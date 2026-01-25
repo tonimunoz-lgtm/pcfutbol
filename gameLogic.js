@@ -79,9 +79,9 @@ function addNews(message, type = 'info', read = false) {
     }  
 }  
   
-function markNewsAsRead() {  
+/*function markNewsAsRead() {  
     gameState.unreadNewsCount = 0;  
-}  
+}  */
   
 function initStandings(teamsArray) {  
     const standings = {};  
