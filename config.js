@@ -11,45 +11,39 @@ try {
 }  
   
 const TEAMS_DATA = {  
-    primera: [  
-        'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Athletic Club', 'Villarreal CF',  
-        'Real Sociedad', 'Real Betis', 'Valencia CF', 'Girona FC', 'Real Mallorca',  
-        'Las Palmas', 'Rayo Vallecano', 'Sevilla FC', 'Osasuna', 'Celta de Vigo',  
-        'Real Oviedo', 'RCD Español', 'Real Valladolid', 'Levante UD', 'Real Elche CF'  
+    primera: [ // Primera División (20 equipos) - Basado en 23/24  
+        'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Girona FC', 'Athletic Club',  
+        'Real Sociedad', 'Real Betis', 'Valencia CF', 'Villarreal CF', 'Getafe CF',  
+        'CA Osasuna', 'Rayo Vallecano', 'Sevilla FC', 'RCD Mallorca', 'UD Las Palmas',  
+        'Celta de Vigo', 'Deportivo Alavés', 'Cádiz CF', 'Granada CF', 'UD Almería'  
     ],  
-    segunda: [  
-        'Albacete', 'Andorra', 'Alcorcón', 'Eibar', 'Huesca', 'Ferrol', 'Tenerife', 'Sabadell', 'Mirandés', 'Burgos',  
-        'Lugo', 'Córdoba', 'Ibiza', 'Alcoyano', 'Real Unión', 'Zaragoza', 'Lleida', 'Málaga', 'Cádiz', 'Ponferradina'  
+    segunda: [ // Segunda División (22 equipos) - Basado en 23/24  
+        'SD Eibar', 'RCD Espanyol', 'Real Oviedo', 'Sporting Gijón', 'Levante UD',  
+        'Burgos CF', 'Racing Santander', 'CD Leganés', 'Real Valladolid', 'Real Zaragoza',  
+        'CD Tenerife', 'FC Cartagena', 'Albacete Balompié', 'SD Huesca', 'CD Mirandés',  
+        'Villarreal B', 'AD Alcorcón', 'SD Amorebieta', 'FC Andorra', 'CD Eldense',  
+        'Racing de Ferrol', 'Elche CF'  
     ],  
-    rfef: [ // Primera RFEF con dos grupos (ejemplos)  
-        // Grupo 1  
-        'RC Deportivo', 'FC Barcelona B', 'Real Madrid Castilla', 'Racing Ferrol', 'Celta B',  
-        'Rayo Majadahonda', 'Cultural Leonesa', 'Real Unión', 'SD Logroñés', 'Unionistas Salamanca',  
-        'Gimnàstic Tarragona', 'CE Sabadell FC', 'CD Castellón', 'UE Cornellà', 'UD Logroñés',  
-        'Atlético Baleares', 'CD Alcoyano', 'CF Intercity', 'Eldense', 'La Nucía',  
-        // Grupo 2 (para asegurar ~40 equipos en total en RFEF, luego se dividirán en 2 grupos)  
-        'Recreativo Huelva', 'Málaga CF', 'Antequera CF', 'Algeciras CF', 'San Fernando CD',  
-        'AD Mérida', 'Real Murcia CF', 'Atlético Sanluqueño', 'Linares Deportivo', 'CD Atlético Baleares',  
-        'UD Ibiza', 'AD Ceuta FC', 'Córdoba CF', 'RC Recreativo de Huelva', 'CD Badajoz',  
-        'Extremadura UD', 'Real Balompédica Linense', 'UD Melilla', 'CP Cacereño', 'UCAM Murcia CF'  
+    rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 23/24  
+        'RC Deportivo', 'FC Barcelona Atlètic', 'Real Madrid Castilla', 'Cultural Leonesa', 'Unionistas Salamanca CF',  
+        'Celta Fortuna', 'Rayo Majadahonda', 'SD Logroñés', 'Osasuna Promesas', 'Real Sociedad B',  
+        'Gimnàstic Tarragona', 'CE Sabadell FC', 'CD Lugo', 'UE Cornellà', 'Teruel',  
+        'Fuenlabrada', 'Sestao River', 'Tarazona', 'Arenteiro', 'Logroñés'  
+    ],  
+    rfef_grupo2: [ // Primera RFEF Grupo 2 (20 equipos) - Basado en 23/24  
+        'Málaga CF', 'Recreativo Huelva', 'Córdoba CF', 'AD Ceuta FC', 'CD Castellón',  
+        'Antequera CF', 'Atlético Baleares', 'Linares Deportivo', 'UD Ibiza', 'CF Intercity',  
+        'Real Murcia CF', 'Atlético Sanluqueño', 'Melilla', 'Algeciras CF', 'San Fernando CD',  
+        'Recreativo Granada', 'UD Melilla', 'CP Cacereño', 'Yeclano Deportivo', 'Granada B'  
     ]  
 };  
   
 const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
   
 const ATTRIBUTES = [  
-    'EN', // Entradas / Entradas (defensa)  
-    'VE', // Velocidad  
-    'RE', // Resistencia  
-    'AG', // Agresividad / Agilidad (depende de la posición)  
-    'CA', // Cabeza / Capacidad (depende de la posición)  
-    'EF', // Efectividad / Fuerza (depende de la posición)  
-    'MO', // Moral / Condición Física (MO para diferenciar de 'form' que es semanal)  
-    'AT', // Ataque  
-    'DF'  // Defensa  
+    'EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'  
 ];  
   
-// Pesos para calcular el overall según la posición  
 const POSITION_ATTRIBUTE_WEIGHTS = {  
     'POR': { EN: 0.1, VE: 0.1, RE: 0.1, AG: 0.1, CA: 0.2, EF: 0.1, MO: 0.1, AT: 0.05, DF: 0.15 },  
     'DFC': { EN: 0.2, VE: 0.1, RE: 0.15, AG: 0.1, CA: 0.15, EF: 0.1, MO: 0.1, AT: 0.05, DF: 0.15 },  
@@ -63,63 +57,64 @@ const POSITION_ATTRIBUTE_WEIGHTS = {
     'DC': { EN: 0.05, VE: 0.15, RE: 0.1, AG: 0.1, CA: 0.15, EF: 0.2, MO: 0.1, AT: 0.15, DF: 0.0 },  
 };  
   
-// Layouts visuales para la alineación en el campo  
+// Layouts visuales para la alineación en el campo (x, y son coordenadas relativas en una cuadrícula virtual 5x9)  
+// El campo tiene 5 columnas (0 a 4) y 9 filas (0 a 8)  
+// Las coordenadas se han ajustado para centrar mejor las líneas de jugadores.  
 const FORMATIONS = {  
     '433': {  
         name: '4-3-3',  
         layout: [  
-            { pos: 'POR', x: 1, y: 1 },  
-            { pos: 'LI', x: 0, y: 3 }, { pos: 'DFC', x: 1, y: 3 }, { pos: 'DFC', x: 2, y: 3 }, { pos: 'LD', x: 3, y: 3 },  
-            { pos: 'MC', x: 0, y: 5 }, { pos: 'MCO', x: 1, y: 5 }, { pos: 'MC', x: 2, y: 5 },  
-            { pos: 'EXT', x: 0, y: 7 }, { pos: 'DC', x: 1, y: 7 }, { pos: 'EXT', x: 2, y: 7 }  
+            { pos: 'POR', x: 2, y: 0 }, // Portero  
+            { pos: 'LI', x: 0, y: 2 }, { pos: 'DFC', x: 1, y: 2 }, { pos: 'DFC', x: 3, y: 2 }, { pos: 'LD', x: 4, y: 2 }, // Defensas  
+            { pos: 'MC', x: 1, y: 4 }, { pos: 'MCO', x: 2, y: 4 }, { pos: 'MC', x: 3, y: 4 }, // Medios  
+            { pos: 'EXT', x: 0, y: 6 }, { pos: 'DC', x: 2, y: 6 }, { pos: 'EXT', x: 4, y: 6 } // Delanteros  
         ]  
     },  
     '442': {  
         name: '4-4-2',  
         layout: [  
-            { pos: 'POR', x: 1, y: 1 },  
-            { pos: 'LI', x: 0, y: 3 }, { pos: 'DFC', x: 1, y: 3 }, { pos: 'DFC', x: 2, y: 3 }, { pos: 'LD', x: 3, y: 3 },  
-            { pos: 'MI', x: 0, y: 5 }, { pos: 'MC', x: 1, y: 5 }, { pos: 'MC', x: 2, y: 5 }, { pos: 'MD', x: 3, y: 5 },  
-            { pos: 'DC', x: 1, y: 7 }, { pos: 'DC', x: 2, y: 7 }  
+            { pos: 'POR', x: 2, y: 0 },  
+            { pos: 'LI', x: 0, y: 2 }, { pos: 'DFC', x: 1, y: 2 }, { pos: 'DFC', x: 3, y: 2 }, { pos: 'LD', x: 4, y: 2 },  
+            { pos: 'MI', x: 0, y: 4 }, { pos: 'MC', x: 1, y: 4 }, { pos: 'MC', x: 3, y: 4 }, { pos: 'MD', x: 4, y: 4 },  
+            { pos: 'DC', x: 1, y: 6 }, { pos: 'DC', x: 3, y: 6 }  
         ]  
     },  
     '352': {  
         name: '3-5-2',  
         layout: [  
-            { pos: 'POR', x: 1, y: 1 },  
-            { pos: 'DFC', x: 0, y: 3 }, { pos: 'DFC', x: 1, y: 3 }, { pos: 'DFC', x: 2, y: 3 },  
-            { pos: 'MI', x: 0, y: 5 }, { pos: 'MC', x: 1, y: 5 }, { pos: 'MCO', x: 2, y: 5 }, { pos: 'MC', x: 3, y: 5 }, { pos: 'MD', x: 4, y: 5 },  
-            { pos: 'DC', x: 1, y: 7 }, { pos: 'DC', x: 2, y: 7 }  
+            { pos: 'POR', x: 2, y: 0 },  
+            { pos: 'DFC', x: 1, y: 2 }, { pos: 'DFC', x: 2, y: 2 }, { pos: 'DFC', x: 3, y: 2 },  
+            { pos: 'MI', x: 0, y: 4 }, { pos: 'MC', x: 1, y: 4 }, { pos: 'MCO', x: 2, y: 4 }, { pos: 'MC', x: 3, y: 4 }, { pos: 'MD', x: 4, y: 4 },  
+            { pos: 'DC', x: 1, y: 6 }, { pos: 'DC', x: 3, y: 6 }  
         ]  
     },  
     '541': {  
         name: '5-4-1',  
         layout: [  
-            { pos: 'POR', x: 1, y: 1 },  
-            { pos: 'LI', x: 0, y: 3 }, { pos: 'DFC', x: 1, y: 3 }, { pos: 'DFC', x: 2, y: 3 }, { pos: 'DFC', x: 3, y: 3 }, { pos: 'LD', x: 4, y: 3 },  
-            { pos: 'MI', x: 0, y: 5 }, { pos: 'MC', x: 1, y: 5 }, { pos: 'MC', x: 2, y: 5 }, { pos: 'MD', x: 3, y: 5 },  
-            { pos: 'DC', x: 1, y: 7 }  
+            { pos: 'POR', x: 2, y: 0 },  
+            { pos: 'LI', x: 0, y: 2 }, { pos: 'DFC', x: 1, y: 2 }, { pos: 'DFC', x: 2, y: 2 }, { pos: 'DFC', x: 3, y: 2 }, { pos: 'LD', x: 4, y: 2 },  
+            { pos: 'MI', x: 0, y: 4 }, { pos: 'MC', x: 1, y: 4 }, { pos: 'MC', x: 3, y: 4 }, { pos: 'MD', x: 4, y: 4 },  
+            { pos: 'DC', x: 2, y: 6 }  
         ]  
     },  
     '451': {  
         name: '4-5-1',  
         layout: [  
-            { pos: 'POR', x: 1, y: 1 },  
-            { pos: 'LI', x: 0, y: 3 }, { pos: 'DFC', x: 1, y: 3 }, { pos: 'DFC', x: 2, y: 3 }, { pos: 'LD', x: 3, y: 3 },  
-            { pos: 'MI', x: 0, y: 5 }, { pos: 'MC', x: 1, y: 5 }, { pos: 'MCO', x: 2, y: 5 }, { pos: 'MC', x: 3, y: 5 }, { pos: 'MD', x: 4, y: 5 },  
-            { pos: 'DC', x: 1, y: 7 }  
+            { pos: 'POR', x: 2, y: 0 },  
+            { pos: 'LI', x: 0, y: 2 }, { pos: 'DFC', x: 1, y: 2 }, { pos: 'DFC', x: 3, y: 2 }, { pos: 'LD', x: 4, y: 2 },  
+            { pos: 'MI', x: 0, y: 4 }, { pos: 'MC', x: 1, y: 4 }, { pos: 'MCO', x: 2, y: 4 }, { pos: 'MC', x: 3, y: 4 }, { pos: 'MD', x: 4, y: 4 },  
+            { pos: 'DC', x: 2, y: 6 }  
         ]  
     }  
 };  
   
-  
 const DIVISION_MULTIPLIERS = {  
-    primera: 1.5, // Mayor presupuesto/valor de staff  
+    primera: 1.5,  
     segunda: 1.0,  
-    rfef: 0.7 // Menor presupuesto/valor de staff  
+    rfef_grupo1: 0.7, // Se usa para la generación de staff si el equipo está en esta división  
+    rfef_grupo2: 0.7  // Se usa para la generación de staff si el equipo está en esta división  
 };  
   
-// --- Configuración del STAFF ---  
 const STAFF_ROLES = {  
     medico: { displayName: 'Médico', minSalary: 800, maxSalary: 2500, baseClausula: 5000, levelCostMultiplier: 1.5 },  
     entrenador: { displayName: 'Entrenador Físico', minSalary: 700, maxSalary: 2000, baseClausula: 4000, levelCostMultiplier: 1.5 },  
@@ -131,39 +126,31 @@ const STAFF_ROLES = {
     segundoEntrenador: { displayName: 'Segundo Entrenador', minSalary: 1000, maxSalary: 3000, baseClausula: 7000, levelCostMultiplier: 1.5 }  
 };  
   
-// Multiplicadores de efecto del staff por nivel (1-5)  
 const STAFF_LEVEL_EFFECTS = {  
     1: { training: 0.5, injuryProb: 1.5, recoveryTime: 1.5, scoutQuality: 0.5, negotiation: 0.5 },  
     2: { training: 0.75, injuryProb: 1.25, recoveryTime: 1.25, scoutQuality: 0.75, negotiation: 0.75 },  
-    3: { training: 1.0, injuryProb: 1.0, recoveryTime: 1.0, scoutQuality: 1.0, negotiation: 1.0 }, // Base  
+    3: { training: 1.0, injuryProb: 1.0, recoveryTime: 1.0, scoutQuality: 1.0, negotiation: 1.0 },  
     4: { training: 1.25, injuryProb: 0.75, recoveryTime: 0.75, scoutQuality: 1.25, negotiation: 1.25 },  
     5: { training: 1.5, injuryProb: 0.5, recoveryTime: 0.5, scoutQuality: 1.5, negotiation: 1.5 }  
 };  
   
-// --- Configuración de Lesiones ---  
-// Probabilidad base de lesión por partido jugado por un jugador  
-const BASE_INJURY_PROB_PER_MATCH = 0.005; // 0.5% de probabilidad base  
-// Rango de tiempo de recuperación en semanas si no hay fisio/médico bueno  
-const BASE_RECOVERY_TIME_WEEKS = { min: 3, max: 10 }; // Ajustado para ser más realista  
+const BASE_INJURY_PROB_PER_MATCH = 0.005;  
+const BASE_RECOVERY_TIME_WEEKS = { min: 3, max: 10 };  
   
-// --- Configuración de Temporada ---  
-const SEASON_WEEKS = 38; // 38 jornadas de liga  
-const PRESEASON_WEEKS = 4; // 4 semanas de pretemporada  
-const CUP_WEEKS = 6; // Semanas reservadas para la Copa del Rey, etc.  
-const EUROPEAN_WEEKS = 10; // Semanas para competiciones europeas (solapadas con liga)  
+const SEASON_WEEKS = 38;  
+const PRESEASON_WEEKS = 4;  
   
-// Configuración de ascensos y descensos  
 const PROMOTION_RELEGATION = {  
     primera: {  
-        relegate: 3 // 3 descienden a Segunda  
+        relegate: 3  
     },  
     segunda: {  
-        promote: 3, // 3 ascienden a Primera (2 directos, 1 playoff)  
-        relegate: 4 // 4 descienden a Primera RFEF  
+        promote: 3, // 2 directos, 1 playoff (simulado como 3 directos para simplificar)  
+        relegate: 4  
     },  
-    rfef: {  
-        promote: 4, // 4 ascienden a Segunda (2 directos, 2 playoff)  
-        relegate: 0 // La especificación dice que no hay descensos en RFEF  
+    rfef: { // Para RFEF, asumimos que 4 ascienden (2 de cada grupo) y 0 descienden según tu indicación  
+        promote: 4, // Estos 4 saldrían del top de ambos grupos combinados, o 2 de cada grupo.  
+        relegate: 0  
     }  
 };  
   
@@ -181,7 +168,7 @@ export {
     STAFF_LEVEL_EFFECTS,  
     BASE_INJURY_PROB_PER_MATCH,  
     BASE_RECOVERY_TIME_WEEKS,  
-    SEASON_WEEKS,           // Nuevo  
-    PRESEASON_WEEKS,        // Nuevo  
-    PROMOTION_RELEGATION    // Nuevo  
+    SEASON_WEEKS,  
+    PRESEASON_WEEKS,  
+    PROMOTION_RELEGATION  
 };  
