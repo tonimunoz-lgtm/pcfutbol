@@ -282,7 +282,8 @@ function playMatch() {
     });
     
     gameState.week++;
-    gameState.balance += 3000;
+    endOfWeekUpdate(); // <--- nueva función que sumará ingresos y restará gastos
+
     
     return { 
         home: gameState.team, 
@@ -294,43 +295,42 @@ function playMatch() {
 
 // SIMULAR PARTIDOS DE OTROS EQUIPOS (jornada completa)
 function simulateFullWeek() {
-    const teams = Object.keys(gameState.standings);
-    const played = new Set([gameState.team]);
-    
+    const teams = Object.keys(gameState.standings).filter(t => t !== gameState.team);
+
     for (let i = 0; i < teams.length; i++) {
         for (let j = i + 1; j < teams.length; j++) {
-            if (!played.has(teams[i]) && !played.has(teams[j])) {
-                const goals1 = Math.floor(Math.random() * 5);
-                const goals2 = Math.floor(Math.random() * 5);
-                
-                gameState.standings[teams[i]].pj++;
-                gameState.standings[teams[j]].pj++;
-                gameState.standings[teams[i]].gf += goals1;
-                gameState.standings[teams[i]].gc += goals2;
-                gameState.standings[teams[j]].gf += goals2;
-                gameState.standings[teams[j]].gc += goals1;
-                
-                if (goals1 > goals2) {
-                    gameState.standings[teams[i]].pts += 3;
-                    gameState.standings[teams[i]].g++;
-                    gameState.standings[teams[j]].p++;
-                } else if (goals1 < goals2) {
-                    gameState.standings[teams[j]].pts += 3;
-                    gameState.standings[teams[j]].g++;
-                    gameState.standings[teams[i]].p++;
-                } else {
-                    gameState.standings[teams[i]].pts += 1;
-                    gameState.standings[teams[i]].e++;
-                    gameState.standings[teams[j]].pts += 1;
-                    gameState.standings[teams[j]].e++;
-                }
-                
-                played.add(teams[i]);
-                played.add(teams[j]);
+            const goals1 = Math.floor(Math.random() * 5);
+            const goals2 = Math.floor(Math.random() * 5);
+
+            // Actualizar estadísticas de cada equipo
+            gameState.standings[teams[i]].pj++;
+            gameState.standings[teams[j]].pj++;
+            gameState.standings[teams[i]].gf += goals1;
+            gameState.standings[teams[i]].gc += goals2;
+            gameState.standings[teams[j]].gf += goals2;
+            gameState.standings[teams[j]].gc += goals1;
+
+            if (goals1 > goals2) {
+                gameState.standings[teams[i]].pts += 3;
+                gameState.standings[teams[i]].g++;
+                gameState.standings[teams[j]].p++;
+            } else if (goals1 < goals2) {
+                gameState.standings[teams[j]].pts += 3;
+                gameState.standings[teams[j]].g++;
+                gameState.standings[teams[i]].p++;
+            } else {
+                gameState.standings[teams[i]].pts += 1;
+                gameState.standings[teams[i]].e++;
+                gameState.standings[teams[j]].pts += 1;
+                gameState.standings[teams[j]].e++;
             }
         }
     }
+
+    // Al final de la semana, actualizar balance
+    endOfWeekUpdate();
 }
+
 
 // EXPANDIR ESTADIO
 function expandStadium() {
@@ -428,3 +428,9 @@ export {
     getGameState,
     updateGameState
 };
+
+// actualizar balance semanal
+function endOfWeekUpdate() {
+    const weeklyBalanceChange = gameState.weeklyIncome - gameState.weeklyExpenses;
+    gameState.balance += weeklyBalanceChange;
+}
