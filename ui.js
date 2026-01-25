@@ -2,14 +2,13 @@
   
 function renderStandingsTable(standings, currentTeam) {  
     const tbody = document.getElementById('standingsTable');  
+    if (!tbody) return;  
+  
     const sorted = Object.entries(standings).sort((a, b) => {  
-        // Criterio de ordenación principal: Puntos  
         if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;  
-        // Criterio de desempate: Diferencia de goles  
         const dgA = a[1].gf - a[1].gc;  
         const dgB = b[1].gf - b[1].gc;  
         if (dgB !== dgA) return dgB - dgA;  
-        // Criterio de desempate final: Goles a favor  
         return b[1].gf - a[1].gf;  
     });  
   
@@ -31,6 +30,8 @@ function renderStandingsTable(standings, currentTeam) {
   
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
+    if (!list) return;  
+  
     if (!squad || squad.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';  
         return;  
@@ -45,12 +46,13 @@ function renderSquadList(squad, currentTeam) {
                     <span>${p.position || 'N/A'}</span> |  
                     <span>${p.age} años</span> |  
                     <span>Nivel ${p.overall}/100</span> |  
-                    <span>${p.salary}€/sem</span> |  
+                    <span>${p.salary.toLocaleString('es-ES')}€/sem</span> |  
                     <span>${p.matches || 0} partidos</span>  
                 </div>  
             </div>  
             <div style="display: flex; gap: 5px;">  
-                <button class="btn btn-sm" onclick="window.negotiatePlayer('${p.name}')">Negociar</button>  
+                <!-- Botón de negociar eliminado si no hay funcionalidad, o se deja como placeholder -->  
+                <!-- <button class="btn btn-sm" onclick="window.negotiatePlayer('${p.name}')">Negociar</button> -->  
                 <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
             </div>  
         </div>  
@@ -59,6 +61,8 @@ function renderSquadList(squad, currentTeam) {
   
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
+    if (!list) return;  
+  
     if (!academy || academy.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
         return;  
@@ -85,7 +89,7 @@ function renderAcademyList(academy) {
   
 function renderAvailablePlayersMarket(players) {  
     const list = document.getElementById('availablePlayersList');  
-    if (!list) return; // Asegurarse de que el elemento existe  
+    if (!list) return;  
     if (!players || players.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">No hay jugadores disponibles en el mercado.</div>';  
         return;  
@@ -99,7 +103,7 @@ function renderAvailablePlayersMarket(players) {
                 </div>  
                 <div style="font-size: 0.85em; color: #999;">  
                     ${p.position} | ${p.age} años | Nivel ${p.overall}/100 |  
-                    Salario: ${p.salary}€/sem | ${p.loan ? 'Gratis' : 'Coste: ' + p.cost + '€'}  
+                    Salario: ${p.salary.toLocaleString('es-ES')}€/sem | ${p.loan ? 'Gratis' : 'Coste: ' + p.cost.toLocaleString('es-ES') + '€'}  
                 </div>  
             </div>  
             <button class="btn btn-sm" onclick="window.fichPlayerConfirm('${encodeURIComponent(JSON.stringify(p))}')">  
@@ -111,7 +115,7 @@ function renderAvailablePlayersMarket(players) {
   
 function renderAvailableYoungstersMarket(youngsters) {  
     const list = document.getElementById('availableYoungstersList');  
-    if (!list) return; // Asegurarse de que el elemento existe  
+    if (!list) return;  
     if (!youngsters || youngsters.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">No hay jóvenes talentos disponibles.</div>';  
         return;  
@@ -125,7 +129,7 @@ function renderAvailableYoungstersMarket(youngsters) {
                     Edad ${y.age} |  
                     Nivel actual ${y.overall}/100 |  
                     Potencial ${y.potential}/100 |  
-                    Coste: ${y.cost}€  
+                    Coste: ${y.cost.toLocaleString('es-ES')}€  
                 </div>  
             </div>  
             <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
@@ -135,7 +139,7 @@ function renderAvailableYoungstersMarket(youngsters) {
   
 function renderNextMatchCard(homeTeam, awayTeam, week) {  
     const matchInfo = document.getElementById('matchInfo');  
-    if (!matchInfo) return; // Asegurarse de que el elemento existe  
+    if (!matchInfo) return;  
     matchInfo.innerHTML = `  
         <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
             <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${homeTeam}</div>  
@@ -146,7 +150,7 @@ function renderNextMatchCard(homeTeam, awayTeam, week) {
     `;  
 }  
   
-function updateDashboardStats(state) { // Solo necesita el estado, no standings por separado  
+function updateDashboardStats(state) {  
     // Actualizar elementos del header  
     document.getElementById('teamName').textContent = state.team || '-';  
     document.getElementById('weekNo').textContent = state.week;  
@@ -175,7 +179,7 @@ function updateDashboardStats(state) { // Solo necesita el estado, no standings 
   
     const weekly = state.weeklyIncome - state.weeklyExpenses;  
     document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
-    document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`; // Clase para color  
+    document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
   
   
     const warningAlert = document.getElementById('warningAlert');  
@@ -200,13 +204,12 @@ function refreshUI(state) {
     renderSquadList(state.squad, state.team);  
     renderAcademyList(state.academy);  
   
-    // Renderizar el próximo partido (necesita saber quién es el rival)  
     const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
-    const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA'; // Fallback  
+    const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
     renderNextMatchCard(state.team, nextRival, state.week);  
 }  
   
-// Exportar todas las funciones necesarias (ES Module style)  
+// Exportar todas las funciones necesarias  
 export {  
     renderStandingsTable,  
     renderSquadList,  
