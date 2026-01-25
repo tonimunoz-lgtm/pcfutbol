@@ -1379,6 +1379,16 @@ function markNewsAsRead(index) {
     }
 }
 
+function nextWeek() {
+    if(gameState.unreadNewsCount > 0){
+        alert('¡Debes leer todas las noticias antes de continuar la jornada!');
+        return;
+    }
+
+    gameLogic.advanceWeek(); // o tu función real para avanzar la semana
+    ui.refreshUI(gameState);
+}
+
   
 export {  
     getGameState,  
