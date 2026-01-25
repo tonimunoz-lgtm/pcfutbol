@@ -212,3 +212,15 @@ export {
     updateDashboardStats,
     playFullWeekAndUpdateUI
 };
+
+/**
+ * Actualiza dashboard, clasificación y plantillas después de una jornada
+ * @param {Object} state - gameState
+ * @param {Object} standings - Clasificación
+ */
+function refreshUI(state, standings) {
+    updateDashboardStats(state, standings);
+    renderStandingsTable(standings, state.team);
+    renderSquadList(state.squad, state.team);
+    renderAcademyList(state.academy);
+}
