@@ -35,11 +35,10 @@ function generateRandomName() {
 }  
   
 // Función para calcular el Overall a partir de los atributos y la posición  
-export function calculateOverall(player) { // <--- Ya se exporta aquí  
+export function calculateOverall(player) {  
     const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
     if (!weights) {  
         console.warn(`Pesos de atributos no definidos para la posición: ${player.position}. Usando pesos por defecto.`);  
-        // Si no hay pesos específicos para la posición, usar un promedio simple o pesos por defecto  
         let overallSum = 0;  
         for (const attr of ATTRIBUTES) {  
             overallSum += (player[attr] || 0);  
@@ -51,14 +50,12 @@ export function calculateOverall(player) { // <--- Ya se exporta aquí
     let totalWeight = 0;  
   
     for (const attr of ATTRIBUTES) {  
-        const weight = weights[attr] || 0; // Si el atributo no tiene peso específico, su peso es 0  
+        const weight = weights[attr] || 0;  
         overallSum += (player[attr] || 0) * weight;  
         totalWeight += weight;  
     }  
   
-    // Evitar división por cero si no hay pesos definidos o son todos cero  
     if (totalWeight === 0) {  
-        // Fallback a un cálculo simple si los pesos no suman a un valor significativo  
         let simpleOverallSum = 0;  
         for (const attr of ATTRIBUTES) {  
             simpleOverallSum += (player[attr] || 0);  
@@ -123,6 +120,8 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
         foot: foot,  
         matches: 0,  
         form: 75 + Math.floor(Math.random() * 10), // Estado de forma inicial (75-85)  
+        isInjured: false, // Por defecto no lesionado  
+        weeksOut: 0, // Por defecto 0 semanas  
         // Atributos iniciales base  
         ...generateRandomAttributes(Math.max(1, minOverallTarget - 20), Math.min(100, maxOverallTarget + 10))  
     };  
@@ -159,6 +158,8 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, isStar = fa
         foot: foot,  
         matches: 0,  
         form: 70 + Math.floor(Math.random() * 10),  
+        isInjured: false, // Por defecto no lesionado  
+        weeksOut: 0, // Por defecto 0 semanas  
         ...generateRandomAttributes(Math.max(1, minOverallTarget - 10), Math.min(100, maxOverallTarget + 5))  
     };  
   
@@ -190,6 +191,8 @@ function initPlayerDatabase() {
             ...p,  
             matches: 0,  
             form: 80 + Math.floor(Math.random() * 10), // Estado de forma inicial para élite  
+            isInjured: false,  
+            weeksOut: 0  
         };  
         // overall y potential se calculan si no vienen ya calculados en ELITE_PLAYERS_BASE  
         // (ya vienen predefinidos en ELITE_PLAYERS_BASE, pero esta es una capa de seguridad)  
@@ -221,7 +224,9 @@ function initYoungsterDatabase() {
         const fullYoungster = {  
             ...y,  
             matches: 0,  
-            form: 70 + Math.floor(Math.random() * 10)  
+            form: 70 + Math.floor(Math.random() * 10),  
+            isInjured: false,  
+            weeksOut: 0  
         };  
         // similar a ELITE_PLAYERS_BASE, el overall y potential ya vienen  
         if (!fullYoungster.overall) fullYoungster.overall = calculateOverall(fullYoungster);  
@@ -244,7 +249,7 @@ function initYoungsterDatabase() {
   
 // --- Funciones para el mercado (usan ALL_AVAILABLE_PLAYERS) ---  
 // Estas son las que gameLogic.js importará y re-exportará  
-function getPlayerMarket(filters = {}) {  
+function getPlayerMarket(filters = {}, scoutLevel = 0) {  
     let filteredPlayers = [...ALL_AVAILABLE_PLAYERS];  
   
     if (filters.position && filters.position !== 'ALL') {  
@@ -267,14 +272,31 @@ function getPlayerMarket(filters = {}) {
         filteredPlayers = filteredPlayers.filter(p => p.loanListed);  
     }  
   
+    // --- Efecto del Scout ---  
+    let finalPlayers = [...filteredPlayers];  
+    if (scoutLevel > 0) {  
+        const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
+        const numExtraPlayers = Math.floor(filteredPlayers.length * (scoutEffectMultiplier - 1)); // Cuántos más podemos "descubrir"  
+  
+        // Para simplificar, si el scout es mejor, "encontramos" jugadores con mejor overall/potential  
+        // Filtrar por overall y potencial para simular un "buen ojo" del scout  
+        const topTierPlayers = ALL_AVAILABLE_PLAYERS.filter(p => p.overall > 70 && p.potential > 80);  
+        for (let i = 0; i < numExtraPlayers && i < topTierPlayers.length; i++) {  
+            if (!finalPlayers.some(fp => fp.name === topTierPlayers[i].name)) {  
+                finalPlayers.push(topTierPlayers[i]);  
+            }  
+        }  
+    }  
+  
+  
     // Devolver un número razonable de jugadores, ordenados por overall  
-    return filteredPlayers  
+    return finalPlayers  
         .sort((a, b) => b.overall - a.overall)  
         .slice(0, 50); // Limitar a 50 jugadores en el mercado para no sobrecargar  
 }  
   
   
-function getYoungsterMarket(filters = {}) {  
+function getYoungsterMarket(filters = {}, scoutLevel = 0) {  
     let filteredYoungsters = [...ALL_AVAILABLE_YOUNGSTERS];  
   
     if (filters.minOverall) {  
@@ -291,7 +313,21 @@ function getYoungsterMarket(filters = {}) {
         filteredYoungsters = filteredYoungsters.filter(p => p.potential >= filters.minPotential);  
     }  
   
-    return filteredYoungsters  
+    // --- Efecto del Scout en juveniles ---  
+    let finalYoungsters = [...filteredYoungsters];  
+    if (scoutLevel > 0) {  
+        const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
+        const numExtraYoungsters = Math.floor(filteredYoungsters.length * (scoutEffectMultiplier - 1));  
+  
+        const highPotentialYoungsters = ALL_AVAILABLE_YOUNGSTERS.filter(y => y.potential > 85);  
+        for (let i = 0; i < numExtraYoungsters && i < highPotentialYoungsters.length; i++) {  
+            if (!finalYoungsters.some(fy => fy.name === highPotentialYoungsters[i].name)) {  
+                finalYoungsters.push(highPotentialYoungsters[i]);  
+            }  
+        }  
+    }  
+  
+    return finalYoungsters  
         .sort((a, b) => b.potential - a.potential)  
         .slice(0, 30); // Limitar a 30 jóvenes en el mercado  
 }  
