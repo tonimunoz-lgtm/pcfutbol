@@ -351,7 +351,7 @@ function updateDashboardStats(state) {
   
     const simulateButton = document.getElementById('simulateWeekButton');  
     if (simulateButton) {  
-        simulateButton.disabled = state.unreadNewsCount > 0;  
+        simulateButton.disabled = false;  
     }  
 }  
   
