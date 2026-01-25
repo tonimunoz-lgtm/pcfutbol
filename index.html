@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>PC Fútbol Manager 2025/26</title>  
     <style>  
+        /* ... (tus estilos existentes) ... */  
         * { margin: 0; padding: 0; box-sizing: border-box; }  
   
         body {  
@@ -233,12 +234,41 @@
         .negotiation-player-info p { margin-bottom: 5px; }  
         .negotiation-step { margin-top: 20px; border-top: 1px dashed rgba(233, 69, 96, 0.3); padding-top: 20px; }  
         .negotiation-step label { display: block; margin-bottom: 8px; font-weight: bold; color: #e94560; }  
-        .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"] {  
-            width: auto; /* Para checkboxes */  
+        .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"], .negotiation-step select {  
+            width: auto; /* Para checkboxes y sliders */  
             margin-right: 10px;  
         }  
         .negotiation-incentives { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }  
         .negotiation-incentives div { display: flex; align-items: center; }  
+  
+        /* Estilos para el modal de entrenamiento */  
+        #trainingModal .training-player-info {  
+            background: rgba(233, 69, 96, 0.15);  
+            border: 1px solid #e94560;  
+            padding: 15px;  
+            margin-bottom: 20px;  
+            border-radius: 5px;  
+        }  
+        #trainingModal .attribute-selection label {  
+            display: inline-block;  
+            background: rgba(233, 69, 96, 0.1);  
+            border: 1px solid #e94560;  
+            padding: 8px 15px;  
+            margin: 5px;  
+            border-radius: 3px;  
+            cursor: pointer;  
+            transition: background 0.2s;  
+        }  
+        #trainingModal .attribute-selection label:hover {  
+            background: rgba(233, 69, 96, 0.3);  
+        }  
+        #trainingModal .attribute-selection input[type="radio"]:checked + label {  
+            background: #e94560;  
+            color: #fff;  
+        }  
+        #trainingModal .attribute-selection input[type="radio"] {  
+            display: none; /* Ocultar el radio button nativo */  
+        }  
     </style>  
 </head>  
 <body>  
@@ -351,16 +381,7 @@
                     <input type="text" id="marketSearchName" placeholder="Nombre del jugador" style="width: 150px;">  
                     <select id="marketPosition" style="width: 120px;">  
                         <option value="ALL">Posición</option>  
-                        <option value="POR">POR</option>  
-                        <option value="DFC">DFC</option>  
-                        <option value="LI">LI</option>  
-                        <option value="LD">LD</option>  
-                        <option value="MC">MC</option>  
-                        <option value="MCO">MCO</option>  
-                        <option value="MD">MD</option>  
-                        <option value="MI">MI</option>  
-                        <option value="EXT">EXT</option>  
-                        <option value="DC">DC</option>  
+                        <!-- Opciones de posición se cargarán dinámicamente -->  
                     </select>  
                     <input type="number" id="marketMinOverall" placeholder="Media min." min="1" max="99" style="width: 100px;">  
                     <input type="number" id="marketMaxAge" placeholder="Edad max." min="16" max="40" style="width: 100px;">  
@@ -370,7 +391,6 @@
                     <button class="btn btn-sm" onclick="clearPlayerMarketFilters()" style="background: #c73446;">Limpiar</button>  
                 </div>  
                 <div id="availablePlayersSearchResult" style="margin-top: 20px;">  
-                    <!-- Aquí se mostrarán los resultados de la búsqueda -->  
                     <div class="alert alert-info">Utiliza los filtros de búsqueda para encontrar jugadores.</div>  
                 </div>  
                 <h2>Contratar Jóvenes de Cantera</h2>  
@@ -606,15 +626,45 @@
         </div>  
     </div>  
   
+    <!-- MODAL DE ENTRENAMIENTO -->  
+    <div id="trainingModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('training')">&times;</span>  
+            <h1>Entrenamiento Individual</h1>  
+  
+            <div class="training-player-info">  
+                <h3>Jugador: <span id="trainingPlayerName"></span></h3>  
+                <p>Posición: <span id="trainingPlayerPosition"></span> | Media: <span id="trainingPlayerOverall"></span> | Potencial: <span id="trainingPlayerPotential"></span></p>  
+                <p>Atributos actuales:</p>  
+                <ul id="trainingPlayerAttributes" style="list-style: none; display: flex; flex-wrap: wrap; gap: 10px;"></ul>  
+            </div>  
+  
+            <p class="alert alert-info" id="trainingInfoMessage">Selecciona un atributo para que <span id="trainingPlayerNameInfo"></span> se enfoque esta semana.</p>  
+            <div id="trainingStaffWarning" class="alert alert-warning" style="display: none;">  
+                ⚠️ ¡Advertencia! No tienes un entrenador contratado. El entrenamiento será menos efectivo.  
+            </div>  
+  
+            <div class="attribute-selection" style="margin-top: 20px;">  
+                <p>Seleccionar atributo para entrenar:</p>  
+                <div id="attributeRadioButtons">  
+                    <!-- Los radio buttons se generarán aquí -->  
+                </div>  
+            </div>  
+  
+            <button class="btn" style="margin-top: 20px;" onclick="submitTrainingFocus()">Establecer Foco de Entrenamiento</button>  
+            <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="closeModal('training')">Cerrar</button>  
+        </div>  
+    </div>  
+  
   
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
         import * as ui from './ui.js';  
-        import { TEAMS_DATA, FORMATIONS, POSITIONS } from './config.js'; // Importar POSITIONS  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES } from './config.js'; // Importar ATTRIBUTES  
         import { getPlayerMarket, getYoungsterMarket } from './players.js';  
   
+  
         // --- Funciones globales expuestas para el HTML ---  
-        // Placeholder para negotiatePlayer (el error que salía)  
         window.negotiatePlayer = function(playerName) {  
             alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía. Esto sería para renovaciones, subidas de sueldo, etc.`);  
             console.log(`Intentando negociar con ${playerName}`);  
@@ -630,8 +680,8 @@
             if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);  
             if (pageId === 'academy') ui.renderAcademyList(state.academy);  
             if (pageId === 'transfers') {  
-                searchPlayersMarket(); // Realizar búsqueda inicial al entrar al mercado  
-                renderAvailableYoungsters(); // Renderizar jóvenes al entrar al mercado  
+                searchPlayersMarket();  
+                renderAvailableYoungsters();  
             }  
             if (pageId === 'match') {  
                 const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
@@ -658,11 +708,13 @@
             } else if (type === 'selectTeam') {  
                 document.getElementById('selectTeamModal').classList.add('active');  
                 renderTeamSelectors();  
-            } else if (type === 'signYoungster') { // Modal para jóvenes del mercado  
+            } else if (type === 'signYoungster') {  
                 document.getElementById('signYoungsterModal').classList.add('active');  
                 renderAvailableYoungsters();  
-            } else if (type === 'negotiation') { // Nuevo modal de negociación  
+            } else if (type === 'negotiation') {  
                 document.getElementById('negotiationModal').classList.add('active');  
+            } else if (type === 'training') { // Nuevo modal de entrenamiento  
+                document.getElementById('trainingModal').classList.add('active');  
             }  
         };  
   
@@ -728,7 +780,7 @@
         };  
   
         function renderAvailableYoungsters() {  
-            const youngsters = getYoungsterMarket(); // Ahora usamos la función de gameLogic  
+            const youngsters = gameLogic.getYoungsterMarket();  
             ui.renderAvailableYoungstersMarket(youngsters);  
         }  
   
@@ -773,21 +825,18 @@
         };  
   
         // --- Funciones de Negociación (UI) ---  
-        let currentNegotiatingPlayer = null; // Guardar el jugador actual en negociación  
-  
         window.startNegotiationUI = function(encodedPlayerJson) {  
             const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
             const result = gameLogic.startNegotiation(player);  
             if (result.success) {  
-                currentNegotiatingPlayer = gameLogic.getGameState().negotiatingPlayer;  
-                updateNegotiationModal();  
+                window.updateNegotiationModal();  
                 openModal('negotiation');  
             } else {  
                 alert('Error: ' + result.message);  
             }  
         };  
   
-        function updateNegotiationModal() {  
+        window.updateNegotiationModal = function() {  
             const state = gameLogic.getGameState();  
             const player = state.negotiatingPlayer;  
   
@@ -808,7 +857,6 @@
             document.getElementById('negotiationPlayerCurrentSalary').textContent = player.salary.toLocaleString('es-ES');  
             document.getElementById('negotiationPlayerValue').textContent = player.value.toLocaleString('es-ES');  
   
-            // Mostrar/ocultar precio pedido o info de cesión  
             const askingPriceElem = document.getElementById('negotiationPlayerAskingPrice');  
             const loanInfoElem = document.getElementById('negotiationPlayerLoanInfo');  
             if (player.transferListed) {  
@@ -824,14 +872,18 @@
                 loanInfoElem.style.display = 'none';  
             }  
   
-  
-            // Mostrar el paso de negociación correcto  
             document.getElementById('negotiationStep1').style.display = 'none';  
             document.getElementById('negotiationStep2').style.display = 'none';  
   
             if (state.negotiationStep === 1) {  
                 document.getElementById('negotiationStep1').style.display = 'block';  
-                document.getElementById('offeredSalary').value = player.salary; // Salario base sugerido  
+                document.getElementById('offeredSalary').value = player.salary;  
+                document.getElementById('offeredBonus').checked = false;  
+                document.getElementById('offeredCar').checked = false;  
+                document.getElementById('offeredHouse').checked = false;  
+                document.getElementById('offeredMerchPercent').checked = false;  
+                document.getElementById('offeredTicketPercent').checked = false;  
+  
             } else if (state.negotiationStep === 2) {  
                 document.getElementById('negotiationStep2').style.display = 'block';  
   
@@ -846,13 +898,13 @@
                 if (player.loanListed) {  
                     negotiationLoanOffer.style.display = 'block';  
                     document.getElementById('loanPlayerSalaryExample').textContent = player.salary.toLocaleString('es-ES');  
-                    document.getElementById('loanClubContributionInfo').textContent = player.loanWageContribution.toLocaleString('es-ES');  
-                    document.getElementById('loanWageContribution').value = 50; // Sugerir 50%  
+                    document.getElementById('loanClubContributionInfo').textContent = (player.loanWageContribution || 0).toLocaleString('es-ES');  
+                    document.getElementById('loanWageContribution').value = 50;  
                     document.getElementById('loanWageContributionValue').textContent = '50%';  
                 } else if (player.transferListed) {  
                     negotiationTransferOffer.style.display = 'block';  
-                    document.getElementById('offerAmount').value = player.askingPrice; // Sugerir precio pedido  
-                    populatePlayerExchangeSelect(); // Llenar el selector de intercambio  
+                    document.getElementById('offerAmount').value = player.askingPrice;  
+                    populatePlayerExchangeSelect();  
                 }  
             }  
         }  
@@ -868,11 +920,9 @@
             const result = gameLogic.offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent);  
             alert(result.message);  
             if (result.success) {  
-                updateNegotiationModal(); // Actualizar a paso 2  
+                window.updateNegotiationModal();  
             } else {  
-                // Si rechaza pero pide más, se mantiene en paso 1  
-                // Si rechaza del todo, se cierra el modal  
-                if (result.message.includes('rechazado tu oferta. No está interesado')) {  
+                if (result.message.includes('No está interesado')) {  
                     endNegotiationUI(false);  
                 }  
             }  
@@ -880,25 +930,23 @@
   
         function populatePlayerExchangeSelect() {  
             const select = document.getElementById('playerExchangeSelect');  
-            select.innerHTML = ''; // Limpiar opciones anteriores  
+            select.innerHTML = '';  
             const state = gameLogic.getGameState();  
             state.squad.forEach(p => {  
                 const option = document.createElement('option');  
                 option.value = p.name;  
-                option.textContent = `${p.name} (${p.overall}) - ${p.value.toLocaleString('es-ES')}€`;  
+                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}€`;  
                 select.appendChild(option);  
             });  
         }  
   
         window.submitLoanOffer = function() {  
             const loanWageContribution = parseInt(document.getElementById('loanWageContribution').value);  
-            const result = gameLogic.offerToClub(loanWageContribution, [], true); // true para cesión  
+            const result = gameLogic.offerToClub(loanWageContribution, [], true);  
             alert(result.message);  
             if (result.success) {  
-                endNegotiationUI(true); // Cierra y actualiza UI  
+                endNegotiationUI(true);  
             } else {  
-                // Se mantiene en el paso 2 para re-negociar con el club  
-                // Si el mensaje indica rechazo total, se cierra.  
                 if (result.message.includes('rechazado tu oferta de cesión')) {  
                     endNegotiationUI(false);  
                 }  
@@ -910,12 +958,11 @@
             const playerExchangeSelect = document.getElementById('playerExchangeSelect');  
             const selectedPlayers = Array.from(playerExchangeSelect.selectedOptions).map(option => option.value);  
   
-            const result = gameLogic.offerToClub(offerAmount, selectedPlayers, false); // false para traspaso  
+            const result = gameLogic.offerToClub(offerAmount, selectedPlayers, false);  
             alert(result.message);  
             if (result.success) {  
-                endNegotiationUI(true); // Cierra y actualiza UI  
+                endNegotiationUI(true);  
             } else {  
-                // Se mantiene en el paso 2 para re-negociar con el club  
                 if (result.message.includes('rechazado tu oferta')) {  
                     endNegotiationUI(false);  
                 }  
@@ -925,7 +972,63 @@
         window.endNegotiationUI = function(success) {  
             gameLogic.endNegotiation(success);  
             closeModal('negotiation');  
-            ui.refreshUI(gameLogic.getGameState()); // Refrescar UI principal  
+            ui.refreshUI(gameLogic.getGameState());  
+        };  
+  
+        // --- Funciones de Entrenamiento (UI) ---  
+        let currentTrainingPlayerIndex = -1;  
+  
+        window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {  
+            currentTrainingPlayerIndex = playerIndex;  
+            const state = gameLogic.getGameState();  
+            const player = state.squad[playerIndex];  
+  
+            if (!player) return;  
+  
+            document.getElementById('trainingPlayerName').textContent = playerName;  
+            document.getElementById('trainingPlayerNameInfo').textContent = playerName;  
+            document.getElementById('trainingPlayerPosition').textContent = player.position;  
+            document.getElementById('trainingPlayerOverall').textContent = player.overall;  
+            document.getElementById('trainingPlayerPotential').textContent = player.potential;  
+  
+            const attributesList = document.getElementById('trainingPlayerAttributes');  
+            attributesList.innerHTML = '';  
+            ATTRIBUTES.forEach(attr => {  
+                attributesList.innerHTML += `<li>${attr}: ${player[attr] || 0}</li>`;  
+            });  
+  
+            const attributeRadioButtons = document.getElementById('attributeRadioButtons');  
+            attributeRadioButtons.innerHTML = '';  
+            ATTRIBUTES.forEach(attr => {  
+                const checked = (state.trainingFocus.playerIndex === playerIndex && state.trainingFocus.attribute === attr) ? 'checked' : '';  
+                attributeRadioButtons.innerHTML += `  
+                    <input type="radio" id="attr_${attr}" name="trainingAttribute" value="${attr}" ${checked}>  
+                    <label for="attr_${attr}">${attr}</label>  
+                `;  
+            });  
+  
+            if (!state.staff.entrenador) {  
+                document.getElementById('trainingStaffWarning').style.display = 'block';  
+            } else {  
+                document.getElementById('trainingStaffWarning').style.display = 'none';  
+            }  
+  
+            openModal('training');  
+        };  
+  
+        window.submitTrainingFocus = function() {  
+            const selectedAttribute = document.querySelector('input[name="trainingAttribute"]:checked')?.value;  
+            if (!selectedAttribute) {  
+                alert('Por favor, selecciona un atributo para entrenar.');  
+                return;  
+            }  
+  
+            const result = gameLogic.setTrainingFocus(currentTrainingPlayerIndex, selectedAttribute);  
+            alert(result.message);  
+            if (result.success) {  
+                closeModal('training');  
+            }  
+            ui.refreshUI(gameLogic.getGameState()); // Para actualizar la UI con el foco de entrenamiento  
         };  
   
         // --- Funciones de Gestión ---  
