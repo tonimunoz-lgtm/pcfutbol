@@ -152,22 +152,7 @@ function signPlayer(name, overall, salary, position, age, cost, loan) {
     return { success: true, message: `${name} fichado ${loan ? 'en préstamo' : 'exitosamente'}` };
 }
 
-// NEGOCIAR CON JUGADOR
-function negotiatePlayer(playerName) {
-    const player = gameState.squad.find(p => p.name === playerName);
-    if (!player) return { success: false, message: 'Jugador no encontrado' };
-    
-    const newSalary = Math.floor(player.salary * 0.8 + Math.random() * (player.salary * 0.4));
-    const reduction = player.salary - newSalary;
-    
-    if (reduction > 0) {
-        player.salary = newSalary;
-        gameState.weeklyExpenses -= reduction;
-        return { success: true, message: `Negociación exitosa. Nuevo salario: ${newSalary}€/sem. Ahorro: ${reduction}€/sem` };
-    }
-    
-    return { success: false, message: 'No se pudo negociar el salario' };
-}
+
 
 // FICHAR JOVEN
 function signYoungster(name, age, overall, potential, cost) {
@@ -430,7 +415,6 @@ export {
     generateInitialSquad,
     generateInitialAcademy,
     signPlayer, 
-    negotiatePlayer,
     signYoungster, 
     promoteYoungster, 
     sellPlayer, 
