@@ -1,9 +1,10 @@
 // gameLogic.js - Lógica central del juego  
   
 import {  
-    TEAMS_DATA, ATTRIBUTES, POSITION_ATTRIBUTE_WEIGHTS,  
+    TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
     STAFF_ROLES, STAFF_LEVEL_EFFECTS,  
-    BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS  
+    BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS,  
+    FORMATIONS // Importar FORMATIONS  
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall } from './players.js';  
   
@@ -25,6 +26,7 @@ const gameState = {
         fisio: null, // Nuevo rol  
         analista: null,  
         scout: null,  
+        secretario: null,  
         segundoEntrenador: null // Nuevo rol  
     },  
     balance: 50000,  
@@ -32,6 +34,7 @@ const gameState = {
     weeklyIncome: 0,  
     weeklyExpenses: 0,  
     formation: '442',  
+    lineup: [], // Los 11 jugadores iniciales, se inicializan con la plantilla  
     mentality: 'balanced',  
     trainingLevel: 1, // Nivel de instalaciones de entrenamiento  
     matchHistory: [],  
@@ -49,7 +52,8 @@ const gameState = {
         playerIndex: -1,  
         attribute: null  
     },  
-    newsFeed: [] // Cola de mensajes para el dashboard  
+    newsFeed: [], // Cola de mensajes para el dashboard  
+    unreadNewsCount: 0 // Contador de noticias no leídas  
 };  
   
 // --------------------------------------------  
@@ -64,12 +68,21 @@ function updateGameState(newState) {
 }  
   
 // Función para añadir noticias al feed  
-function addNews(message) {  
-    gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now() });  
-    if (gameState.newsFeed.length > 10) { // Limitar el número de noticias  
+function addNews(message, type = 'info') {  
+    gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now(), type: type });  
+    if (gameState.newsFeed.length > 20) { // Limitar el número de noticias  
         gameState.newsFeed.pop();  
     }  
+    // Solo incrementar contador si no es una noticia del sistema (ej. entrenamiento exitoso)  
+    if (type !== 'system') {  
+        gameState.unreadNewsCount++;  
+    }  
 }  
+  
+function markNewsAsRead() {  
+    gameState.unreadNewsCount = 0;  
+}  
+  
   
 // --------------------------------------------  
 // Inicialización de la clasificación  
@@ -84,13 +97,14 @@ function initStandings(teamsArray) {
 // --------------------------------------------  
 // Generación de plantilla inicial (ahora con atributos detallados)  
 function generateInitialSquad() {  
-    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC']; // Más variedad  
-    return positions.map((pos, idx) => {  
+    const positions = ['POR', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'MCO', 'EXT', 'EXT', 'DC', // 11 para titulares  
+                       'POR', 'DFC', 'MC', 'DC']; // 4 para suplentes  
+    const squad = positions.map((pos, idx) => {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
         const player = {  
             name: `Jugador ${idx + 1}`,  
             age: 18 + Math.floor(Math.random() * 10),  
-            position: positions[Math.floor(Math.random() * positions.length)], // Posición aleatoria  
+            position: pos,  
             foot: foot,  
             matches: 0,  
             form: 70 + Math.floor(Math.random() * 20), // 70-90 de forma inicial  
@@ -108,11 +122,15 @@ function generateInitialSquad() {
   
         return player;  
     });  
+  
+    // Inicializar la alineación con los 11 primeros  
+    gameState.lineup = squad.slice(0, 11);  
+    return squad;  
 }  
   
 // Generación cantera (ahora con atributos detallados)  
 function generateInitialAcademy() {  
-    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
+    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'EXT', 'DC']; // Más variedad de canteranos  
     const academy = [];  
     for (let i = 0; i < 5; i++) {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
@@ -146,6 +164,7 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.team = teamName;  
     gameState.division = divisionType;  
     gameState.gameMode = gameMode;  
+    // generateInitialSquad ya inicializa gameState.lineup  
     gameState.squad = generateInitialSquad();  
     gameState.academy = generateInitialAcademy();  
   
@@ -233,7 +252,7 @@ function promoteYoungster(name) {
     promotedPlayer.value = Math.floor(promotedPlayer.overall * 2000 + promotedPlayer.potential * 500 + promotedPlayer.salary * 5);  
     promotedPlayer.club = gameState.team;  
     promotedPlayer.matches = 0;  
-    promotedPlayer.isInjured = false; // Asegurarse de que no esté lesionado al ascender  
+    promotedPlayer.isInjured = false;  
     promotedPlayer.weeksOut = 0;  
   
     gameState.squad.push(promotedPlayer);  
@@ -293,7 +312,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     if (player.loanListed && offeredSalary >= player.salary) acceptanceChance += 0.2;  
   
     const roll = Math.random();  
-    const secretaryEffect = gameState.staff.secretario ? 0.1 : 0;  
+    const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0; // Efecto del secretario en negociación  
     acceptanceChance += secretaryEffect;  
   
     const accepted = roll < acceptanceChance;  
@@ -373,7 +392,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         }  
   
         const roll = Math.random();  
-        const secretaryEffect = gameState.staff.secretario ? 0.1 : 0;  
+        const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;  
         acceptanceChance += secretaryEffect;  
   
         const accepted = roll < acceptanceChance;  
@@ -442,53 +461,47 @@ function applyWeeklyTraining() {
     const attribute = gameState.trainingFocus.attribute;  
   
     if (player.isInjured) {  
-        return { success: false, message: `${player.name} está lesionado y no puede entrenar.` };  
+        return { success: false, message: `${player.name} está lesionado y no puede entrenar.`, type: 'system' };  
     }  
   
     const currentAttrValue = player[attribute];  
     const potentialAttrValue = player.potential;  
   
     if (currentAttrValue >= potentialAttrValue) {  
-        return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.` };  
+        return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.`, type: 'system' };  
     }  
   
-    // Calcular la probabilidad y cantidad de mejora  
     let improvementChance = 0.3;  
     let improvementAmount = 1;  
   
-    // Influencia del nivel de instalaciones y entrenador  
-    improvementChance += (gameState.trainingLevel * 0.02); // +2% por nivel de instalación  
+    improvementChance += (gameState.trainingLevel * 0.02);  
   
-    // Efecto del staff entrenador  
     if (gameState.staff.entrenador) {  
         const coachLevel = gameState.staff.entrenador.level;  
         const coachEffect = STAFF_LEVEL_EFFECTS[coachLevel]?.training || 1;  
-        improvementChance *= coachEffect; // Multiplicador por nivel de entrenador  
+        improvementChance *= coachEffect;  
     }  
   
-    // Efecto del entrenador de porteros si es POR y el atributo es relevante para POR  
     if (player.position === 'POR' && ['EN', 'CA', 'DF'].includes(attribute) && gameState.staff.entrenadorPorteros) {  
         const gkCoachLevel = gameState.staff.entrenadorPorteros.level;  
         const gkCoachEffect = STAFF_LEVEL_EFFECTS[gkCoachLevel]?.training || 1;  
         improvementChance *= gkCoachEffect;  
     } else if (player.position === 'POR' && !gameState.staff.entrenadorPorteros) {  
-         // Si es POR y no tiene entrenador de porteros, la mejora es menor para atributos clave de POR  
         improvementChance *= 0.5;  
     }  
   
-    // Reducir mejora si el atributo está cerca del potencial  
     if (currentAttrValue >= potentialAttrValue - 5) improvementChance *= 0.5;  
   
     let message = '';  
     if (Math.random() < improvementChance) {  
         player[attribute] = Math.min(100, currentAttrValue + improvementAmount);  
-        player.overall = calculatePlayerOverall(player); // Recalcular overall  
+        player.overall = calculatePlayerOverall(player);  
         message = `${player.name} ha mejorado su ${attribute} a ${player[attribute]}! (OVR: ${player.overall})`;  
-        addNews(`[Entrenamiento] ${message}`);  
+        addNews(`[Entrenamiento] ${message}`, 'system'); // Noticia de sistema, no incrementa unread  
         return { success: true, message: message };  
     } else {  
         message = `${player.name} no ha mostrado mejoras significativas en ${attribute} esta semana.`;  
-        return { success: false, message: message };  
+        return { success: false, message: message, type: 'system' }; // Noticia de sistema  
     }  
 }  
   
@@ -498,8 +511,6 @@ function applyWeeklyTraining() {
 // --------------------------------------------  
 function getPlayerMarket(filters = {}) {  
     let scoutLevel = gameState.staff.scout?.level || 0;  
-    // Si no hay scout, o si se especifican filtros muy concretos,  
-    // el efecto del scout puede ser limitado.  
     return getPlayerMarketData(filters, scoutLevel);  
 }  
   
@@ -513,30 +524,14 @@ function getYoungsterMarket(filters = {}) {
 // Simulación de partidos  
 // --------------------------------------------  
   
-function calculateMatchOutcome(teamOverall, opponentOverall, mentality) {  
-    let teamFactor = teamOverall / 100;  
-    let opponentFactor = opponentOverall / 100;  
+// Calcula el overall efectivo del equipo (jugadores no lesionados)  
+const calculateTeamEffectiveOverall = (teamSquad) => {  
+    const availablePlayers = teamSquad.filter(p => !p.isInjured);  
+    if (availablePlayers.length === 0) return 40;  
+    return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;  
+};  
   
-    if (mentality === 'offensive') {  
-        teamFactor *= 1.1;  
-        opponentFactor *= 0.9;  
-    } else if (mentality === 'defensive') {  
-        teamFactor *= 0.9;  
-        opponentFactor *= 1.1;  
-    }  
-  
-    teamFactor += (Math.random() - 0.5) * 0.2;  
-    opponentFactor += (Math.random() - 0.5) * 0.2;  
-  
-    teamFactor = Math.max(0.1, teamFactor);  
-    opponentFactor = Math.max(0.1, opponentFactor);  
-  
-    const teamGoals = Math.round(teamFactor * (Math.random() * 3 + 1));  
-    const opponentGoals = Math.round(opponentFactor * (Math.random() * 3 + 1));  
-  
-    return { teamGoals: Math.max(0, teamGoals), opponentGoals: Math.max(0, opponentGoals) };  
-}  
-  
+// Generación de lesiones  
 function generateInjury(player) {  
     let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
     let recoveryMin = BASE_RECOVERY_TIME_WEEKS.min;  
@@ -545,8 +540,12 @@ function generateInjury(player) {
     if (gameState.staff.fisio) {  
         const fisioLevel = gameState.staff.fisio.level;  
         const fisioEffect = STAFF_LEVEL_EFFECTS[fisioLevel]?.injuryProb || 1;  
-        injuryProb *= fisioEffect; // Menos probabilidad de lesión con mejor fisio  
+        injuryProb /= fisioEffect; // Menos probabilidad de lesión con mejor fisio (dividimos el prob)  
     }  
+  
+    // Un jugador con muy baja forma o muy alta agresividad podría tener más riesgo  
+    if (player.form < 60) injuryProb *= 1.5; // 50% más de probabilidad  
+    if (player.AG > 85) injuryProb *= 1.2; // 20% más de probabilidad  
   
     if (Math.random() < injuryProb) {  
         player.isInjured = true;  
@@ -554,11 +553,12 @@ function generateInjury(player) {
         if (gameState.staff.medico) {  
             const medicoLevel = gameState.staff.medico.level;  
             const medicoEffect = STAFF_LEVEL_EFFECTS[medicoLevel]?.recoveryTime || 1;  
-            recoveryMin = Math.floor(recoveryMin * medicoEffect);  
-            recoveryMax = Math.ceil(recoveryMax * medicoEffect);  
+            recoveryMin /= medicoEffect; // Menos tiempo con mejor médico  
+            recoveryMax /= medicoEffect;  
         }  
-        player.weeksOut = Math.max(1, Math.floor(Math.random() * (recoveryMax - recoveryMin + 1)) + recoveryMin);  
-        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`);  
+        player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin)); // Redondeamos  
+  
+        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`, 'warning');  
         return true;  
     }  
     return false;  
@@ -569,19 +569,22 @@ function playMatch(homeTeamName, awayTeamName) {
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20);  
     let teamMentality = 'balanced';  
   
-    // Para calcular el overall del equipo, usamos la media de overall de sus jugadores aptos  
-    const calculateTeamEffectiveOverall = (teamSquad) => {  
-        const availablePlayers = teamSquad.filter(p => !p.isInjured);  
-        if (availablePlayers.length === 0) return 40; // Equipo muy malo si no hay nadie  
-        return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;  
-    };  
-  
+    // Usar la alineación para el cálculo del overall de nuestro equipo  
+    let myTeamSquadForMatch = [];  
+    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
+        const lineupValidation = validateLineup(gameState.lineup);  
+        if (!lineupValidation.success) {  
+            addNews(`[Segundo Entrenador - ALINEACIÓN] No se pudo jugar el partido. ${lineupValidation.message}`, 'error');  
+            return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals: 0, awayGoals: 3 }; // Perdemos por incomparecencia o algo así  
+        }  
+        myTeamSquadForMatch = gameState.lineup;  
+    }  
   
     if (homeTeamName === gameState.team) {  
-        homeTeamOverall = calculateTeamEffectiveOverall(gameState.squad);  
+        homeTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);  
         teamMentality = gameState.mentality;  
     } else if (awayTeamName === gameState.team) {  
-        awayTeamOverall = calculateTeamEffectiveOverall(gameState.squad);  
+        awayTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);  
         teamMentality = gameState.mentality;  
     }  
   
@@ -600,49 +603,42 @@ function playMatch(homeTeamName, awayTeamName) {
     updateStats(homeTeamName, homeGoals, awayGoals);  
     updateStats(awayTeamName, awayGoals, homeGoals);  
   
-    gameState.squad.forEach(p => {  
-        if (!p.isInjured) { // Solo si no está lesionado participa  
-            if (Math.random() < 0.7) { // El jugador participa en el partido  
-                p.matches++;  
-                // Generar lesión  
-                generateInjury(p);  
+    // Actualización de experiencia por partidos jugados (PCF7 style)  
+    // Solo los jugadores en la alineación tienen posibilidad de lesionarse o cambiar forma drásticamente  
+    const playersInvolved = (homeTeamName === gameState.team || awayTeamName === gameState.team) ? myTeamSquadForMatch : [];  
   
-                // Actualizar la forma del jugador  
-                p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1))); // Pequeñas variaciones  
-                if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-                    const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
-                    const draw = (homeGoals === awayGoals);  
-                    if (myResult) p.form = Math.min(100, p.form + 2); // Sube más la forma si ganamos  
-                    else if (draw) p.form = Math.min(100, p.form + 1);  
-                    else p.form = Math.max(0, p.form - 2); // Baja si perdemos  
-                }  
+    playersInvolved.forEach(pInvolved => {  
+        const p = gameState.squad.find(s => s.name === pInvolved.name) || gameState.academy.find(a => a.name === pInvolved.name);  
+        if (!p) return; // Jugador no encontrado (esto no debería pasar con validateLineup)  
   
-                // Aumento de overall por partidos (basado en PCF7)  
-                if (p.overall < p.potential) {  
-                    if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                    if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                    if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                }  
-            } else {  
-                // Jugadores que no juegan también pueden variar su forma, pero menos  
-                p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
+        if (!p.isInjured) {  
+            p.matches++;  
+            generateInjury(p); // Posibilidad de lesión  
+  
+            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1)));  
+            const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
+            const draw = (homeGoals === awayGoals);  
+            if (myResult) p.form = Math.min(100, p.form + 2);  
+            else if (draw) p.form = Math.min(100, p.form + 1);  
+            else p.form = Math.max(0, p.form - 2);  
+  
+            if (p.overall < p.potential) {  
+                if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
             }  
         }  
     });  
   
+    // Para el resto de la plantilla que no jugó, solo varía la forma ligeramente  
+    gameState.squad.forEach(p => {  
+        if (!playersInvolved.some(pi => pi.name === p.name) && !p.isInjured) {  
+            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
+        }  
+    });  
     gameState.academy.forEach(y => {  
-        if (!y.isInjured) {  
-            if (Math.random() < 0.3) {  
-                y.matches++;  
-                y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.5 ? 1 : -1)));  
-                if (y.overall < y.potential) {  
-                    if (y.matches % 5 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
-                    if (y.matches % 10 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
-                    if (y.matches % 20 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
-                }  
-            } else {  
-                y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.7 ? 1 : -1)));  
-            }  
+        if (!y.isInjured) { // Y los juveniles que no juegan en el primer equipo, varían menos  
+             y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.8 ? 1 : -1)));  
         }  
     });  
   
@@ -655,9 +651,9 @@ function playMatch(homeTeamName, awayTeamName) {
     });  
   
     if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-        const myScore = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
+        const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
         const draw = (homeGoals === awayGoals);  
-        if (myScore) {  
+        if (myResult) {  
             gameState.popularity = Math.min(100, gameState.popularity + 3 + Math.floor(Math.random() * 2));  
             gameState.fanbase = Math.min(1000000, gameState.fanbase + 500 + Math.floor(Math.random() * 500));  
         } else if (draw) {  
@@ -672,65 +668,116 @@ function playMatch(homeTeamName, awayTeamName) {
     return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };  
 }  
   
-// Lógica del Segundo Entrenador  
+// Lógica del Segundo Entrenador como mini-IA  
 function secondCoachAdvice() {  
     if (!gameState.staff.segundoEntrenador) return;  
   
-    // Consejos si hay jugadores con baja forma  
-    const lowFormPlayers = gameState.squad.filter(p => p.form < 60 && !p.isInjured);  
-    if (lowFormPlayers.length > 0) {  
-        addNews(`[Segundo Entrenador] ${lowFormPlayers[0].name} tiene baja forma (${lowFormPlayers[0].form}). Quizás necesite descanso.`);  
+    const currentLineupPlayers = new Set(gameState.lineup.map(p => p.name));  
+    const availableSquad = gameState.squad.filter(p => !p.isInjured);  
+  
+    // 1. Advertencia si no hay foco de entrenamiento  
+    if (gameState.trainingFocus.playerIndex === -1 && Math.random() < 0.7) {  
+        addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`, 'warning');  
     }  
   
-    // Consejos si la plantilla está desequilibrada (ej. pocos en una posición clave)  
-    const currentPositions = gameState.squad.map(p => p.position);  
-    const requiredPositions = ['POR', 'DFC', 'MC', 'DC']; // Ejemplo de posiciones clave  
-    for (const pos of requiredPositions) {  
-        const count = currentPositions.filter(p => p === pos).length;  
-        if (pos === 'POR' && count < 2) {  
-            addNews(`[Segundo Entrenador] Solo tenemos ${count} ${pos} disponible. Deberíamos buscar refuerzos.`);  
-        } else if (pos !== 'POR' && count < 3) {  
-            addNews(`[Segundo Entrenador] Pocos ${pos} en plantilla (${count}). Considera fichar.`);  
+    // 2. Jugadores con baja forma  
+    const lowFormPlayers = availableSquad.filter(p => p.form < 65 && currentLineupPlayers.has(p.name));  
+    if (lowFormPlayers.length > 0 && Math.random() < 0.6) {  
+        const p = lowFormPlayers[Math.floor(Math.random() * lowFormPlayers.length)];  
+        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}) tiene baja forma (${p.form}). ¿Debería salir en el once inicial?`, 'warning');  
+    }  
+  
+    // 3. Jugadores con alto potencial que no juegan mucho  
+    const promisingBenched = availableSquad.filter(p =>  
+        !currentLineupPlayers.has(p.name) &&  
+        p.age < 23 && p.potential > 80 && p.matches < (gameState.week * 0.5) // Juega menos de la mitad de los partidos  
+    );  
+    if (promisingBenched.length > 0 && Math.random() < 0.4) {  
+        const p = promisingBenched[Math.floor(Math.random() * promisingBenched.length)];  
+        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}/${p.potential}) es un gran talento. Deberíamos darle más minutos para que crezca.`, 'info');  
+    }  
+  
+    // 4. Advertencia sobre desequilibrio de plantilla (ej. pocos DFC disponibles)  
+    const criticalPositions = ['POR', 'DFC', 'MC', 'DC'];  
+    for (const pos of criticalPositions) {  
+        const availableInPosition = availableSquad.filter(p => p.position === pos).length;  
+        if (pos === 'POR' && availableInPosition < 2) {  
+            addNews(`[Segundo Entrenador] Solo tenemos ${availableInPosition} ${pos} apto. Deberíamos buscar refuerzos para la portería.`, 'warning');  
+        } else if (pos !== 'POR' && availableInPosition < 3) {  
+            addNews(`[Segundo Entrenador] Tenemos pocos ${pos} aptos (${availableInPosition}). Considera fichar en esta posición.`, 'warning');  
         }  
     }  
   
-    // Si el entrenamiento no está fijado  
-    if (gameState.trainingFocus.playerIndex === -1 && Math.random() < 0.5) { // 50% de probabilidad de recordatorio  
-        addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`);  
-    }  
-  
-    // Recomendaciones sobre jugadores si están rindiendo mal (simulado)  
-    const underperformingPlayers = gameState.squad.filter(p => p.overall > 75 && p.form < 65 && Math.random() < 0.1);  
-    if (underperformingPlayers.length > 0) {  
-        addNews(`[Segundo Entrenador] ${underperformingPlayers[0].name} no está rindiendo al nivel esperado. ¿Deberíamos considerar darle un descanso o buscar alternativas?`);  
+    // 5. Recomendaciones de fichajes (si hay scout y dinero)  
+    if (gameState.staff.scout && gameState.balance > 100000 && Math.random() < 0.3) {  
+        const topPlayersInMarket = getPlayerMarketData({}, gameState.staff.scout.level)  
+                                    .filter(p => p.overall > 80 && p.transferListed && !p.loanListed);  
+        if (topPlayersInMarket.length > 0) {  
+            const p = topPlayersInMarket[Math.floor(Math.random() * topPlayersInMarket.length)];  
+            addNews(`[Segundo Entrenador] Nuestro ojeador ha encontrado a ${p.name} (${p.position}, OVR ${p.overall}) del ${p.club}. ¡Podría ser un gran fichaje!`, 'info');  
+        }  
     }  
 }  
   
+// Mensajes de la Directiva  
+function boardMessages() {  
+    // Satisfacción de la directiva (muy simplificado)  
+    let satisfaction = 0;  
+    const teamStats = gameState.standings[gameState.team];  
+    if (teamStats) {  
+        satisfaction += teamStats.pts / gameState.week; // Puntos por jornada  
+        satisfaction += gameState.balance / 50000; // Balance económico  
+        satisfaction += gameState.popularity / 10; // Popularidad  
+  
+        if (satisfaction < 5 && gameState.week > 5) { // Insatisfechos  
+            addNews(`[Directiva] Esperábamos mejores resultados a estas alturas de la temporada. Hay que mejorar.`, 'error');  
+        } else if (satisfaction > 15 && gameState.week > 5) { // Contentos  
+            addNews(`[Directiva] Felicitaciones por el buen desempeño del equipo y la excelente gestión. Sigan así.`, 'success');  
+        } else if (Math.random() < 0.1) { // Mensaje random si no hay extremos  
+             addNews(`[Directiva] La estabilidad económica es clave para nuestro proyecto a largo plazo.`, 'info');  
+        }  
+    }  
+}  
   
 function simulateFullWeek() {  
-    // Aplicar entrenamiento antes de los partidos de la semana  
+    // 1. Aplicar entrenamiento  
     const trainingResult = applyWeeklyTraining();  
-    if (trainingResult.success) {  
-        // console.log(`[Entrenamiento] ${trainingResult.message}`); // Ya se añade a noticias  
-    } else if (trainingResult.message !== 'No hay un foco de entrenamiento establecido.' && trainingResult.message !== `${gameState.trainingFocus.player?.name} está lesionado y no puede entrenar.`) {  
-        addNews(`[Entrenamiento Fallido] ${trainingResult.message}`);  
+    if (!trainingResult.success && trainingResult.message !== 'No hay un foco de entrenamiento establecido.') {  
+        addNews(`[Entrenamiento Fallido] ${trainingResult.message}`, 'system');  
     }  
   
-    // Recuperación de lesiones  
+    // 2. Recuperación de lesiones  
     gameState.squad.forEach(p => {  
         if (p.isInjured) {  
             p.weeksOut--;  
             if (p.weeksOut <= 0) {  
                 p.isInjured = false;  
                 p.weeksOut = 0;  
-                addNews(`¡${p.name} se ha recuperado de su lesión!`);  
+                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
+            }  
+        }  
+    });  
+    // También para cantera  
+    gameState.academy.forEach(y => {  
+        if (y.isInjured) {  
+            y.weeksOut--;  
+            if (y.weeksOut <= 0) {  
+                y.isInjured = false;  
+                y.weeksOut = 0;  
+                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
             }  
         }  
     });  
   
-    // Consejos del segundo entrenador  
+    // 3. Consejos del segundo entrenador  
     secondCoachAdvice();  
   
+    // 4. Mensajes de la directiva (cada 4 semanas, por ejemplo)  
+    if (gameState.week % 4 === 0) {  
+        boardMessages();  
+    }  
+  
+    // 5. Simulación de partidos  
     const teams = Object.keys(gameState.standings);  
     const myTeam = gameState.team;  
   
@@ -778,14 +825,14 @@ function simulateFullWeek() {
   
     // Comprobación de bancarrota para el segundo entrenador (si lo hay)  
     if (gameState.staff.segundoEntrenador && (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && gameState.balance < 0) {  
-        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`);  
+        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
     }  
   
     // Comprobación de despido (muy básico por ahora)  
-    if (gameState.balance < -100000 && gameState.week > 10) { // Si el balance negativo es muy grande  
-        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`);  
+    if (gameState.balance < -100000 && gameState.week > 10) {  
+        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
         alert("¡GAME OVER! Has sido despedido por la directiva.");  
-        resetGame(); // Reiniciar el juego  
+        resetGame();  
     }  
   
 }  
@@ -794,7 +841,7 @@ function simulateFullWeek() {
 // Finanzas y estadios  
 function updateWeeklyFinancials() {  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + p.salary, 0);  
-    const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0); // Sumar salarios de staff  
+    const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);  
     gameState.weeklyExpenses = playerSalaries + staffSalaries;  
   
     let attendance = Math.floor(gameState.stadiumCapacity * (0.5 + (gameState.popularity / 200) - (gameState.ticketPrice / 100)));  
@@ -836,17 +883,39 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
     return { success: true, message: `¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
 }  
   
-// Genera 3 candidatos aleatorios para un rol de staff  
+// Genera 3 candidatos aleatorios para un rol de staff (ahora con cláusulas)  
 function generateStaffCandidates(role) {  
     const candidates = [];  
     const roleConfig = STAFF_ROLES[role];  
-    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego"]; // Nombres genéricos  
+    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego"];  
+  
+    // Factor de la cláusula según la división del jugador y el nivel del staff  
+    let divisionFactor = 1;  
+    if (gameState.division === 'primera') divisionFactor = 1.5;  
+    else if (gameState.division === 'segunda') divisionFactor = 1.0;  
+    else if (gameState.division === 'rfef') divisionFactor = 0.7;  
+  
   
     for (let i = 0; i < 3; i++) {  
         const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
         const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5));  
         const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
-        candidates.push({ name: name, level: level, salary: salary, role: role, displayName: roleConfig.displayName });  
+  
+        // Calcular cláusula de rescisión:  
+        // Cierto nivel de aleatoriedad, factor de nivel, factor de división  
+        let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * (0.8 + Math.random() * 0.4)); // Entre 0.8x y 1.2x  
+  
+        // Los de nivel 1 tienen 50% de probabilidad de ser libres  
+        if (level === 1 && Math.random() < 0.5) {  
+            clausula = 0; // Libre  
+        } else if (level <= 2 && Math.random() < 0.2) { // Nivel 2, 20% de probabilidad de ser libre  
+            clausula = 0;  
+        } else {  
+            clausula = Math.max(clausula, 1000); // Mínimo 1000€ si no es libre  
+        }  
+  
+  
+        candidates.push({ name: name, level: level, salary: salary, role: role, displayName: roleConfig.displayName, clausula: clausula });  
     }  
     return candidates;  
 }  
@@ -856,13 +925,17 @@ function hireStaffFromCandidates(candidate) {
     if (gameState.staff[candidate.role]) {  
         return { success: false, message: `Ya tienes un ${candidate.displayName} contratado.` };  
     }  
-    if (gameState.balance < candidate.salary) { // Costo inicial si lo hubiera, por ahora solo salario  
-        return { success: false, message: 'Dinero insuficiente para pagar el salario de este miembro del staff.' };  
+    if (gameState.balance < candidate.clausula) { // Pagar la cláusula si la hay  
+        return { success: false, message: `Dinero insuficiente para pagar la cláusula de ${candidate.clausula.toLocaleString('es-ES')}€.` };  
+    }  
+    if (gameState.balance < candidate.salary) { // Verificar salario para la primera semana  
+        return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}€/sem.` };  
     }  
   
-    gameState.staff[candidate.role] = candidate; // Almacenar el objeto completo del staff  
+    gameState.balance -= candidate.clausula;  
+    gameState.staff[candidate.role] = candidate;  
     updateWeeklyFinancials();  
-    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff!`);  
+    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${candidate.clausula.toLocaleString('es-ES')}€)`, 'success');  
     return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
 }  
   
@@ -888,6 +961,85 @@ function setMerchandisingPrice(newPrice) {
 }  
   
 // --------------------------------------------  
+// Gestión de Alineación (NUEVO)  
+// --------------------------------------------  
+function getLineup() {  
+    return gameState.lineup;  
+}  
+  
+function getReservePlayers() {  
+    // Jugadores de la plantilla que no están en la alineación y no están lesionados  
+    const lineupNames = new Set(gameState.lineup.map(p => p.name));  
+    return gameState.squad.filter(p => !lineupNames.has(p.name) && !p.isInjured);  
+}  
+  
+function setLineup(newLineup) {  
+    if (!Array.isArray(newLineup) || newLineup.length !== 11) {  
+        return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
+    }  
+  
+    // Asegurarse de que los jugadores existen en la plantilla  
+    const validPlayers = newLineup.every(p => gameState.squad.some(s => s.name === p.name));  
+    if (!validPlayers) {  
+        return { success: false, message: 'Algunos jugadores en la alineación no pertenecen a tu plantilla.' };  
+    }  
+  
+    gameState.lineup = newLineup;  
+    return { success: true, message: 'Alineación guardada correctamente.' };  
+}  
+  
+function validateLineup(lineupToCheck) {  
+    if (!Array.isArray(lineupToCheck) || lineupToCheck.length !== 11) {  
+        return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
+    }  
+  
+    const availablePlayers = gameState.squad.filter(p => !p.isInjured);  
+    const availablePlayerNames = new Set(availablePlayers.map(p => p.name));  
+  
+    let hasGK = false;  
+    let numPlayers = 0;  
+    const positionCounts = {};  
+  
+    for (const player of lineupToCheck) {  
+        // Verificar si el jugador existe y está apto  
+        if (!availablePlayerNames.has(player.name)) {  
+            const fullPlayer = gameState.squad.find(p => p.name === player.name);  
+            if (fullPlayer && fullPlayer.isInjured) {  
+                return { success: false, message: `¡Error! ${player.name} está lesionado y no puede jugar.` };  
+            }  
+            return { success: false, message: `¡Error! ${player.name} no está en la plantilla o no está apto.` };  
+        }  
+  
+        // Contar posiciones  
+        if (player.position === 'POR') {  
+            hasGK = true;  
+        }  
+        positionCounts[player.position] = (positionCounts[player.position] || 0) + 1;  
+        numPlayers++;  
+    }  
+  
+    if (!hasGK) {  
+        return { success: false, message: '¡Error! Necesitas al menos un portero en la alineación.' };  
+    }  
+    if (numPlayers !== 11) {  
+        return { success: false, message: `¡Error! Se necesitan 11 jugadores, pero tienes ${numPlayers}.` };  
+    }  
+  
+    // Validaciones de formación simplificadas (ej. no más de 5 DFC, no menos de 3 defensas, etc.)  
+    const numDefenders = (positionCounts['DFC'] || 0) + (positionCounts['LI'] || 0) + (positionCounts['LD'] || 0);  
+    const numMidfielders = (positionCounts['MC'] || 0) + (positionCounts['MCO'] || 0) + (positionCounts['MD'] || 0) + (positionCounts['MI'] || 0);  
+    const numForwards = (positionCounts['EXT'] || 0) + (positionCounts['DC'] || 0);  
+  
+    if (numDefenders < 3) return { success: false, message: '¡Error! Necesitas al menos 3 defensas (DFC, LI, LD).' };  
+    if (numMidfielders < 2) return { success: false, message: '¡Error! Necesitas al menos 2 centrocampistas.' };  
+    if (numForwards < 1) return { success: false, message: '¡Error! Necesitas al menos 1 delantero.' };  
+  
+  
+    return { success: true, message: 'Alineación válida.' };  
+}  
+  
+  
+// --------------------------------------------  
 // Guardado y carga  
 function saveToLocalStorage() {  
     localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
@@ -904,7 +1056,9 @@ function loadFromLocalStorage() {
             if (gameState.staff[role] === undefined) gameState.staff[role] = null;  
         });  
         if (!gameState.newsFeed) gameState.newsFeed = [];  
+        if (!gameState.unreadNewsCount) gameState.unreadNewsCount = 0;  
         if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
+        if (!gameState.lineup) gameState.lineup = gameState.squad.slice(0, 11); // Fallback para partidas antiguas  
   
         updateWeeklyFinancials();  
         return { success: true, message: 'Partida cargada.' };  
@@ -932,21 +1086,26 @@ export {
     sellPlayer,  
     expandStadium,  
     improveFacilities,  
-    generateStaffCandidates, // Nuevo export para el staff  
-    hireStaffFromCandidates, // Nuevo export para contratar staff  
+    generateStaffCandidates,  
+    hireStaffFromCandidates,  
     setTicketPrice,  
     setMerchandisingPrice,  
     saveToLocalStorage,  
     loadFromLocalStorage,  
     resetGame,  
     initStandings,  
-    getPlayerMarket, // Ahora llama a getPlayerMarketData con scoutLevel  
-    getYoungsterMarket, // Ahora llama a getYoungsterMarketData con scoutLevel  
+    getPlayerMarket,  
+    getYoungsterMarket,  
     startNegotiation,  
     offerToPlayer,  
     offerToClub,  
     endNegotiation,  
     setTrainingFocus,  
     applyWeeklyTraining,  
-    addNews // Exportar para que otras partes puedan añadir noticias  
+    addNews,  
+    markNewsAsRead, // Nueva función para marcar noticias como leídas  
+    getLineup,      // Nuevas funciones de alineación  
+    getReservePlayers,  
+    setLineup,  
+    validateLineup  
 };  
