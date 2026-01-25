@@ -1,8 +1,11 @@
 // gameLogic.js - Lógica central del juego  
   
-import { TEAMS_DATA, ATTRIBUTES, POSITION_ATTRIBUTE_WEIGHTS } from './config.js';  
-// Importamos las nuevas funciones del market  
-import { getPlayerMarket, getYoungsterMarket, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall } from './players.js';  
+import {  
+    TEAMS_DATA, ATTRIBUTES, POSITION_ATTRIBUTE_WEIGHTS,  
+    STAFF_ROLES, STAFF_LEVEL_EFFECTS,  
+    BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS  
+} from './config.js';  
+import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall } from './players.js';  
   
 // Estado global del juego  
 const gameState = {  
@@ -15,12 +18,14 @@ const gameState = {
     stadiumCapacity: 5000,  
     ticketPrice: 20,  
     merchandisingRevenue: 500,  
-    staff: {  
-        medico: null,  
-        entrenador: null, // Entrenador para mejorar atributos  
+    staff: { // Staff ahora almacena objetos con level y salary  
+        medico: null, // { name: string, level: number, salary: number }  
+        entrenador: null,  
+        entrenadorPorteros: null, // Nuevo rol  
+        fisio: null, // Nuevo rol  
         analista: null,  
         scout: null,  
-        secretario: null // El secretario técnico será clave en negociaciones  
+        segundoEntrenador: null // Nuevo rol  
     },  
     balance: 50000,  
     weeklyIncomeBase: 5000,  
@@ -28,7 +33,7 @@ const gameState = {
     weeklyExpenses: 0,  
     formation: '442',  
     mentality: 'balanced',  
-    trainingLevel: 1,  
+    trainingLevel: 1, // Nivel de instalaciones de entrenamiento  
     matchHistory: [],  
     popularity: 50,  
     fanbase: 10000,  
@@ -41,9 +46,10 @@ const gameState = {
     clubOffer: null,  
     // Atributos para el entrenamiento  
     trainingFocus: {  
-        playerIndex: -1, // Índice del jugador en la plantilla que se entrena  
-        attribute: null // Atributo a mejorar  
-    }  
+        playerIndex: -1,  
+        attribute: null  
+    },  
+    newsFeed: [] // Cola de mensajes para el dashboard  
 };  
   
 // --------------------------------------------  
@@ -55,6 +61,14 @@ function getGameState() {
 function updateGameState(newState) {  
     Object.assign(gameState, newState);  
     updateWeeklyFinancials();  
+}  
+  
+// Función para añadir noticias al feed  
+function addNews(message) {  
+    gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now() });  
+    if (gameState.newsFeed.length > 10) { // Limitar el número de noticias  
+        gameState.newsFeed.pop();  
+    }  
 }  
   
 // --------------------------------------------  
@@ -70,26 +84,27 @@ function initStandings(teamsArray) {
 // --------------------------------------------  
 // Generación de plantilla inicial (ahora con atributos detallados)  
 function generateInitialSquad() {  
-    const positions = ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'MI', 'MD', 'DC'];  
+    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC']; // Más variedad  
     return positions.map((pos, idx) => {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
         const player = {  
             name: `Jugador ${idx + 1}`,  
             age: 18 + Math.floor(Math.random() * 10),  
-            position: pos,  
+            position: positions[Math.floor(Math.random() * positions.length)], // Posición aleatoria  
             foot: foot,  
             matches: 0,  
             form: 70 + Math.floor(Math.random() * 20), // 70-90 de forma inicial  
-            // Atributos aleatorios para jugadores iniciales  
+            isInjured: false,  
+            weeksOut: 0,  
             ...ATTRIBUTES.reduce((acc, attr) => {  
                 acc[attr] = 40 + Math.floor(Math.random() * 40); // Atributos entre 40 y 80  
                 return acc;  
             }, {})  
         };  
         player.overall = calculatePlayerOverall(player);  
-        player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall)); // Potencial siempre mayor  
-        player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000); // Salario basado en overall y edad  
-        player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5); // Valor de mercado  
+        player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall));  
+        player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000);  
+        player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5);  
   
         return player;  
     });  
@@ -97,17 +112,19 @@ function generateInitialSquad() {
   
 // Generación cantera (ahora con atributos detallados)  
 function generateInitialAcademy() {  
+    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
     const academy = [];  
     for (let i = 0; i < 5; i++) {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
         const player = {  
             name: `Juvenil ${i + 1}`,  
             age: 16 + Math.floor(Math.random() * 2),  
-            position: 'MC', // Posición inicial genérica  
+            position: positions[Math.floor(Math.random() * positions.length)], // Posición aleatoria  
             foot: foot,  
             matches: 0,  
             form: 60 + Math.floor(Math.random() * 20),  
-            // Atributos aleatorios para juveniles iniciales  
+            isInjured: false,  
+            weeksOut: 0,  
             ...ATTRIBUTES.reduce((acc, attr) => {  
                 acc[attr] = 30 + Math.floor(Math.random() * 30); // Atributos entre 30 y 60  
                 return acc;  
@@ -115,7 +132,7 @@ function generateInitialAcademy() {
         };  
         player.overall = calculatePlayerOverall(player);  
         player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall));  
-        player.salary = Math.floor(player.overall * 50 + Math.random() * 200); // Salario para juveniles  
+        player.salary = Math.floor(player.overall * 50 + Math.random() * 200);  
         player.value = Math.floor(player.overall * 1000 + player.potential * 500 + player.salary * 5);  
         player.cost = player.value;  
   
@@ -161,20 +178,22 @@ function signPlayer(player) {
     if (gameState.squad.length >= 25) {  
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
     }  
-    // Añadimos los atributos al jugador firmado si no los tiene (ej. de los generados aleatoriamente)  
     const newPlayer = { ...player };  
     ATTRIBUTES.forEach(attr => {  
         if (newPlayer[attr] === undefined) {  
-            newPlayer[attr] = 50 + Math.floor(Math.random() * 30); // Atributo base por defecto  
+            newPlayer[attr] = 50 + Math.floor(Math.random() * 30);  
         }  
     });  
-    newPlayer.overall = calculatePlayerOverall(newPlayer); // Recalcular overall  
-    newPlayer.form = 70 + Math.floor(Math.random() * 20); // Forma inicial  
-    newPlayer.matches = 0; // Resetear partidos jugados al fichar  
+    newPlayer.overall = calculatePlayerOverall(newPlayer);  
+    newPlayer.form = 70 + Math.floor(Math.random() * 20);  
+    newPlayer.matches = 0;  
+    newPlayer.isInjured = false;  
+    newPlayer.weeksOut = 0;  
   
     gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
-    return { success: true, message: `${player.name} ha sido fichado.` };  
+    addNews(`¡${player.name} ha sido fichado por ${player.club} (Tu equipo)!`);  
+    return { success: true, message: `¡${player.name} ha sido fichado!` };  
 }  
   
 function signYoungster(youngster) {  
@@ -186,12 +205,15 @@ function signYoungster(youngster) {
     }  
   
     const newYoungster = { ...youngster, club: gameState.team };  
-    newYoungster.overall = calculatePlayerOverall(newYoungster); // Asegurar overall calculado  
-    newYoungster.form = 60 + Math.floor(Math.random() * 20); // Forma inicial  
+    newYoungster.overall = calculatePlayerOverall(newYoungster);  
+    newYoungster.form = 60 + Math.floor(Math.random() * 20);  
+    newYoungster.isInjured = false;  
+    newYoungster.weeksOut = 0;  
   
     gameState.balance -= newYoungster.cost;  
     gameState.academy.push(newYoungster);  
     updateWeeklyFinancials();  
+    addNews(`¡${youngster.name} se une a la cantera!`);  
     return { success: true, message: `${youngster.name} ha sido contratado para la cantera.` };  
 }  
   
@@ -207,13 +229,16 @@ function promoteYoungster(name) {
     const youngster = gameState.academy.splice(index, 1)[0];  
     const promotedPlayer = { ...youngster };  
     promotedPlayer.position = promotedPlayer.position || 'MC';  
-    promotedPlayer.salary = Math.floor(promotedPlayer.overall * 150 + Math.random() * 1000); // Salario acorde a su overall  
+    promotedPlayer.salary = Math.floor(promotedPlayer.overall * 150 + Math.random() * 1000);  
     promotedPlayer.value = Math.floor(promotedPlayer.overall * 2000 + promotedPlayer.potential * 500 + promotedPlayer.salary * 5);  
     promotedPlayer.club = gameState.team;  
-    promotedPlayer.matches = 0; // Se resetean los partidos jugados en la cantera  
+    promotedPlayer.matches = 0;  
+    promotedPlayer.isInjured = false; // Asegurarse de que no esté lesionado al ascender  
+    promotedPlayer.weeksOut = 0;  
   
     gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
+    addNews(`¡${youngster.name} ha sido ascendido a la primera plantilla!`);  
     return { success: true, message: `${youngster.name} ha sido ascendido a la primera plantilla.` };  
 }  
   
@@ -227,6 +252,7 @@ function sellPlayer(name) {
     const salePrice = Math.floor(player.overall * 2000 + (player.matches * 500) * (1 + Math.random() * 0.5));  
     gameState.balance += salePrice;  
     updateWeeklyFinancials();  
+    addNews(`¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}€!`);  
     return { success: true, message: `${player.name} vendido por ${salePrice}€.` };  
 }  
   
@@ -304,7 +330,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         }  
   
         const actualWageToPay = player.salary * (myWageContribution / 100);  
-        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0); // Si el club original contribuye  
+        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0);  
   
         let acceptanceChance = 0.5;  
         if (myWageContribution >= 80) acceptanceChance += 0.3;  
@@ -393,7 +419,7 @@ function endNegotiation(success = false) {
 }  
   
 // --------------------------------------------  
-// Entrenamiento (NUEVO)  
+// Entrenamiento  
 // --------------------------------------------  
 function setTrainingFocus(playerIndex, attribute) {  
     if (playerIndex < 0 || playerIndex >= gameState.squad.length) {  
@@ -408,46 +434,85 @@ function setTrainingFocus(playerIndex, attribute) {
 }  
   
 function applyWeeklyTraining() {  
-    if (!gameState.staff.entrenador) {  
-        return { success: false, message: 'No tienes un entrenador contratado para realizar entrenamientos.' };  
-    }  
     if (gameState.trainingFocus.playerIndex === -1 || !gameState.trainingFocus.attribute) {  
         return { success: false, message: 'No hay un foco de entrenamiento establecido.' };  
     }  
   
     const player = gameState.squad[gameState.trainingFocus.playerIndex];  
     const attribute = gameState.trainingFocus.attribute;  
-    const currentAttrValue = player[attribute];  
-    const potentialAttrValue = player.potential; // El potencial del jugador limita el crecimiento de sus atributos  
   
-    if (currentAttrValue >= potentialAttrValue) { // El atributo ya alcanzó su potencial máximo  
+    if (player.isInjured) {  
+        return { success: false, message: `${player.name} está lesionado y no puede entrenar.` };  
+    }  
+  
+    const currentAttrValue = player[attribute];  
+    const potentialAttrValue = player.potential;  
+  
+    if (currentAttrValue >= potentialAttrValue) {  
         return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.` };  
     }  
   
-    // Calcular mejora del atributo  
-    let improvementChance = 0.3; // Base de mejora  
-    let improvementAmount = 1;   // Cuánto mejora  
+    // Calcular la probabilidad y cantidad de mejora  
+    let improvementChance = 0.3;  
+    let improvementAmount = 1;  
   
     // Influencia del nivel de instalaciones y entrenador  
-    improvementChance += (gameState.trainingLevel * 0.05); // +5% por cada nivel de entrenamiento  
-    // El atributo entrenador del staff afectaría aquí, por ahora solo si está contratado  
-    if (gameState.staff.entrenador) improvementChance += 0.1;  
+    improvementChance += (gameState.trainingLevel * 0.02); // +2% por nivel de instalación  
+  
+    // Efecto del staff entrenador  
+    if (gameState.staff.entrenador) {  
+        const coachLevel = gameState.staff.entrenador.level;  
+        const coachEffect = STAFF_LEVEL_EFFECTS[coachLevel]?.training || 1;  
+        improvementChance *= coachEffect; // Multiplicador por nivel de entrenador  
+    }  
+  
+    // Efecto del entrenador de porteros si es POR y el atributo es relevante para POR  
+    if (player.position === 'POR' && ['EN', 'CA', 'DF'].includes(attribute) && gameState.staff.entrenadorPorteros) {  
+        const gkCoachLevel = gameState.staff.entrenadorPorteros.level;  
+        const gkCoachEffect = STAFF_LEVEL_EFFECTS[gkCoachLevel]?.training || 1;  
+        improvementChance *= gkCoachEffect;  
+    } else if (player.position === 'POR' && !gameState.staff.entrenadorPorteros) {  
+         // Si es POR y no tiene entrenador de porteros, la mejora es menor para atributos clave de POR  
+        improvementChance *= 0.5;  
+    }  
   
     // Reducir mejora si el atributo está cerca del potencial  
     if (currentAttrValue >= potentialAttrValue - 5) improvementChance *= 0.5;  
   
+    let message = '';  
     if (Math.random() < improvementChance) {  
         player[attribute] = Math.min(100, currentAttrValue + improvementAmount);  
         player.overall = calculatePlayerOverall(player); // Recalcular overall  
-        return { success: true, message: `${player.name} ha mejorado su ${attribute} a ${player[attribute]}!` };  
+        message = `${player.name} ha mejorado su ${attribute} a ${player[attribute]}! (OVR: ${player.overall})`;  
+        addNews(`[Entrenamiento] ${message}`);  
+        return { success: true, message: message };  
     } else {  
-        return { success: false, message: `${player.name} no ha mostrado mejoras en ${attribute} esta semana.` };  
+        message = `${player.name} no ha mostrado mejoras significativas en ${attribute} esta semana.`;  
+        return { success: false, message: message };  
     }  
 }  
   
   
 // --------------------------------------------  
+// Funciones del mercado para el SCOUT  
+// --------------------------------------------  
+function getPlayerMarket(filters = {}) {  
+    let scoutLevel = gameState.staff.scout?.level || 0;  
+    // Si no hay scout, o si se especifican filtros muy concretos,  
+    // el efecto del scout puede ser limitado.  
+    return getPlayerMarketData(filters, scoutLevel);  
+}  
+  
+function getYoungsterMarket(filters = {}) {  
+    let scoutLevel = gameState.staff.scout?.level || 0;  
+    return getYoungsterMarketData(filters, scoutLevel);  
+}  
+  
+  
+// --------------------------------------------  
 // Simulación de partidos  
+// --------------------------------------------  
+  
 function calculateMatchOutcome(teamOverall, opponentOverall, mentality) {  
     let teamFactor = teamOverall / 100;  
     let opponentFactor = opponentOverall / 100;  
@@ -472,17 +537,51 @@ function calculateMatchOutcome(teamOverall, opponentOverall, mentality) {
     return { teamGoals: Math.max(0, teamGoals), opponentGoals: Math.max(0, opponentGoals) };  
 }  
   
+function generateInjury(player) {  
+    let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
+    let recoveryMin = BASE_RECOVERY_TIME_WEEKS.min;  
+    let recoveryMax = BASE_RECOVERY_TIME_WEEKS.max;  
+  
+    if (gameState.staff.fisio) {  
+        const fisioLevel = gameState.staff.fisio.level;  
+        const fisioEffect = STAFF_LEVEL_EFFECTS[fisioLevel]?.injuryProb || 1;  
+        injuryProb *= fisioEffect; // Menos probabilidad de lesión con mejor fisio  
+    }  
+  
+    if (Math.random() < injuryProb) {  
+        player.isInjured = true;  
+        // Médico afecta el tiempo de recuperación  
+        if (gameState.staff.medico) {  
+            const medicoLevel = gameState.staff.medico.level;  
+            const medicoEffect = STAFF_LEVEL_EFFECTS[medicoLevel]?.recoveryTime || 1;  
+            recoveryMin = Math.floor(recoveryMin * medicoEffect);  
+            recoveryMax = Math.ceil(recoveryMax * medicoEffect);  
+        }  
+        player.weeksOut = Math.max(1, Math.floor(Math.random() * (recoveryMax - recoveryMin + 1)) + recoveryMin);  
+        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`);  
+        return true;  
+    }  
+    return false;  
+}  
+  
 function playMatch(homeTeamName, awayTeamName) {  
     let homeTeamOverall = 70 + Math.floor(Math.random() * 20);  
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20);  
     let teamMentality = 'balanced';  
   
-    // Para calcular el overall del equipo, usamos la media de overall de sus jugadores  
+    // Para calcular el overall del equipo, usamos la media de overall de sus jugadores aptos  
+    const calculateTeamEffectiveOverall = (teamSquad) => {  
+        const availablePlayers = teamSquad.filter(p => !p.isInjured);  
+        if (availablePlayers.length === 0) return 40; // Equipo muy malo si no hay nadie  
+        return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;  
+    };  
+  
+  
     if (homeTeamName === gameState.team) {  
-        homeTeamOverall = gameState.squad.reduce((sum, p) => sum + p.overall, 0) / gameState.squad.length;  
+        homeTeamOverall = calculateTeamEffectiveOverall(gameState.squad);  
         teamMentality = gameState.mentality;  
     } else if (awayTeamName === gameState.team) {  
-        awayTeamOverall = gameState.squad.reduce((sum, p) => sum + p.overall, 0) / gameState.squad.length;  
+        awayTeamOverall = calculateTeamEffectiveOverall(gameState.squad);  
         teamMentality = gameState.mentality;  
     }  
   
@@ -501,43 +600,49 @@ function playMatch(homeTeamName, awayTeamName) {
     updateStats(homeTeamName, homeGoals, awayGoals);  
     updateStats(awayTeamName, awayGoals, homeGoals);  
   
-    // Actualización de experiencia por partidos jugados (PCF7 style)  
     gameState.squad.forEach(p => {  
-        if (Math.random() < 0.7) { // El jugador participa  
-            p.matches++;  
-            // Actualizar la forma del jugador  
-            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1))); // Pequeñas variaciones  
-            if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-                const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
-                const draw = (homeGoals === awayGoals);  
-                if (myResult) p.form = Math.min(100, p.form + 2); // Sube más la forma si ganamos  
-                else if (draw) p.form = Math.min(100, p.form + 1);  
-                else p.form = Math.max(0, p.form - 2); // Baja si perdemos  
-            }  
+        if (!p.isInjured) { // Solo si no está lesionado participa  
+            if (Math.random() < 0.7) { // El jugador participa en el partido  
+                p.matches++;  
+                // Generar lesión  
+                generateInjury(p);  
   
-            // Aumento de overall por partidos (basado en PCF7)  
-            if (p.overall < p.potential) {  
-                if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                // Actualizar la forma del jugador  
+                p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1))); // Pequeñas variaciones  
+                if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
+                    const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
+                    const draw = (homeGoals === awayGoals);  
+                    if (myResult) p.form = Math.min(100, p.form + 2); // Sube más la forma si ganamos  
+                    else if (draw) p.form = Math.min(100, p.form + 1);  
+                    else p.form = Math.max(0, p.form - 2); // Baja si perdemos  
+                }  
+  
+                // Aumento de overall por partidos (basado en PCF7)  
+                if (p.overall < p.potential) {  
+                    if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                    if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                    if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                }  
+            } else {  
+                // Jugadores que no juegan también pueden variar su forma, pero menos  
+                p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
             }  
-        } else {  
-            // Jugadores que no juegan también pueden variar su forma, pero menos  
-            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
         }  
     });  
   
     gameState.academy.forEach(y => {  
-        if (Math.random() < 0.3) {  
-            y.matches++;  
-            y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.5 ? 1 : -1)));  
-            if (y.overall < y.potential) {  
-                if (y.matches % 5 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
-                if (y.matches % 10 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
-                if (y.matches % 20 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+        if (!y.isInjured) {  
+            if (Math.random() < 0.3) {  
+                y.matches++;  
+                y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.5 ? 1 : -1)));  
+                if (y.overall < y.potential) {  
+                    if (y.matches % 5 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+                    if (y.matches % 10 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+                    if (y.matches % 20 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+                }  
+            } else {  
+                y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.7 ? 1 : -1)));  
             }  
-        } else {  
-            y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.7 ? 1 : -1)));  
         }  
     });  
   
@@ -550,16 +655,15 @@ function playMatch(homeTeamName, awayTeamName) {
     });  
   
     if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-        const myScore = (homeTeamName === gameState.team) ? homeGoals : awayGoals;  
-        const opponentScore = (homeTeamName === gameState.team) ? awayGoals : homeGoals;  
-  
-        if (myScore > opponentScore) { // Victoria  
+        const myScore = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
+        const draw = (homeGoals === awayGoals);  
+        if (myScore) {  
             gameState.popularity = Math.min(100, gameState.popularity + 3 + Math.floor(Math.random() * 2));  
             gameState.fanbase = Math.min(1000000, gameState.fanbase + 500 + Math.floor(Math.random() * 500));  
-        } else if (myScore === opponentScore) { // Empate  
+        } else if (draw) {  
             gameState.popularity = Math.max(0, gameState.popularity + 1);  
             gameState.fanbase = Math.min(1000000, gameState.fanbase + 100 + Math.floor(Math.random() * 100));  
-        } else { // Derrota  
+        } else {  
             gameState.popularity = Math.max(0, gameState.popularity - 2 - Math.floor(Math.random() * 2));  
             gameState.fanbase = Math.max(0, gameState.fanbase - 200 - Math.floor(Math.random() * 200));  
         }  
@@ -568,15 +672,64 @@ function playMatch(homeTeamName, awayTeamName) {
     return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };  
 }  
   
+// Lógica del Segundo Entrenador  
+function secondCoachAdvice() {  
+    if (!gameState.staff.segundoEntrenador) return;  
+  
+    // Consejos si hay jugadores con baja forma  
+    const lowFormPlayers = gameState.squad.filter(p => p.form < 60 && !p.isInjured);  
+    if (lowFormPlayers.length > 0) {  
+        addNews(`[Segundo Entrenador] ${lowFormPlayers[0].name} tiene baja forma (${lowFormPlayers[0].form}). Quizás necesite descanso.`);  
+    }  
+  
+    // Consejos si la plantilla está desequilibrada (ej. pocos en una posición clave)  
+    const currentPositions = gameState.squad.map(p => p.position);  
+    const requiredPositions = ['POR', 'DFC', 'MC', 'DC']; // Ejemplo de posiciones clave  
+    for (const pos of requiredPositions) {  
+        const count = currentPositions.filter(p => p === pos).length;  
+        if (pos === 'POR' && count < 2) {  
+            addNews(`[Segundo Entrenador] Solo tenemos ${count} ${pos} disponible. Deberíamos buscar refuerzos.`);  
+        } else if (pos !== 'POR' && count < 3) {  
+            addNews(`[Segundo Entrenador] Pocos ${pos} en plantilla (${count}). Considera fichar.`);  
+        }  
+    }  
+  
+    // Si el entrenamiento no está fijado  
+    if (gameState.trainingFocus.playerIndex === -1 && Math.random() < 0.5) { // 50% de probabilidad de recordatorio  
+        addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`);  
+    }  
+  
+    // Recomendaciones sobre jugadores si están rindiendo mal (simulado)  
+    const underperformingPlayers = gameState.squad.filter(p => p.overall > 75 && p.form < 65 && Math.random() < 0.1);  
+    if (underperformingPlayers.length > 0) {  
+        addNews(`[Segundo Entrenador] ${underperformingPlayers[0].name} no está rindiendo al nivel esperado. ¿Deberíamos considerar darle un descanso o buscar alternativas?`);  
+    }  
+}  
+  
+  
 function simulateFullWeek() {  
     // Aplicar entrenamiento antes de los partidos de la semana  
     const trainingResult = applyWeeklyTraining();  
     if (trainingResult.success) {  
-        console.log(`[Entrenamiento] ${trainingResult.message}`);  
-    } else if (trainingResult.message !== 'No hay un foco de entrenamiento establecido.') {  
-        console.log(`[Entrenamiento] ${trainingResult.message}`);  
+        // console.log(`[Entrenamiento] ${trainingResult.message}`); // Ya se añade a noticias  
+    } else if (trainingResult.message !== 'No hay un foco de entrenamiento establecido.' && trainingResult.message !== `${gameState.trainingFocus.player?.name} está lesionado y no puede entrenar.`) {  
+        addNews(`[Entrenamiento Fallido] ${trainingResult.message}`);  
     }  
   
+    // Recuperación de lesiones  
+    gameState.squad.forEach(p => {  
+        if (p.isInjured) {  
+            p.weeksOut--;  
+            if (p.weeksOut <= 0) {  
+                p.isInjured = false;  
+                p.weeksOut = 0;  
+                addNews(`¡${p.name} se ha recuperado de su lesión!`);  
+            }  
+        }  
+    });  
+  
+    // Consejos del segundo entrenador  
+    secondCoachAdvice();  
   
     const teams = Object.keys(gameState.standings);  
     const myTeam = gameState.team;  
@@ -622,13 +775,26 @@ function simulateFullWeek() {
   
     gameState.week++;  
     updateWeeklyFinancials();  
+  
+    // Comprobación de bancarrota para el segundo entrenador (si lo hay)  
+    if (gameState.staff.segundoEntrenador && (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && gameState.balance < 0) {  
+        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`);  
+    }  
+  
+    // Comprobación de despido (muy básico por ahora)  
+    if (gameState.balance < -100000 && gameState.week > 10) { // Si el balance negativo es muy grande  
+        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`);  
+        alert("¡GAME OVER! Has sido despedido por la directiva.");  
+        resetGame(); // Reiniciar el juego  
+    }  
+  
 }  
   
 // --------------------------------------------  
 // Finanzas y estadios  
 function updateWeeklyFinancials() {  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + p.salary, 0);  
-    const staffSalaries = Object.values(gameState.staff).filter(s => s !== null).length * 500;  
+    const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0); // Sumar salarios de staff  
     gameState.weeklyExpenses = playerSalaries + staffSalaries;  
   
     let attendance = Math.floor(gameState.stadiumCapacity * (0.5 + (gameState.popularity / 200) - (gameState.ticketPrice / 100)));  
@@ -654,6 +820,7 @@ function expandStadium(cost = 50000, capacityIncrease = 10000) {
     gameState.stadiumCapacity += capacityIncrease;  
     gameState.weeklyIncomeBase += Math.floor(capacityIncrease / 20);  
     updateWeeklyFinancials();  
+    addNews(`¡Estadio expandido a ${gameState.stadiumCapacity.toLocaleString('es-ES')} espectadores!`);  
     return { success: true, message: `¡Estadio expandido a ${gameState.stadiumCapacity} espectadores!` };  
 }  
   
@@ -665,17 +832,40 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
     gameState.trainingLevel = (gameState.trainingLevel || 0) + trainingLevelIncrease;  
     gameState.merchandisingRevenue += 200;  
     updateWeeklyFinancials();  
+    addNews(`¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!`);  
     return { success: true, message: `¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
 }  
   
-function hireStaff(role) {  
-    if (gameState.staff[role] !== null && gameState.staff[role] !== undefined) {  
-        return { success: false, message: `Ya tienes un ${role} contratado.` };  
+// Genera 3 candidatos aleatorios para un rol de staff  
+function generateStaffCandidates(role) {  
+    const candidates = [];  
+    const roleConfig = STAFF_ROLES[role];  
+    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego"]; // Nombres genéricos  
+  
+    for (let i = 0; i < 3; i++) {  
+        const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
+        const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5));  
+        const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
+        candidates.push({ name: name, level: level, salary: salary, role: role, displayName: roleConfig.displayName });  
     }  
-    gameState.staff[role] = true;  
-    updateWeeklyFinancials();  
-    return { success: true, message: `¡${role} contratado exitosamente!` };  
+    return candidates;  
 }  
+  
+// Contrata staff del modal de candidatos  
+function hireStaffFromCandidates(candidate) {  
+    if (gameState.staff[candidate.role]) {  
+        return { success: false, message: `Ya tienes un ${candidate.displayName} contratado.` };  
+    }  
+    if (gameState.balance < candidate.salary) { // Costo inicial si lo hubiera, por ahora solo salario  
+        return { success: false, message: 'Dinero insuficiente para pagar el salario de este miembro del staff.' };  
+    }  
+  
+    gameState.staff[candidate.role] = candidate; // Almacenar el objeto completo del staff  
+    updateWeeklyFinancials();  
+    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff!`);  
+    return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
+}  
+  
   
 function setTicketPrice(newPrice) {  
     newPrice = parseInt(newPrice);  
@@ -709,6 +899,13 @@ function loadFromLocalStorage() {
     if (saved) {  
         const loadedState = JSON.parse(saved);  
         Object.assign(gameState, loadedState);  
+        // Asegurarse de que los nuevos campos de staff estén inicializados a null si no existían en el save  
+        Object.keys(STAFF_ROLES).forEach(role => {  
+            if (gameState.staff[role] === undefined) gameState.staff[role] = null;  
+        });  
+        if (!gameState.newsFeed) gameState.newsFeed = [];  
+        if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
+  
         updateWeeklyFinancials();  
         return { success: true, message: 'Partida cargada.' };  
     }  
@@ -735,19 +932,21 @@ export {
     sellPlayer,  
     expandStadium,  
     improveFacilities,  
-    hireStaff,  
+    generateStaffCandidates, // Nuevo export para el staff  
+    hireStaffFromCandidates, // Nuevo export para contratar staff  
     setTicketPrice,  
     setMerchandisingPrice,  
     saveToLocalStorage,  
     loadFromLocalStorage,  
     resetGame,  
     initStandings,  
-    getPlayerMarket,  
-    getYoungsterMarket,  
+    getPlayerMarket, // Ahora llama a getPlayerMarketData con scoutLevel  
+    getYoungsterMarket, // Ahora llama a getYoungsterMarketData con scoutLevel  
     startNegotiation,  
     offerToPlayer,  
     offerToClub,  
     endNegotiation,  
-    setTrainingFocus, // Exportar las nuevas funciones de entrenamiento  
-    applyWeeklyTraining  
+    setTrainingFocus,  
+    applyWeeklyTraining,  
+    addNews // Exportar para que otras partes puedan añadir noticias  
 };  
