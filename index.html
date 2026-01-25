@@ -1757,6 +1757,16 @@ window.updateUnreadCount = function(state) {
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
             }  
         });  
+
+        function markNewsAsRead(index) {
+    const newsItem = gameState.newsFeed[index];
+    if (newsItem && !newsItem.read) {
+        newsItem.read = true;
+        gameState.unreadNewsCount--;
+        renderNews(); // Volvemos a renderizar para actualizar el contador y estilo
+    }
+}
+
     </script>  
 </body>  
 </html>  
