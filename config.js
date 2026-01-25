@@ -4,29 +4,12 @@ let firebaseAvailable = false;
 let db = null;  
 let auth = null;  
   
-// Intentar cargar Firebase (opcional)  
 try {  
-    // Si quieres usar Firebase en el futuro, descomenta esto y añade los módulos  
-    // import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";  
-    // import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";  
-    // import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";  
-  
-    // Configuración Firebase (por si lo necesitas después)  
-    const firebaseConfig = {  
-        apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",  
-        authDomain: "cuentacuentos-57631.firebaseapp.com",  
-        projectId: "cuentacuentos-57631",  
-        storageBucket: "cuentacuentos-57631.firebasestorage.app",  
-        messagingSenderId: "654911737232",  
-        appId: "1:654911737232:web:e87ecaea12351dd3d5b715"  
-    };  
-  
     console.log('Firebase disponible pero deshabilitado (usar localStorage)');  
 } catch (e) {  
     console.log('Firebase no disponible, usando almacenamiento local');  
 }  
   
-// DATOS DE EQUIPOS POR DIVISIÓN  
 const TEAMS_DATA = {  
     primera: [  
         'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Athletic Club', 'Villarreal CF',  
@@ -44,7 +27,8 @@ const TEAMS_DATA = {
     ]  
 };  
   
-const POSITIONS = ['POR', 'DEF', 'CED', 'MED', 'EXT', 'DEL'];  
+// POSITIONS ahora incluye más variedad y es coherente con generateRandomPlayer  
+const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
   
 const FORMATIONS = {  
     '433': { name: '4-3-3', type: 'Equilibrada' },  
@@ -54,20 +38,18 @@ const FORMATIONS = {
     '451': { name: '4-5-1', type: 'Mixta' }  
 };  
   
-// Estadísticas iniciales de jugadores por división (para variarlas)  
 const DIVISION_MULTIPLIERS = {  
-    primera: 1.2,    // Los jugadores de Primera son mejores  
-    segunda: 1.0,    // Línea base  
-    rfef: 0.85       // Los de RFEF son más jóvenes/peores  
+    primera: 1.2,  
+    segunda: 1.0,  
+    rfef: 0.85  
 };  
   
-// Exportar todas las constantes (ES Module style)  
 export {  
     firebaseAvailable,  
     db,  
     auth,  
     TEAMS_DATA,  
-    POSITIONS,  
+    POSITIONS, // Exportar POSITIONS  
     FORMATIONS,  
     DIVISION_MULTIPLIERS  
 };  
