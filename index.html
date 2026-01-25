@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>PC Fútbol Manager 2025/26</title>  
     <style>  
-        /* ... (tus estilos existentes) ... */  
+        /* ... (tus estilos existentes, actualizados para mejor legibilidad) ... */  
         * { margin: 0; padding: 0; box-sizing: border-box; }  
   
         body {  
@@ -234,15 +234,15 @@
         .negotiation-player-info p { margin-bottom: 5px; }  
         .negotiation-step { margin-top: 20px; border-top: 1px dashed rgba(233, 69, 96, 0.3); padding-top: 20px; }  
         .negotiation-step label { display: block; margin-bottom: 8px; font-weight: bold; color: #e94560; }  
-        .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"], .negotiation-step select {  
-            width: auto; /* Para checkboxes y sliders */  
+        .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"] {  
+            width: auto; /* Para checkboxes */  
             margin-right: 10px;  
         }  
         .negotiation-incentives { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }  
         .negotiation-incentives div { display: flex; align-items: center; }  
   
-        /* Estilos para el modal de entrenamiento */  
-        #trainingModal .training-player-info {  
+        /* Estilos para los modales */  
+        #trainingModal .training-player-info, #hireStaffModal .staff-candidate {  
             background: rgba(233, 69, 96, 0.15);  
             border: 1px solid #e94560;  
             padding: 15px;  
@@ -268,6 +268,22 @@
         }  
         #trainingModal .attribute-selection input[type="radio"] {  
             display: none; /* Ocultar el radio button nativo */  
+        }  
+        #hireStaffModal .staff-candidate {  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
+        }  
+        #newsFeed {  
+            margin-top: 20px;  
+            max-height: 200px;  
+            overflow-y: auto;  
+            border: 1px solid rgba(233, 69, 96, 0.3);  
+            border-radius: 5px;  
+            padding: 10px;  
+        }  
+        #newsFeed .alert-info {  
+            margin-bottom: 5px;  
         }  
     </style>  
 </head>  
@@ -355,6 +371,10 @@
                     <tr><td>Gastos Semanales:</td><td id="dashExpenses">0€</td></tr>  
                     <tr><td>Balance Semanal:</td><td id="dashWeekly" class="data-value">+0€</td></tr>  
                 </table>  
+                <h2>Últimas Noticias</h2>  
+                <div id="newsFeed">  
+                    <div class="alert alert-info">No hay noticias recientes.</div>  
+                </div>  
             </div>  
   
             <!-- CLASIFICACIÓN -->  
@@ -515,11 +535,16 @@
             <div id="staff" class="page">  
                 <h1>👔 Personal del Club</h1>  
                 <table>  
-                    <tr><td>🏥 Médico</td><td id="staffMedico"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="hireStaff('medico')"></button></td></tr>  
-                    <tr><td>🧪 Entrenador Físico</td><td id="staffEntrenador"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="hireStaff('entrenador')"></button></td></tr>  
-                    <tr><td>🎬 Analista Vídeo</td><td id="staffAnalista"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="hireStaff('analista')"></button></td></tr>  
-                    <tr><td>🔍 Scout</td><td id="staffScout"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="hireStaff('scout')"></button></td></tr>  
-                    <tr><td>✍️ Secretario Técnico</td><td id="staffSecretario"></td><td><button class="btn btn-sm" id="btnHireSecretario" onclick="hireStaff('secretario')"></button></td></tr>  
+                    <thead><tr><th>Rol</th><th>Nombre</th><th>Nivel</th><th>Salario</th><th>Acciones</th></tr></thead>  
+                    <tbody>  
+                        <tr><td>🏥 Médico</td><td id="staffMedicoName"></td><td id="staffMedicoLevel"></td><td id="staffMedicoSalary"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="openHireStaffModal('medico')"></button></td></tr>  
+                        <tr><td>🧪 Entrenador Físico</td><td id="staffEntrenadorName"></td><td id="staffEntrenadorLevel"></td><td id="staffEntrenadorSalary"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="openHireStaffModal('entrenador')"></button></td></tr>  
+                        <tr><td>⚽ Entrenador Porteros</td><td id="staffEntrenadorPorterosName"></td><td id="staffEntrenadorPorterosLevel"></td><td id="staffEntrenadorPorterosSalary"></td><td><button class="btn btn-sm" id="btnHireEntrenadorPorteros" onclick="openHireStaffModal('entrenadorPorteros')"></button></td></tr>  
+                        <tr><td>🩹 Fisioterapeuta</td><td id="staffFisioName"></td><td id="staffFisioLevel"></td><td id="staffFisioSalary"></td><td><button class="btn btn-sm" id="btnHireFisio" onclick="openHireStaffModal('fisio')"></button></td></tr>  
+                        <tr><td>🎬 Analista Vídeo</td><td id="staffAnalistaName"></td><td id="staffAnalistaLevel"></td><td id="staffAnalistaSalary"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="openHireStaffModal('analista')"></button></td></tr>  
+                        <tr><td>🔍 Ojeador</td><td id="staffScoutName"></td><td id="staffScoutLevel"></td><td id="staffScoutSalary"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="openHireStaffModal('scout')"></button></td></tr>  
+                        <tr><td>✍️ Segundo Entrenador</td><td id="staffSegundoEntrenadorName"></td><td id="staffSegundoEntrenadorLevel"></td><td id="staffSegundoEntrenadorSalary"></td><td><button class="btn btn-sm" id="btnHireSegundoEntrenador" onclick="openHireStaffModal('segundoEntrenador')"></button></td></tr>  
+                    </tbody>  
                 </table>  
             </div>  
   
@@ -556,7 +581,6 @@
         </div>  
     </div>  
   
-    <!-- Modal de Contratar Joven (viejo, se usará el nuevo sistema de mercado) -->  
     <div id="signYoungsterModal" class="modal">  
         <div class="modal-content">  
             <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>  
@@ -643,6 +667,9 @@
             <div id="trainingStaffWarning" class="alert alert-warning" style="display: none;">  
                 ⚠️ ¡Advertencia! No tienes un entrenador contratado. El entrenamiento será menos efectivo.  
             </div>  
+             <div id="trainingGkStaffWarning" class="alert alert-warning" style="display: none;">  
+                ⚠️ ¡Advertencia! No tienes un entrenador de porteros contratado. El entrenamiento para POR será menos efectivo.  
+            </div>  
   
             <div class="attribute-selection" style="margin-top: 20px;">  
                 <p>Seleccionar atributo para entrenar:</p>  
@@ -656,11 +683,24 @@
         </div>  
     </div>  
   
+    <!-- MODAL DE CONTRATAR STAFF -->  
+    <div id="hireStaffModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('hireStaff')">&times;</span>  
+            <h1>Contratar Personal: <span id="staffRoleDisplayName"></span></h1>  
+            <p>Selecciona un candidato para el puesto de <span id="staffRoleDisplayNameInfo"></span>.</p>  
+            <div id="staffCandidatesList" style="margin-top: 20px;">  
+                <!-- Candidatos se cargarán aquí -->  
+            </div>  
+            <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="closeModal('hireStaff')">Cancelar</button>  
+        </div>  
+    </div>  
+  
   
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
         import * as ui from './ui.js';  
-        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES } from './config.js'; // Importar ATTRIBUTES  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES } from './config.js';  
         import { getPlayerMarket, getYoungsterMarket } from './players.js';  
   
   
@@ -713,8 +753,10 @@
                 renderAvailableYoungsters();  
             } else if (type === 'negotiation') {  
                 document.getElementById('negotiationModal').classList.add('active');  
-            } else if (type === 'training') { // Nuevo modal de entrenamiento  
+            } else if (type === 'training') {  
                 document.getElementById('trainingModal').classList.add('active');  
+            } else if (type === 'hireStaff') { // Nuevo modal de contratar staff  
+                document.getElementById('hireStaffModal').classList.add('active');  
             }  
         };  
   
@@ -765,7 +807,7 @@
                 transferListed: document.getElementById('marketTransferListed').checked,  
                 loanListed: document.getElementById('marketLoanListed').checked  
             };  
-            const players = gameLogic.getPlayerMarket(filters);  
+            const players = gameLogic.getPlayerMarket(filters); // gameLogic ahora maneja el scout level  
             ui.renderPlayerMarketList(players);  
         };  
   
@@ -780,7 +822,7 @@
         };  
   
         function renderAvailableYoungsters() {  
-            const youngsters = gameLogic.getYoungsterMarket();  
+            const youngsters = gameLogic.getYoungsterMarket(); // gameLogic ahora maneja el scout level  
             ui.renderAvailableYoungstersMarket(youngsters);  
         }  
   
@@ -845,7 +887,6 @@
                 return;  
             }  
   
-            // Actualizar información del jugador  
             document.getElementById('negotiationPlayerName').textContent = player.name;  
             document.getElementById('negotiationPlayerNameStep1').textContent = player.name;  
             document.getElementById('negotiationPlayerClub').textContent = player.club;  
@@ -866,7 +907,7 @@
             } else if (player.loanListed) {  
                 askingPriceElem.style.display = 'none';  
                 loanInfoElem.style.display = 'block';  
-                document.getElementById('negotiationPlayerLoanContribution').textContent = player.loanWageContribution.toLocaleString('es-ES');  
+                document.getElementById('negotiationPlayerLoanContribution').textContent = (player.loanWageContribution || 0).toLocaleString('es-ES');  
             } else {  
                 askingPriceElem.style.display = 'none';  
                 loanInfoElem.style.display = 'none';  
@@ -907,7 +948,7 @@
                     populatePlayerExchangeSelect();  
                 }  
             }  
-        }  
+        };  
   
         window.submitPlayerOffer = function() {  
             const offeredSalary = parseInt(document.getElementById('offeredSalary').value);  
@@ -994,7 +1035,7 @@
             const attributesList = document.getElementById('trainingPlayerAttributes');  
             attributesList.innerHTML = '';  
             ATTRIBUTES.forEach(attr => {  
-                attributesList.innerHTML += `<li>${attr}: ${player[attr] || 0}</li>`;  
+                attributesList.innerHTML += `<li style="display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(233, 69, 96, 0.3); padding: 5px; border-radius: 3px;"><strong>${attr}:</strong> ${player[attr] || 0}</li>`;  
             });  
   
             const attributeRadioButtons = document.getElementById('attributeRadioButtons');  
@@ -1002,8 +1043,10 @@
             ATTRIBUTES.forEach(attr => {  
                 const checked = (state.trainingFocus.playerIndex === playerIndex && state.trainingFocus.attribute === attr) ? 'checked' : '';  
                 attributeRadioButtons.innerHTML += `  
-                    <input type="radio" id="attr_${attr}" name="trainingAttribute" value="${attr}" ${checked}>  
-                    <label for="attr_${attr}">${attr}</label>  
+                    <div>  
+                        <input type="radio" id="attr_${attr}" name="trainingAttribute" value="${attr}" ${checked}>  
+                        <label for="attr_${attr}">${attr}</label>  
+                    </div>  
                 `;  
             });  
   
@@ -1011,6 +1054,13 @@
                 document.getElementById('trainingStaffWarning').style.display = 'block';  
             } else {  
                 document.getElementById('trainingStaffWarning').style.display = 'none';  
+            }  
+  
+            // Advertencia para entrenador de porteros  
+            if (player.position === 'POR' && !state.staff.entrenadorPorteros) {  
+                document.getElementById('trainingGkStaffWarning').style.display = 'block';  
+            } else {  
+                document.getElementById('trainingGkStaffWarning').style.display = 'none';  
             }  
   
             openModal('training');  
@@ -1028,8 +1078,42 @@
             if (result.success) {  
                 closeModal('training');  
             }  
-            ui.refreshUI(gameLogic.getGameState()); // Para actualizar la UI con el foco de entrenamiento  
+            ui.refreshUI(gameLogic.getGameState());  
         };  
+  
+        // --- Funciones de Staff (UI) ---  
+        let currentStaffRoleToHire = null; // Para saber qué rol se está contratando  
+  
+        window.openHireStaffModal = function(role) {  
+            currentStaffRoleToHire = role;  
+            document.getElementById('staffRoleDisplayName').textContent = STAFF_ROLES[role].displayName;  
+            document.getElementById('staffRoleDisplayNameInfo').textContent = STAFF_ROLES[role].displayName;  
+  
+            const candidates = gameLogic.generateStaffCandidates(role);  
+            const list = document.getElementById('staffCandidatesList');  
+            list.innerHTML = candidates.map((c, idx) => `  
+                <div class="staff-candidate">  
+                    <div>  
+                        <strong>${c.name}</strong> (Nivel ${c.level})<br>  
+                        Salario: ${c.salary.toLocaleString('es-ES')}€/semana  
+                    </div>  
+                    <button class="btn btn-sm" onclick="hireStaffConfirm('${encodeURIComponent(JSON.stringify(c))}')">Contratar</button>  
+                </div>  
+            `).join('');  
+  
+            openModal('hireStaff');  
+        };  
+  
+        window.hireStaffConfirm = function(encodedCandidateJson) {  
+            const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));  
+            const result = gameLogic.hireStaffFromCandidates(candidate);  
+            alert(result.message);  
+            if (result.success) {  
+                closeModal('hireStaff');  
+            }  
+            ui.refreshUI(gameLogic.getGameState()); // Refrescar la UI para mostrar el nuevo staff  
+        };  
+  
   
         // --- Funciones de Gestión ---  
         window.updateFormation = function() {  
@@ -1076,23 +1160,30 @@
             if (currentTrainingLevel) currentTrainingLevel.textContent = state.trainingLevel;  
         }  
   
-        window.hireStaff = function(role) {  
-            const result = gameLogic.hireStaff(role);  
-            alert(result.message);  
-            ui.refreshUI(gameLogic.getGameState());  
-            updateStaffDisplay(gameLogic.getGameState());  
-        };  
-  
         function updateStaffDisplay(state) {  
-            const staffRoles = ['medico', 'entrenador', 'analista', 'scout', 'secretario'];  
-            staffRoles.forEach(role => {  
-                const staffElement = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}`);  
-                const btnElement = document.getElementById(`btnHire${role.charAt(0).toUpperCase() + role.slice(1)}`);  
+            Object.keys(STAFF_ROLES).forEach(role => {  
+                const staff = state.staff[role];  
+                const nameElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Name`);  
+                const levelElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Level`);  
+                const salaryElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Salary`);  
+                const btnElem = document.getElementById(`btnHire${role.charAt(0).toUpperCase() + role.slice(1)}`);  
   
-                if (staffElement) staffElement.textContent = state.staff[role] ? 'Contratado' : 'No contratado';  
-                if (btnElement) {  
-                    btnElement.disabled = state.staff[role] !== null;  
-                    btnElement.textContent = state.staff[role] !== null ? 'Contratado' : 'Contratar';  
+                if (staff) {  
+                    if (nameElem) nameElem.textContent = staff.name;  
+                    if (levelElem) levelElem.textContent = staff.level;  
+                    if (salaryElem) salaryElem.textContent = staff.salary.toLocaleString('es-ES') + '€';  
+                    if (btnElem) {  
+                        btnElem.disabled = true;  
+                        btnElem.textContent = 'Contratado';  
+                    }  
+                } else {  
+                    if (nameElem) nameElem.textContent = 'No Contratado';  
+                    if (levelElem) levelElem.textContent = '-';  
+                    if (salaryElem) salaryElem.textContent = '-';  
+                    if (btnElem) {  
+                        btnElem.disabled = false;  
+                        btnElem.textContent = 'Contratar';  
+                    }  
                 }  
             });  
         }  
