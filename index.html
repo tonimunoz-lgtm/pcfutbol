@@ -263,6 +263,7 @@
                 <div class="menu-title">💼 GESTIÓN</div>  
                 <button class="menu-item" onclick="switchPage('finance', this)">Finanzas</button>  
                 <button class="menu-item" onclick="switchPage('facilities', this)">Instalaciones</button>  
+                <button class="menu-item" onclick="switchPage('commercial', this)">Comercial</button> <!-- Nueva sección -->  
                 <button class="menu-item" onclick="switchPage('staff', this)">Staff</button>  
             </div>  
   
@@ -392,19 +393,18 @@
                         <div class="data-label">Balance Actual</div>  
                         <div class="data-value" id="financeBalance">0€</div>  
                     </div>  
-                    <div class="data-box">  
-                        <div class="data-label">Capacidad Estadio</div>  
-                        <div class="data-value" id="financeStadiumCapacity">0</div>  
-                    </div>  
-                    <div class="data-box">  
-                        <div class="data-label">Precio Entrada</div>  
-                        <div class="data-value" id="financeTicketPrice">0€</div>  
-                    </div>  
-                    <div class="data-box">  
-                        <div class="data-label">Merchandising</div>  
-                        <div class="data-value" id="financeMerchandising">0€</div>  
-                    </div>  
                 </div>  
+                <h2>Detalle de Ingresos</h2>  
+                <table>  
+                    <tr><td>Capacidad Estadio:</td><td id="financeStadiumCapacity">0</td></tr>  
+                    <tr><td>Asistencia Esperada:</td><td id="financeExpectedAttendance">0</td></tr>  
+                    <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="5" max="100" onchange="setTicketPriceFromInput()">€</td></tr>  
+                    <tr><td>Popularidad del Club:</td><td id="financePopularity">0%</td></tr>  
+                    <tr><td>Fanbase:</td><td id="financeFanbase">0</td></tr>  
+                    <tr><td>Merchandising vendido:</td><td id="financeMerchandisingItemsSold">0</td></tr>  
+                    <tr><td>Precio Merchandising:</td><td><input type="number" id="merchandisingPriceInput" min="1" max="50" onchange="setMerchandisingPriceFromInput()">€</td></tr>  
+                    <tr><td>Ingresos Merchandising:</td><td id="financeMerchandisingRevenue">0€</td></tr>  
+                </table>  
             </div>  
   
             <!-- INSTALACIONES -->  
@@ -417,6 +417,42 @@
                 <p>Nivel actual: <span id="currentTrainingLevel">1</span></p>  
                 <button class="btn" onclick="improveFacilities()">Mejorar Entrenamientos (30.000€)</button>  
             </div>  
+  
+            <!-- COMERCIAL (Nueva sección) -->  
+            <div id="commercial" class="page">  
+                <h1>🛒 Gestión Comercial</h1>  
+                <div class="data-grid">  
+                    <div class="data-box">  
+                        <div class="data-label">Popularidad del Club</div>  
+                        <div class="data-value" id="commercialPopularity">0%</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Base de Fans</div>  
+                        <div class="data-value" id="commercialFanbase">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Merchandising Vendido (semana)</div>  
+                        <div class="data-value" id="commercialItemsSold">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Ingresos Merchandising (semana)</div>  
+                        <div class="data-value" id="commercialMerchRevenue">0€</div>  
+                    </div>  
+                </div>  
+                <h2>Ajustes Comerciales</h2>  
+                <p>Ajusta el precio de tus entradas y merchandising para maximizar beneficios. Ten en cuenta que precios muy altos pueden reducir la popularidad y la asistencia.</p>  
+                <div style="margin-top: 20px;">  
+                    <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>€):</label>  
+                    <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" oninput="updateTicketPriceDisplay(this.value)" onchange="setTicketPriceFromSlider(this.value)">  
+                    <span id="ticketPriceSliderValue">20</span>€  
+                </div>  
+                <div style="margin-top: 15px;">  
+                    <label style="display: block; margin-bottom: 5px;">Precio del Merchandising (actual: <span id="currentMerchandisingPrice">0</span>€):</label>  
+                    <input type="range" id="merchandisingPriceSlider" min="1" max="50" value="10" oninput="updateMerchandisingPriceDisplay(this.value)" onchange="setMerchandisingPriceFromSlider(this.value)">  
+                    <span id="merchandisingPriceSliderValue">10</span>€  
+                </div>  
+            </div>  
+  
   
             <!-- STAFF -->  
             <div id="staff" class="page">  
@@ -486,22 +522,27 @@
         import { generateAvailablePlayers, generateAvailableYoungsters } from './players.js';  
   
         // --- Funciones globales expuestas para el HTML ---  
+        // Se añade `window.negotiatePlayer` como placeholder para eliminar el error.  
+        window.negotiatePlayer = function(playerName) {  
+            alert(`Funcionalidad de negociación para ${playerName} no implementada aún.`);  
+            console.log(`Intentando negociar con ${playerName}`);  
+        };  
+  
         window.switchPage = function(pageId, element) {  
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
             document.getElementById(pageId).classList.add('active');  
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));  
-            element.classList.add('active'); // Usa el elemento pasado para marcarlo como activo  
+            element.classList.add('active');  
   
-            // Al cambiar de página, actualiza la UI relevante  
             const state = gameLogic.getGameState();  
             if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);  
             if (pageId === 'academy') ui.renderAcademyList(state.academy);  
-            if (pageId === 'transfers') renderAvailablePlayers(); // Refrescar mercado al abrir  
+            if (pageId === 'transfers') renderAvailablePlayers();  
             if (pageId === 'match') {  
                 const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
-                const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo AI';  
+                const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
                 ui.renderNextMatchCard(state.team, nextRival, state.week);  
-                document.getElementById('lastMatchResult').innerHTML = ''; // Limpiar resultados anteriores  
+                document.getElementById('lastMatchResult').innerHTML = '';  
                 const lastMatch = state.matchHistory[state.matchHistory.length - 1];  
                 if (lastMatch) {  
                     document.getElementById('lastMatchResult').innerHTML = `  
@@ -511,6 +552,7 @@
             }  
             if (pageId === 'finance') updateFinanceDisplay(state);  
             if (pageId === 'facilities') updateFacilitiesDisplay(state);  
+            if (pageId === 'commercial') updateCommercialDisplay(state); // Nueva función para la sección comercial  
             if (pageId === 'staff') updateStaffDisplay(state);  
             if (pageId === 'tactics') updateTacticsDisplay(state);  
         };  
@@ -535,13 +577,12 @@
         };  
   
         window.startGameMode = function(mode) {  
-            window.gameMode = mode; // Almacenar el modo de juego  
+            window.gameMode = mode;  
             window.closeModal('gameMode');  
             window.openModal('selectTeam');  
         };  
   
         function renderTeamSelectors() {  
-            // Función para generar botones de equipo  
             const createTeamButtons = (divisionKey) => {  
                 const listElement = document.getElementById(`${divisionKey}List`);  
                 if (!listElement) return;  
@@ -560,16 +601,14 @@
   
         window.selectTeamAndStart = function(teamName, division) {  
             gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);  
-            ui.refreshUI(gameLogic.getGameState()); // Refrescar toda la UI después de seleccionar equipo  
+            ui.refreshUI(gameLogic.getGameState());  
             window.closeModal('selectTeam');  
-            // Asegurar que Dashboard esté activo y su botón marcado  
             const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
             if(dashboardButton) {  
                 window.switchPage('dashboard', dashboardButton);  
             }  
         };  
   
-        // --- Funciones para renderizar listas dinámicas ---  
         function renderAvailablePlayers() {  
             const players = generateAvailablePlayers();  
             ui.renderAvailablePlayersMarket(players);  
@@ -580,7 +619,6 @@
             ui.renderAvailableYoungstersMarket(youngsters);  
         }  
   
-        // --- Acciones del juego ---  
         window.fichPlayerConfirm = function(encodedPlayerJson) {  
             const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
             const result = gameLogic.signPlayer(player);  
@@ -626,7 +664,6 @@
             const state = gameLogic.getGameState();  
             ui.refreshUI(state);  
   
-            // Mostrar el resultado del último partido en la página de partido  
             const lastMatch = state.matchHistory[state.matchHistory.length - 1];  
             if (lastMatch) {  
                 document.getElementById('lastMatchResult').innerHTML = `  
@@ -635,20 +672,19 @@
             }  
         };  
   
-        // --- Funciones para las páginas de gestión ---  
         window.updateFormation = function() {  
             const state = gameLogic.getGameState();  
             const newFormation = document.getElementById('formationSelect').value;  
-            const updatedState = { ...state, formation: newFormation }; // Crear nueva copia  
-            gameLogic.updateGameState(updatedState); // Usar updateGameState  
+            const updatedState = { ...state, formation: newFormation };  
+            gameLogic.updateGameState(updatedState);  
             alert('Formación actualizada a ' + FORMATIONS[updatedState.formation].name);  
         };  
   
         window.updateMentality = function() {  
             const state = gameLogic.getGameState();  
             const newMentality = document.getElementById('mentalitySelect').value;  
-            const updatedState = { ...state, mentality: newMentality }; // Crear nueva copia  
-            gameLogic.updateGameState(updatedState); // Usar updateGameState  
+            const updatedState = { ...state, mentality: newMentality };  
+            gameLogic.updateGameState(updatedState);  
             alert('Mentalidad táctica actualizada a ' + updatedState.mentality);  
         };  
   
@@ -663,14 +699,14 @@
             const result = gameLogic.expandStadium();  
             alert(result.message);  
             ui.refreshUI(gameLogic.getGameState());  
-            updateFacilitiesDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+            updateFacilitiesDisplay(gameLogic.getGameState());  
         };  
   
         window.improveFacilities = function() {  
             const result = gameLogic.improveFacilities();  
             alert(result.message);  
             ui.refreshUI(gameLogic.getGameState());  
-            updateFacilitiesDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+            updateFacilitiesDisplay(gameLogic.getGameState());  
         };  
   
         function updateFacilitiesDisplay(state) {  
@@ -684,7 +720,7 @@
             const result = gameLogic.hireStaff(role);  
             alert(result.message);  
             ui.refreshUI(gameLogic.getGameState());  
-            updateStaffDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+            updateStaffDisplay(gameLogic.getGameState());  
         };  
   
         function updateStaffDisplay(state) {  
@@ -695,20 +731,119 @@
   
                 if (staffElement) staffElement.textContent = state.staff[role] ? 'Contratado' : 'No contratado';  
                 if (btnElement) {  
-                    btnElement.disabled = state.staff[role] !== null; // Deshabilitar si ya está contratado (true o string)  
+                    btnElement.disabled = state.staff[role] !== null;  
                     btnElement.textContent = state.staff[role] !== null ? 'Contratado' : 'Contratar';  
                 }  
             });  
         }  
+  
+        // --- Nuevas funciones para la sección comercial ---  
+        window.setTicketPriceFromInput = function() {  
+            const input = document.getElementById('ticketPriceInput');  
+            const newPrice = input.value;  
+            const result = gameLogic.setTicketPrice(newPrice);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState()); // Actualizar finanzas  
+                updateCommercialDisplay(gameLogic.getGameState()); // Actualizar comercial  
+            } else {  
+                alert('Error: ' + result.message);  
+                input.value = gameLogic.getGameState().ticketPrice; // Revertir valor  
+            }  
+        };  
+  
+        window.setMerchandisingPriceFromInput = function() {  
+            const input = document.getElementById('merchandisingPriceInput');  
+            const newPrice = input.value;  
+            const result = gameLogic.setMerchandisingPrice(newPrice);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState()); // Actualizar finanzas  
+                updateCommercialDisplay(gameLogic.getGameState()); // Actualizar comercial  
+            } else {  
+                alert('Error: ' + result.message);  
+                input.value = gameLogic.getGameState().merchandisingPrice; // Revertir valor  
+            }  
+        };  
+  
+        window.updateTicketPriceDisplay = function(value) {  
+            document.getElementById('ticketPriceSliderValue').textContent = value;  
+        };  
+  
+        window.setTicketPriceFromSlider = function(value) {  
+            const result = gameLogic.setTicketPrice(value);  
+            if (result.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                // No alert, ya que el slider es interactivo  
+            } else {  
+                alert('Error: ' + result.message);  
+                document.getElementById('ticketPriceSlider').value = gameLogic.getGameState().ticketPrice;  
+                document.getElementById('ticketPriceSliderValue').textContent = gameLogic.getGameState().ticketPrice;  
+            }  
+        };  
+  
+        window.updateMerchandisingPriceDisplay = function(value) {  
+            document.getElementById('merchandisingPriceSliderValue').textContent = value;  
+        };  
+  
+        window.setMerchandisingPriceFromSlider = function(value) {  
+            const result = gameLogic.setMerchandisingPrice(value);  
+            if (result.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                // No alert, ya que el slider es interactivo  
+            } else {  
+                alert('Error: ' + result.message);  
+                document.getElementById('merchandisingPriceSlider').value = gameLogic.getGameState().merchandisingPrice;  
+                document.getElementById('merchandisingPriceSliderValue').textContent = gameLogic.getGameState().merchandisingPrice;  
+            }  
+        };  
+  
   
         function updateFinanceDisplay(state) {  
             document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';  
             document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';  
             document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
             document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');  
-            document.getElementById('financeTicketPrice').textContent = state.ticketPrice.toLocaleString('es-ES') + '€';  
-            document.getElementById('financeMerchandising').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
+  
+            // Calcular asistencia esperada para mostrar en finanzas  
+            let expectedAttendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));  
+            expectedAttendance = Math.max(0, Math.min(state.stadiumCapacity, expectedAttendance));  
+            document.getElementById('financeExpectedAttendance').textContent = expectedAttendance.toLocaleString('es-ES');  
+  
+            document.getElementById('ticketPriceInput').value = state.ticketPrice;  
+            document.getElementById('financePopularity').textContent = state.popularity + '%';  
+            document.getElementById('financeFanbase').textContent = state.fanbase.toLocaleString('es-ES');  
+            document.getElementById('financeMerchandisingItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
+            document.getElementById('merchandisingPriceInput').value = state.merchandisingPrice;  
+            document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
         }  
+  
+        function updateCommercialDisplay(state) {  
+            document.getElementById('commercialPopularity').textContent = state.popularity + '%';  
+            document.getElementById('commercialFanbase').textContent = state.fanbase.toLocaleString('es-ES');  
+            document.getElementById('commercialItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
+            document.getElementById('commercialMerchRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
+  
+            // Actualizar sliders y sus valores  
+            const ticketPriceSlider = document.getElementById('ticketPriceSlider');  
+            const merchandisingPriceSlider = document.getElementById('merchandisingPriceSlider');  
+  
+            if (ticketPriceSlider) {  
+                ticketPriceSlider.value = state.ticketPrice;  
+                document.getElementById('currentTicketPrice').textContent = state.ticketPrice;  
+                document.getElementById('ticketPriceSliderValue').textContent = state.ticketPrice;  
+            }  
+            if (merchandisingPriceSlider) {  
+                merchandisingPriceSlider.value = state.merchandisingPrice;  
+                document.getElementById('currentMerchandisingPrice').textContent = state.merchandisingPrice;  
+                document.getElementById('merchandisingPriceSliderValue').textContent = state.merchandisingPrice;  
+            }  
+        }  
+  
   
         // --- Guardado y Carga ---  
         window.saveGame = function() {  
@@ -721,7 +856,6 @@
             if (result.success) {  
                 alert(result.message);  
                 ui.refreshUI(gameLogic.getGameState());  
-                // Asegúrate de que el menú activo sea 'dashboard' al cargar una partida  
                 const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
                 if(dashboardButton) {  
                     window.switchPage('dashboard', dashboardButton);  
@@ -733,7 +867,7 @@
   
         window.resetGame = function() {  
             if (confirm('¿Estás seguro de que quieres reiniciar completamente el juego? Toda tu partida se perderá.')) {  
-                gameLogic.resetGame(); // Esta función recarga la página  
+                gameLogic.resetGame();  
             }  
         };  
   
@@ -742,14 +876,12 @@
             const savedStateResult = gameLogic.loadFromLocalStorage();  
             if (savedStateResult.success) {  
                 ui.refreshUI(gameLogic.getGameState());  
-                // Asegúrate de que el menú activo sea 'dashboard' al cargar una partida  
                 const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
                 if(dashboardButton) {  
                     window.switchPage('dashboard', dashboardButton);  
                 }  
             } else {  
-                window.openModal('gameMode'); // Mostrar el modal de selección de modo de juego si no hay partida guardada  
-                // Asegúrate de que no haya ninguna página activa y el dashboard no se muestre hasta que se inicie el juego  
+                window.openModal('gameMode');  
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
             }  
         });  
