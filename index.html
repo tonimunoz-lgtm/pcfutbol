@@ -159,7 +159,8 @@
             margin: 5px 5px 5px 0;  
         }  
   
-        .btn:hover { background: linear-gradient(180deg, #ff5577 0%, #e94560 100%); transform: translateY(-1px); }  
+        .btn:hover:not(:disabled) { background: linear-gradient(180deg, #ff5577 0%, #e94560 100%); transform: translateY(-1px); }  
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }  
         .btn-sm { padding: 6px 12px; font-size: 0.85em; }  
   
         .modal {  
@@ -237,7 +238,7 @@
         .negotiation-step { margin-top: 20px; border-top: 1px dashed rgba(233, 69, 96, 0.3); padding-top: 20px; }  
         .negotiation-step label { display: block; margin-bottom: 8px; font-weight: bold; color: #e94560; }  
         .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"] {  
-            width: auto; /* Para checkboxes */  
+            width: auto;  
             margin-right: 10px;  
         }  
         .negotiation-incentives { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }  
@@ -269,7 +270,7 @@
             color: #fff;  
         }  
         #trainingModal .attribute-selection input[type="radio"] {  
-            display: none; /* Ocultar el radio button nativo */  
+            display: none;  
         }  
         #hireStaffModal .staff-candidate {  
             display: flex;  
@@ -307,13 +308,13 @@
                 linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px); /* líneas horizontales */  
             background-size: 20% 12.5%, 100% 12.5%; /* 5 franjas verticales, 8 horizontales */  
             border-radius: 10px;  
-            overflow: hidden; /* Para que los jugadores no se salgan */  
+            overflow: hidden;  
         }  
   
         .pitch-position-placeholder {  
             position: absolute;  
-            width: 18%; /* Ajustado para 5 columnas (20% por columna, dejando márgenes) */  
-            height: 10%; /* Ajustado para 9 filas (11.1% por fila) */  
+            width: 18%;  
+            height: 10%;  
             background: rgba(0,0,0,0.2);  
             border: 1px dashed rgba(255,255,255,0.5);  
             border-radius: 5px;  
@@ -324,11 +325,10 @@
             text-align: center;  
             font-size: 0.7em;  
             color: rgba(255,255,255,0.7);  
-            cursor: pointer;  
             transition: background 0.2s;  
         }  
         .pitch-position-placeholder.highlight {  
-            background: rgba(233, 69, 96, 0.4); /* Resaltar slot al arrastrar sobre él */  
+            background: rgba(233, 69, 96, 0.4);  
         }  
   
         .pitch-player {  
@@ -349,12 +349,13 @@
             align-items: center;  
             box-shadow: 0 0 5px rgba(0,0,0,0.5);  
             cursor: grab;  
-            user-select: none; /* Evitar selección de texto al arrastrar */  
+            user-select: none;  
         }  
         .pitch-player.injured {  
             background: #c73446;  
             border-color: red;  
             cursor: not-allowed;  
+            opacity: 0.7;  
         }  
         .pitch-player span {  
             font-size: 0.8em;  
@@ -388,7 +389,7 @@
             margin: 5px;  
             cursor: grab;  
             white-space: nowrap;  
-            display: inline-flex; /* Para centrar texto si es necesario */  
+            display: inline-flex;  
             align-items: center;  
             justify-content: center;  
             user-select: none;  
@@ -397,6 +398,7 @@
             background: #c73446;  
             border-color: red;  
             cursor: not-allowed;  
+            opacity: 0.7;  
         }  
   
     </style>  
@@ -832,7 +834,7 @@
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
         import * as ui from './ui.js';  
-        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS } from './config.js';  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js'; // Importar SEASON_WEEKS  
         import { getPlayerMarket, getYoungsterMarket } from './players.js';  
   
   
@@ -851,6 +853,11 @@
             ev.currentTarget.classList.add('highlight');  
         };  
   
+        window.dragleave = function(ev) {  
+            ev.preventDefault();  
+            ev.currentTarget.classList.remove('highlight');  
+        };  
+  
         window.drag = function(ev, playerJson) {  
             const player = JSON.parse(decodeURIComponent(playerJson));  
             if (player.isInjured) {  
@@ -861,7 +868,7 @@
             draggedPlayer = player;  
             ev.dataTransfer.setData("text/plain", playerJson);  
             ev.dataTransfer.effectAllowed = "move"; // Indicar que es un movimiento  
-            console.log("Arrastrando:", draggedPlayer.name);  
+            // console.log("Arrastrando:", draggedPlayer.name);  
         };  
   
         window.drop = function(ev, targetSlotId) {  
@@ -870,68 +877,39 @@
   
             const state = gameLogic.getGameState();  
             let currentLineup = gameLogic.getLineup(); // Obtener la alineación actual  
-            let currentSquad = state.squad; // Referencia a toda la plantilla  
-  
+              
             const droppedPlayer = draggedPlayer;  
             if (!droppedPlayer || droppedPlayer.isInjured) return; // No permitir soltar lesionados  
   
-            const isDroppedPlayerInCurrentLineup = currentLineup.some(p => p && p.name === droppedPlayer.name);  
-            const playerInReserves = currentSquad.find(p => p.name === droppedPlayer.name && !currentLineup.some(lp => lp && lp.name === p.name));  
-  
             let newProposedLineup = [...currentLineup]; // Copia de la alineación para modificar  
-            let playerMovedFromSlot = false; // Bandera para saber si un jugador fue movido de un slot del campo  
   
             if (targetSlotId.startsWith('pitch-slot-')) { // Soltar en un slot de alineación  
                 const targetIndex = parseInt(targetSlotId.replace('pitch-slot-', ''));  
                 const playerAlreadyInTargetSlot = newProposedLineup[targetIndex];  
-  
-                if (playerAlreadyInTargetSlot && playerAlreadyInTargetSlot.name === droppedPlayer.name) {  
-                    return; // Soltar un jugador sobre sí mismo en el mismo slot  
-                }  
-  
-                if (isDroppedPlayerInCurrentLineup) { // El jugador arrastrado ya estaba en el campo  
-                    const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
-                    if (sourceIndex !== -1) {  
-                        newProposedLineup[sourceIndex] = playerAlreadyInTargetSlot; // Mover el que estaba en el destino al origen  
-                        newProposedLineup[targetIndex] = droppedPlayer; // Mover el arrastrado al destino  
-                        playerMovedFromSlot = true;  
-                    }  
-                } else { // El jugador arrastrado viene de reservas  
+                  
+                // Buscar si el jugador arrastrado ya está en la alineación  
+                const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
+                  
+                if (sourceIndex !== -1) { // El jugador arrastrado ya estaba en un slot del campo  
+                    // Intercambiar posiciones  
+                    newProposedLineup[sourceIndex] = playerAlreadyInTargetSlot;  
                     newProposedLineup[targetIndex] = droppedPlayer;  
-                    if (playerAlreadyInTargetSlot) {  
-                        // El jugador que estaba en el slot va a reservas (se maneja en renderLineupPageUI)  
-                        // Por ahora, solo necesitamos actualizar la alineación.  
-                    }  
+                } else { // El jugador arrastrado viene de las reservas o de la lista de suplentes  
+                    newProposedLineup[targetIndex] = droppedPlayer;  
                 }  
             } else if (targetSlotId === 'reservesList') { // Soltar en el área de reservas  
-                if (isDroppedPlayerInCurrentLineup) { // El jugador arrastrado venía del campo  
-                    const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
-                    if (sourceIndex !== -1) {  
-                        newProposedLineup[sourceIndex] = null; // Vaciar el slot en el campo  
-                        playerMovedFromSlot = true;  
-                    }  
-                } else { // El jugador ya estaba en reservas, no hacer nada (o reordenar, pero eso es más complejo)  
-                    return;  
+                // Si el jugador arrastrado venía de un slot del campo, vaciar ese slot  
+                const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
+                if (sourceIndex !== -1) {  
+                    newProposedLineup[sourceIndex] = null; // Vaciar el slot en el campo  
                 }  
             }  
-  
-            // Filtrar los nulls de la alineación (slots vacíos) y reconstruir  
-            const finalLineupPlayers = newProposedLineup.filter(p => p !== null);  
-  
-            // Rellenar slots vacíos si es necesario y si el jugador original estaba en el campo  
-            // Esta parte es más compleja para manejar todos los casos de drag&drop.  
-            // Una forma más sencilla es simplemente actualizar la alineación y dejar que `renderLineupPageUI`  
-            // recalcule las reservas y los slots.  
               
-            // Simplemente actualizamos la alineación con la nueva propuesta  
-            gameLogic.setLineup(finalLineupPlayers); // Guardar la nueva alineación (puede ser < 11 si se vació un slot)  
+            // Filtrar los nulls y guardar la alineación. `saveLineup` se encarga de rellenar si hay menos de 11.  
+            const validLineupPlayers = newProposedLineup.filter(Boolean);  
+            gameLogic.setLineup(validLineupPlayers);  
             renderLineupPageUI(); // Volver a renderizar la UI  
             draggedPlayer = null; // Resetear  
-        };  
-  
-        window.dragleave = function(ev) {  
-            ev.preventDefault();  
-            ev.currentTarget.classList.remove('highlight');  
         };  
   
         window.switchPage = function(pageId, element) {  
@@ -995,24 +973,42 @@
         };  
   
         function renderTeamSelectors() {  
-            const createTeamButtons = (divisionKey) => {  
-                const listElement = document.getElementById(`${divisionKey}List`);  
+            const createTeamButtons = (divisionKey, listId) => {  
+                const listElement = document.getElementById(listId);  
                 if (!listElement) return;  
   
-                listElement.innerHTML = TEAMS_DATA[divisionKey].map(team =>  
+                // Para RFEF, combinamos los dos grupos para la selección inicial, pero se guarda el grupo real  
+                let teamsToRender = [];  
+                if (divisionKey === 'rfef') {  
+                    teamsToRender = [...TEAMS_DATA.rfef_grupo1, ...TEAMS_DATA.rfef_grupo2];  
+                } else {  
+                    teamsToRender = TEAMS_DATA[divisionKey];  
+                }  
+  
+                listElement.innerHTML = teamsToRender.map(team =>  
                     `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="selectTeamAndStart('${team}', '${divisionKey}')">  
                         ${team}  
                     </button>`  
                 ).join('');  
             };  
   
-            createTeamButtons('primera');  
-            createTeamButtons('segunda');  
-            createTeamButtons('rfef');  
+            createTeamButtons('primera', 'primeraList');  
+            createTeamButtons('segunda', 'segundaList');  
+            createTeamButtons('rfef', 'rfefList'); // Usamos 'rfef' como clave genérica para la UI  
         }  
   
         window.selectTeamAndStart = function(teamName, division) {  
-            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);  
+            // Ajustar la divisionKey para gameLogic si es RFEF para que sepa el grupo exacto  
+            let actualDivisionKey = division;  
+            if (division === 'rfef') {  
+                if (TEAMS_DATA.rfef_grupo1.includes(teamName)) {  
+                    actualDivisionKey = 'rfef_grupo1';  
+                } else if (TEAMS_DATA.rfef_grupo2.includes(teamName)) {  
+                    actualDivisionKey = 'rfef_grupo2';  
+                }  
+                // Si no está en ninguno (ej. equipo generado), gameLogic ya lo maneja  
+            }  
+            gameLogic.selectTeamWithInitialSquad(teamName, actualDivisionKey, window.gameMode);  
             ui.refreshUI(gameLogic.getGameState());  
             window.closeModal('selectTeam');  
             const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
@@ -1021,7 +1017,6 @@
             }  
         };  
   
-        // --- Funciones para el mercado ---  
         window.searchPlayersMarket = function() {  
             const filters = {  
                 searchName: document.getElementById('marketSearchName').value,  
@@ -1050,7 +1045,6 @@
             ui.renderAvailableYoungstersMarket(youngsters);  
         }  
   
-        // --- Acciones de fichajes y cantera ---  
         window.fichYoungsterConfirm = function(encodedYoungsterJson) {  
             const youngster = JSON.parse(decodeURIComponent(encodedYoungsterJson));  
             const result = gameLogic.signYoungster(youngster);  
@@ -1085,18 +1079,9 @@
                 return;  
             }  
   
-            // Solo validar alineación si estamos en temporada regular  
-            if (state.seasonType === 'regular') {  
-                const lineupValidation = gameLogic.validateLineup(state.lineup);  
-                if (!lineupValidation.success) {  
-                    alert(`¡Error en la alineación! ${lineupValidation.message}. Por favor, corrige tu alineación antes de simular.`);  
-                    gameLogic.addNews(`[Segundo Entrenador] ${lineupValidation.message}`, 'error');  
-                    switchPage('lineup', document.querySelector('.menu-item[onclick="switchPage(\'lineup\', this)"]'));  
-                    return;  
-                }  
-            }  
+            // Validar alineación solo si es temporada regular. En pretemporada no se valida (amistosos)  
+            // y gameLogic.simulateFullWeek ya maneja la invalidación si es temporada regular  
               
-  
             gameLogic.simulateFullWeek();  
             ui.refreshUI(gameLogic.getGameState());  
   
@@ -1109,7 +1094,6 @@
             switchPage('dashboard', document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]'));  
         };  
   
-        // --- Funciones de Negociación (UI) ---  
         window.startNegotiationUI = function(encodedPlayerJson) {  
             const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
             const result = gameLogic.startNegotiation(player);  
@@ -1259,9 +1243,6 @@
             ui.refreshUI(gameLogic.getGameState());  
         };  
   
-        // --- Funciones de Entrenamiento (UI) ---  
-        let currentTrainingPlayerIndex = -1;  
-  
         window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {  
             currentTrainingPlayerIndex = playerIndex;  
             const state = gameLogic.getGameState();  
@@ -1323,12 +1304,11 @@
             ui.refreshUI(gameLogic.getGameState());  
         };  
   
-        // --- Funciones de Staff (UI) ---  
         window.openHireStaffModal = function(role) {  
             document.getElementById('staffRoleDisplayName').textContent = STAFF_ROLES[role].displayName;  
             document.getElementById('staffRoleDisplayNameInfo').textContent = STAFF_ROLES[role].displayName;  
   
-            const candidates = gameLogic.generateStaffCandidates(role, true); // Forzar nuevos candidatos  
+            const candidates = gameLogic.generateStaffCandidates(role, true);  
             const list = document.getElementById('staffCandidatesList');  
             const state = gameLogic.getGameState();  
             const existingStaff = state.staff[role];  
@@ -1369,20 +1349,18 @@
                 if (result.success) {  
                     closeModal('hireStaff');  
                 }  
-                ui.refreshUI(gameLogic.getGameState()); // Refrescar la UI para que los cambios en staff se vean inmediatamente  
-                updateStaffDisplay(gameLogic.getGameState()); // Asegurar que la tabla de staff se actualice  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateStaffDisplay(gameLogic.getGameState());  
             }  
         };  
   
-  
-        // --- Funciones de Gestión ---  
         window.updateFormation = function() {  
             const state = gameLogic.getGameState();  
             const newFormation = document.getElementById('formationSelect').value;  
             const updatedState = { ...state, formation: newFormation };  
             gameLogic.updateGameState(updatedState);  
             alert('Formación actualizada a ' + FORMATIONS[updatedState.formation].name);  
-            renderLineupPageUI(); // Si cambia la formación, actualizar la visualización de la alineación  
+            renderLineupPageUI();  
         };  
   
         window.updateMentality = function() {  
@@ -1430,24 +1408,13 @@
                 const clausulaElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Clausula`);  
                 const btnElem = document.getElementById(`btnHire${role.charAt(0).toUpperCase() + role.slice(1)}`);  
   
-                if (staff) {  
-                    if (nameElem) nameElem.textContent = staff.name;  
-                    if (levelElem) levelElem.textContent = staff.level;  
-                    if (salaryElem) salaryElem.textContent = staff.salary.toLocaleString('es-ES') + '€';  
-                    if (clausulaElem) clausulaElem.textContent = 'N/A';  
-                    if (btnElem) {  
-                        btnElem.disabled = true;  
-                        btnElem.textContent = 'Contratado';  
-                    }  
-                } else {  
-                    if (nameElem) nameElem.textContent = 'No Contratado';  
-                    if (levelElem) levelElem.textContent = '-';  
-                    if (salaryElem) salaryElem.textContent = '-';  
-                    if (clausulaElem) clausulaElem.textContent = '-';  
-                    if (btnElem) {  
-                        btnElem.disabled = false;  
-                        btnElem.textContent = 'Contratar';  
-                    }  
+                if (nameElem) nameElem.textContent = staff ? staff.name : 'No Contratado';  
+                if (levelElem) levelElem.textContent = staff ? staff.level : '-';  
+                if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '€' : '-';  
+                if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-';  
+                if (btnElem) {  
+                    btnElem.disabled = !!staff;  
+                    btnElem.textContent = staff ? 'Contratado' : 'Contratar';  
                 }  
             });  
         }  
@@ -1558,127 +1525,6 @@
             }  
         }  
   
-        // --- Funciones de Alineación (UI) ---  
-        window.renderLineupPageUI = function() {  
-            const state = gameLogic.getGameState();  
-            const currentFormation = FORMATIONS[state.formation];  
-            let lineup = gameLogic.getLineup();  
-            let reserves = gameLogic.getReservePlayers();  
-  
-            const pitchContainer = document.getElementById('pitchContainer');  
-            const reservesList = document.getElementById('reservesList');  
-              
-            pitchContainer.innerHTML = '';  
-            reservesList.innerHTML = '';  
-  
-            // Calcular las dimensiones de los slots (cada slot ocupa 18% del ancho y 10% del alto)  
-            const slotWidth = 18; // % del ancho del contenedor  
-            const slotHeight = 10; // % del alto del contenedor  
-  
-            // Crear los placeholders de posición en el campo  
-            currentFormation.layout.forEach((posData, index) => {  
-                const slot = document.createElement('div');  
-                slot.classList.add('pitch-position-placeholder');  
-                slot.id = `pitch-slot-${index}`;  
-                  
-                // Posicionamiento absoluto basado en las coordenadas x, y de la formación  
-                // El campo tiene 5 columnas (0 a 4) y 9 filas (0 a 8)  
-                const leftOffset = posData.x * (100 / 5) + ( (100 / 5) - slotWidth ) / 2;  
-                const topOffset = posData.y * (100 / 8) + ( (100 / 8) - slotHeight ) / 2;  
-  
-                slot.style.left = `${leftOffset}%`;  
-                slot.style.top = `${topOffset}%`;  
-                slot.style.width = `${slotWidth}%`;  
-                slot.style.height = `${slotHeight}%`;  
-  
-                slot.textContent = posData.pos; // Mostrar la posición esperada del slot  
-                slot.ondragover = window.allowDrop;  
-                slot.ondragleave = window.dragleave;  
-                slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);  
-  
-                const playerInSlot = lineup[index];  
-                if (playerInSlot) {  
-                    const playerDiv = document.createElement('div');  
-                    playerDiv.classList.add('pitch-player');  
-                    if (playerInSlot.isInjured) playerDiv.classList.add('injured');  
-                    playerDiv.draggable = true;  
-                    playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));  
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;  
-                    playerDiv.dataset.playername = playerInSlot.name;  
-                    slot.appendChild(playerDiv);  
-                }  
-                pitchContainer.appendChild(slot);  
-            });  
-  
-            // Renderizar los suplentes (jugadores no en alineación)  
-            reserves.forEach(player => {  
-                const playerDiv = document.createElement('div');  
-                playerDiv.classList.add('draggable-player');  
-                if (player.isInjured) playerDiv.classList.add('injured');  
-                playerDiv.draggable = true;  
-                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));  
-                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;  
-                playerDiv.dataset.playername = player.name;  
-                reservesList.appendChild(playerDiv);  
-            });  
-  
-            reservesList.ondragover = window.allowDrop;  
-            reservesList.ondragleave = window.dragleave;  
-            reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');  
-  
-            const lineupMessageElem = document.getElementById('lineupMessage');  
-            if (lineupMessageElem) {  
-                const validation = gameLogic.validateLineup(lineup);  
-                if (!validation.success) {  
-                    lineupMessageElem.className = 'alert alert-warning';  
-                    lineupMessageElem.innerHTML = `⚠️ Advertencia: ${validation.message}`;  
-                } else {  
-                    lineupMessageElem.className = 'alert alert-info';  
-                    lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;  
-                }  
-            }  
-        };  
-  
-        window.saveLineup = function() {  
-            const state = gameLogic.getGameState();  
-            const currentFormation = FORMATIONS[state.formation];  
-            const newLayout = Array(11).fill(null); // Array para la nueva alineación  
-  
-            // Recoger jugadores del campo  
-            currentFormation.layout.forEach((posData, index) => {  
-                const slot = document.getElementById(`pitch-slot-${index}`);  
-                const playerDiv = slot?.querySelector('.pitch-player');  
-                if (playerDiv) {  
-                    const playerName = playerDiv.dataset.playername;  
-                    const fullPlayer = state.squad.find(p => p.name === playerName);  
-                    if (fullPlayer) {  
-                        newLayout[index] = fullPlayer;  
-                    }  
-                }  
-            });  
-  
-            const validationResult = gameLogic.validateLineup(newLayout);  
-            if (!validationResult.success) {  
-                alert(`Error al guardar la alineación: ${validationResult.message}`);  
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar: ${validationResult.message}`, 'error');  
-                renderLineupPageUI(); // Volver a renderizar para mostrar el estado actual  
-                return;  
-            }  
-  
-            const result = gameLogic.setLineup(newLayout);  
-            if (result.success) {  
-                gameLogic.addNews('¡Alineación guardada con éxito!', 'success');  
-                alert(result.message);  
-                ui.refreshUI(gameLogic.getGameState());  
-                renderLineupPageUI();  
-            } else {  
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar la alineación: ${result.message}`, 'error');  
-                alert(`Error al guardar la alineación: ${result.message}`);  
-            }  
-        };  
-  
-  
-        // --- Guardado y Carga ---  
         window.saveGame = function() {  
             const result = gameLogic.saveToLocalStorage();  
             alert(result.message);  
@@ -1704,7 +1550,6 @@
             }  
         };  
   
-        // --- Inicialización del juego ---  
         document.addEventListener('DOMContentLoaded', () => {  
             const marketPositionSelect = document.getElementById('marketPosition');  
             POSITIONS.forEach(pos => {  
