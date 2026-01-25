@@ -1,360 +1,216 @@
-import { DIVISION_MULTIPLIERS } from './config.js';
+// gameLogic.js - Lógica central del juego
 
-// Estado global
-let gameState = {
+// Estado global del juego
+const gameState = {
     team: null,
-    division: null,
-    balance: 100000,
     week: 1,
+    division: 'Primera',
     squad: [],
     academy: [],
     standings: {},
-    matchHistory: [],
-    gameMode: null,
-    formation: '433',
-    mentality: 'balanced',
-    stadiumCapacity: 50000,
-    trainingLevel: 3,
-    weeklyIncome: 10500,
-    weeklyExpenses: 8000,
-    userId: null,
-    staff: {
-        medico: true,
-        entrenador: true,
-        analista: false,
-        scout: true,
-        secretario: true
-    },
+    stadiumCapacity: 5000,
+    ticketPrice: 20,
     merchandisingRevenue: 500,
-    ticketPrice: 50
+    staff: {
+        medico: null,
+        entrenador: null,
+        analista: null,
+        scout: null,
+        secretario: null
+    },
+    balance: 50000,
+    weeklyIncomeBase: 5000,
+    weeklyIncome: 0,
+    weeklyExpenses: 0
 };
 
-// -----------------------------
-// INICIALIZAR CLASIFICACIÓN
-// -----------------------------
+// --------------------------------------------
+// Inicialización de la clasificación
 function initStandings(teamsArray) {
     const standings = {};
     teamsArray.forEach(team => {
-        standings[team] = { 
-            pts: 0, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, nextMatchRival: null
-        };
+        standings[team] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 };
     });
     return standings;
 }
 
-// -----------------------------
-// SELECCIONAR EQUIPO / PLANTILLA
-// -----------------------------
+// --------------------------------------------
+// Generación de plantilla inicial
+function generateInitialSquad() {
+    const positions = ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'MI', 'MD', 'DC'];
+    return positions.map((pos, idx) => ({
+        name: `Jugador ${idx + 1}`,
+        age: 18 + Math.floor(Math.random() * 10),
+        overall: 50 + Math.floor(Math.random() * 50),
+        potential: 60 + Math.floor(Math.random() * 40),
+        position: pos,
+        salary: Math.floor(3000 + Math.random() * 7000),
+        matches: 0
+    }));
+}
+
+// Generación cantera
+function generateInitialAcademy() {
+    const academy = [];
+    for (let i = 0; i < 5; i++) {
+        academy.push({
+            name: `Juvenil ${i + 1}`,
+            age: 16 + Math.floor(Math.random() * 2),
+            overall: 40 + Math.floor(Math.random() * 20),
+            potential: 60 + Math.floor(Math.random() * 40),
+            matches: 0
+        });
+    }
+    return academy;
+}
+
+// Selección de equipo inicial
 function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.team = teamName;
     gameState.division = divisionType;
-    gameState.gameMode = gameMode;
-    gameState.balance = gameMode === 'promanager' ? 50000 : 100000;
-    gameState.week = 1;
-    gameState.squad = generateInitialSquad(divisionType);
+    gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
-    gameState.matchHistory = [];
-
-    const salaryTotal = gameState.squad.reduce((sum, p) => sum + p.salary, 0);
-    gameState.weeklyExpenses = salaryTotal + 3000; // Salarios + staff
-
-    return gameState;
+    gameState.standings = initStandings([teamName, "Rival A", "Rival B", "Rival C", "Rival D"]);
+    updateWeeklyFinancials();
 }
 
-// -----------------------------
-// GENERAR PLANTILLA / CANTERA
-// -----------------------------
-function generateInitialSquad(division) {
-    const baseLevel = division === 'primera' ? 78 : division === 'segunda' ? 70 : 65;
-    const positions = ['POR','POR','DEF','DEF','DEF','DEF','CED','CED','MED','MED','EXT','EXT','DEL','DEL','DEL','DEF','MED','EXT'];
-    const playerNames = {
-        'POR': ['García','Martínez','Pérez','López'],
-        'DEF': ['Gómez','Hernández','Jiménez','Sánchez','Rodríguez','Fernández'],
-        'CED': ['Castro','Díaz','Moreno','Ruiz'],
-        'MED': ['Silva','Costa','Mendes','Ribeiro','Santos'],
-        'EXT': ['Alves','Oliveira','Rojas','Vargas'],
-        'DEL': ['Torres','Flores','Ramírez','Domínguez']
-    };
-    const squad = [];
-    positions.forEach((pos, idx) => {
-        const names = playerNames[pos];
-        const name = names[Math.floor(Math.random() * names.length)] + ' ' + (idx + 1);
-        const variation = (Math.random() - 0.5) * 10;
-        squad.push({
-            name,
-            position: pos,
-            age: 20 + Math.floor(Math.random() * 15),
-            overall: Math.max(50, Math.min(99, baseLevel + variation)),
-            salary: 3000 + Math.random() * 7000,
-            goals: 0,
-            assists: 0,
-            matches: 0,
-            joinDate: 1
-        });
-    });
-    return squad;
+// --------------------------------------------
+// Gestión de jugadores
+function signPlayer(player) {
+    if (gameState.squad.length >= 16) return false;
+    if (gameState.balance < player.cost) return false;
+
+    gameState.balance -= player.cost;
+    gameState.squad.push(player);
+    updateWeeklyFinancials();
+    return true;
 }
 
-function generateInitialAcademy() {
-    const youngsters = [];
-    const youngNames = ['Pérez Jr','García Jr','López Jr','Martínez Jr','Sánchez Jr'];
-    youngNames.forEach(name => {
-        youngsters.push({
-            name,
-            age: 17 + Math.floor(Math.random() * 3),
-            overall: 55 + Math.floor(Math.random() * 15),
-            potential: 75 + Math.floor(Math.random() * 15),
-            salary: 300,
-            matches: 0,
-            joinDate: 1
-        });
-    });
-    return youngsters;
-}
-
-// -----------------------------
-// FICHAR / CEDER JUGADOR
-// -----------------------------
-function signPlayer(name, overall, salary, position, age, cost, loan) {
-    if (gameState.balance < (loan ? 0 : cost)) return { success: false, message: 'Dinero insuficiente' };
-    if (gameState.squad.length >= 25) return { success: false, message: 'Plantilla completa (máx. 25)' };
-
-    const newPlayer = { name, position, age, overall, salary, goals:0, assists:0, matches:0, joinDate:gameState.week, onLoan:loan||false };
-    gameState.squad.push(newPlayer);
-
-    if (!loan) gameState.balance -= cost;
-    gameState.weeklyExpenses += salary;
-
-    return { success: true, message: `${name} fichado ${loan?'en préstamo':'exitosamente'}` };
-}
-
-function signYoungster(name, age, overall, potential, cost) {
-    if (gameState.balance < cost) return { success: false, message: 'Dinero insuficiente' };
-
-    const newYoungster = { name, age, overall, potential, salary:300, matches:0, joinDate:gameState.week };
-    gameState.academy.push(newYoungster);
-    gameState.balance -= cost;
-    gameState.weeklyExpenses += 300;
-
-    return { success: true, message: `${name} contratado en cantera` };
+function signYoungster(youngster) {
+    if (gameState.balance < youngster.cost) return false;
+    gameState.balance -= youngster.cost;
+    gameState.academy.push(youngster);
+    updateWeeklyFinancials();
+    return true;
 }
 
 function promoteYoungster(name) {
-    const youngster = gameState.academy.find(y => y.name === name);
-    if (!youngster) return { success:false, message:'Joven no encontrado' };
-    if (gameState.squad.length >= 25) return { success:false, message:'Plantilla completa' };
+    const index = gameState.academy.findIndex(y => y.name === name);
+    if (index === -1) return false;
+    const player = gameState.academy.splice(index, 1)[0];
+    gameState.squad.push(player);
+    return true;
+}
 
-    let levelIncrease = 0;
-    if (youngster.matches >= 20) levelIncrease = 3;
-    else if (youngster.matches >= 10) levelIncrease = 2;
-    else if (youngster.matches >= 5) levelIncrease = 1;
+function sellPlayer(name) {
+    const index = gameState.squad.findIndex(p => p.name === name);
+    if (index === -1) return false;
+    const player = gameState.squad.splice(index, 1)[0];
 
-    const promoted = { 
-        name: youngster.name,
-        position: 'DEL',
-        age: youngster.age,
-        overall: Math.min(youngster.potential, youngster.overall + levelIncrease),
-        salary: 1500,
-        goals: 0,
-        assists: 0,
-        matches: youngster.matches,
-        joinDate: gameState.week
+    // Venta moderada estilo PCF7
+    const salePrice = player.overall * 2000 + (player.matches * 500);
+    gameState.balance += salePrice;
+    updateWeeklyFinancials();
+    return true;
+}
+
+// --------------------------------------------
+// Simulación de partidos
+function playMatch(homeTeam, awayTeam) {
+    const homeGoals = Math.floor(Math.random() * 4);
+    const awayGoals = Math.floor(Math.random() * 4);
+
+    const updateStats = (team, gf, gc) => {
+        const s = gameState.standings[team];
+        s.pj++;
+        s.gf += gf;
+        s.gc += gc;
+        if (gf > gc) { s.g++; s.pts += 3; }
+        else if (gf === gc) { s.e++; s.pts += 1; }
+        else s.p++;
     };
 
-    gameState.squad.push(promoted);
-    gameState.academy = gameState.academy.filter(y=>y.name!==name);
-    gameState.weeklyExpenses += 1500;
+    updateStats(homeTeam, homeGoals, awayGoals);
+    updateStats(awayTeam, awayGoals, homeGoals);
 
-    return { success:true, message:`${name} ascendido a primer equipo (Nivel +${levelIncrease})` };
+    // Contabilizar minutos a juveniles
+    gameState.squad.forEach(p => { if (Math.random() < 0.7) p.matches++; });
+    gameState.academy.forEach(y => { if (Math.random() < 0.5) y.matches++; });
 }
 
-// -----------------------------
-// VENDER JUGADOR
-// -----------------------------
-function sellPlayer(name) {
-    const player = gameState.squad.find(p=>p.name===name);
-    if(!player) return { success:false, message:'Jugador no encontrado' };
-
-    const salePrice = Math.floor(player.overall*2000 + player.matches*500);
-    gameState.balance += salePrice;
-    gameState.squad = gameState.squad.filter(p=>p.name!==name);
-    gameState.weeklyExpenses -= player.salary;
-
-    return { success:true, message:`${name} vendido por ${salePrice}€`, salePrice };
-}
-
-// -----------------------------
-// SIMULAR PARTIDO
-// -----------------------------
-function playMatch() {
-    const rivals = Object.keys(gameState.standings).filter(t=>t!==gameState.team);
-    const rival = rivals[Math.floor(Math.random()*rivals.length)];
-
-    const myLevel = gameState.squad.reduce((sum,p)=>sum+p.overall,0)/gameState.squad.length || 70;
-    const rivalLevel = 70; // nivel base para rival
-
-    let myGoals = Math.floor(Math.random()*4 + myLevel/85);
-    let rivalGoals = Math.floor(Math.random()*4 + rivalLevel/85);
-
-    if(gameState.mentality==='offensive') myGoals += 1.5;
-    if(gameState.mentality==='defensive') rivalGoals = Math.max(0, rivalGoals-1);
-
-    myGoals = Math.floor(myGoals);
-    rivalGoals = Math.floor(rivalGoals);
-
-    // Actualizar stats
-    gameState.standings[gameState.team].pj++;
-    gameState.standings[rival].pj++;
-    gameState.standings[gameState.team].gf += myGoals;
-    gameState.standings[gameState.team].gc += rivalGoals;
-    gameState.standings[rival].gf += rivalGoals;
-    gameState.standings[rival].gc += myGoals;
-
-    if(myGoals>rivalGoals){
-        gameState.standings[gameState.team].pts +=3;
-        gameState.standings[gameState.team].g++;
-        gameState.standings[rival].p++;
-    } else if(myGoals<rivalGoals){
-        gameState.standings[rival].pts +=3;
-        gameState.standings[rival].g++;
-        gameState.standings[gameState.team].p++;
-    } else {
-        gameState.standings[gameState.team].pts++;
-        gameState.standings[gameState.team].e++;
-        gameState.standings[rival].pts++;
-        gameState.standings[rival].e++;
-    }
-
-    // Progreso cantera
-    gameState.academy.forEach(y=>{ if(Math.random()>0.5)y.matches++; });
-
-    gameState.matchHistory.push({
-        week: gameState.week,
-        home: gameState.team,
-        away: rival,
-        score:`${myGoals}-${rivalGoals}`,
-        result: myGoals>rivalGoals?'W':myGoals<rivalGoals?'L':'D'
-    });
-
-    gameState.week++;
-    gameState.balance += 3000;
-
-    return { home: gameState.team, away: rival, homeGoals: myGoals, awayGoals: rivalGoals };
-}
-
-// -----------------------------
-// SIMULAR JORNADA COMPLETA
-// -----------------------------
+// Simulación completa de la jornada
 function simulateFullWeek() {
     const teams = Object.keys(gameState.standings);
-    const played = new Set();
-
-    for(let i=0;i<teams.length;i++){
-        for(let j=i+1;j<teams.length;j++){
-            if(!played.has(teams[i]) && !played.has(teams[j])){
-                const goals1 = Math.floor(Math.random()*5);
-                const goals2 = Math.floor(Math.random()*5);
-
-                gameState.standings[teams[i]].pj++;
-                gameState.standings[teams[j]].pj++;
-                gameState.standings[teams[i]].gf += goals1;
-                gameState.standings[teams[i]].gc += goals2;
-                gameState.standings[teams[j]].gf += goals2;
-                gameState.standings[teams[j]].gc += goals1;
-
-                if(goals1>goals2){
-                    gameState.standings[teams[i]].pts+=3;
-                    gameState.standings[teams[i]].g++;
-                    gameState.standings[teams[j]].p++;
-                } else if(goals1<goals2){
-                    gameState.standings[teams[j]].pts+=3;
-                    gameState.standings[teams[j]].g++;
-                    gameState.standings[teams[i]].p++;
-                } else {
-                    gameState.standings[teams[i]].pts++;
-                    gameState.standings[teams[i]].e++;
-                    gameState.standings[teams[j]].pts++;
-                    gameState.standings[teams[j]].e++;
-                }
-
-                played.add(teams[i]);
-                played.add(teams[j]);
-            }
+    for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+            playMatch(teams[i], teams[j]);
         }
     }
+    gameState.week++;
+    updateWeeklyFinancials();
 }
 
-// -----------------------------
-// ESTADIO / INSTALACIONES / STAFF
-// -----------------------------
-function expandStadium() {
-    if(gameState.balance<50000) return { success:false, message:'Dinero insuficiente' };
-    gameState.balance -= 50000;
-    gameState.stadiumCapacity += 10000;
-    gameState.weeklyIncome += 500;
-    return { success:true, message:`Estadio expandido a ${gameState.stadiumCapacity} espectadores` };
+// --------------------------------------------
+// Finanzas y estadios
+function updateWeeklyFinancials() {
+    // Gastos semanales: salarios de jugadores
+    gameState.weeklyExpenses = gameState.squad.reduce((sum, p) => sum + p.salary, 0);
+
+    // Ingresos semanales: base + entradas + merchandising
+    gameState.weeklyIncome = gameState.weeklyIncomeBase + 
+                             Math.floor(gameState.ticketPrice * gameState.stadiumCapacity / 100) +
+                             gameState.merchandisingRevenue;
+
+    // Balance total
+    gameState.balance = gameState.balance + gameState.weeklyIncome - gameState.weeklyExpenses;
 }
 
-function improveFacilities() {
-    if(gameState.balance<30000) return { success:false, message:'Dinero insuficiente' };
-    gameState.balance -= 30000;
-    gameState.trainingLevel++;
-    return { success:true, message:`Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}` };
+function expandStadium(amount) {
+    gameState.stadiumCapacity += amount;
+    updateWeeklyFinancials();
 }
 
-function hireStaff(position) {
-    const costs = { analista:4000, scout:3000, medico:5000, entrenador:3000 };
-    const cost = costs[position]||0;
-    if(gameState.balance<cost) return { success:false, message:'Dinero insuficiente' };
-    gameState.balance -= cost;
-    gameState.staff[position] = true;
-    gameState.weeklyExpenses += 500;
-    return { success:true, message:'Personal contratado' };
+function improveFacilities(amount) {
+    gameState.merchandisingRevenue += amount;
+    updateWeeklyFinancials();
 }
 
-// -----------------------------
-// BALANCE SEMANAL
-// -----------------------------
-function updateWeeklyBalance() {
-    const ticketRevenue = gameState.stadiumCapacity * gameState.ticketPrice * 0.2; // asistencia ~20%
-    const merchandising = gameState.merchandisingRevenue;
-    const income = gameState.weeklyIncome + ticketRevenue + merchandising;
-    const expenses = gameState.weeklyExpenses;
-    const balance = income - expenses;
-    return { weeklyIncome: income, weeklyExpenses: expenses, weeklyBalance: balance };
+function hireStaff(role, name) {
+    gameState.staff[role] = name;
 }
 
-// -----------------------------
-// LOCALSTORAGE
-// -----------------------------
+// --------------------------------------------
+// Guardado y carga
 function saveToLocalStorage() {
-    try{
-        localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));
-        return { success:true, message:'Partida guardada en dispositivo' };
-    } catch(e){
-        return { success:false, message:'Error al guardar' };
-    }
+    localStorage.setItem('gameState', JSON.stringify(gameState));
 }
 
 function loadFromLocalStorage() {
-    try{
-        const saved = localStorage.getItem('pcfutbol-save');
-        if(saved){ gameState=JSON.parse(saved); return { success:true, message:'Partida cargada' }; }
-        return { success:false, message:'No hay partida guardada' };
-    } catch(e){
-        return { success:false, message:'Error al cargar' };
+    const saved = localStorage.getItem('gameState');
+    if (saved) {
+        Object.assign(gameState, JSON.parse(saved));
     }
 }
 
-// -----------------------------
-// ESTADO
-// -----------------------------
-function getGameState(){ return gameState; }
-function updateGameState(updates){ gameState={...gameState,...updates}; return gameState; }
+// --------------------------------------------
+// Obtener estado del juego
+function getGameState() {
+    return gameState;
+}
 
+// Export
 export {
-    gameState, initStandings, selectTeamWithInitialSquad, generateInitialSquad, generateInitialAcademy,
-    signPlayer, signYoungster, promoteYoungster, sellPlayer, playMatch, simulateFullWeek,
-    expandStadium, improveFacilities, hireStaff, saveToLocalStorage, loadFromLocalStorage,
-    getGameState, updateGameState, updateWeeklyBalance
+    selectTeamWithInitialSquad,
+    simulateFullWeek,
+    playMatch,
+    signPlayer,
+    signYoungster,
+    promoteYoungster,
+    sellPlayer,
+    expandStadium,
+    improveFacilities,
+    hireStaff,
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    getGameState
 };
