@@ -35,7 +35,7 @@ function generateRandomName() {
 }  
   
 // Función para calcular el Overall a partir de los atributos y la posición  
-export function calculateOverall(player) {  
+export function calculateOverall(player) { // <--- Ya se exporta aquí  
     const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
     if (!weights) {  
         console.warn(`Pesos de atributos no definidos para la posición: ${player.position}. Usando pesos por defecto.`);  
@@ -307,6 +307,6 @@ export {
     getPlayerMarket,  
     getYoungsterMarket,  
     initPlayerDatabase,  
-    initYoungsterDatabase,  
-    calculateOverall // calculateOverall se exporta aquí en su definición.  
+    initYoungsterDatabase  
+    // calculateOverall YA NO SE EXPORTA AQUÍ, porque ya se exporta en su línea de declaración.  
 };  
