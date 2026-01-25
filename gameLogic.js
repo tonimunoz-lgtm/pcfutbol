@@ -69,7 +69,7 @@ function updateGameState(newState) {
     updateWeeklyFinancials();  
 }  
   
-function addNews(message, type = 'info', read: false) {  
+function addNews(message, type = 'info', read = false) {  
     gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now(), type: type, read: read });  
     if (gameState.newsFeed.length > 20) {  
         gameState.newsFeed.pop();  
