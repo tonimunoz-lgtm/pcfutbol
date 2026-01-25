@@ -1550,39 +1550,6 @@
             }  
         }  
 
-// --- Renderizar noticias en Dashboard ---
-window.renderNewsList = function(state) {
-    const newsContainer = document.getElementById('newsList');
-    if (!newsContainer) return;
-
-    newsContainer.innerHTML = '';
-
-    state.news.forEach((n, index) => {
-        const newsDiv = document.createElement('div');
-        newsDiv.className = 'news-item';
-        if (!n.read) newsDiv.classList.add('unread');
-        newsDiv.innerHTML = `<strong>${n.type}</strong>: ${n.message}`;
-
-        // Al hacer clic, marcamos la noticia como leída
-        newsDiv.onclick = () => {
-            if (!n.read) {
-                n.read = true; // Marcamos como leída
-                window.updateUnreadCount(state); // Actualizamos el contador
-                window.renderNewsList(state); // Volvemos a renderizar para quitar clase "unread"
-            }
-        };
-
-        newsContainer.appendChild(newsDiv);
-    });
-};
-
-// --- Actualizar contador de noticias sin leer ---
-window.updateUnreadCount = function(state) {
-    state.unreadNewsCount = state.news.filter(n => !n.read).length;
-    const unreadElem = document.getElementById('unreadNewsCount');
-    if (unreadElem) unreadElem.textContent = state.unreadNewsCount;
-};
-
         
  // --- Funciones de Alineación (UI) ---  
         window.renderLineupPageUI = function() {  
@@ -1757,15 +1724,6 @@ window.updateUnreadCount = function(state) {
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
             }  
         });  
-
-        function markNewsAsRead(index) {
-    const newsItem = gameState.newsFeed[index];
-    if (newsItem && !newsItem.read) {
-        newsItem.read = true;
-        gameState.unreadNewsCount--;
-        renderNews(); // Volvemos a renderizar para actualizar el contador y estilo
-    }
-}
 
     </script>  
 </body>  
