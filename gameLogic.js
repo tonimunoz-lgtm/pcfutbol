@@ -214,3 +214,26 @@ export {
     loadFromLocalStorage,
     getGameState
 };
+
+// --------------------------------------------
+// Actualizar el estado global
+function updateGameState(newState) {
+    Object.assign(gameState, newState);
+}
+
+export {
+    selectTeamWithInitialSquad,
+    simulateFullWeek,
+    playMatch,
+    signPlayer,
+    signYoungster,
+    promoteYoungster,
+    sellPlayer,
+    expandStadium,
+    improveFacilities,
+    hireStaff,
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    getGameState,
+    updateGameState  // ✅ Añadido
+};
