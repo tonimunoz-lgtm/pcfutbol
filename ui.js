@@ -1,6 +1,6 @@
 // ui.js - Renderizado y UI  
   
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES } from './config.js'; // Importar STAFF_ROLES  
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS } from './config.js'; // Importar FORMATIONS  
   
 function renderStandingsTable(standings, currentTeam) {  
     const tbody = document.getElementById('standingsTable');  
@@ -30,7 +30,6 @@ function renderStandingsTable(standings, currentTeam) {
     `).join('');  
 }  
   
-// renderSquadList ahora muestra los atributos detallados, la moral/forma, y el estado de lesión  
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
     if (!list) return;  
@@ -91,7 +90,6 @@ function renderSquadList(squad, currentTeam) {
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
 }  
   
-// renderAcademyList ahora muestra los atributos detallados y el estado de lesión  
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
     if (!list) return;  
@@ -325,10 +323,17 @@ function updateDashboardStats(state) {
     const newsFeedElem = document.getElementById('newsFeed');  
     if (newsFeedElem) {  
         newsFeedElem.innerHTML = state.newsFeed.map(news => `  
-            <div class="alert alert-info" style="font-size: 0.9em; margin-bottom: 5px;">  
+            <div class="alert ${news.type === 'error' ? 'alert-warning' : news.type === 'warning' ? 'alert-warning' : news.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">  
                 <strong>Semana ${news.week}:</strong> ${news.message}  
             </div>  
         `).join('');  
+    }  
+    // Actualizar contador de noticias no leídas en el botón del dashboard  
+    const dashButton = document.querySelector('button[onclick="switchPage(\'dashboard\', this)"]');  
+    if (dashButton && state.unreadNewsCount > 0) {  
+        dashButton.innerHTML = `Dashboard <span style="background: #ff3333; border-radius: 50%; padding: 2px 6px; font-size: 0.7em;">${state.unreadNewsCount}</span>`;  
+    } else if (dashButton) {  
+        dashButton.innerHTML = `Dashboard`;  
     }  
 }  
   
@@ -338,6 +343,11 @@ function refreshUI(state) {
     renderStandingsTable(state.standings, state.team);  
     renderSquadList(state.squad, state.team);  
     renderAcademyList(state.academy);  
+  
+    // Si estamos en la página de alineación, refrescarla  
+    if (document.getElementById('lineup').classList.contains('active')) {  
+        window.renderLineupPageUI();  
+    }  
   
     if (state.negotiationStep > 0) {  
         window.updateNegotiationModal();  
