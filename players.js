@@ -324,7 +324,7 @@ export {
     ALL_AVAILABLE_YOUNGSTERS,  
     getPlayerMarket,  
     getYoungsterMarket,  
-    initPlayerDatabase, // Exportar para poder usarlo en gameLogic para elite players  
+    initPlayerDatabase,  
     initYoungsterDatabase,  
     generateRandomName // Exportar para gameLogic.js  
 };  
