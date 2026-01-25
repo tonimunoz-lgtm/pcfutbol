@@ -221,10 +221,24 @@
             margin-bottom: 10px;  
         }  
   
-        @media (max-width: 768px) {  
-            .container { flex-direction: column; }  
-            .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #e94560; }  
+        /* Estilos específicos para la negociación */  
+        .negotiation-player-info {  
+            background: rgba(233, 69, 96, 0.15);  
+            border: 1px solid #e94560;  
+            padding: 15px;  
+            margin-bottom: 20px;  
+            border-radius: 5px;  
         }  
+        .negotiation-player-info h3 { color: #00ff00; margin-bottom: 5px; }  
+        .negotiation-player-info p { margin-bottom: 5px; }  
+        .negotiation-step { margin-top: 20px; border-top: 1px dashed rgba(233, 69, 96, 0.3); padding-top: 20px; }  
+        .negotiation-step label { display: block; margin-bottom: 8px; font-weight: bold; color: #e94560; }  
+        .negotiation-step input[type="number"], .negotiation-step input[type="checkbox"] {  
+            width: auto; /* Para checkboxes */  
+            margin-right: 10px;  
+        }  
+        .negotiation-incentives { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }  
+        .negotiation-incentives div { display: flex; align-items: center; }  
     </style>  
 </head>  
 <body>  
@@ -263,7 +277,7 @@
                 <div class="menu-title">💼 GESTIÓN</div>  
                 <button class="menu-item" onclick="switchPage('finance', this)">Finanzas</button>  
                 <button class="menu-item" onclick="switchPage('facilities', this)">Instalaciones</button>  
-                <button class="menu-item" onclick="switchPage('commercial', this)">Comercial</button> <!-- Nueva sección -->  
+                <button class="menu-item" onclick="switchPage('commercial', this)">Comercial</button>  
                 <button class="menu-item" onclick="switchPage('staff', this)">Staff</button>  
             </div>  
   
@@ -325,7 +339,6 @@
             <!-- PLANTILLA -->  
             <div id="squad" class="page">  
                 <h1>👥 Plantilla</h1>  
-                <button class="btn" onclick="openModal('signPlayer')">+ Fichar Jugador</button>  
                 <div id="squadList" style="margin-top: 20px;"></div>  
             </div>  
   
@@ -333,16 +346,41 @@
             <div id="transfers" class="page">  
                 <h1>🔄 Mercado de Fichajes</h1>  
                 <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro, o refuerza tu equipo.</div>  
-                <button class="btn" onclick="openModal('signPlayer')">Ver Jugadores Disponibles</button>  
-                <div id="transferMarket" style="margin-top: 20px;">  
-                    <!-- Los jugadores disponibles se renderizarán en el modal, no aquí directamente -->  
+                <h2>Buscar Jugadores</h2>  
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">  
+                    <input type="text" id="marketSearchName" placeholder="Nombre del jugador" style="width: 150px;">  
+                    <select id="marketPosition" style="width: 120px;">  
+                        <option value="ALL">Posición</option>  
+                        <option value="POR">POR</option>  
+                        <option value="DFC">DFC</option>  
+                        <option value="LI">LI</option>  
+                        <option value="LD">LD</option>  
+                        <option value="MC">MC</option>  
+                        <option value="MCO">MCO</option>  
+                        <option value="MD">MD</option>  
+                        <option value="MI">MI</option>  
+                        <option value="EXT">EXT</option>  
+                        <option value="DC">DC</option>  
+                    </select>  
+                    <input type="number" id="marketMinOverall" placeholder="Media min." min="1" max="99" style="width: 100px;">  
+                    <input type="number" id="marketMaxAge" placeholder="Edad max." min="16" max="40" style="width: 100px;">  
+                    <label style="display:flex; align-items:center; gap: 5px;"><input type="checkbox" id="marketTransferListed" style="width:auto;"> Transferibles</label>  
+                    <label style="display:flex; align-items:center; gap: 5px;"><input type="checkbox" id="marketLoanListed" style="width:auto;"> Cedibles</label>  
+                    <button class="btn btn-sm" onclick="searchPlayersMarket()">Buscar</button>  
+                    <button class="btn btn-sm" onclick="clearPlayerMarketFilters()" style="background: #c73446;">Limpiar</button>  
                 </div>  
+                <div id="availablePlayersSearchResult" style="margin-top: 20px;">  
+                    <!-- Aquí se mostrarán los resultados de la búsqueda -->  
+                    <div class="alert alert-info">Utiliza los filtros de búsqueda para encontrar jugadores.</div>  
+                </div>  
+                <h2>Contratar Jóvenes de Cantera</h2>  
+                <div id="availableYoungstersList" style="margin-top: 20px;"></div>  
             </div>  
   
             <!-- CANTERA -->  
             <div id="academy" class="page">  
                 <h1>🎓 Academia y Cantera</h1>  
-                <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven</button>  
+                <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven de Mercado</button>  
                 <div id="academyList" style="margin-top: 20px;"></div>  
             </div>  
   
@@ -453,7 +491,6 @@
                 </div>  
             </div>  
   
-  
             <!-- STAFF -->  
             <div id="staff" class="page">  
                 <h1>👔 Personal del Club</h1>  
@@ -499,14 +536,7 @@
         </div>  
     </div>  
   
-    <div id="signPlayerModal" class="modal">  
-        <div class="modal-content">  
-            <span class="modal-close" onclick="closeModal('signPlayer')">&times;</span>  
-            <h1>Fichar Jugador</h1>  
-            <div id="availablePlayersList"></div>  
-        </div>  
-    </div>  
-  
+    <!-- Modal de Contratar Joven (viejo, se usará el nuevo sistema de mercado) -->  
     <div id="signYoungsterModal" class="modal">  
         <div class="modal-content">  
             <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>  
@@ -515,16 +545,79 @@
         </div>  
     </div>  
   
+    <!-- MODAL DE NEGOCIACIÓN -->  
+    <div id="negotiationModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="endNegotiationUI(false)">&times;</span>  
+            <h1>Negociación de Fichajes</h1>  
+  
+            <div class="negotiation-player-info">  
+                <h3><span id="negotiationPlayerName"></span> (<span id="negotiationPlayerClub"></span>)</h3>  
+                <p>Posición: <span id="negotiationPlayerPosition"></span> | Edad: <span id="negotiationPlayerAge"></span> | Media: <span id="negotiationPlayerOverall"></span> | Potencial: <span id="negotiationPlayerPotential"></span></p>  
+                <p>Salario Actual: <span id="negotiationPlayerCurrentSalary"></span>€/sem | Valor de Mercado: <span id="negotiationPlayerValue"></span>€</p>  
+                <p id="negotiationPlayerAskingPrice" style="display: none;"><span style="color: orange; font-weight: bold;">Precio solicitado: <span id="negotiationPlayerAskingPriceValue"></span>€</span></p>  
+                <p id="negotiationPlayerLoanInfo" style="display: none;"><span style="color: lightblue; font-weight: bold;">Cedible (club actual paga <span id="negotiationPlayerLoanContribution"></span>€/sem)</span></p>  
+            </div>  
+  
+            <!-- PASO 1: Oferta al Jugador -->  
+            <div id="negotiationStep1" class="negotiation-step">  
+                <h2>Paso 1: Ofrecer Contrato Personal a <span id="negotiationPlayerNameStep1"></span></h2>  
+                <label for="offeredSalary">Salario Semanal:</label>  
+                <input type="number" id="offeredSalary" value="0" min="0" step="100">€  
+  
+                <div class="negotiation-incentives">  
+                    <div><input type="checkbox" id="offeredBonus"><label for="offeredBonus">Prima por Fichaje</label></div>  
+                    <div><input type="checkbox" id="offeredCar"><label for="offeredCar">Coche</label></div>  
+                    <div><input type="checkbox" id="offeredHouse"><label for="offeredHouse">Casa</label></div>  
+                    <div><input type="checkbox" id="offeredMerchPercent"><label for="offeredMerchPercent">% Merchandising</label></div>  
+                    <div><input type="checkbox" id="offeredTicketPercent"><label for="offeredTicketPercent">% Entradas</label></div>  
+                </div>  
+                <button class="btn" onclick="submitPlayerOffer()">Hacer Oferta al Jugador</button>  
+                <button class="btn" style="background: #c73446;" onclick="endNegotiationUI(false)">Cancelar Negociación</button>  
+            </div>  
+  
+            <!-- PASO 2: Oferta al Club -->  
+            <div id="negotiationStep2" class="negotiation-step" style="display: none;">  
+                <h2>Paso 2: Negociar con el Club <span id="negotiationPlayerClubStep2"></span></h2>  
+                <p id="negotiationClubMessage"></p>  
+  
+                <!-- Si es cesión -->  
+                <div id="negotiationLoanOffer" style="display: none;">  
+                    <label for="loanWageContribution">¿Qué porcentaje de su salario semanal pagarías? (Actual: <span id="loanPlayerSalaryExample"></span>€)</label>  
+                    <input type="range" id="loanWageContribution" min="0" max="100" value="50" oninput="document.getElementById('loanWageContributionValue').textContent=this.value+'%'">  
+                    <span id="loanWageContributionValue">50</span>%  
+                    <p class="alert alert-info">El club de origen paga <span id="loanClubContributionInfo"></span>€ de su salario actual.</p>  
+                    <button class="btn" onclick="submitLoanOffer()">Hacer Oferta de Cesión</button>  
+                </div>  
+  
+                <!-- Si es traspaso -->  
+                <div id="negotiationTransferOffer" style="display: none;">  
+                    <label for="offerAmount">Cantidad de Traspaso:</label>  
+                    <input type="number" id="offerAmount" value="0" min="0" step="1000">€  
+                    <label style="margin-top: 15px;">Jugadores a incluir en el intercambio (opcional):</label>  
+                    <select id="playerExchangeSelect" multiple style="min-height: 100px;">  
+                        <!-- Opciones cargadas dinámicamente -->  
+                    </select>  
+                    <button class="btn" onclick="submitTransferOffer()">Hacer Oferta de Traspaso</button>  
+                </div>  
+                <button class="btn" style="background: #c73446; margin-top: 10px;" onclick="endNegotiationUI(false)">Cancelar Negociación</button>  
+            </div>  
+  
+        </div>  
+    </div>  
+  
+  
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
         import * as ui from './ui.js';  
-        import { TEAMS_DATA, FORMATIONS } from './config.js'; // Importar FORMATIONS también  
-        import { generateAvailablePlayers, generateAvailableYoungsters } from './players.js';  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS } from './config.js'; // Importar POSITIONS  
+        import { generateAvailablePlayers, generateAvailableYoungsters, getPlayerMarket, getYoungsterMarket } from './players.js';  
+  
   
         // --- Funciones globales expuestas para el HTML ---  
-        // Se añade `window.negotiatePlayer` como placeholder para eliminar el error.  
+        // Placeholder para negotiatePlayer (el error que salía)  
         window.negotiatePlayer = function(playerName) {  
-            alert(`Funcionalidad de negociación para ${playerName} no implementada aún.`);  
+            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía. Esto sería para renovaciones, subidas de sueldo, etc.`);  
             console.log(`Intentando negociar con ${playerName}`);  
         };  
   
@@ -537,7 +630,10 @@
             const state = gameLogic.getGameState();  
             if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);  
             if (pageId === 'academy') ui.renderAcademyList(state.academy);  
-            if (pageId === 'transfers') renderAvailablePlayers();  
+            if (pageId === 'transfers') {  
+                searchPlayersMarket(); // Realizar búsqueda inicial al entrar al mercado  
+                renderAvailableYoungsters(); // Renderizar jóvenes al entrar al mercado  
+            }  
             if (pageId === 'match') {  
                 const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
                 const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
@@ -552,7 +648,7 @@
             }  
             if (pageId === 'finance') updateFinanceDisplay(state);  
             if (pageId === 'facilities') updateFacilitiesDisplay(state);  
-            if (pageId === 'commercial') updateCommercialDisplay(state); // Nueva función para la sección comercial  
+            if (pageId === 'commercial') updateCommercialDisplay(state);  
             if (pageId === 'staff') updateStaffDisplay(state);  
             if (pageId === 'tactics') updateTacticsDisplay(state);  
         };  
@@ -563,12 +659,11 @@
             } else if (type === 'selectTeam') {  
                 document.getElementById('selectTeamModal').classList.add('active');  
                 renderTeamSelectors();  
-            } else if (type === 'signPlayer') {  
-                document.getElementById('signPlayerModal').classList.add('active');  
-                renderAvailablePlayers();  
-            } else if (type === 'signYoungster') {  
+            } else if (type === 'signYoungster') { // Modal para jóvenes del mercado  
                 document.getElementById('signYoungsterModal').classList.add('active');  
                 renderAvailableYoungsters();  
+            } else if (type === 'negotiation') { // Nuevo modal de negociación  
+                document.getElementById('negotiationModal').classList.add('active');  
             }  
         };  
   
@@ -609,37 +704,43 @@
             }  
         };  
   
-        function renderAvailablePlayers() {  
-            const players = generateAvailablePlayers();  
-            ui.renderAvailablePlayersMarket(players);  
-        }  
+        // --- Funciones para el mercado ---  
+        window.searchPlayersMarket = function() {  
+            const filters = {  
+                searchName: document.getElementById('marketSearchName').value,  
+                position: document.getElementById('marketPosition').value,  
+                minOverall: parseInt(document.getElementById('marketMinOverall').value) || 0,  
+                maxAge: parseInt(document.getElementById('marketMaxAge').value) || 100,  
+                transferListed: document.getElementById('marketTransferListed').checked,  
+                loanListed: document.getElementById('marketLoanListed').checked  
+            };  
+            const players = gameLogic.getPlayerMarket(filters);  
+            ui.renderPlayerMarketList(players);  
+        };  
+  
+        window.clearPlayerMarketFilters = function() {  
+            document.getElementById('marketSearchName').value = '';  
+            document.getElementById('marketPosition').value = 'ALL';  
+            document.getElementById('marketMinOverall').value = '';  
+            document.getElementById('marketMaxAge').value = '';  
+            document.getElementById('marketTransferListed').checked = false;  
+            document.getElementById('marketLoanListed').checked = false;  
+            searchPlayersMarket();  
+        };  
   
         function renderAvailableYoungsters() {  
-            const youngsters = generateAvailableYoungsters();  
+            const youngsters = getYoungsterMarket(); // Ahora usamos la función de gameLogic  
             ui.renderAvailableYoungstersMarket(youngsters);  
         }  
   
-        window.fichPlayerConfirm = function(encodedPlayerJson) {  
-            const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
-            const result = gameLogic.signPlayer(player);  
-            if (result.success) {  
-                alert(result.message);  
-                ui.refreshUI(gameLogic.getGameState());  
-                window.closeModal('signPlayer');  
-            } else {  
-                alert('Error: ' + result.message);  
-            }  
-        };  
-  
+        // --- Acciones de fichajes y cantera ---  
         window.fichYoungsterConfirm = function(encodedYoungsterJson) {  
             const youngster = JSON.parse(decodeURIComponent(encodedYoungsterJson));  
             const result = gameLogic.signYoungster(youngster);  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
             if (result.success) {  
-                alert(result.message);  
-                ui.refreshUI(gameLogic.getGameState());  
                 window.closeModal('signYoungster');  
-            } else {  
-                alert('Error: ' + result.message);  
             }  
         };  
   
@@ -672,6 +773,163 @@
             }  
         };  
   
+        // --- Funciones de Negociación (UI) ---  
+        let currentNegotiatingPlayer = null; // Guardar el jugador actual en negociación  
+  
+        window.startNegotiationUI = function(encodedPlayerJson) {  
+            const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
+            const result = gameLogic.startNegotiation(player);  
+            if (result.success) {  
+                currentNegotiatingPlayer = gameLogic.getGameState().negotiatingPlayer;  
+                updateNegotiationModal();  
+                openModal('negotiation');  
+            } else {  
+                alert('Error: ' + result.message);  
+            }  
+        };  
+  
+        function updateNegotiationModal() {  
+            const state = gameLogic.getGameState();  
+            const player = state.negotiatingPlayer;  
+  
+            if (!player) {  
+                closeModal('negotiation');  
+                return;  
+            }  
+  
+            // Actualizar información del jugador  
+            document.getElementById('negotiationPlayerName').textContent = player.name;  
+            document.getElementById('negotiationPlayerNameStep1').textContent = player.name;  
+            document.getElementById('negotiationPlayerClub').textContent = player.club;  
+            document.getElementById('negotiationPlayerClubStep2').textContent = player.club;  
+            document.getElementById('negotiationPlayerPosition').textContent = player.position;  
+            document.getElementById('negotiationPlayerAge').textContent = player.age;  
+            document.getElementById('negotiationPlayerOverall').textContent = player.overall;  
+            document.getElementById('negotiationPlayerPotential').textContent = player.potential;  
+            document.getElementById('negotiationPlayerCurrentSalary').textContent = player.salary.toLocaleString('es-ES');  
+            document.getElementById('negotiationPlayerValue').textContent = player.value.toLocaleString('es-ES');  
+  
+            // Mostrar/ocultar precio pedido o info de cesión  
+            const askingPriceElem = document.getElementById('negotiationPlayerAskingPrice');  
+            const loanInfoElem = document.getElementById('negotiationPlayerLoanInfo');  
+            if (player.transferListed) {  
+                askingPriceElem.style.display = 'block';  
+                document.getElementById('negotiationPlayerAskingPriceValue').textContent = player.askingPrice.toLocaleString('es-ES');  
+                loanInfoElem.style.display = 'none';  
+            } else if (player.loanListed) {  
+                askingPriceElem.style.display = 'none';  
+                loanInfoElem.style.display = 'block';  
+                document.getElementById('negotiationPlayerLoanContribution').textContent = player.loanWageContribution.toLocaleString('es-ES');  
+            } else {  
+                askingPriceElem.style.display = 'none';  
+                loanInfoElem.style.display = 'none';  
+            }  
+  
+  
+            // Mostrar el paso de negociación correcto  
+            document.getElementById('negotiationStep1').style.display = 'none';  
+            document.getElementById('negotiationStep2').style.display = 'none';  
+  
+            if (state.negotiationStep === 1) {  
+                document.getElementById('negotiationStep1').style.display = 'block';  
+                document.getElementById('offeredSalary').value = player.salary; // Salario base sugerido  
+            } else if (state.negotiationStep === 2) {  
+                document.getElementById('negotiationStep2').style.display = 'block';  
+  
+                const negotiationLoanOffer = document.getElementById('negotiationLoanOffer');  
+                const negotiationTransferOffer = document.getElementById('negotiationTransferOffer');  
+  
+                negotiationLoanOffer.style.display = 'none';  
+                negotiationTransferOffer.style.display = 'none';  
+  
+                document.getElementById('negotiationClubMessage').textContent = `Estás a punto de hacer una oferta a ${player.club} por ${player.name}.`;  
+  
+                if (player.loanListed) {  
+                    negotiationLoanOffer.style.display = 'block';  
+                    document.getElementById('loanPlayerSalaryExample').textContent = player.salary.toLocaleString('es-ES');  
+                    document.getElementById('loanClubContributionInfo').textContent = player.loanWageContribution.toLocaleString('es-ES');  
+                    document.getElementById('loanWageContribution').value = 50; // Sugerir 50%  
+                    document.getElementById('loanWageContributionValue').textContent = '50%';  
+                } else if (player.transferListed) {  
+                    negotiationTransferOffer.style.display = 'block';  
+                    document.getElementById('offerAmount').value = player.askingPrice; // Sugerir precio pedido  
+                    populatePlayerExchangeSelect(); // Llenar el selector de intercambio  
+                }  
+            }  
+        }  
+  
+        window.submitPlayerOffer = function() {  
+            const offeredSalary = parseInt(document.getElementById('offeredSalary').value);  
+            const offeredBonus = document.getElementById('offeredBonus').checked;  
+            const offeredCar = document.getElementById('offeredCar').checked;  
+            const offeredHouse = document.getElementById('offeredHouse').checked;  
+            const offeredMerchPercent = document.getElementById('offeredMerchPercent').checked;  
+            const offeredTicketPercent = document.getElementById('offeredTicketPercent').checked;  
+  
+            const result = gameLogic.offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent);  
+            alert(result.message);  
+            if (result.success) {  
+                updateNegotiationModal(); // Actualizar a paso 2  
+            } else {  
+                // Si rechaza pero pide más, se mantiene en paso 1  
+                // Si rechaza del todo, se cierra el modal  
+                if (result.message.includes('rechazado tu oferta. No está interesado')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        function populatePlayerExchangeSelect() {  
+            const select = document.getElementById('playerExchangeSelect');  
+            select.innerHTML = ''; // Limpiar opciones anteriores  
+            const state = gameLogic.getGameState();  
+            state.squad.forEach(p => {  
+                const option = document.createElement('option');  
+                option.value = p.name;  
+                option.textContent = `${p.name} (${p.overall}) - ${p.value.toLocaleString('es-ES')}€`;  
+                select.appendChild(option);  
+            });  
+        }  
+  
+        window.submitLoanOffer = function() {  
+            const loanWageContribution = parseInt(document.getElementById('loanWageContribution').value);  
+            const result = gameLogic.offerToClub(loanWageContribution, [], true); // true para cesión  
+            alert(result.message);  
+            if (result.success) {  
+                endNegotiationUI(true); // Cierra y actualiza UI  
+            } else {  
+                // Se mantiene en el paso 2 para re-negociar con el club  
+                // Si el mensaje indica rechazo total, se cierra.  
+                if (result.message.includes('rechazado tu oferta de cesión')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        window.submitTransferOffer = function() {  
+            const offerAmount = parseInt(document.getElementById('offerAmount').value);  
+            const playerExchangeSelect = document.getElementById('playerExchangeSelect');  
+            const selectedPlayers = Array.from(playerExchangeSelect.selectedOptions).map(option => option.value);  
+  
+            const result = gameLogic.offerToClub(offerAmount, selectedPlayers, false); // false para traspaso  
+            alert(result.message);  
+            if (result.success) {  
+                endNegotiationUI(true); // Cierra y actualiza UI  
+            } else {  
+                // Se mantiene en el paso 2 para re-negociar con el club  
+                if (result.message.includes('rechazado tu oferta')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        window.endNegotiationUI = function(success) {  
+            gameLogic.endNegotiation(success);  
+            closeModal('negotiation');  
+            ui.refreshUI(gameLogic.getGameState()); // Refrescar UI principal  
+        };  
+  
+        // --- Funciones de Gestión ---  
         window.updateFormation = function() {  
             const state = gameLogic.getGameState();  
             const newFormation = document.getElementById('formationSelect').value;  
@@ -737,7 +995,6 @@
             });  
         }  
   
-        // --- Nuevas funciones para la sección comercial ---  
         window.setTicketPriceFromInput = function() {  
             const input = document.getElementById('ticketPriceInput');  
             const newPrice = input.value;  
@@ -745,11 +1002,11 @@
             if (result.success) {  
                 alert(result.message);  
                 ui.refreshUI(gameLogic.getGameState());  
-                updateFinanceDisplay(gameLogic.getGameState()); // Actualizar finanzas  
-                updateCommercialDisplay(gameLogic.getGameState()); // Actualizar comercial  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                updateCommercialDisplay(gameLogic.getGameState());  
             } else {  
                 alert('Error: ' + result.message);  
-                input.value = gameLogic.getGameState().ticketPrice; // Revertir valor  
+                input.value = gameLogic.getGameState().ticketPrice;  
             }  
         };  
   
@@ -760,11 +1017,11 @@
             if (result.success) {  
                 alert(result.message);  
                 ui.refreshUI(gameLogic.getGameState());  
-                updateFinanceDisplay(gameLogic.getGameState()); // Actualizar finanzas  
-                updateCommercialDisplay(gameLogic.getGameState()); // Actualizar comercial  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                updateCommercialDisplay(gameLogic.getGameState());  
             } else {  
                 alert('Error: ' + result.message);  
-                input.value = gameLogic.getGameState().merchandisingPrice; // Revertir valor  
+                input.value = gameLogic.getGameState().merchandisingPrice;  
             }  
         };  
   
@@ -777,7 +1034,6 @@
             if (result.success) {  
                 ui.refreshUI(gameLogic.getGameState());  
                 updateFinanceDisplay(gameLogic.getGameState());  
-                // No alert, ya que el slider es interactivo  
             } else {  
                 alert('Error: ' + result.message);  
                 document.getElementById('ticketPriceSlider').value = gameLogic.getGameState().ticketPrice;  
@@ -794,7 +1050,6 @@
             if (result.success) {  
                 ui.refreshUI(gameLogic.getGameState());  
                 updateFinanceDisplay(gameLogic.getGameState());  
-                // No alert, ya que el slider es interactivo  
             } else {  
                 alert('Error: ' + result.message);  
                 document.getElementById('merchandisingPriceSlider').value = gameLogic.getGameState().merchandisingPrice;  
@@ -809,16 +1064,20 @@
             document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
             document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');  
   
-            // Calcular asistencia esperada para mostrar en finanzas  
             let expectedAttendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));  
             expectedAttendance = Math.max(0, Math.min(state.stadiumCapacity, expectedAttendance));  
             document.getElementById('financeExpectedAttendance').textContent = expectedAttendance.toLocaleString('es-ES');  
   
-            document.getElementById('ticketPriceInput').value = state.ticketPrice;  
+            const ticketPriceInput = document.getElementById('ticketPriceInput');  
+            if (ticketPriceInput) ticketPriceInput.value = state.ticketPrice;  
+  
             document.getElementById('financePopularity').textContent = state.popularity + '%';  
             document.getElementById('financeFanbase').textContent = state.fanbase.toLocaleString('es-ES');  
             document.getElementById('financeMerchandisingItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
-            document.getElementById('merchandisingPriceInput').value = state.merchandisingPrice;  
+  
+            const merchandisingPriceInput = document.getElementById('merchandisingPriceInput');  
+            if (merchandisingPriceInput) merchandisingPriceInput.value = state.merchandisingPrice;  
+  
             document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
         }  
   
@@ -828,7 +1087,6 @@
             document.getElementById('commercialItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
             document.getElementById('commercialMerchRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
   
-            // Actualizar sliders y sus valores  
             const ticketPriceSlider = document.getElementById('ticketPriceSlider');  
             const merchandisingPriceSlider = document.getElementById('merchandisingPriceSlider');  
   
@@ -873,6 +1131,15 @@
   
         // --- Inicialización del juego ---  
         document.addEventListener('DOMContentLoaded', () => {  
+            // Inicializar los filtros de posición con las del config  
+            const marketPositionSelect = document.getElementById('marketPosition');  
+            POSITIONS.forEach(pos => {  
+                const option = document.createElement('option');  
+                option.value = pos;  
+                option.textContent = pos;  
+                marketPositionSelect.appendChild(option);  
+            });  
+  
             const savedStateResult = gameLogic.loadFromLocalStorage();  
             if (savedStateResult.success) {  
                 ui.refreshUI(gameLogic.getGameState());  
