@@ -218,9 +218,14 @@ export {
  * @param {Object} state - gameState
  * @param {Object} standings - Clasificación
  */
+/**
+ * Actualiza dashboard, clasificación, plantilla y cantera
+ */
 function refreshUI(state, standings) {
     updateDashboardStats(state, standings);
     renderStandingsTable(standings, state.team);
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
 }
+refreshUI(getGameState(), getGameState().standings);
+
