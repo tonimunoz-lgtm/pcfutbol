@@ -1,5 +1,7 @@
 // ui.js - Renderizado y UI  
   
+import { ATTRIBUTES, POSITIONS } from './config.js'; // Importar ATTRIBUTES y POSITIONS  
+  
 function renderStandingsTable(standings, currentTeam) {  
     const tbody = document.getElementById('standingsTable');  
     if (!tbody) return;  
@@ -28,6 +30,7 @@ function renderStandingsTable(standings, currentTeam) {
     `).join('');  
 }  
   
+// renderSquadList ahora muestra los atributos detallados y la moral/forma  
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
     if (!list) return;  
@@ -37,28 +40,54 @@ function renderSquadList(squad, currentTeam) {
         return;  
     }  
   
+    // Encabezado de la tabla de plantilla  
+    let headerHtml = `  
+        <div style="overflow-x: auto;">  
+            <table style="font-size: 0.8em; min-width: 900px;">  
+                <thead>  
+                    <tr>  
+                        <th>Nº</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                        <th>FORMA</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>ACCIONES</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+    `;  
+  
     const sorted = squad.sort((a, b) => b.overall - a.overall);  
-    list.innerHTML = sorted.map((p, idx) => `  
-        <div class="player-card">  
-            <div style="flex: 1;">  
-                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">${idx + 1}. ${p.name}</div>  
-                <div style="font-size: 0.85em; color: #999;">  
-                    <span>${p.position || 'N/A'}</span> |  
-                    <span>${p.age} años</span> |  
-                    <span>Nivel ${p.overall}/100</span> |  
-                    <span>${p.salary.toLocaleString('es-ES')}€/sem</span> |  
-                    <span>${p.matches || 0} partidos</span>  
-                </div>  
-            </div>  
-            <div style="display: flex; gap: 5px;">  
-                <!-- Botón de negociar eliminado si no hay funcionalidad, o se deja como placeholder -->  
-                <!-- <button class="btn btn-sm" onclick="window.negotiatePlayer('${p.name}')">Negociar</button> -->  
+    let playersHtml = sorted.map((p, idx) => `  
+        <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+            <td>${idx + 1}</td>  
+            <td>${p.name}</td>  
+            <td><strong>${p.overall}</strong></td>  
+            <td>${p.potential}</td>  
+            <td>${p.age}</td>  
+            <td>${p.position || 'N/A'}</td>  
+            <td>${p.foot || 'N/A'}</td>  
+            ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
+            <td>${p.form || 0}</td>  
+            <td>${p.salary.toLocaleString('es-ES')}€</td>  
+            <td>${p.value.toLocaleString('es-ES')}€</td>  
+            <td>  
+                <button class="btn btn-sm" onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>  
                 <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
-            </div>  
-        </div>  
+            </td>  
+        </tr>  
     `).join('');  
+  
+    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
 }  
   
+// renderAcademyList ahora muestra los atributos detallados  
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
     if (!list) return;  
@@ -68,26 +97,54 @@ function renderAcademyList(academy) {
         return;  
     }  
   
-    list.innerHTML = academy.map((p, idx) => `  
-        <div class="player-card">  
-            <div style="flex: 1;">  
-                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">${idx + 1}. ${p.name}</div>  
-                <div style="font-size: 0.85em; color: #999;">  
-                    Edad ${p.age} |  
-                    Nivel ${p.overall}/100 |  
-                    Potencial ${p.potential}/100 |  
-                    ${p.matches || 0} partidos |  
-                    Progreso: ${Math.floor(((p.matches || 0) / 20) * 100)}% <!-- 20 partidos para 100% de progreso -->  
-                </div>  
-            </div>  
-            <div style="display: flex; gap: 5px;">  
+    let headerHtml = `  
+        <div style="overflow-x: auto;">  
+            <table style="font-size: 0.8em; min-width: 900px;">  
+                <thead>  
+                    <tr>  
+                        <th>Nº</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                        <th>FORMA</th>  
+                        <th>PART.</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>ACCIONES</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+    `;  
+  
+    const sorted = academy.sort((a, b) => b.overall - a.overall);  
+    let youngstersHtml = sorted.map((p, idx) => `  
+        <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+            <td>${idx + 1}</td>  
+            <td>${p.name}</td>  
+            <td><strong>${p.overall}</strong></td>  
+            <td>${p.potential}</td>  
+            <td>${p.age}</td>  
+            <td>${p.position || 'N/A'}</td>  
+            <td>${p.foot || 'N/A'}</td>  
+            ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
+            <td>${p.form || 0}</td>  
+            <td>${p.matches || 0}</td>  
+            <td>${p.salary.toLocaleString('es-ES')}€</td>  
+            <td>${p.value.toLocaleString('es-ES')}€</td>  
+            <td>  
                 <button class="btn btn-sm" onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
-            </div>  
-        </div>  
+            </td>  
+        </tr>  
     `).join('');  
+  
+    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
 }  
   
-// Nueva función para renderizar el mercado de jugadores (con botón de negociar)  
+  
 function renderPlayerMarketList(players) {  
     const list = document.getElementById('availablePlayersSearchResult');  
     if (!list) return;  
@@ -96,26 +153,60 @@ function renderPlayerMarketList(players) {
         return;  
     }  
   
-    list.innerHTML = players.map(p => `  
-        <div class="player-card">  
-            <div style="flex: 1;">  
-                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">${p.name}</div>  
-                <div style="font-size: 0.85em; color: #999;">  
-                    ${p.position} | ${p.age} años | Nivel ${p.overall}/100 | Potencial ${p.potential}/100<br>  
-                    Club: ${p.club} | Salario: ${p.salary.toLocaleString('es-ES')}€/sem | Valor: ${p.value.toLocaleString('es-ES')}€<br>  
-                    ${p.transferListed ? `<span style="color: orange;">En Venta: ${p.askingPrice.toLocaleString('es-ES')}€</span>` : ''}  
-                    ${p.loanListed ? `<span style="color: lightblue;">Cedible (paga ${p.loanWageContribution.toLocaleString('es-ES')}€ de salario)</span>` : ''}  
-                    ${!p.transferListed && !p.loanListed ? 'No Transferible' : ''}  
-                </div>  
-            </div>  
-            <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
-                Negociar  
-            </button>  
-        </div>  
-    `).join('');  
+    // Renderizar la lista de jugadores de mercado con su overall calculado y atributos  
+    let headerHtml = `  
+        <div style="overflow-x: auto;">  
+            <table style="font-size: 0.8em; min-width: 1100px;">  
+                <thead>  
+                    <tr>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                        <th>CLUB</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>PRECIO P.</th>  
+                        <th>ESTADO</th>  
+                        <th>ACCIONES</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+    `;  
+  
+    let playersHtml = players.map((p, idx) => {  
+        const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
+        const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
+        return `  
+            <tr>  
+                <td>${p.name}</td>  
+                <td><strong>${p.overall}</strong></td>  
+                <td>${p.potential}</td>  
+                <td>${p.age}</td>  
+                <td>${p.position || 'N/A'}</td>  
+                <td>${p.foot || 'N/A'}</td>  
+                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
+                <td>${p.club}</td>  
+                <td>${p.salary.toLocaleString('es-ES')}€</td>  
+                <td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td>${askingPrice}</td>  
+                <td>${estado}</td>  
+                <td>  
+                    <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
+                        Negociar  
+                    </button>  
+                </td>  
+            </tr>  
+        `;  
+    }).join('');  
+  
+    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
 }  
   
-// Renderiza jóvenes del mercado  
+  
 function renderAvailableYoungstersMarket(youngsters) {  
     const list = document.getElementById('availableYoungstersList');  
     if (!list) return;  
@@ -124,20 +215,44 @@ function renderAvailableYoungstersMarket(youngsters) {
         return;  
     }  
   
-    list.innerHTML = youngsters.map(y => `  
-        <div class="player-card">  
-            <div style="flex: 1;">  
-                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">${y.name}</div>  
-                <div style="font-size: 0.85em; color: #999;">  
-                    Edad ${y.age} |  
-                    Nivel actual ${y.overall}/100 |  
-                    Potencial ${y.potential}/100 |  
-                    Coste: ${y.cost.toLocaleString('es-ES')}€  
-                </div>  
-            </div>  
-            <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
-        </div>  
+    let headerHtml = `  
+        <div style="overflow-x: auto;">  
+            <table style="font-size: 0.8em; min-width: 900px;">  
+                <thead>  
+                    <tr>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                        <th>CLUB</th>  
+                        <th>COSTE</th>  
+                        <th>ACCIONES</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+    `;  
+  
+    let youngstersHtml = youngsters.map(y => `  
+        <tr>  
+            <td>${y.name}</td>  
+            <td><strong>${y.overall}</strong></td>  
+            <td>${y.potential}</td>  
+            <td>${y.age}</td>  
+            <td>${y.position || 'N/A'}</td>  
+            <td>${y.foot || 'N/A'}</td>  
+            ${ATTRIBUTES.map(attr => `<td>${y[attr] || 0}</td>`).join('')}  
+            <td>${y.club}</td>  
+            <td>${y.cost.toLocaleString('es-ES')}€</td>  
+            <td>  
+                <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
+            </td>  
+        </tr>  
     `).join('');  
+  
+    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
 }  
   
   
@@ -206,6 +321,14 @@ function refreshUI(state) {
     renderSquadList(state.squad, state.team);  
     renderAcademyList(state.academy);  
   
+    // Si hay una negociación activa, actualizar el modal  
+    if (state.negotiationStep > 0) {  
+        window.updateNegotiationModal();  
+    } else {  
+        window.closeModal('negotiation'); // Asegurarse de que el modal de negociación esté cerrado  
+    }  
+  
+  
     const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
     const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
     renderNextMatchCard(state.team, nextRival, state.week);  
@@ -216,7 +339,6 @@ export {
     renderStandingsTable,  
     renderSquadList,  
     renderAcademyList,  
-    // Eliminamos renderAvailablePlayersMarket de aquí, ahora se usa renderPlayerMarketList  
     renderPlayerMarketList,  
     renderAvailableYoungstersMarket,  
     renderNextMatchCard,  
