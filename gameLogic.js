@@ -73,9 +73,10 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.squad = generateInitialSquad(divisionType);
     gameState.academy = generateInitialAcademy();
     gameState.matchHistory = [];
-    
-    calculateWeeklyExpenses();
-    
+
+    // Nuevo cálculo de gastos semanales
+    const salaryTotal = gameState.squad.reduce((sum, p) => sum + p.salary, 0);
+    gameState.weeklyExpenses = salaryTotal + 3000; // Salarios + staff fijo
     return gameState;
 }
 
@@ -231,11 +232,10 @@ function sellPlayer(name) {
     const player = gameState.squad.find(p => p.name === name);
     if (!player) return { success: false, message: 'Jugador no encontrado' };
 
-    const salePrice = Math.round(player.overall * 1000 + (player.matches * 200));
+    const salePrice = Math.floor(player.overall * 2000 + player.matches * 500); // mucho más realista
     gameState.balance += salePrice;
     gameState.squad = gameState.squad.filter(p => p.name !== name);
-
-    calculateWeeklyExpenses();
+    gameState.weeklyExpenses -= player.salary;
 
     return { success: true, message: `${name} vendido por ${salePrice}€`, salePrice };
 }
@@ -307,49 +307,44 @@ function playMatch() {
 // SIMULAR PARTIDOS DE OTROS EQUIPOS
 function simulateFullWeek() {
     const teams = Object.keys(gameState.standings);
-    const matchesPlayed = new Set();
+    const played = new Set();
 
+    // Todos los equipos se emparejan aleatoriamente y juegan
     for (let i = 0; i < teams.length; i++) {
         for (let j = i + 1; j < teams.length; j++) {
-            const teamA = teams[i];
-            const teamB = teams[j];
-            const matchKey = `${teamA}-${teamB}`;
+            if (!played.has(teams[i]) && !played.has(teams[j])) {
+                const goals1 = Math.floor(Math.random() * 5);
+                const goals2 = Math.floor(Math.random() * 5);
 
-            if (!matchesPlayed.has(matchKey)) {
-                const levelA = teamA === gameState.team ? gameState.squad.reduce((sum, p) => sum + p.overall, 0)/gameState.squad.length : 70;
-                const levelB = teamB === gameState.team ? gameState.squad.reduce((sum, p) => sum + p.overall, 0)/gameState.squad.length : 70;
+                // Actualizar estadísticas de cada equipo
+                gameState.standings[teams[i]].pj++;
+                gameState.standings[teams[j]].pj++;
+                gameState.standings[teams[i]].gf += goals1;
+                gameState.standings[teams[i]].gc += goals2;
+                gameState.standings[teams[j]].gf += goals2;
+                gameState.standings[teams[j]].gc += goals1;
 
-                const goalsA = Math.floor(Math.random() * 4 + levelA / 85);
-                const goalsB = Math.floor(Math.random() * 4 + levelB / 85);
-
-                gameState.standings[teamA].pj++;
-                gameState.standings[teamB].pj++;
-                gameState.standings[teamA].gf += goalsA;
-                gameState.standings[teamA].gc += goalsB;
-                gameState.standings[teamB].gf += goalsB;
-                gameState.standings[teamB].gc += goalsA;
-
-                if (goalsA > goalsB) {
-                    gameState.standings[teamA].pts += 3;
-                    gameState.standings[teamA].g++;
-                    gameState.standings[teamB].p++;
-                } else if (goalsA < goalsB) {
-                    gameState.standings[teamB].pts += 3;
-                    gameState.standings[teamB].g++;
-                    gameState.standings[teamA].p++;
+                if (goals1 > goals2) {
+                    gameState.standings[teams[i]].pts += 3;
+                    gameState.standings[teams[i]].g++;
+                    gameState.standings[teams[j]].p++;
+                } else if (goals1 < goals2) {
+                    gameState.standings[teams[j]].pts += 3;
+                    gameState.standings[teams[j]].g++;
+                    gameState.standings[teams[i]].p++;
                 } else {
-                    gameState.standings[teamA].pts += 1;
-                    gameState.standings[teamB].pts += 1;
-                    gameState.standings[teamA].e++;
-                    gameState.standings[teamB].e++;
+                    gameState.standings[teams[i]].pts += 1;
+                    gameState.standings[teams[i]].e++;
+                    gameState.standings[teams[j]].pts += 1;
+                    gameState.standings[teams[j]].e++;
                 }
 
-                matchesPlayed.add(matchKey);
+                played.add(teams[i]);
+                played.add(teams[j]);
             }
         }
     }
 }
-
 // ------------------------------------------------------------
 // EXPANDIR ESTADIO
 function expandStadium() {
