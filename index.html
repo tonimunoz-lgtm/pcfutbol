@@ -455,15 +455,15 @@
             getGameState, 
             updateGameState, 
             initStandings, 
-            selectTeam, 
+            selectTeamWithInitialSquad as selectTeam, 
             signPlayer, 
             signYoungster, 
             playMatch,
             expandStadium,
             improveFacilities,
             hireStaff,
-            saveToFirebase,
-            loadFromFirebase
+            saveToLocalStorage as saveToFirebase,
+            loadFromLocalStorage as loadFromFirebase
         } from './gameLogic.js';
         import { TEAMS_DATA } from './config.js';
         
