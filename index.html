@@ -834,7 +834,7 @@
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
         import * as ui from './ui.js';  
-        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js'; // Importar SEASON_WEEKS  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js';  
         import { getPlayerMarket, getYoungsterMarket } from './players.js';  
   
   
@@ -849,7 +849,6 @@
   
         window.allowDrop = function(ev) {  
             ev.preventDefault();  
-            // Resaltar el slot de destino  
             ev.currentTarget.classList.add('highlight');  
         };  
   
@@ -867,49 +866,45 @@
             }  
             draggedPlayer = player;  
             ev.dataTransfer.setData("text/plain", playerJson);  
-            ev.dataTransfer.effectAllowed = "move"; // Indicar que es un movimiento  
-            // console.log("Arrastrando:", draggedPlayer.name);  
+            ev.dataTransfer.effectAllowed = "move";  
         };  
   
         window.drop = function(ev, targetSlotId) {  
             ev.preventDefault();  
-            ev.currentTarget.classList.remove('highlight'); // Quitar resaltado  
+            ev.currentTarget.classList.remove('highlight');  
   
             const state = gameLogic.getGameState();  
-            let currentLineup = gameLogic.getLineup(); // Obtener la alineación actual  
-              
+            let currentLineup = gameLogic.getLineup();  
             const droppedPlayer = draggedPlayer;  
-            if (!droppedPlayer || droppedPlayer.isInjured) return; // No permitir soltar lesionados  
+            if (!droppedPlayer || droppedPlayer.isInjured) return;  
   
-            let newProposedLineup = [...currentLineup]; // Copia de la alineación para modificar  
+            // Crear una copia de la alineación para manipularla  
+            let newProposedLineup = [...currentLineup];   
+  
+            // Identificar si el jugador arrastrado ya estaba en el campo  
+            const indexOfDroppedPlayerInLineup = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
   
             if (targetSlotId.startsWith('pitch-slot-')) { // Soltar en un slot de alineación  
                 const targetIndex = parseInt(targetSlotId.replace('pitch-slot-', ''));  
-                const playerAlreadyInTargetSlot = newProposedLineup[targetIndex];  
-                  
-                // Buscar si el jugador arrastrado ya está en la alineación  
-                const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
-                  
-                if (sourceIndex !== -1) { // El jugador arrastrado ya estaba en un slot del campo  
-                    // Intercambiar posiciones  
-                    newProposedLineup[sourceIndex] = playerAlreadyInTargetSlot;  
+                const playerCurrentlyInTargetSlot = newProposedLineup[targetIndex];  
+  
+                if (indexOfDroppedPlayerInLineup !== -1) { // El jugador arrastrado ya estaba en el campo  
+                    // Intercambiar jugadores  
+                    newProposedLineup[indexOfDroppedPlayerInLineup] = playerCurrentlyInTargetSlot;  
                     newProposedLineup[targetIndex] = droppedPlayer;  
-                } else { // El jugador arrastrado viene de las reservas o de la lista de suplentes  
+                } else { // El jugador arrastrado viene de las reservas o de fuera de la alineación  
                     newProposedLineup[targetIndex] = droppedPlayer;  
                 }  
             } else if (targetSlotId === 'reservesList') { // Soltar en el área de reservas  
-                // Si el jugador arrastrado venía de un slot del campo, vaciar ese slot  
-                const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
-                if (sourceIndex !== -1) {  
-                    newProposedLineup[sourceIndex] = null; // Vaciar el slot en el campo  
+                if (indexOfDroppedPlayerInLineup !== -1) { // El jugador arrastrado venía del campo  
+                    newProposedLineup[indexOfDroppedPlayerInLineup] = null; // Vaciar el slot  
                 }  
             }  
               
-            // Filtrar los nulls y guardar la alineación. `saveLineup` se encarga de rellenar si hay menos de 11.  
-            const validLineupPlayers = newProposedLineup.filter(Boolean);  
-            gameLogic.setLineup(validLineupPlayers);  
-            renderLineupPageUI(); // Volver a renderizar la UI  
-            draggedPlayer = null; // Resetear  
+            // Reestablecer la alineación, setLineup se encargará de rellenar si es necesario  
+            gameLogic.setLineup(newProposedLineup.filter(Boolean));   
+            renderLineupPageUI();  
+            draggedPlayer = null;  
         };  
   
         window.switchPage = function(pageId, element) {  
@@ -941,7 +936,10 @@
             if (pageId === 'staff') updateStaffDisplay(state);  
             if (pageId === 'tactics') updateTacticsDisplay(state);  
             if (pageId === 'lineup') renderLineupPageUI();  
-            if (pageId === 'dashboard') gameLogic.markNewsAsRead();  
+            if (pageId === 'dashboard') {  
+                gameLogic.markNewsAsRead(); // Marcar noticias como leídas  
+                ui.refreshUI(gameLogic.getGameState()); // Refrescar UI para actualizar el botón simular  
+            }  
         };  
   
         window.openModal = function(type) {  
@@ -977,8 +975,9 @@
                 const listElement = document.getElementById(listId);  
                 if (!listElement) return;  
   
-                // Para RFEF, combinamos los dos grupos para la selección inicial, pero se guarda el grupo real  
                 let teamsToRender = [];  
+                // La clave divisionKey puede ser 'rfef' o 'primera' o 'segunda'.  
+                // En config.js, RFEF está dividido en rfef_grupo1 y rfef_grupo2.  
                 if (divisionKey === 'rfef') {  
                     teamsToRender = [...TEAMS_DATA.rfef_grupo1, ...TEAMS_DATA.rfef_grupo2];  
                 } else {  
@@ -994,11 +993,11 @@
   
             createTeamButtons('primera', 'primeraList');  
             createTeamButtons('segunda', 'segundaList');  
-            createTeamButtons('rfef', 'rfefList'); // Usamos 'rfef' como clave genérica para la UI  
+            createTeamButtons('rfef', 'rfefList'); // Usamos 'rfef' para la UI del modal  
         }  
   
         window.selectTeamAndStart = function(teamName, division) {  
-            // Ajustar la divisionKey para gameLogic si es RFEF para que sepa el grupo exacto  
+            // Necesitamos pasar la clave exacta de la división a gameLogic (ej. 'rfef_grupo1')  
             let actualDivisionKey = division;  
             if (division === 'rfef') {  
                 if (TEAMS_DATA.rfef_grupo1.includes(teamName)) {  
@@ -1006,7 +1005,6 @@
                 } else if (TEAMS_DATA.rfef_grupo2.includes(teamName)) {  
                     actualDivisionKey = 'rfef_grupo2';  
                 }  
-                // Si no está en ninguno (ej. equipo generado), gameLogic ya lo maneja  
             }  
             gameLogic.selectTeamWithInitialSquad(teamName, actualDivisionKey, window.gameMode);  
             ui.refreshUI(gameLogic.getGameState());  
@@ -1079,9 +1077,7 @@
                 return;  
             }  
   
-            // Validar alineación solo si es temporada regular. En pretemporada no se valida (amistosos)  
-            // y gameLogic.simulateFullWeek ya maneja la invalidación si es temporada regular  
-              
+            // gameLogic.simulateFullWeek() ya maneja la validación de la alineación y la penalización si es temporada regular  
             gameLogic.simulateFullWeek();  
             ui.refreshUI(gameLogic.getGameState());  
   
@@ -1333,7 +1329,7 @@
         };  
   
         window.hireStaffConfirm = function(encodedCandidateJson) {  
-            const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));  
+            const candidate = JSON.PARSE(decodeURIComponent(encodedCandidateJson));  
             const state = gameLogic.getGameState();  
             const existingStaff = state.staff[candidate.role];  
             let confirmationMessage = `¿Estás seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}€/semana y una cláusula de ${candidate.clausula.toLocaleString('es-ES')}€?`;  
