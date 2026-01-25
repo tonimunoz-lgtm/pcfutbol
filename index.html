@@ -1097,11 +1097,11 @@
   
         window.simulateWeek = function() {  
             const state = gameLogic.getGameState();  
-            if (state.unreadNewsCount > 0) {  
+            /*if (state.unreadNewsCount > 0) {  
                 alert('¡Atención! Tienes mensajes importantes sin leer en el Dashboard. No puedes simular la jornada hasta que los hayas revisado.');  
                 switchPage('dashboard', document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]'));  
                 return;  
-            }  
+            }  */
   
             // gameLogic.simulateFullWeek() ya maneja la validación de la alineación y la penalización si es temporada regular  
             gameLogic.simulateFullWeek();  
