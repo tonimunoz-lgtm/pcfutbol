@@ -386,33 +386,3 @@ export {
     refreshUI  
 };  
 
-function renderNews() {
-    const newsContainer = document.getElementById('newsFeed');
-    newsContainer.innerHTML = '';
-
-    if(gameState.newsFeed.length === 0){
-        newsContainer.innerHTML = '<div class="alert alert-info">No hay noticias recientes.</div>';
-        return;
-    }
-
-    gameState.newsFeed.forEach((news, index) => {
-        const newsDiv = document.createElement('div');
-        newsDiv.classList.add('alert', `alert-${news.type}`);
-        if(news.read) newsDiv.classList.add('read'); // estilo para leídas
-        newsDiv.textContent = news.message;
-
-        // Al hacer clic se marca como leída
-        newsDiv.onclick = () => markNewsAsRead(index);
-
-        newsContainer.appendChild(newsDiv);
-    });
-}
-
-function markNewsAsRead(index) {
-    const newsItem = gameState.newsFeed[index];
-    if(newsItem && !newsItem.read){
-        newsItem.read = true;
-        gameState.unreadNewsCount--;
-        renderNews(); // actualizar estilos y contador
-    }
-}
