@@ -136,4 +136,79 @@ function renderAvailableYoungstersMarket(youngsters) {
 function renderNextMatchCard(homeTeam, awayTeam, week) {
     const matchInfo = document.getElementById('matchInfo');
     matchInfo.innerHTML = `
-        <div style="text-align: center; background: rgba(233, 69, 96, 0.1
+        <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">
+            <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${homeTeam}</div>
+            <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>
+            <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${awayTeam}</div>
+            <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${week}</div>
+        </div>
+    `;
+}
+
+/**
+ * Actualiza dashboard con estadísticas
+ */
+function updateDashboardStats(state, standings) {
+    const teamStats = standings[state.team];
+    const sorted = Object.entries(standings).sort((a, b) => b[1].pts - a[1].pts);
+    const position = sorted.findIndex(([name]) => name === state.team) + 1;
+    
+    document.getElementById('dashPos').textContent = position;
+    document.getElementById('dashPts').textContent = teamStats?.pts || 0;
+    document.getElementById('dashPJ').textContent = teamStats?.pj || 0;
+    document.getElementById('dashGoals').textContent = teamStats?.gf || 0;
+    document.getElementById('dashSquad').textContent = state.squad?.length || 0;
+    document.getElementById('dashAcademy').textContent = state.academy?.length || 0;
+    document.getElementById('dashBalance').textContent = state.balance + '€';
+    document.getElementById('dashIncome').textContent = state.weeklyIncome + '€';
+    document.getElementById('dashExpenses').textContent = state.weeklyExpenses + '€';
+    
+    const weekly = state.weeklyIncome - state.weeklyExpenses;
+    document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly + '€';
+    
+    // Alerta si está en números rojos
+    const warningAlert = document.getElementById('warningAlert');
+    if (weekly < 0) {
+        warningAlert.innerHTML = `
+            <div class="alert alert-warning" style="border-color: #ff3333; background: rgba(255, 51, 51, 0.1); color: #ff3333;">
+                ⚠️ ATENCIÓN: Tu club está en números rojos (${weekly}€/semana). Si continúa así, ¡podrías ser destituido!
+            </div>
+        `;
+        warningAlert.style.display = 'block';
+    } else {
+        warningAlert.style.display = 'none';
+    }
+}
+
+// ------------------- NUEVA FUNCIÓN -------------------
+// Simula la jornada completa y actualiza UI
+function playFullWeekAndUpdateUI(gameLogic) {
+    // Simula todos los partidos
+    gameLogic.simulateFullWeek();
+
+    // Obtener estado actualizado
+    const state = gameLogic.getGameState();
+    const standings = state.standings;
+
+    // Actualizar dashboard
+    updateDashboardStats(state, standings);
+
+    // Actualizar clasificación
+    renderStandingsTable(standings, state.team);
+
+    // Actualizar próximo partido
+    const rivals = Object.keys(standings).filter(t => t !== state.team);
+    const nextRival = rivals[Math.floor(Math.random() * rivals.length)];
+    renderNextMatchCard(state.team, nextRival, state.week);
+}
+
+export { 
+    renderStandingsTable, 
+    renderSquadList, 
+    renderAcademyList,
+    renderAvailablePlayersMarket,
+    renderAvailableYoungstersMarket,
+    renderNextMatchCard,
+    updateDashboardStats,
+    playFullWeekAndUpdateUI
+};
