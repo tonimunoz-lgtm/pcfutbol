@@ -1,819 +1,758 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC Fútbol Manager 2025/26</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%);
-            border-bottom: 3px solid #e94560;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #e94560;
-            letter-spacing: 2px;
-        }
-        
-        .header-info {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            font-size: 0.9em;
-        }
-        
-        .info-box {
-            background: rgba(233, 69, 96, 0.1);
-            border: 1px solid #e94560;
-            padding: 8px 15px;
-            border-radius: 3px;
-        }
-        
-        .container {
-            display: flex;
-            max-width: 1600px;
-            margin: 0 auto;
-            min-height: calc(100vh - 60px);
-        }
-        
-        .sidebar {
-            width: 200px;
-            background: linear-gradient(180deg, #0f3460 0%, #162a45 100%);
-            border-right: 2px solid #e94560;
-            padding: 15px 0;
-            overflow-y: auto;
-        }
-        
-        .menu-section {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(233, 69, 96, 0.3);
-        }
-        
-        .menu-title {
-            padding: 8px 15px;
-            color: #e94560;
-            font-size: 0.85em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .menu-item {
-            padding: 10px 15px;
-            color: #fff;
-            cursor: pointer;
-            background: transparent;
-            border: none;
-            width: 100%;
-            text-align: left;
-            font-size: 0.9em;
-            transition: all 0.2s;
-        }
-        
-        .menu-item:hover, .menu-item.active {
-            background: rgba(233, 69, 96, 0.4);
-            padding-left: 25px;
-        }
-        
-        .menu-item.active {
-            background: #e94560;
-            font-weight: bold;
-        }
-        
-        .main {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        h1 {
-            color: #e94560;
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e94560;
-            padding-bottom: 10px;
-        }
-        
-        h2 {
-            color: #e94560;
-            font-size: 1.3em;
-            margin: 20px 0 10px 0;
-        }
-        
-        .data-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
-        
-        .data-box {
-            background: rgba(233, 69, 96, 0.1);
-            border: 1px solid #e94560;
-            padding: 15px;
-            border-radius: 3px;
-            text-align: center;
-        }
-        
-        .data-label { color: #999; font-size: 0.8em; margin-bottom: 8px; }
-        .data-value { font-size: 1.8em; font-weight: bold; color: #00ff00; }
-        .data-value.negative { color: #ff3333; }
-        
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; background: rgba(0,0,0,0.3); }
-        th { padding: 12px; text-align: left; color: #e94560; background: rgba(233, 69, 96, 0.2); font-weight: bold; border: 1px solid rgba(233, 69, 96, 0.3); }
-        td { padding: 10px; border: 1px solid rgba(233, 69, 96, 0.15); }
-        tr:hover { background: rgba(233, 69, 96, 0.1); }
-        
-        .btn {
-            background: linear-gradient(180deg, #e94560 0%, #c73446 100%);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-            margin: 5px 5px 5px 0;
-        }
-        
-        .btn:hover { background: linear-gradient(180deg, #ff5577 0%, #e94560 100%); transform: translateY(-1px); }
-        .btn-sm { padding: 6px 12px; font-size: 0.85em; }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal.active { display: flex; }
-        
-        .modal-content {
-            background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);
-            border: 2px solid #e94560;
-            padding: 30px;
-            border-radius: 5px;
-            max-width: 700px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-close { float: right; color: #e94560; font-size: 2em; cursor: pointer; }
-        
-        .player-card {
-            background: rgba(233, 69, 96, 0.08);
-            border: 1px solid #e94560;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 3px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .alert {
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 3px;
-            border: 1px solid;
-        }
-        
-        .alert-info { background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #e94560; }
-        .alert-success { background: rgba(0, 255, 0, 0.1); border-color: #00ff00; color: #00ff00; }
-        
-        input, select {
-            width: 100%;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid #e94560;
-            color: #fff;
-            border-radius: 3px;
-            margin-bottom: 10px;
-        }
-        
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #e94560; }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-title">⚽ PC FÚTBOL MANAGER 25/26</div>
-        <div class="header-info">
-            <div class="info-box">Equipo: <span id="teamName">-</span></div>
-            <div class="info-box">Jornada: <span id="weekNo">1</span></div>
-            <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div>
-            <button class="btn btn-sm" onclick="openModal('gameMode')">Nuevo Juego</button>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="sidebar">
-            <div class="menu-section">
-                <div class="menu-title">📊 INFORMACIÓN</div>
-                <button class="menu-item active" onclick="switchPage('dashboard')">Dashboard</button>
-                <button class="menu-item" onclick="switchPage('standings')">Clasificación</button>
-            </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">👥 PLANTILLA</div>
-                <button class="menu-item" onclick="switchPage('squad')">Plantilla</button>
-                <button class="menu-item" onclick="switchPage('transfers')">Mercado</button>
-                <button class="menu-item" onclick="switchPage('academy')">Cantera</button>
-            </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">🎯 PARTIDO</div>
-                <button class="menu-item" onclick="switchPage('tactics')">Tácticas</button>
-                <button class="menu-item" onclick="switchPage('match')">Próximo</button>
-            </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">💼 GESTIÓN</div>
-                <button class="menu-item" onclick="switchPage('finance')">Finanzas</button>
-                <button class="menu-item" onclick="switchPage('facilities')">Instalaciones</button>
-                <button class="menu-item" onclick="switchPage('staff')">Staff</button>
-            </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">⚙️ SISTEMA</div>
-                <button class="menu-item" onclick="switchPage('settings')">Opciones</button>
-            </div>
-        </div>
-        
-        <div class="main">
-            <!-- DASHBOARD -->
-            <div id="dashboard" class="page active">
-                <h1>📊 Dashboard del Club</h1>
-                <div class="data-grid">
-                    <div class="data-box">
-                        <div class="data-label">Posición</div>
-                        <div class="data-value" id="dashPos">-</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Puntos</div>
-                        <div class="data-value" id="dashPts">0</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">PJ</div>
-                        <div class="data-value" id="dashPJ">0</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Goles</div>
-                        <div class="data-value" id="dashGoals">0</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Jugadores</div>
-                        <div class="data-value" id="dashSquad">0</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Juveniles</div>
-                        <div class="data-value" id="dashAcademy">0</div>
-                    </div>
-                </div>
-                <h2>Estado del Club</h2>
-                <table>
-                    <tr><td>Dinero en Caja:</td><td id="dashBalance">0€</td></tr>
-                    <tr><td>Ingresos Semanales:</td><td id="dashIncome">10500€</td></tr>
-                    <tr><td>Gastos Semanales:</td><td id="dashExpenses">8000€</td></tr>
-                    <tr><td>Balance Semanal:</td><td id="dashWeekly">+2500€</td></tr>
-                </table>
-            </div>
-            
-            <!-- CLASIFICACIÓN -->
-            <div id="standings" class="page">
-                <h1>📈 Clasificación Liga</h1>
-                <table>
-                    <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>
-                    <tbody id="standingsTable"></tbody>
-                </table>
-            </div>
-            
-            <!-- PLANTILLA -->
-            <div id="squad" class="page">
-                <h1>👥 Plantilla</h1>
-                <button class="btn" onclick="openModal('signPlayer')">+ Fichar Jugador</button>
-                <div id="squadList" style="margin-top: 20px;"></div>
-            </div>
-            
-            <!-- MERCADO -->
-            <div id="transfers" class="page">
-                <h1>🔄 Mercado de Fichajes</h1>
-                <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro.</div>
-                <button class="btn" onclick="openModal('signPlayer')">Ver Jugadores Disponibles</button>
-                <div id="transferMarket" style="margin-top: 20px;"></div>
-            </div>
-            
-            <!-- CANTERA -->
-            <div id="academy" class="page">
-                <h1>🎓 Academia y Cantera</h1>
-                <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven</button>
-                <div id="academyList" style="margin-top: 20px;"></div>
-            </div>
-            
-            <!-- TÁCTICAS -->
-            <div id="tactics" class="page">
-                <h1>🎯 Tácticas</h1>
-                <div class="form-group" style="margin: 20px 0;">
-                    <label>Formación:</label>
-                    <select id="formationSelect" onchange="updateFormation()">
-                        <option value="433">4-3-3 Equilibrada</option>
-                        <option value="442">4-4-2 Clásica</option>
-                        <option value="352">3-5-2 Ofensiva</option>
-                        <option value="541">5-4-1 Defensiva</option>
-                    </select>
-                    <label>Mentalidad:</label>
-                    <select id="mentalitySelect" onchange="updateMentality()">
-                        <option value="defensive">Defensiva</option>
-                        <option value="balanced" selected>Equilibrada</option>
-                        <option value="offensive">Ofensiva</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- PRÓXIMO PARTIDO -->
-            <div id="match" class="page">
-                <h1>⚽ Próximo Partido</h1>
-                <div id="matchInfo" style="margin: 30px 0;"></div>
-                <button class="btn" onclick="playMatch()">Jugar Partido</button>
-            </div>
-            
-            <!-- FINANZAS -->
-            <div id="finance" class="page">
-                <h1>💼 Finanzas</h1>
-                <div class="data-grid">
-                    <div class="data-box">
-                        <div class="data-label">Ingresos/Semana</div>
-                        <div class="data-value" id="weeklyIncome">10500€</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Gastos/Semana</div>
-                        <div class="data-value negative" id="weeklyExpenses">8000€</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- INSTALACIONES -->
-            <div id="facilities" class="page">
-                <h1>🏟️ Instalaciones</h1>
-                <button class="btn" onclick="expandStadium()">Expandir Estadio (+50.000€)</button>
-                <button class="btn" onclick="improveFacilities()">Mejorar Entrenamientos (+30.000€)</button>
-            </div>
-            
-            <!-- STAFF -->
-            <div id="staff" class="page">
-                <h1>👔 Personal del Club</h1>
-                <table>
-                    <tr><td>🏥 Médico</td><td id="medico">Contratado</td><td><button class="btn btn-sm">Cambiar</button></td></tr>
-                    <tr><td>🧪 Entrenador Físico</td><td id="entrenador">Contratado</td><td><button class="btn btn-sm">Cambiar</button></td></tr>
-                    <tr><td>🎬 Analista Vídeo</td><td id="analista">No contratado</td><td><button class="btn btn-sm" onclick="hireStaff('analista')">Contratar</button></td></tr>
-                </table>
-            </div>
-            
-            <!-- OPCIONES -->
-            <div id="settings" class="page">
-                <h1>⚙️ Opciones</h1>
-                <button class="btn" onclick="saveGame()">💾 Guardar Partida</button>
-                <button class="btn" onclick="loadGame()">📂 Cargar Partida</button>
-                <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="resetGame()">🔄 Reiniciar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MODALES -->
-    <div id="gameModeModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('gameMode')">&times;</span>
-            <h1>Modo de Juego</h1>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('manager')">🏅 Liga Manager</button>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('promanager')">🚀 Liga Promanager</button>
-        </div>
-    </div>
-    
-    <div id="selectTeamModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('selectTeam')">&times;</span>
-            <h1>Selecciona tu Equipo</h1>
-            <h2>Primera División</h2>
-            <div id="ligaList"></div>
-            <h2>Segunda División</h2>
-            <div id="segundaList"></div>
-            <h2>Primera RFEF</h2>
-            <div id="refList"></div>
-        </div>
-    </div>
-    
-    <div id="signPlayerModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('signPlayer')">&times;</span>
-            <h1>Fichar Jugador</h1>
-            <div id="availablePlayersList"></div>
-        </div>
-    </div>
-    
-    <div id="signYoungsterModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>
-            <h1>Contratar Joven</h1>
-            <div id="availableYoungstersList"></div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { generateAvailablePlayers, generateAvailableYoungsters } from './players.js';
-        import { 
-            getGameState, 
-            updateGameState,  
-            selectTeamWithInitialSquad as selectTeam, 
-            signPlayer, 
-            signYoungster, 
-            playMatch,
-            expandStadium,
-            improveFacilities,
-            hireStaff,
-            saveToLocalStorage as saveToFirebase,
-            loadFromLocalStorage as loadFromFirebase
-        } from './gameLogic.js';
-        import { TEAMS_DATA } from './config.js';
-        
-        window.switchPage = function(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-            event.target.classList.add('active');
-        };
-        
-        window.openModal = function(type) {
-            if (type === 'gameMode') {
-                document.getElementById('gameModeModal').classList.add('active');
-            } else if (type === 'selectTeam') {
-                document.getElementById('selectTeamModal').classList.add('active');
-                renderTeamSelectors();
-            } else if (type === 'signPlayer') {
-                document.getElementById('signPlayerModal').classList.add('active');
-                renderAvailablePlayers();
-            } else if (type === 'signYoungster') {
-                document.getElementById('signYoungsterModal').classList.add('active');
-                renderAvailableYoungsters();
-            }
-        };
-        
-        window.closeModal = function(type) {
-            document.getElementById(type + 'Modal').classList.remove('active');
-        };
-        
-        window.startGameMode = function(mode) {
-            window.gameMode = mode;
-            window.closeModal('gameMode');
-            window.openModal('selectTeam');
-        };
-        
-        function renderTeamSelectors() {
-            document.getElementById('ligaList').innerHTML = TEAMS_DATA.primera.map(team => 
-                `<button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeamAndStart('${team}', 'primera')">
-                    ${team}
-                </button>`
-            ).join('');
-            document.getElementById('segundaList').innerHTML = TEAMS_DATA.segunda.map(team => 
-                `<button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeamAndStart('${team}', 'segunda')">
-                    ${team}
-                </button>`
-            ).join('');
-        }
-        
-        window.selectTeamAndStart = function(team, division) {
-            selectTeam(team, division, window.gameMode);
-            const state = getGameState();
-            state.standings = initStandings(division === 'primera' ? TEAMS_DATA.primera : TEAMS_DATA.segunda);
-            updateGameState(state);
-            updateDisplay();
-            window.closeModal('selectTeam');
-            window.switchPage('dashboard');
-        };
-        
-        window.updateDisplay = function() {
-            const state = getGameState();
-            document.getElementById('teamName').textContent = state.team || '-';
-            document.getElementById('weekNo').textContent = state.week;
-            document.getElementById('balanceDisplay').textContent = state.balance + '€';
-            document.getElementById('dashSquad').textContent = state.squad.length;
-            document.getElementById('dashAcademy').textContent = state.academy.length;
-            document.getElementById('dashBalance').textContent = state.balance + '€';
-            document.getElementById('dashIncome').textContent = state.weeklyIncome + '€';
-            document.getElementById('dashExpenses').textContent = state.weeklyExpenses + '€';
-            document.getElementById('dashWeekly').textContent = (state.weeklyIncome - state.weeklyExpenses) + '€';
-            
-            renderStandings();
-            renderSquad();
-            renderAcademy();
-            renderNextMatch();
-        };
-        
-        function renderStandings() {
-            const state = getGameState();
-            const tbody = document.getElementById('standingsTable');
-            const sorted = Object.entries(state.standings).sort((a, b) => b[1].pts - a[1].pts);
-            
-            tbody.innerHTML = sorted.map(([team, stats], i) => `
-                <tr style="${team === state.team ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
-                    <td>${i + 1}</td><td><strong>${team}</strong></td><td>${stats.pj}</td><td>${stats.g}</td><td>${stats.e}</td><td>${stats.p}</td>
-                    <td>${stats.gf}</td><td>${stats.gc}</td><td>${stats.gf - stats.gc}</td><td style="color: #00ff00;">${stats.pts}</td>
-                </tr>
-            `).join('');
-        }
-        
-        function renderSquad() {
-            const state = getGameState();
-            const list = document.getElementById('squadList');
-            if (state.squad.length === 0) {
-                list.innerHTML = '<div class="alert alert-info">No hay jugadores. ¡Ficha algunos!</div>';
-                return;
-            }
-            list.innerHTML = state.squad.map(p => `
-                <div class="player-card">
-                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">${p.position} | ${p.age}a | Nivel ${p.overall}</div></div>
-                    <button class="btn btn-sm" onclick="sellPlayerConfirm('${p.name}')">Vender</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderAcademy() {
-            const state = getGameState();
-            const list = document.getElementById('academyList');
-            if (state.academy.length === 0) {
-                list.innerHTML = '<div class="alert alert-info">No hay jóvenes. ¡Contrata talentos!</div>';
-                return;
-            }
-            list.innerHTML = state.academy.map(p => `
-                <div class="player-card">
-                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">Edad ${p.age} | Nivel ${p.overall}/100 | Potencial ${p.potential}</div></div>
-                    <button class="btn btn-sm" onclick="promoteConfirm('${p.name}')">Ascender</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderAvailablePlayers() {
-            const players = generateAvailablePlayers();
-            document.getElementById('availablePlayersList').innerHTML = players.map(p => `
-                <div class="player-card">
-                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">${p.position} | ${p.age}a | Nivel ${p.overall} | ${p.salary}€/sem | ${p.cost}€</div></div>
-                    <button class="btn btn-sm" onclick="fichPlayerConfirm('${JSON.stringify(p).replace(/"/g, '&quot;')}')">Fichar</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderAvailableYoungsters() {
-            const youngsters = generateAvailableYoungsters();
-            document.getElementById('availableYoungstersList').innerHTML = youngsters.map(y => `
-                <div class="player-card">
-                    <div><div style="color: #e94560; font-weight: bold;">${y.name}</div><div style="font-size: 0.85em; color: #999;">Edad ${y.age} | Nivel ${y.overall}/100 | Potencial ${y.potential}/100 | ${y.cost}€</div></div>
-                    <button class="btn btn-sm" onclick="fichYoungsterConfirm('${JSON.stringify(y).replace(/"/g, '&quot;')}')">Contratar</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderNextMatch() {
-            const state = getGameState();
-            const rivals = Object.keys(state.standings).filter(t => t !== state.team);
-            const rival = rivals[Math.floor(Math.random() * rivals.length)];
-            document.getElementById('matchInfo').innerHTML = `
-                <div style="text-align: center; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; padding: 40px; border-radius: 3px;">
-                    <div style="color: #e94560; font-size: 1.3em; margin-bottom: 20px;"><strong>${state.team}</strong></div>
-                    <div style="color: #999; margin-bottom: 20px;">vs</div>
-                    <div style="color: #e94560; font-size: 1.3em;"><strong>${rival}</strong></div>
-                </div>
-            `;
-        }
-        
-        window.fichPlayerConfirm = function(playerJson) {
-            const player = JSON.parse(playerJson.replace(/&quot;/g, '"'));
-            const result = signPlayer(player);
-            if (result.success) {
-                alert(result.message);
-                window.updateDisplay();
-                window.closeModal('signPlayer');
-            } else {
-                alert('Error: ' + result.message);
-            }
-        };
-        
-        window.fichYoungsterConfirm = function(youngsterJson) {
-            const youngster = JSON.parse(youngsterJson.replace(/&quot;/g, '"'));
-            const result = signYoungster(youngster);
-            if (result.success) {
-                alert(result.message);
-                window.updateDisplay();
-                window.closeModal('signYoungster');
-            } else {
-                alert('Error: ' + result.message);
-            }
-        };
-        
-        window.sellPlayerConfirm = function(name) {
-            if (confirm('¿Vender a ' + name + '?')) {
-                const state = getGameState();
-                const player = state.squad.find(p => p.name === name);
-                if (player) {
-                    const salePrice = player.overall * 5000 + (player.matches * 1000);
-                    state.balance += salePrice;
-                    state.squad = state.squad.filter(p => p.name !== name);
-                    state.weeklyExpenses -= player.salary;
-                    updateGameState(state);
-                    alert(name + ' vendido por ' + salePrice + '€');
-                    window.updateDisplay();
-                }
-            }
-        };
-        
-        window.promoteConfirm = function(name) {
-            const state = getGameState();
-            const youngster = state.academy.find(y => y.name === name);
-            if (youngster && state.squad.length < 25) {
-                state.squad.push({
-                    name: youngster.name,
-                    position: 'DEL',
-                    age: youngster.age,
-                    overall: youngster.overall,
-                    salary: 1500,
-                    goals: 0,
-                    assists: 0,
-                    matches: youngster.matches
-                });
-                state.academy = state.academy.filter(y => y.name !== name);
-                state.weeklyExpenses += 1500;
-                updateGameState(state);
-                alert(name + ' ascendido a primer equipo');
-                window.updateDisplay();
-            }
-        };
-        
-        window.playMatch = function() {
-            const state = getGameState();
-            const rivals = Object.keys(state.standings).filter(t => t !== state.team);
-            const rival = rivals[Math.floor(Math.random() * rivals.length)];
-            
-            let myGoals = Math.floor(Math.random() * 5);
-            let rivalGoals = Math.floor(Math.random() * 5);
-            
-            if (state.mentality === 'offensive') myGoals += 1;
-            if (state.mentality === 'defensive') rivalGoals = Math.max(0, rivalGoals - 1);
-            
-            state.standings[state.team].pj++;
-            state.standings[rival].pj++;
-            state.standings[state.team].gf += myGoals;
-            state.standings[state.team].gc += rivalGoals;
-            state.standings[rival].gf += rivalGoals;
-            state.standings[rival].gc += myGoals;
-            
-            if (myGoals > rivalGoals) {
-                state.standings[state.team].pts += 3;
-                state.standings[state.team].g++;
-                state.standings[rival].p++;
-            } else if (myGoals < rivalGoals) {
-                state.standings[rival].pts += 3;
-                state.standings[rival].g++;
-                state.standings[state.team].p++;
-            } else {
-                state.standings[state.team].pts += 1;
-                state.standings[state.team].e++;
-                state.standings[rival].pts += 1;
-                state.standings[rival].e++;
-            }
-            
-            state.matchHistory.push({
-                week: state.week,
-                home: state.team,
-                away: rival,
-                score: `${myGoals}-${rivalGoals}`
-            });
-            
-            state.week++;
-            state.balance += 3000;
-            updateGameState(state);
-            
-            alert(`${state.team} ${myGoals} - ${rivalGoals} ${rival}\n\n¡Partido completado!`);
-            window.updateDisplay();
-        };
-        
-        window.updateFormation = function() {
-            const formation = document.getElementById('formationSelect').value;
-            const state = getGameState();
-            state.formation = formation;
-            updateGameState(state);
-            alert('Formación actualizada');
-        };
-        
-        window.updateMentality = function() {
-            const mentality = document.getElementById('mentalitySelect').value;
-            const state = getGameState();
-            state.mentality = mentality;
-            updateGameState(state);
-            alert('Mentalidad táctica actualizada');
-        };
-        
-        window.expandStadium = function() {
-            const state = getGameState();
-            if (state.balance < 50000) {
-                alert('Dinero insuficiente. Necesitas 50.000€');
-                return;
-            }
-            state.balance -= 50000;
-            state.stadiumCapacity += 10000;
-            state.weeklyIncome += 500;
-            updateGameState(state);
-            alert('¡Estadio expandido a ' + state.stadiumCapacity + ' espectadores!');
-            window.updateDisplay();
-        };
-        
-        window.improveFacilities = function() {
-            const state = getGameState();
-            if (state.balance < 30000) {
-                alert('Dinero insuficiente. Necesitas 30.000€');
-                return;
-            }
-            state.balance -= 30000;
-            state.trainingLevel++;
-            updateGameState(state);
-            alert('¡Centro de entrenamiento mejorado a nivel ' + state.trainingLevel + '!');
-            window.updateDisplay();
-        };
-        
-        window.hireStaff = function(position) {
-            const state = getGameState();
-            const costs = { analista: 4000, scout: 3000, medico: 5000, entrenador: 3000 };
-            const cost = costs[position] || 0;
-            
-            if (state.balance < cost) {
-                alert('Dinero insuficiente');
-                return;
-            }
-            
-            state.balance -= cost;
-            state.staff[position] = true;
-            state.weeklyExpenses += 500;
-            updateGameState(state);
-            alert('Personal contratado exitosamente');
-            window.updateDisplay();
-        };
-        
-        window.saveGame = function() {
-            const state = getGameState();
-            localStorage.setItem('pcfutbol-save', JSON.stringify(state));
-            alert('Partida guardada en dispositivo');
-        };
-        
-        window.loadGame = function() {
-            const saved = localStorage.getItem('pcfutbol-save');
-            if (saved) {
-                const state = JSON.parse(saved);
-                updateGameState(state);
-                alert('Partida cargada');
-                window.updateDisplay();
-            } else {
-                alert('No hay partida guardada en el dispositivo');
-            }
-        };
-        
-        window.resetGame = function() {
-            if (confirm('¿Estás seguro de que quieres reiniciar completamente?')) {
-                localStorage.removeItem('pcfutbol-save');
-                location.reload();
-            }
-        };
-        
-        // Inicializar
-        window.updateDisplay();
-        document.getElementById('gameModeModal').classList.add('active');
-    </script>
-</body>
-</html>
+<!DOCTYPE html>  
+<html lang="es">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>PC Fútbol Manager 2025/26</title>  
+    <style>  
+        * { margin: 0; padding: 0; box-sizing: border-box; }  
+  
+        body {  
+            font-family: Arial, sans-serif;  
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);  
+            color: #fff;  
+            min-height: 100vh;  
+        }  
+  
+        .header {  
+            background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%);  
+            border-bottom: 3px solid #e94560;  
+            padding: 10px 20px;  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
+            position: sticky;  
+            top: 0;  
+            z-index: 100;  
+        }  
+  
+        .header-title {  
+            font-size: 1.8em;  
+            font-weight: bold;  
+            color: #e94560;  
+            letter-spacing: 2px;  
+        }  
+  
+        .header-info {  
+            display: flex;  
+            gap: 20px;  
+            align-items: center;  
+            font-size: 0.9em;  
+        }  
+  
+        .info-box {  
+            background: rgba(233, 69, 96, 0.1);  
+            border: 1px solid #e94560;  
+            padding: 8px 15px;  
+            border-radius: 3px;  
+        }  
+  
+        .container {  
+            display: flex;  
+            max-width: 1600px;  
+            margin: 0 auto;  
+            min-height: calc(100vh - 60px);  
+        }  
+  
+        .sidebar {  
+            width: 200px;  
+            background: linear-gradient(180deg, #0f3460 0%, #162a45 100%);  
+            border-right: 2px solid #e94560;  
+            padding: 15px 0;  
+            overflow-y: auto;  
+        }  
+  
+        .menu-section {  
+            padding: 10px 0;  
+            border-bottom: 1px solid rgba(233, 69, 96, 0.3);  
+        }  
+  
+        .menu-title {  
+            padding: 8px 15px;  
+            color: #e94560;  
+            font-size: 0.85em;  
+            font-weight: bold;  
+            text-transform: uppercase;  
+        }  
+  
+        .menu-item {  
+            padding: 10px 15px;  
+            color: #fff;  
+            cursor: pointer;  
+            background: transparent;  
+            border: none;  
+            width: 100%;  
+            text-align: left;  
+            font-size: 0.9em;  
+            transition: all 0.2s;  
+        }  
+  
+        .menu-item:hover, .menu-item.active {  
+            background: rgba(233, 69, 96, 0.4);  
+            padding-left: 25px;  
+        }  
+  
+        .menu-item.active {  
+            background: #e94560;  
+            font-weight: bold;  
+        }  
+  
+        .main {  
+            flex: 1;  
+            padding: 20px;  
+            overflow-y: auto;  
+        }  
+  
+        .page { display: none; }  
+        .page.active { display: block; animation: fadeIn 0.3s ease; }  
+  
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }  
+  
+        h1 {  
+            color: #e94560;  
+            font-size: 1.8em;  
+            margin-bottom: 20px;  
+            border-bottom: 2px solid #e94560;  
+            padding-bottom: 10px;  
+        }  
+  
+        h2 {  
+            color: #e94560;  
+            font-size: 1.3em;  
+            margin: 20px 0 10px 0;  
+        }  
+  
+        .data-grid {  
+            display: grid;  
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));  
+            gap: 15px;  
+            margin: 15px 0;  
+        }  
+  
+        .data-box {  
+            background: rgba(233, 69, 96, 0.1);  
+            border: 1px solid #e94560;  
+            padding: 15px;  
+            border-radius: 3px;  
+            text-align: center;  
+        }  
+  
+        .data-label { color: #999; font-size: 0.8em; margin-bottom: 8px; }  
+        .data-value { font-size: 1.8em; font-weight: bold; color: #00ff00; }  
+        .data-value.negative { color: #ff3333; }  
+  
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; background: rgba(0,0,0,0.3); }  
+        th { padding: 12px; text-align: left; color: #e94560; background: rgba(233, 69, 96, 0.2); font-weight: bold; border: 1px solid rgba(233, 69, 96, 0.3); }  
+        td { padding: 10px; border: 1px solid rgba(233, 69, 96, 0.15); }  
+        tr:hover { background: rgba(233, 69, 96, 0.1); }  
+  
+        .btn {  
+            background: linear-gradient(180deg, #e94560 0%, #c73446 100%);  
+            color: white;  
+            padding: 10px 20px;  
+            border: none;  
+            border-radius: 3px;  
+            cursor: pointer;  
+            font-weight: bold;  
+            transition: all 0.2s;  
+            margin: 5px 5px 5px 0;  
+        }  
+  
+        .btn:hover { background: linear-gradient(180deg, #ff5577 0%, #e94560 100%); transform: translateY(-1px); }  
+        .btn-sm { padding: 6px 12px; font-size: 0.85em; }  
+  
+        .modal {  
+            display: none;  
+            position: fixed;  
+            z-index: 1000;  
+            left: 0;  
+            top: 0;  
+            width: 100%;  
+            height: 100%;  
+            background: rgba(0,0,0,0.8);  
+            align-items: center;  
+            justify-content: center;  
+        }  
+  
+        .modal.active { display: flex; }  
+  
+        .modal-content {  
+            background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);  
+            border: 2px solid #e94560;  
+            padding: 30px;  
+            border-radius: 5px;  
+            max-width: 700px;  
+            width: 90%;  
+            max-height: 80vh;  
+            overflow-y: auto;  
+        }  
+  
+        .modal-close { float: right; color: #e94560; font-size: 2em; cursor: pointer; }  
+  
+        .player-card {  
+            background: rgba(233, 69, 96, 0.08);  
+            border: 1px solid #e94560;  
+            padding: 12px;  
+            margin: 8px 0;  
+            border-radius: 3px;  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
+        }  
+  
+        .alert {  
+            padding: 12px;  
+            margin: 10px 0;  
+            border-radius: 3px;  
+            border: 1px solid;  
+        }  
+  
+        .alert-info { background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #e94560; }  
+        .alert-success { background: rgba(0, 255, 0, 0.1); border-color: #00ff00; color: #00ff00; }  
+        .alert-warning { background: rgba(255, 165, 0, 0.1); border-color: orange; color: orange; }  
+  
+        input, select {  
+            width: 100%;  
+            padding: 10px;  
+            background: rgba(0,0,0,0.3);  
+            border: 1px solid #e94560;  
+            color: #fff;  
+            border-radius: 3px;  
+            margin-bottom: 10px;  
+        }  
+  
+        @media (max-width: 768px) {  
+            .container { flex-direction: column; }  
+            .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #e94560; }  
+        }  
+    </style>  
+</head>  
+<body>  
+    <div class="header">  
+        <div class="header-title">⚽ PC FÚTBOL MANAGER 25/26</div>  
+        <div class="header-info">  
+            <div class="info-box">Equipo: <span id="teamName">-</span></div>  
+            <div class="info-box">Jornada: <span id="weekNo">1</span></div>  
+            <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div>  
+            <button class="btn btn-sm" onclick="openModal('gameMode')">Nuevo Juego</button>  
+        </div>  
+    </div>  
+  
+    <div class="container">  
+        <div class="sidebar">  
+            <div class="menu-section">  
+                <div class="menu-title">📊 INFORMACIÓN</div>  
+                <button class="menu-item active" onclick="switchPage('dashboard', this)">Dashboard</button>  
+                <button class="menu-item" onclick="switchPage('standings', this)">Clasificación</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">👥 PLANTILLA</div>  
+                <button class="menu-item" onclick="switchPage('squad', this)">Plantilla</button>  
+                <button class="menu-item" onclick="switchPage('transfers', this)">Mercado</button>  
+                <button class="menu-item" onclick="switchPage('academy', this)">Cantera</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">🎯 PARTIDO</div>  
+                <button class="menu-item" onclick="switchPage('tactics', this)">Tácticas</button>  
+                <button class="menu-item" onclick="switchPage('match', this)">Próximo</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">💼 GESTIÓN</div>  
+                <button class="menu-item" onclick="switchPage('finance', this)">Finanzas</button>  
+                <button class="menu-item" onclick="switchPage('facilities', this)">Instalaciones</button>  
+                <button class="menu-item" onclick="switchPage('staff', this)">Staff</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">⚙️ SISTEMA</div>  
+                <button class="menu-item" onclick="switchPage('settings', this)">Opciones</button>  
+            </div>  
+        </div>  
+  
+        <div class="main">  
+            <!-- DASHBOARD -->  
+            <div id="dashboard" class="page active">  
+                <h1>📊 Dashboard del Club</h1>  
+                <div id="warningAlert" style="display: none;"></div>  
+                <div class="data-grid">  
+                    <div class="data-box">  
+                        <div class="data-label">Posición</div>  
+                        <div class="data-value" id="dashPos">-</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Puntos</div>  
+                        <div class="data-value" id="dashPts">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">PJ</div>  
+                        <div class="data-value" id="dashPJ">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Goles</div>  
+                        <div class="data-value" id="dashGoals">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Jugadores</div>  
+                        <div class="data-value" id="dashSquad">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Juveniles</div>  
+                        <div class="data-value" id="dashAcademy">0</div>  
+                    </div>  
+                </div>  
+                <h2>Estado Financiero</h2>  
+                <table>  
+                    <tr><td>Dinero en Caja:</td><td id="dashBalance">0€</td></tr>  
+                    <tr><td>Ingresos Semanales:</td><td id="dashIncome">0€</td></tr>  
+                    <tr><td>Gastos Semanales:</td><td id="dashExpenses">0€</td></tr>  
+                    <tr><td>Balance Semanal:</td><td id="dashWeekly" class="data-value">+0€</td></tr>  
+                </table>  
+            </div>  
+  
+            <!-- CLASIFICACIÓN -->  
+            <div id="standings" class="page">  
+                <h1>📈 Clasificación Liga</h1>  
+                <table>  
+                    <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>  
+                    <tbody id="standingsTable"></tbody>  
+                </table>  
+            </div>  
+  
+            <!-- PLANTILLA -->  
+            <div id="squad" class="page">  
+                <h1>👥 Plantilla</h1>  
+                <button class="btn" onclick="openModal('signPlayer')">+ Fichar Jugador</button>  
+                <div id="squadList" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- MERCADO -->  
+            <div id="transfers" class="page">  
+                <h1>🔄 Mercado de Fichajes</h1>  
+                <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro, o refuerza tu equipo.</div>  
+                <button class="btn" onclick="openModal('signPlayer')">Ver Jugadores Disponibles</button>  
+                <div id="transferMarket" style="margin-top: 20px;">  
+                    <!-- Los jugadores disponibles se renderizarán en el modal, no aquí directamente -->  
+                </div>  
+            </div>  
+  
+            <!-- CANTERA -->  
+            <div id="academy" class="page">  
+                <h1>🎓 Academia y Cantera</h1>  
+                <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven</button>  
+                <div id="academyList" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- TÁCTICAS -->  
+            <div id="tactics" class="page">  
+                <h1>🎯 Tácticas</h1>  
+                <div class="form-group" style="margin: 20px 0;">  
+                    <label style="display: block; margin-bottom: 5px;">Formación:</label>  
+                    <select id="formationSelect" onchange="updateFormation()">  
+                        <option value="433">4-3-3 Equilibrada</option>  
+                        <option value="442">4-4-2 Clásica</option>  
+                        <option value="352">3-5-2 Ofensiva</option>  
+                        <option value="541">5-4-1 Defensiva</option>  
+                        <option value="451">4-5-1 Mixta</option>  
+                    </select>  
+                    <label style="display: block; margin-top: 15px; margin-bottom: 5px;">Mentalidad:</label>  
+                    <select id="mentalitySelect" onchange="updateMentality()">  
+                        <option value="defensive">Defensiva</option>  
+                        <option value="balanced" selected>Equilibrada</option>  
+                        <option value="offensive">Ofensiva</option>  
+                    </select>  
+                </div>  
+            </div>  
+  
+            <!-- PRÓXIMO PARTIDO -->  
+            <div id="match" class="page">  
+                <h1>⚽ Simular Jornada</h1>  
+                <div id="matchInfo" style="margin: 30px 0;">  
+                    <!-- Aquí se mostrará la información del próximo partido -->  
+                </div>  
+                <button class="btn" onclick="simulateWeek()">Simular Jornada Completa</button>  
+                <div id="lastMatchResult" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- FINANZAS -->  
+            <div id="finance" class="page">  
+                <h1>💼 Finanzas</h1>  
+                <div class="data-grid">  
+                    <div class="data-box">  
+                        <div class="data-label">Ingresos/Semana</div>  
+                        <div class="data-value" id="financeWeeklyIncome">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Gastos/Semana</div>  
+                        <div class="data-value negative" id="financeWeeklyExpenses">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Balance Actual</div>  
+                        <div class="data-value" id="financeBalance">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Capacidad Estadio</div>  
+                        <div class="data-value" id="financeStadiumCapacity">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Precio Entrada</div>  
+                        <div class="data-value" id="financeTicketPrice">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Merchandising</div>  
+                        <div class="data-value" id="financeMerchandising">0€</div>  
+                    </div>  
+                </div>  
+            </div>  
+  
+            <!-- INSTALACIONES -->  
+            <div id="facilities" class="page">  
+                <h1>🏟️ Instalaciones</h1>  
+                <h2>Estadio</h2>  
+                <p>Capacidad actual: <span id="currentStadiumCapacity">0</span></p>  
+                <button class="btn" onclick="expandStadium()">Expandir Estadio (+10.000 asientos - 50.000€)</button>  
+                <h2>Centro de Entrenamiento</h2>  
+                <p>Nivel actual: <span id="currentTrainingLevel">1</span></p>  
+                <button class="btn" onclick="improveFacilities()">Mejorar Entrenamientos (30.000€)</button>  
+            </div>  
+  
+            <!-- STAFF -->  
+            <div id="staff" class="page">  
+                <h1>👔 Personal del Club</h1>  
+                <table>  
+                    <tr><td>🏥 Médico</td><td id="staffMedico"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="hireStaff('medico')"></button></td></tr>  
+                    <tr><td>🧪 Entrenador Físico</td><td id="staffEntrenador"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="hireStaff('entrenador')"></button></td></tr>  
+                    <tr><td>🎬 Analista Vídeo</td><td id="staffAnalista"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="hireStaff('analista')"></button></td></tr>  
+                    <tr><td>🔍 Scout</td><td id="staffScout"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="hireStaff('scout')"></button></td></tr>  
+                    <tr><td>✍️ Secretario Técnico</td><td id="staffSecretario"></td><td><button class="btn btn-sm" id="btnHireSecretario" onclick="hireStaff('secretario')"></button></td></tr>  
+                </table>  
+            </div>  
+  
+            <!-- OPCIONES -->  
+            <div id="settings" class="page">  
+                <h1>⚙️ Opciones</h1>  
+                <button class="btn" onclick="saveGame()">💾 Guardar Partida</button>  
+                <button class="btn" onclick="loadGame()">📂 Cargar Partida</button>  
+                <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="resetGame()">🔄 Reiniciar</button>  
+            </div>  
+        </div>  
+    </div>  
+  
+    <!-- MODALES -->  
+    <div id="gameModeModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('gameMode')">&times;</span>  
+            <h1>Modo de Juego</h1>  
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('manager')">🏅 Liga Manager (Empezar con equipo preexistente)</button>  
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('promanager')">🚀 Liga Promanager (Empezar desde abajo)</button>  
+        </div>  
+    </div>  
+  
+    <div id="selectTeamModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('selectTeam')">&times;</span>  
+            <h1>Selecciona tu Equipo</h1>  
+            <h2>Primera División</h2>  
+            <div id="primeraList" class="team-selection-list"></div>  
+            <h2>Segunda División</h2>  
+            <div id="segundaList" class="team-selection-list"></div>  
+            <h2>Primera RFEF</h2>  
+            <div id="rfefList" class="team-selection-list"></div>  
+        </div>  
+    </div>  
+  
+    <div id="signPlayerModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('signPlayer')">&times;</span>  
+            <h1>Fichar Jugador</h1>  
+            <div id="availablePlayersList"></div>  
+        </div>  
+    </div>  
+  
+    <div id="signYoungsterModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>  
+            <h1>Contratar Joven</h1>  
+            <div id="availableYoungstersList"></div>  
+        </div>  
+    </div>  
+  
+    <script type="module">  
+        import * as gameLogic from './gameLogic.js';  
+        import * as ui from './ui.js';  
+        import { TEAMS_DATA, FORMATIONS } from './config.js'; // Importar FORMATIONS también  
+        import { generateAvailablePlayers, generateAvailableYoungsters } from './players.js';  
+  
+        // --- Funciones globales expuestas para el HTML ---  
+        window.switchPage = function(pageId, element) {  
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
+            document.getElementById(pageId).classList.add('active');  
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));  
+            element.classList.add('active'); // Usa el elemento pasado para marcarlo como activo  
+  
+            // Al cambiar de página, actualiza la UI relevante  
+            const state = gameLogic.getGameState();  
+            if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);  
+            if (pageId === 'academy') ui.renderAcademyList(state.academy);  
+            if (pageId === 'transfers') renderAvailablePlayers(); // Refrescar mercado al abrir  
+            if (pageId === 'match') {  
+                const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
+                const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo AI';  
+                ui.renderNextMatchCard(state.team, nextRival, state.week);  
+                document.getElementById('lastMatchResult').innerHTML = ''; // Limpiar resultados anteriores  
+                const lastMatch = state.matchHistory[state.matchHistory.length - 1];  
+                if (lastMatch) {  
+                    document.getElementById('lastMatchResult').innerHTML = `  
+                        <div class="alert alert-info">Último resultado: ${lastMatch.home} ${lastMatch.score} ${lastMatch.away}</div>  
+                    `;  
+                }  
+            }  
+            if (pageId === 'finance') updateFinanceDisplay(state);  
+            if (pageId === 'facilities') updateFacilitiesDisplay(state);  
+            if (pageId === 'staff') updateStaffDisplay(state);  
+            if (pageId === 'tactics') updateTacticsDisplay(state);  
+        };  
+  
+        window.openModal = function(type) {  
+            if (type === 'gameMode') {  
+                document.getElementById('gameModeModal').classList.add('active');  
+            } else if (type === 'selectTeam') {  
+                document.getElementById('selectTeamModal').classList.add('active');  
+                renderTeamSelectors();  
+            } else if (type === 'signPlayer') {  
+                document.getElementById('signPlayerModal').classList.add('active');  
+                renderAvailablePlayers();  
+            } else if (type === 'signYoungster') {  
+                document.getElementById('signYoungsterModal').classList.add('active');  
+                renderAvailableYoungsters();  
+            }  
+        };  
+  
+        window.closeModal = function(type) {  
+            document.getElementById(type + 'Modal').classList.remove('active');  
+        };  
+  
+        window.startGameMode = function(mode) {  
+            window.gameMode = mode; // Almacenar el modo de juego  
+            window.closeModal('gameMode');  
+            window.openModal('selectTeam');  
+        };  
+  
+        function renderTeamSelectors() {  
+            // Función para generar botones de equipo  
+            const createTeamButtons = (divisionKey) => {  
+                const listElement = document.getElementById(`${divisionKey}List`);  
+                if (!listElement) return;  
+  
+                listElement.innerHTML = TEAMS_DATA[divisionKey].map(team =>  
+                    `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="selectTeamAndStart('${team}', '${divisionKey}')">  
+                        ${team}  
+                    </button>`  
+                ).join('');  
+            };  
+  
+            createTeamButtons('primera');  
+            createTeamButtons('segunda');  
+            createTeamButtons('rfef');  
+        }  
+  
+        window.selectTeamAndStart = function(teamName, division) {  
+            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);  
+            ui.refreshUI(gameLogic.getGameState()); // Refrescar toda la UI después de seleccionar equipo  
+            window.closeModal('selectTeam');  
+            // Asegurar que Dashboard esté activo y su botón marcado  
+            const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+            if(dashboardButton) {  
+                window.switchPage('dashboard', dashboardButton);  
+            }  
+        };  
+  
+        // --- Funciones para renderizar listas dinámicas ---  
+        function renderAvailablePlayers() {  
+            const players = generateAvailablePlayers();  
+            ui.renderAvailablePlayersMarket(players);  
+        }  
+  
+        function renderAvailableYoungsters() {  
+            const youngsters = generateAvailableYoungsters();  
+            ui.renderAvailableYoungstersMarket(youngsters);  
+        }  
+  
+        // --- Acciones del juego ---  
+        window.fichPlayerConfirm = function(encodedPlayerJson) {  
+            const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
+            const result = gameLogic.signPlayer(player);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                window.closeModal('signPlayer');  
+            } else {  
+                alert('Error: ' + result.message);  
+            }  
+        };  
+  
+        window.fichYoungsterConfirm = function(encodedYoungsterJson) {  
+            const youngster = JSON.parse(decodeURIComponent(encodedYoungsterJson));  
+            const result = gameLogic.signYoungster(youngster);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                window.closeModal('signYoungster');  
+            } else {  
+                alert('Error: ' + result.message);  
+            }  
+        };  
+  
+        window.sellPlayerConfirm = function(name) {  
+            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {  
+                const result = gameLogic.sellPlayer(name);  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+            }  
+        };  
+  
+        window.promoteConfirm = function(name) {  
+            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {  
+                const result = gameLogic.promoteYoungster(name);  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+            }  
+        };  
+  
+        window.simulateWeek = function() {  
+            gameLogic.simulateFullWeek();  
+            const state = gameLogic.getGameState();  
+            ui.refreshUI(state);  
+  
+            // Mostrar el resultado del último partido en la página de partido  
+            const lastMatch = state.matchHistory[state.matchHistory.length - 1];  
+            if (lastMatch) {  
+                document.getElementById('lastMatchResult').innerHTML = `  
+                    <div class="alert alert-info">Último resultado: ${lastMatch.home} ${lastMatch.score} ${lastMatch.away}</div>  
+                `;  
+            }  
+        };  
+  
+        // --- Funciones para las páginas de gestión ---  
+        window.updateFormation = function() {  
+            const state = gameLogic.getGameState();  
+            const newFormation = document.getElementById('formationSelect').value;  
+            const updatedState = { ...state, formation: newFormation }; // Crear nueva copia  
+            gameLogic.updateGameState(updatedState); // Usar updateGameState  
+            alert('Formación actualizada a ' + FORMATIONS[updatedState.formation].name);  
+        };  
+  
+        window.updateMentality = function() {  
+            const state = gameLogic.getGameState();  
+            const newMentality = document.getElementById('mentalitySelect').value;  
+            const updatedState = { ...state, mentality: newMentality }; // Crear nueva copia  
+            gameLogic.updateGameState(updatedState); // Usar updateGameState  
+            alert('Mentalidad táctica actualizada a ' + updatedState.mentality);  
+        };  
+  
+        function updateTacticsDisplay(state) {  
+             const formationSelect = document.getElementById('formationSelect');  
+             const mentalitySelect = document.getElementById('mentalitySelect');  
+             if(formationSelect) formationSelect.value = state.formation;  
+             if(mentalitySelect) mentalitySelect.value = state.mentality;  
+        }  
+  
+        window.expandStadium = function() {  
+            const result = gameLogic.expandStadium();  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            updateFacilitiesDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+        };  
+  
+        window.improveFacilities = function() {  
+            const result = gameLogic.improveFacilities();  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            updateFacilitiesDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+        };  
+  
+        function updateFacilitiesDisplay(state) {  
+            const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');  
+            const currentTrainingLevel = document.getElementById('currentTrainingLevel');  
+            if (currentStadiumCapacity) currentStadiumCapacity.textContent = state.stadiumCapacity.toLocaleString('es-ES');  
+            if (currentTrainingLevel) currentTrainingLevel.textContent = state.trainingLevel;  
+        }  
+  
+        window.hireStaff = function(role) {  
+            const result = gameLogic.hireStaff(role);  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            updateStaffDisplay(gameLogic.getGameState()); // Refrescar solo esta sección  
+        };  
+  
+        function updateStaffDisplay(state) {  
+            const staffRoles = ['medico', 'entrenador', 'analista', 'scout', 'secretario'];  
+            staffRoles.forEach(role => {  
+                const staffElement = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}`);  
+                const btnElement = document.getElementById(`btnHire${role.charAt(0).toUpperCase() + role.slice(1)}`);  
+  
+                if (staffElement) staffElement.textContent = state.staff[role] ? 'Contratado' : 'No contratado';  
+                if (btnElement) {  
+                    btnElement.disabled = state.staff[role] !== null; // Deshabilitar si ya está contratado (true o string)  
+                    btnElement.textContent = state.staff[role] !== null ? 'Contratado' : 'Contratar';  
+                }  
+            });  
+        }  
+  
+        function updateFinanceDisplay(state) {  
+            document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');  
+            document.getElementById('financeTicketPrice').textContent = state.ticketPrice.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeMerchandising').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
+        }  
+  
+        // --- Guardado y Carga ---  
+        window.saveGame = function() {  
+            const result = gameLogic.saveToLocalStorage();  
+            alert(result.message);  
+        };  
+  
+        window.loadGame = function() {  
+            const result = gameLogic.loadFromLocalStorage();  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                // Asegúrate de que el menú activo sea 'dashboard' al cargar una partida  
+                const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+                if(dashboardButton) {  
+                    window.switchPage('dashboard', dashboardButton);  
+                }  
+            } else {  
+                alert(result.message);  
+            }  
+        };  
+  
+        window.resetGame = function() {  
+            if (confirm('¿Estás seguro de que quieres reiniciar completamente el juego? Toda tu partida se perderá.')) {  
+                gameLogic.resetGame(); // Esta función recarga la página  
+            }  
+        };  
+  
+        // --- Inicialización del juego ---  
+        document.addEventListener('DOMContentLoaded', () => {  
+            const savedStateResult = gameLogic.loadFromLocalStorage();  
+            if (savedStateResult.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                // Asegúrate de que el menú activo sea 'dashboard' al cargar una partida  
+                const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+                if(dashboardButton) {  
+                    window.switchPage('dashboard', dashboardButton);  
+                }  
+            } else {  
+                window.openModal('gameMode'); // Mostrar el modal de selección de modo de juego si no hay partida guardada  
+                // Asegúrate de que no haya ninguna página activa y el dashboard no se muestre hasta que se inicie el juego  
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
+            }  
+        });  
+    </script>  
+</body>  
+</html>  
