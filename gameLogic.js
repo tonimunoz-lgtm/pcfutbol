@@ -431,6 +431,21 @@ export {
 
 // actualizar balance semanal
 function endOfWeekUpdate() {
+    calculateWeeklyFinance();
     const weeklyBalanceChange = gameState.weeklyIncome - gameState.weeklyExpenses;
     gameState.balance += weeklyBalanceChange;
+}
+
+
+// CALCULAR INGRESOS Y GASTOS SEMANALES
+function calculateWeeklyFinance() {
+    const squadSalaries = gameState.squad.reduce((sum, p) => sum + p.salary, 0);
+    const staffExpenses = Object.values(gameState.staff).reduce((sum, active) => sum + (active ? 500 : 0), 0);
+    const maintenance = 1000; // puedes ajustar
+    const academySalaries = gameState.academy.reduce((sum, y) => sum + y.salary, 0);
+
+    gameState.weeklyExpenses = squadSalaries + staffExpenses + maintenance + academySalaries;
+    
+    // recalcular ingresos
+    gameState.weeklyIncome = gameState.stadiumCapacity * gameState.ticketPrice / 10 + gameState.merchandisingRevenue;
 }
