@@ -1,7 +1,7 @@
 // players.js - Base de datos de jugadores profesionales y cantera  
   
 // Importar ATRIBUTOS y POSITION_ATTRIBUTE_WEIGHTS  
-import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS } from './config.js';  
+import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS } from './config.js'; // Import STAFF_LEVEL_EFFECTS  
   
 // Lista de clubes de ejemplo (de todas las divisiones para la IA)  
 const AI_CLUBS = [  
@@ -14,36 +14,40 @@ const AI_CLUBS = [
     // Equipos de RFEF para la generación de jugadores (de config.js)  
     'RC Deportivo', 'FC Barcelona B', 'Real Madrid Castilla', 'Racing Ferrol', 'Celta B',  
     'Rayo Majadahonda', 'Cultural Leonesa', 'Real Unión', 'SD Logroñés', 'Unionistas Salamanca',  
-    'Córdoba CF', 'AD Ceuta FC', 'CD Castellón', 'Alcoyano', 'Atlético Baleares',  
-    'Linares Deportivo', 'UD Ibiza', 'CF Intercity', 'Antequera CF', 'Recreativo Granada',  
-    'CD Numancia', 'UD Logroñés', 'San Fernando CD', 'UD Melilla', 'UE Cornellà', 'CF Fuenlabrada',  
-    'Atlético Sanluqueño', 'Mérida AD', 'Algeciras CF', 'Real Murcia CF'  
+    'Gimnàstic Tarragona', 'CE Sabadell FC', 'CD Castellón', 'UE Cornellà', 'UD Logroñés',  
+    'Atlético Baleares', 'CD Alcoyano', 'CF Intercity', 'Eldense', 'La Nucía',  
+    'Recreativo Huelva', 'Málaga CF', 'Antequera CF', 'Algeciras CF', 'San Fernando CD',  
+    'AD Mérida', 'Real Murcia CF', 'Atlético Sanluqueño', 'Linares Deportivo', 'CD Atlético Baleares',  
+    'UD Ibiza', 'AD Ceuta FC', 'Córdoba CF', 'RC Recreativo de Huelva', 'CD Badajoz',  
+    'Extremadura UD', 'Real Balompédica Linense', 'UD Melilla', 'CP Cacereño', 'UCAM Murcia CF'  
 ];  
   
 // Lista de nombres de jugadores para generar más variedad  
 const PLAYER_NAMES = [  
     "Juan", "Pedro", "Pablo", "Alberto", "Manuel", "Sergio", "Daniel", "Carlos", "Luis", "Francisco",  
     "Javier", "David", "José", "Antonio", "Fernando", "Gonzalo", "Diego", "Miguel", "Álvaro", "Adrián",  
-    "Iván", "Jorge", "Raúl", "Ricardo", "Roberto", "Rubén", "Santiago", "Saúl", "Sebastián", "Vicente"  
+    "Iván", "Jorge", "Raúl", "Ricardo", "Roberto", "Rubén", "Santiago", "Saúl", "Sebastián", "Vicente",  
+    "Marco", "Alejandro", "Gabriel", "Mario", "Ángel", "Héctor", "Óscar", "Lucas", "Hugo", "Bruno"  
 ];  
   
 const PLAYER_LAST_NAMES = [  
     "García", "Fernández", "González", "Rodríguez", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Martín",  
-    "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutierrez"  
+    "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutierrez",  
+    "Navarro", "Torres", "Ramírez", "Serrano", "Molina", "Ortiz", "Delgado", "Castro", "Rubio", "Marín"  
 ];  
   
 // Genera un nombre aleatorio  
 function generateRandomName() {  
     const firstName = PLAYER_NAMES[Math.floor(Math.random() * PLAYER_NAMES.length)];  
     const lastName = PLAYER_LAST_NAMES[Math.floor(Math.random() * PLAYER_LAST_NAMES.length)];  
-    return `${firstName} ${lastName}`;  
+    const secondLastName = PLAYER_LAST_NAMES[Math.floor(Math.random() * PLAYER_LAST_NAMES.length)];  
+    return `${firstName} ${lastName} ${secondLastName.slice(0,1)}.`; // Como en PCF: Apellido1 Apellido2_inicial.  
 }  
   
 // Función para calcular el Overall a partir de los atributos y la posición  
 export function calculateOverall(player) {  
     const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
     if (!weights) {  
-        // Fallback a un cálculo simple si no hay pesos específicos para la posición  
         let overallSum = 0;  
         for (const attr of ATTRIBUTES) {  
             overallSum += (player[attr] || 0);  
@@ -279,7 +283,6 @@ function getPlayerMarket(filters = {}, scoutLevel = 0) {
     }  
   
     // --- Efecto del Scout ---  
-    // Si el scout es bueno, se "descubren" jugadores de mejor calidad que no aparecían antes  
     let finalPlayers = [...filteredPlayers];  
     if (scoutLevel > 0) {  
         const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
