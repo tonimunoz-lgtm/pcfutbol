@@ -1,5 +1,8 @@
 // gameLogic.js - Lógica central del juego  
   
+// Importar TEAMS_DATA al inicio del archivo para usar ES Modules  
+import { TEAMS_DATA } from './config.js';  
+  
 // Estado global del juego  
 const gameState = {  
     team: null,  
@@ -84,12 +87,6 @@ function generateInitialAcademy() {
   
 // Selección de equipo inicial  
 function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {  
-    // Importamos TEAMS_DATA aquí para evitar problemas de dependencias circulares  
-    // Si config.js depende de gameLogic.js, y gameLogic.js de config.js, hay un problema.  
-    // La mejor forma es que gameLogic.js solo tenga dependencias unidireccionales (config -> gameLogic)  
-    // Para simplificar y dado que config.js es un módulo simple, lo importamos aquí.  
-    const { TEAMS_DATA } = require('./config');  
-  
     gameState.team = teamName;  
     gameState.division = divisionType;  
     gameState.gameMode = gameMode; // Guardar el modo de juego  
@@ -97,7 +94,7 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.academy = generateInitialAcademy();  
   
     // Inicializar standings con TODOS los equipos de la división  
-    const divisionTeams = TEAMS_DATA[divisionType.toLowerCase()];  
+    const divisionTeams = TEAMS_DATA[divisionType.toLowerCase()]; // Usa el import de TEAMS_DATA  
     gameState.standings = initStandings(divisionTeams);  
   
     // Calcular las finanzas una vez que la plantilla ya está generada  
@@ -209,6 +206,7 @@ function playMatch(homeTeamName, awayTeamName) {
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20); // Default AI team  
     let teamMentality = 'balanced';  
   
+    // Determinar el overall y la mentalidad si uno de los equipos es el del jugador  
     if (homeTeamName === gameState.team) {  
         homeTeamOverall = gameState.squad.reduce((sum, p) => sum + p.overall, 0) / gameState.squad.length;  
         teamMentality = gameState.mentality;  
@@ -217,9 +215,7 @@ function playMatch(homeTeamName, awayTeamName) {
         teamMentality = gameState.mentality;  
     }  
   
-  
     const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome(homeTeamOverall, awayTeamOverall, teamMentality);  
-  
   
     // Actualizar estadísticas de la tabla  
     const updateStats = (team, gf, gc) => {  
@@ -309,7 +305,6 @@ function simulateFullWeek() {
         playMatch(match.home, match.away);  
     });  
   
-  
     gameState.week++;  
     updateWeeklyFinancials();  
 }  
@@ -319,7 +314,8 @@ function simulateFullWeek() {
 function updateWeeklyFinancials() {  
     // Gastos semanales: salarios de jugadores + staff  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + p.salary, 0);  
-    const staffSalaries = Object.values(gameState.staff).filter(s => s !== null).length * 500; // Salario base del staff  
+    // Calcular salarios del staff solo si están contratados  
+    const staffSalaries = Object.values(gameState.staff).filter(s => s !== null).length * 500; // 500€/semana por staff contratado  
     gameState.weeklyExpenses = playerSalaries + staffSalaries;  
   
     // Ingresos semanales: base + entradas + merchandising  
@@ -356,11 +352,10 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
     return { success: true, message: `¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
 }  
   
-function hireStaff(role, costPerWeek = 500) { // Ejemplo de costo semanal  
+function hireStaff(role) { // Eliminamos costPerWeek de aquí, ya está en updateWeeklyFinancials  
     if (gameState.staff[role] !== null && gameState.staff[role] !== undefined) {  
         return { success: false, message: `Ya tienes un ${role} contratado.` };  
     }  
-    // No hay costo inicial para simplificar, solo salario semanal  
     gameState.staff[role] = true; // Simplemente marcamos como contratado  
     updateWeeklyFinancials(); // Para recalcular gastos  
     return { success: true, message: `¡${role} contratado exitosamente!` };  
@@ -391,10 +386,10 @@ function resetGame() {
     window.location.reload(); // Recargar la página para reiniciar todo el estado  
 }  
   
-// Exportamos explícitamente las funciones que otros módulos necesitan  
+// Exportamos explícitamente las funciones que otros módulos necesitan (ES Module style)  
 export {  
     getGameState,  
-    updateGameState, // Añadido  
+    updateGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
     playMatch,  
@@ -407,13 +402,6 @@ export {
     hireStaff,  
     saveToLocalStorage,  
     loadFromLocalStorage,  
-    resetGame // Añadido para la función de reset  
+    resetGame,  
+    initStandings // También exportado por si es necesario  
 };  
-  
-// Para la importación de TEAMS_DATA en selectTeamWithInitialSquad,  
-// necesitamos que config.js también use 'module.exports' o usar un patrón de inyección.  
-// Aquí asumimos que config.js usará 'module.exports' para ser compatible con 'require'.  
-// Si estás usando ES Modules completamente, cambia 'require' por 'import' y 'module.exports' por 'export default'.  
-// Para este entorno de navegador con type="module" en index.html,  
-// la importación de TEAMS_DATA puede ser problemática si config.js no es un ES Module válido.  
-// La forma más limpia sería que gameLogic.js fuera un módulo ES, y que importara TEAMS_DATA con 'import'.  
