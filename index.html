@@ -1358,7 +1358,7 @@
         };  
   
         window.hireStaffConfirm = function(encodedCandidateJson) {  
-            const candidate = JSON.PARSE(decodeURIComponent(encodedCandidateJson));  
+            const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));  
             const state = gameLogic.getGameState();  
             const existingStaff = state.staff[candidate.role];  
             let confirmationMessage = `¿Estás seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}€/semana y una cláusula de ${candidate.clausula.toLocaleString('es-ES')}€?`;  
