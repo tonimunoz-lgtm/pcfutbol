@@ -11,8 +11,13 @@ const AI_CLUBS = [
     'Real Oviedo', 'RCD Español', 'Real Valladolid', 'Levante UD', 'Real Elche CF',  
     'Albacete', 'Andorra', 'Alcorcón', 'Eibar', 'Huesca', 'Ferrol', 'Tenerife', 'Sabadell', 'Mirandés', 'Burgos',  
     'Lugo', 'Córdoba', 'Ibiza', 'Alcoyano', 'Real Unión', 'Zaragoza', 'Lleida', 'Málaga', 'Cádiz', 'Ponferradina',  
-    'AD Alcalá', 'Cerdanyola', 'Talavera', 'Fuenlabrada', 'Alcalá', 'Getafe B', 'Torrejón', 'Alcorcón B', 'Móstoles', 'Cieza',  
-    'Mérida', 'Utrera', 'Coria', 'Extremadura', 'Villanovense', 'Córdoba B', 'Linares', 'San Roque', 'Poli Ejido', 'Jaén'  
+    // Equipos de RFEF para la generación de jugadores (de config.js)  
+    'RC Deportivo', 'FC Barcelona B', 'Real Madrid Castilla', 'Racing Ferrol', 'Celta B',  
+    'Rayo Majadahonda', 'Cultural Leonesa', 'Real Unión', 'SD Logroñés', 'Unionistas Salamanca',  
+    'Córdoba CF', 'AD Ceuta FC', 'CD Castellón', 'Alcoyano', 'Atlético Baleares',  
+    'Linares Deportivo', 'UD Ibiza', 'CF Intercity', 'Antequera CF', 'Recreativo Granada',  
+    'CD Numancia', 'UD Logroñés', 'San Fernando CD', 'UD Melilla', 'UE Cornellà', 'CF Fuenlabrada',  
+    'Atlético Sanluqueño', 'Mérida AD', 'Algeciras CF', 'Real Murcia CF'  
 ];  
   
 // Lista de nombres de jugadores para generar más variedad  
@@ -38,7 +43,7 @@ function generateRandomName() {
 export function calculateOverall(player) {  
     const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
     if (!weights) {  
-        console.warn(`Pesos de atributos no definidos para la posición: ${player.position}. Usando pesos por defecto.`);  
+        // Fallback a un cálculo simple si no hay pesos específicos para la posición  
         let overallSum = 0;  
         for (const attr of ATTRIBUTES) {  
             overallSum += (player[attr] || 0);  
@@ -84,7 +89,10 @@ function generateRandomFoot() {
   
 // Jugadores de élite (referencia para generar otros) - Ahora con atributos  
 const ELITE_PLAYERS_BASE = [  
-  { name: 'Vinicius Jr', position: 'EXT', age: 24, salary: 15000, value: 180000, club: 'Real Madrid', EN: 70, VE: 95, RE: 85, AG: 90, CA: 75, EF: 90, MO: 90, AT: 92, DF: 60, foot: 'Diestro' },  
+  { name: 'Griezmann', position: 'DC', age: 33, salary: 15000, value: 180000, club: 'Atlético Madrid', EN: 70, VE: 85, RE: 80, AG: 85, CA: 80, EF: 90, MO: 88, AT: 90, DF: 60, foot: 'Zurdo' },  
+  { name: 'Koke', position: 'MC', age: 32, salary: 12000, value: 150000, club: 'Atlético Madrid', EN: 80, VE: 70, RE: 88, AG: 80, CA: 80, EF: 85, MO: 85, AT: 80, DF: 80, foot: 'Diestro' },  
+  { name: 'Oblak', position: 'POR', age: 31, salary: 10000, value: 120000, club: 'Atlético Madrid', EN: 90, VE: 60, RE: 70, AG: 80, CA: 95, EF: 85, MO: 88, AT: 40, DF: 95, foot: 'Diestro' },  
+  { name: 'Filipe Luis', position: 'LI', age: 39, salary: 8000, value: 50000, club: 'Flamengo', EN: 75, VE: 70, RE: 75, AG: 70, CA: 70, EF: 65, MO: 70, AT: 60, DF: 75, foot: 'Zurdo' }, // Ejemplo de jugador veterano  
   { name: 'Rodri', position: 'MC', age: 27, salary: 12000, value: 150000, club: 'Man City', EN: 85, VE: 75, RE: 90, AG: 80, CA: 85, EF: 80, MO: 90, AT: 80, DF: 90, foot: 'Diestro' },  
   { name: 'Bellingham', position: 'MCO', age: 21, salary: 10000, value: 120000, club: 'Real Madrid', EN: 75, VE: 85, RE: 85, AG: 88, CA: 85, EF: 88, MO: 90, AT: 90, DF: 70, foot: 'Diestro' },  
   { name: 'Haaland', position: 'DC', age: 24, salary: 18000, value: 200000, club: 'Man City', EN: 60, VE: 90, RE: 80, AG: 80, CA: 90, EF: 95, MO: 90, AT: 93, DF: 40, foot: 'Zurdo' },  
@@ -195,7 +203,6 @@ function initPlayerDatabase() {
             weeksOut: 0  
         };  
         // overall y potential se calculan si no vienen ya calculados en ELITE_PLAYERS_BASE  
-        // (ya vienen predefinidos en ELITE_PLAYERS_BASE, pero esta es una capa de seguridad)  
         if (!fullPlayer.overall) fullPlayer.overall = calculateOverall(fullPlayer);  
         if (!fullPlayer.potential) fullPlayer.potential = fullPlayer.overall + Math.floor(Math.random() * (100 - fullPlayer.overall));  
   
@@ -228,7 +235,6 @@ function initYoungsterDatabase() {
             isInjured: false,  
             weeksOut: 0  
         };  
-        // similar a ELITE_PLAYERS_BASE, el overall y potential ya vienen  
         if (!fullYoungster.overall) fullYoungster.overall = calculateOverall(fullYoungster);  
         if (!fullYoungster.potential) fullYoungster.potential = fullYoungster.overall + Math.floor(Math.random() * (95 - fullYoungster.overall));  
         if (!fullYoungster.cost) fullYoungster.cost = fullYoungster.value;  
@@ -273,17 +279,21 @@ function getPlayerMarket(filters = {}, scoutLevel = 0) {
     }  
   
     // --- Efecto del Scout ---  
+    // Si el scout es bueno, se "descubren" jugadores de mejor calidad que no aparecían antes  
     let finalPlayers = [...filteredPlayers];  
     if (scoutLevel > 0) {  
         const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
-        const numExtraPlayers = Math.floor(filteredPlayers.length * (scoutEffectMultiplier - 1)); // Cuántos más podemos "descubrir"  
-  
-        // Para simplificar, si el scout es mejor, "encontramos" jugadores con mejor overall/potential  
-        // Filtrar por overall y potencial para simular un "buen ojo" del scout  
-        const topTierPlayers = ALL_AVAILABLE_PLAYERS.filter(p => p.overall > 70 && p.potential > 80);  
-        for (let i = 0; i < numExtraPlayers && i < topTierPlayers.length; i++) {  
-            if (!finalPlayers.some(fp => fp.name === topTierPlayers[i].name)) {  
-                finalPlayers.push(topTierPlayers[i]);  
+        // La calidad se refiere a la probabilidad de encontrar talentos o jugadores de alto overall  
+        if (Math.random() < (0.1 * scoutEffectMultiplier)) { // Ejemplo: 10% * efecto_scout  
+            const potentialFinds = ALL_AVAILABLE_PLAYERS.filter(p =>  
+                !finalPlayers.some(fp => fp.name === p.name) && // Que no esté ya en la lista  
+                p.overall > (60 + scoutLevel * 5) && // El scout descubre jugadores de mayor media  
+                (p.transferListed || p.loanListed || Math.random() < 0.1 * scoutEffectMultiplier) // o los hace "visiblemente" transferibles  
+            );  
+            // Añadir un par de los mejores descubrimientos  
+            if (potentialFinds.length > 0) {  
+                potentialFinds.sort((a,b) => b.overall - a.overall);  
+                finalPlayers.push(...potentialFinds.slice(0, Math.min(3, potentialFinds.length)));  
             }  
         }  
     }  
@@ -317,12 +327,14 @@ function getYoungsterMarket(filters = {}, scoutLevel = 0) {
     let finalYoungsters = [...filteredYoungsters];  
     if (scoutLevel > 0) {  
         const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
-        const numExtraYoungsters = Math.floor(filteredYoungsters.length * (scoutEffectMultiplier - 1));  
-  
-        const highPotentialYoungsters = ALL_AVAILABLE_YOUNGSTERS.filter(y => y.potential > 85);  
-        for (let i = 0; i < numExtraYoungsters && i < highPotentialYoungsters.length; i++) {  
-            if (!finalYoungsters.some(fy => fy.name === highPotentialYoungsters[i].name)) {  
-                finalYoungsters.push(highPotentialYoungsters[i]);  
+        if (Math.random() < (0.2 * scoutEffectMultiplier)) { // Más probable encontrar buenos juveniles  
+            const potentialFinds = ALL_AVAILABLE_YOUNGSTERS.filter(y =>  
+                !finalYoungsters.some(fy => fy.name === y.name) &&  
+                y.potential > (70 + scoutLevel * 5)  
+            );  
+            if (potentialFinds.length > 0) {  
+                potentialFinds.sort((a,b) => b.potential - a.potential);  
+                finalYoungsters.push(...potentialFinds.slice(0, Math.min(5, potentialFinds.length)));  
             }  
         }  
     }  
@@ -344,5 +356,4 @@ export {
     getYoungsterMarket,  
     initPlayerDatabase,  
     initYoungsterDatabase  
-    // calculateOverall YA NO SE EXPORTA AQUÍ, porque ya se exporta en su línea de declaración.  
 };  
