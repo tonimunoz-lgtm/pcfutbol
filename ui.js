@@ -189,3 +189,25 @@ export {
     renderNextMatchCard,
     updateDashboardStats
 };
+
+// ------------------- NUEVA FUNCIÓN -------------------
+// Simula la jornada completa y actualiza UI
+function playFullWeekAndUpdateUI(gameLogic) {
+    // Simula todos los partidos
+    gameLogic.simulateFullWeek();
+
+    // Obtener estado actualizado
+    const state = gameLogic.getGameState();
+    const standings = state.standings;
+
+    // Actualizar dashboard
+    updateDashboardStats(state, standings);
+
+    // Actualizar clasificación
+    renderStandingsTable(standings, state.team);
+
+    // Actualizar próximo partido (si quieres mostrar siguiente rival)
+    const rivals = Object.keys(standings).filter(t => t !== state.team);
+    const nextRival = rivals[Math.floor(Math.random() * rivals.length)];
+    renderNextMatchCard(state.team, nextRival, state.week);
+}
