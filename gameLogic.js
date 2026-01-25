@@ -4,7 +4,7 @@ import {
     TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
     STAFF_ROLES, STAFF_LEVEL_EFFECTS,  
     BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS,  
-    FORMATIONS // Importar FORMATIONS  
+    FORMATIONS, SEASON_WEEKS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Importar nuevas constantes de temporada  
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall } from './players.js';  
   
@@ -12,32 +12,32 @@ import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungs
 const gameState = {  
     team: null,  
     week: 1,  
-    division: 'Primera',  
+    division: 'Primera', // La división actual del equipo del jugador  
     squad: [],  
     academy: [],  
-    standings: {},  
+    standings: {}, // Clasificación de la liga actual  
     stadiumCapacity: 5000,  
     ticketPrice: 20,  
     merchandisingRevenue: 500,  
-    staff: { // Staff ahora almacena objetos con level y salary  
-        medico: null, // { name: string, level: number, salary: number }  
+    staff: {  
+        medico: null, // { name: string, level: number, salary: number, clausula: number }  
         entrenador: null,  
-        entrenadorPorteros: null, // Nuevo rol  
-        fisio: null, // Nuevo rol  
+        entrenadorPorteros: null,  
+        fisio: null,  
         analista: null,  
         scout: null,  
         secretario: null,  
-        segundoEntrenador: null // Nuevo rol  
+        segundoEntrenador: null  
     },  
     balance: 50000,  
     weeklyIncomeBase: 5000,  
     weeklyIncome: 0,  
     weeklyExpenses: 0,  
     formation: '442',  
-    lineup: [], // Los 11 jugadores iniciales, se inicializan con la plantilla  
+    lineup: [], // Los 11 jugadores iniciales  
     mentality: 'balanced',  
     trainingLevel: 1, // Nivel de instalaciones de entrenamiento  
-    matchHistory: [],  
+    matchHistory: [], // Historial de partidos jugados  
     popularity: 50,  
     fanbase: 10000,  
     merchandisingPrice: 10,  
@@ -53,7 +53,15 @@ const gameState = {
         attribute: null  
     },  
     newsFeed: [], // Cola de mensajes para el dashboard  
-    unreadNewsCount: 0 // Contador de noticias no leídas  
+    unreadNewsCount: 0, // Contador de noticias no leídas  
+    // Nuevas propiedades para la temporada  
+    currentSeason: '2025/2026', // Año actual de la temporada  
+    seasonType: 'preseason', // 'preseason', 'regular', 'postseason'  
+    leagueTeams: [], // Todos los equipos de la liga del jugador (incluido el nuestro)  
+    nextOpponent: null, // El próximo rival para la UI del partido  
+    // Competiciones (por implementar detalles)  
+    cupProgress: 0, // 0-5 (rondas de copa)  
+    europeanProgress: 0 // 0-5 (rondas europeas)  
 };  
   
 // --------------------------------------------  
@@ -70,7 +78,7 @@ function updateGameState(newState) {
 // Función para añadir noticias al feed  
 function addNews(message, type = 'info') {  
     gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now(), type: type });  
-    if (gameState.newsFeed.length > 20) { // Limitar el número de noticias  
+    if (gameState.newsFeed.length > 20) {  
         gameState.newsFeed.pop();  
     }  
     // Solo incrementar contador si no es una noticia del sistema (ej. entrenamiento exitoso)  
@@ -98,13 +106,13 @@ function initStandings(teamsArray) {
 // Generación de plantilla inicial (ahora con atributos detallados)  
 function generateInitialSquad() {  
     const positions = ['POR', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'MCO', 'EXT', 'EXT', 'DC', // 11 para titulares  
-                       'POR', 'DFC', 'MC', 'DC']; // 4 para suplentes  
+                       'POR', 'DFC', 'MC', 'DC', 'LI']; // 5 para suplentes (total 16)  
     const squad = positions.map((pos, idx) => {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
         const player = {  
             name: `Jugador ${idx + 1}`,  
             age: 18 + Math.floor(Math.random() * 10),  
-            position: pos,  
+            position: positions[Math.floor(Math.random() * positions.length)], // Posición aleatoria  
             foot: foot,  
             matches: 0,  
             form: 70 + Math.floor(Math.random() * 20), // 70-90 de forma inicial  
@@ -130,7 +138,7 @@ function generateInitialSquad() {
   
 // Generación cantera (ahora con atributos detallados)  
 function generateInitialAcademy() {  
-    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'EXT', 'DC']; // Más variedad de canteranos  
+    const positions = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'EXT', 'DC'];  
     const academy = [];  
     for (let i = 0; i < 5; i++) {  
         const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
@@ -159,17 +167,58 @@ function generateInitialAcademy() {
     return academy;  
 }  
   
-// Selección de equipo inicial  
+// Configura una nueva temporada  
+function setupNewSeason(currentSeason, division) {  
+    const nextSeasonYear = parseInt(currentSeason.split('/')[0]) + 1;  
+    const newSeasonName = `${nextSeasonYear}/${nextSeasonYear + 1}`;  
+  
+    // Limpiar estado relevante de la temporada anterior  
+    gameState.week = 1;  
+    gameState.matchHistory = [];  
+    gameState.standings = {};  
+    gameState.newsFeed = [];  
+    gameState.unreadNewsCount = 0;  
+    gameState.seasonType = 'preseason'; // Iniciar siempre con pretemporada  
+    gameState.currentSeason = newSeasonName;  
+    gameState.division = division; // La nueva división del equipo  
+  
+    // Generar nuevos equipos para la liga según la división (ejemplo, se mejorará con ascensos/descensos)  
+    const teamsInNewDivision = TEAMS_DATA[division.toLowerCase()];  
+    // Asegurarse de que el equipo del jugador esté en la lista, si no, lo añade  
+    if (!teamsInNewDivision.includes(gameState.team)) {  
+        teamsInNewDivision.push(gameState.team);  
+    }  
+    gameState.leagueTeams = teamsInNewDivision;  
+    gameState.standings = initStandings(teamsInNewDivision);  
+  
+    addNews(`¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`);  
+    // También generar nuevos jugadores en el mercado, rotar staff, etc.  
+    initPlayerDatabase();  
+    initYoungsterDatabase(); // Refrescar cantera del mercado  
+    // Resetear stats de jugadores (partidos, forma, lesiones)  
+    gameState.squad.forEach(p => { p.matches = 0; p.form = 70 + Math.floor(Math.random()*20); p.isInjured = false; p.weeksOut = 0; });  
+    gameState.academy.forEach(p => { p.matches = 0; p.form = 60 + Math.floor(Math.random()*20); p.isInjured = false; p.weeksOut = 0; });  
+}  
+  
+// Selección de equipo inicial (solo para el primer juego)  
 function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {  
     gameState.team = teamName;  
     gameState.division = divisionType;  
     gameState.gameMode = gameMode;  
+    gameState.currentSeason = '2025/2026';  
+    gameState.seasonType = 'preseason';  
+  
     // generateInitialSquad ya inicializa gameState.lineup  
     gameState.squad = generateInitialSquad();  
     gameState.academy = generateInitialAcademy();  
   
-    const divisionTeams = TEAMS_DATA[divisionType.toLowerCase()];  
-    gameState.standings = initStandings(divisionTeams);  
+    const teamsInDivision = TEAMS_DATA[divisionType.toLowerCase()];  
+    // Asegurarse de que el equipo del jugador esté en la lista, si no, lo añade  
+    if (!teamsInDivision.includes(gameState.team)) {  
+        teamsInDivision.push(gameState.team);  
+    }  
+    gameState.leagueTeams = teamsInDivision;  
+    gameState.standings = initStandings(teamsInDivision);  
   
     if (divisionType === 'primera') {  
         gameState.popularity = 65;  
@@ -188,6 +237,7 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         gameState.ticketPrice = 15;  
     }  
   
+    addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');  
     updateWeeklyFinancials();  
 }  
   
@@ -211,7 +261,7 @@ function signPlayer(player) {
   
     gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
-    addNews(`¡${player.name} ha sido fichado por ${player.club} (Tu equipo)!`);  
+    addNews(`¡${player.name} ha sido fichado!`, 'success');  
     return { success: true, message: `¡${player.name} ha sido fichado!` };  
 }  
   
@@ -232,7 +282,7 @@ function signYoungster(youngster) {
     gameState.balance -= newYoungster.cost;  
     gameState.academy.push(newYoungster);  
     updateWeeklyFinancials();  
-    addNews(`¡${youngster.name} se une a la cantera!`);  
+    addNews(`¡${youngster.name} se une a la cantera!`, 'info');  
     return { success: true, message: `${youngster.name} ha sido contratado para la cantera.` };  
 }  
   
@@ -257,7 +307,7 @@ function promoteYoungster(name) {
   
     gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
-    addNews(`¡${youngster.name} ha sido ascendido a la primera plantilla!`);  
+    addNews(`¡${youngster.name} ha sido ascendido a la primera plantilla!`, 'info');  
     return { success: true, message: `${youngster.name} ha sido ascendido a la primera plantilla.` };  
 }  
   
@@ -271,7 +321,7 @@ function sellPlayer(name) {
     const salePrice = Math.floor(player.overall * 2000 + (player.matches * 500) * (1 + Math.random() * 0.5));  
     gameState.balance += salePrice;  
     updateWeeklyFinancials();  
-    addNews(`¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}€!`);  
+    addNews(`¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}€!`, 'info');  
     return { success: true, message: `${player.name} vendido por ${salePrice}€.` };  
 }  
   
@@ -312,7 +362,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     if (player.loanListed && offeredSalary >= player.salary) acceptanceChance += 0.2;  
   
     const roll = Math.random();  
-    const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0; // Efecto del secretario en negociación  
+    const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;  
     acceptanceChance += secretaryEffect;  
   
     const accepted = roll < acceptanceChance;  
@@ -331,7 +381,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     } else {  
         if (roll > 0.8) {  
             endNegotiation();  
-            return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.` };  
+            return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.`, type: 'error' };  
         } else {  
             return { success: false, message: `${player.name} encuentra tu oferta insuficiente. Podrías subir el salario o añadir más incentivos.` };  
         }  
@@ -371,7 +421,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
             return signPlayer(newPlayer);  
         } else {  
             endNegotiation();  
-            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.` };  
+            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.`, type: 'error' };  
         }  
   
     } else {  
@@ -400,7 +450,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         if (accepted) {  
             if (gameState.balance < offerAmount) {  
                 endNegotiation();  
-                return { success: false, message: 'No tienes suficiente dinero para esta oferta.' };  
+                return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };  
             }  
             gameState.balance -= offerAmount;  
             playerExchange.forEach(pName => {  
@@ -421,7 +471,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         } else {  
             if (roll > 0.8) {  
                 endNegotiation();  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.` };  
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.`, type: 'error' };  
             } else {  
                 return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
             }  
@@ -430,7 +480,9 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
 }  
   
 function endNegotiation(success = false) {  
-    console.log(`Negociación con ${gameState.negotiatingPlayer?.name || 'jugador desconocido'} finalizada ${success ? 'con éxito' : 'sin éxito'}.`);  
+    if (!success && gameState.negotiatingPlayer) {  
+        addNews(`Negociación por ${gameState.negotiatingPlayer.name} fracasada.`, 'error');  
+    }  
     gameState.negotiatingPlayer = null;  
     gameState.negotiationStep = 0;  
     gameState.playerOffer = null;  
@@ -497,11 +549,11 @@ function applyWeeklyTraining() {
         player[attribute] = Math.min(100, currentAttrValue + improvementAmount);  
         player.overall = calculatePlayerOverall(player);  
         message = `${player.name} ha mejorado su ${attribute} a ${player[attribute]}! (OVR: ${player.overall})`;  
-        addNews(`[Entrenamiento] ${message}`, 'system'); // Noticia de sistema, no incrementa unread  
+        addNews(`[Entrenamiento] ${message}`, 'system');  
         return { success: true, message: message };  
     } else {  
         message = `${player.name} no ha mostrado mejoras significativas en ${attribute} esta semana.`;  
-        return { success: false, message: message, type: 'system' }; // Noticia de sistema  
+        return { success: false, message: message, type: 'system' };  
     }  
 }  
   
@@ -544,8 +596,8 @@ function generateInjury(player) {
     }  
   
     // Un jugador con muy baja forma o muy alta agresividad podría tener más riesgo  
-    if (player.form < 60) injuryProb *= 1.5; // 50% más de probabilidad  
-    if (player.AG > 85) injuryProb *= 1.2; // 20% más de probabilidad  
+    if (player.form < 60) injuryProb *= 1.5;  
+    if (player.AG > 85) injuryProb *= 1.2;  
   
     if (Math.random() < injuryProb) {  
         player.isInjured = true;  
@@ -553,10 +605,10 @@ function generateInjury(player) {
         if (gameState.staff.medico) {  
             const medicoLevel = gameState.staff.medico.level;  
             const medicoEffect = STAFF_LEVEL_EFFECTS[medicoLevel]?.recoveryTime || 1;  
-            recoveryMin /= medicoEffect; // Menos tiempo con mejor médico  
+            recoveryMin /= medicoEffect;  
             recoveryMax /= medicoEffect;  
         }  
-        player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin)); // Redondeamos  
+        player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin));  
   
         addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`, 'warning');  
         return true;  
@@ -572,10 +624,10 @@ function playMatch(homeTeamName, awayTeamName) {
     // Usar la alineación para el cálculo del overall de nuestro equipo  
     let myTeamSquadForMatch = [];  
     if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-        const lineupValidation = validateLineup(gameState.lineup);  
-        if (!lineupValidation.success) {  
+        const lineupValidation = validateLineup(gameState.lineup); // Re-validar por si acaso  
+        if (!lineupValidation.success) { // Esto no debería pasar si el botón de simular lo comprueba  
             addNews(`[Segundo Entrenador - ALINEACIÓN] No se pudo jugar el partido. ${lineupValidation.message}`, 'error');  
-            return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals: 0, awayGoals: 3 }; // Perdemos por incomparecencia o algo así  
+            return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals: 0, awayGoals: 3 }; // Perdemos  
         }  
         myTeamSquadForMatch = gameState.lineup;  
     }  
@@ -603,17 +655,15 @@ function playMatch(homeTeamName, awayTeamName) {
     updateStats(homeTeamName, homeGoals, awayGoals);  
     updateStats(awayTeamName, awayGoals, homeGoals);  
   
-    // Actualización de experiencia por partidos jugados (PCF7 style)  
-    // Solo los jugadores en la alineación tienen posibilidad de lesionarse o cambiar forma drásticamente  
     const playersInvolved = (homeTeamName === gameState.team || awayTeamName === gameState.team) ? myTeamSquadForMatch : [];  
   
     playersInvolved.forEach(pInvolved => {  
-        const p = gameState.squad.find(s => s.name === pInvolved.name) || gameState.academy.find(a => a.name === pInvolved.name);  
-        if (!p) return; // Jugador no encontrado (esto no debería pasar con validateLineup)  
+        const p = gameState.squad.find(s => s.name === pInvolved.name); // Asumimos que sólo juegan de la plantilla  
+        if (!p) return;  
   
         if (!p.isInjured) {  
             p.matches++;  
-            generateInjury(p); // Posibilidad de lesión  
+            generateInjury(p);  
   
             p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1)));  
             const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
@@ -630,14 +680,13 @@ function playMatch(homeTeamName, awayTeamName) {
         }  
     });  
   
-    // Para el resto de la plantilla que no jugó, solo varía la forma ligeramente  
     gameState.squad.forEach(p => {  
         if (!playersInvolved.some(pi => pi.name === p.name) && !p.isInjured) {  
             p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
         }  
     });  
-    gameState.academy.forEach(y => {  
-        if (!y.isInjured) { // Y los juveniles que no juegan en el primer equipo, varían menos  
+    gameState.academy.forEach(y => { // Los juveniles no participan en partidos de primer equipo, solo cambia la forma  
+        if (!y.isInjured) {  
              y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.8 ? 1 : -1)));  
         }  
     });  
@@ -672,7 +721,7 @@ function playMatch(homeTeamName, awayTeamName) {
 function secondCoachAdvice() {  
     if (!gameState.staff.segundoEntrenador) return;  
   
-    const currentLineupPlayers = new Set(gameState.lineup.map(p => p.name));  
+    const currentLineup = gameState.lineup;  
     const availableSquad = gameState.squad.filter(p => !p.isInjured);  
   
     // 1. Advertencia si no hay foco de entrenamiento  
@@ -680,17 +729,17 @@ function secondCoachAdvice() {
         addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`, 'warning');  
     }  
   
-    // 2. Jugadores con baja forma  
-    const lowFormPlayers = availableSquad.filter(p => p.form < 65 && currentLineupPlayers.has(p.name));  
-    if (lowFormPlayers.length > 0 && Math.random() < 0.6) {  
-        const p = lowFormPlayers[Math.floor(Math.random() * lowFormPlayers.length)];  
-        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}) tiene baja forma (${p.form}). ¿Debería salir en el once inicial?`, 'warning');  
+    // 2. Jugadores con baja forma en la alineación  
+    const lowFormLineupPlayers = currentLineup.filter(p => p.form < 65 && !p.isInjured);  
+    if (lowFormLineupPlayers.length > 0 && Math.random() < 0.6) {  
+        const p = lowFormLineupPlayers[Math.floor(Math.random() * lowFormLineupPlayers.length)];  
+        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}) tiene baja forma (${p.form}). Quizás necesite descanso.`, 'warning');  
     }  
   
     // 3. Jugadores con alto potencial que no juegan mucho  
     const promisingBenched = availableSquad.filter(p =>  
-        !currentLineupPlayers.has(p.name) &&  
-        p.age < 23 && p.potential > 80 && p.matches < (gameState.week * 0.5) // Juega menos de la mitad de los partidos  
+        !currentLineup.some(lp => lp.name === p.name) &&  
+        p.age < 23 && p.potential > 80 && p.matches < (gameState.week * 0.5)  
     );  
     if (promisingBenched.length > 0 && Math.random() < 0.4) {  
         const p = promisingBenched[Math.floor(Math.random() * promisingBenched.length)];  
@@ -704,7 +753,7 @@ function secondCoachAdvice() {
         if (pos === 'POR' && availableInPosition < 2) {  
             addNews(`[Segundo Entrenador] Solo tenemos ${availableInPosition} ${pos} apto. Deberíamos buscar refuerzos para la portería.`, 'warning');  
         } else if (pos !== 'POR' && availableInPosition < 3) {  
-            addNews(`[Segundo Entrenador] Tenemos pocos ${pos} aptos (${availableInPosition}). Considera fichar en esta posición.`, 'warning');  
+            addNews(`[Segundo Entrenador] Tenemos pocos ${pos} aptos (${availableInPosition}). Considera fichar.`, 'warning');  
         }  
     }  
   
@@ -717,29 +766,136 @@ function secondCoachAdvice() {
             addNews(`[Segundo Entrenador] Nuestro ojeador ha encontrado a ${p.name} (${p.position}, OVR ${p.overall}) del ${p.club}. ¡Podría ser un gran fichaje!`, 'info');  
         }  
     }  
+  
+    // 6. Validación de la alineación y sugerencias (antes del partido)  
+    const lineupValidation = validateLineup(currentLineup);  
+    if (!lineupValidation.success) {  
+        addNews(`[Segundo Entrenador - ALINEACIÓN] Tu alineación es inválida: ${lineupValidation.message}`, 'error');  
+    } else {  
+        // Consejos si hay jugadores fuera de posición  
+        currentLineup.forEach(p => {  
+            const currentFormationLayout = FORMATIONS[gameState.formation].layout;  
+            const positionInLayout = currentFormationLayout[currentLineup.indexOf(p)].pos;  
+            if (p.position !== positionInLayout && Math.random() < 0.3) {  
+                addNews(`[Segundo Entrenador - ALINEACIÓN] ${p.name} es un ${p.position} natural, pero está alineado como ${positionInLayout}. Sugiero revisar su posición.`, 'info');  
+            }  
+        });  
+    }  
 }  
   
 // Mensajes de la Directiva  
 function boardMessages() {  
-    // Satisfacción de la directiva (muy simplificado)  
     let satisfaction = 0;  
     const teamStats = gameState.standings[gameState.team];  
     if (teamStats) {  
-        satisfaction += teamStats.pts / gameState.week; // Puntos por jornada  
-        satisfaction += gameState.balance / 50000; // Balance económico  
-        satisfaction += gameState.popularity / 10; // Popularidad  
+        // Puntos por jornada, comparado con un ideal (ej. 2 puntos/jornada)  
+        satisfaction += (teamStats.pts / teamStats.pj) - 2;  
+        satisfaction += gameState.balance / 50000;  
+        satisfaction += gameState.popularity / 10 - 5; // Base 50% de popularidad  
   
-        if (satisfaction < 5 && gameState.week > 5) { // Insatisfechos  
-            addNews(`[Directiva] Esperábamos mejores resultados a estas alturas de la temporada. Hay que mejorar.`, 'error');  
-        } else if (satisfaction > 15 && gameState.week > 5) { // Contentos  
-            addNews(`[Directiva] Felicitaciones por el buen desempeño del equipo y la excelente gestión. Sigan así.`, 'success');  
-        } else if (Math.random() < 0.1) { // Mensaje random si no hay extremos  
-             addNews(`[Directiva] La estabilidad económica es clave para nuestro proyecto a largo plazo.`, 'info');  
+        let message = '';  
+        if (satisfaction < -2) {  
+            message = `[Directiva] Esperábamos mejores resultados a estas alturas de la temporada y estamos preocupados. Hay que mejorar.`;  
+            addNews(message, 'error');  
+        } else if (satisfaction < 0) {  
+            message = `[Directiva] No estamos del todo satisfechos con el progreso actual. Es necesario un empujón.`;  
+            addNews(message, 'warning');  
+        } else if (satisfaction > 2) {  
+            message = `[Directiva] Felicitaciones por el buen desempeño del equipo y la excelente gestión. Sigan así.`;  
+            addNews(message, 'success');  
+        } else if (Math.random() < 0.1) {  
+             message = `[Directiva] La estabilidad económica es clave para nuestro proyecto a largo plazo.`;  
+             addNews(message, 'info');  
         }  
     }  
 }  
   
+// --- Gestión de Temporadas ---  
+function endSeason() {  
+    const currentDivision = gameState.division;  
+    const currentSeason = gameState.currentSeason;  
+    const teams = Object.entries(gameState.standings).sort((a, b) => b[1].pts - a[1].pts);  
+    const myTeamRank = teams.findIndex(([name]) => name === gameState.team);  
+  
+    let nextDivision = currentDivision;  
+    let seasonSummary = `¡Fin de la temporada ${currentSeason}!\n`;  
+  
+    if (currentDivision === 'rfef') {  
+        // Ascensos desde RFEF  
+        const numPromote = PROMOTION_RELEGATION.rfef.promote;  
+        const promotedTeams = teams.slice(0, numPromote);  
+        if (promotedTeams.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Has ascendido a Segunda División! Felicidades.\n`;  
+            nextDivision = 'segunda';  
+        } else {  
+            seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
+        }  
+        seasonSummary += `Equipos que ascienden a Segunda: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
+  
+    } else if (currentDivision === 'segunda') {  
+        // Ascensos a Primera, descensos a RFEF  
+        const numPromote = PROMOTION_RELEGATION.segunda.promote;  
+        const promotedTeams = teams.slice(0, numPromote);  
+        if (promotedTeams.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Has ascendido a Primera División! ¡Un logro enorme!\n`;  
+            nextDivision = 'primera';  
+        }  
+  
+        const numRelegate = PROMOTION_RELEGATION.segunda.relegate;  
+        const relegatedTeams = teams.slice(-numRelegate);  
+        if (relegatedTeams.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Has descendido a Primera RFEF! Es hora de reconstruir.\n`;  
+            nextDivision = 'rfef';  
+        } else if (!promotedTeams.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `Tu equipo permanece en Segunda División.\n`;  
+        }  
+        seasonSummary += `Equipos que ascienden a Primera: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
+        seasonSummary += `Equipos que descienden a Primera RFEF: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
+  
+  
+    } else if (currentDivision === 'primera') {  
+        // Descensos a Segunda  
+        const numRelegate = PROMOTION_RELEGATION.primera.relegate;  
+        const relegatedTeams = teams.slice(-numRelegate);  
+        if (relegatedTeams.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Has descendido a Segunda División! A trabajar para volver.\n`;  
+            nextDivision = 'segunda';  
+        } else {  
+            seasonSummary += `Tu equipo permanece en Primera División.\n`;  
+        }  
+        seasonSummary += `Equipos que descienden a Segunda: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
+  
+        // Competiciones europeas (simplificado)  
+        const top4 = teams.slice(0, 4);  
+        if (top4.some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Te has clasificado para la Champions League!\n`;  
+        } else if (teams.slice(4, 7).some(([name]) => name === gameState.team)) {  
+            seasonSummary += `¡Te has clasificado para la Europa League!\n`;  
+        }  
+    }  
+  
+    alert(seasonSummary); // Mostrar resumen al usuario  
+    addNews(seasonSummary, 'info'); // Añadir al feed de noticias  
+    setupNewSeason(currentSeason, nextDivision); // Iniciar la nueva temporada  
+}  
+  
+  
 function simulateFullWeek() {  
+    // Si estamos en pretemporada, gestionarla  
+    if (gameState.seasonType === 'preseason') {  
+        handlePreseasonWeek();  
+        gameState.week++;  
+        updateWeeklyFinancials();  
+        if (gameState.week > PRESEASON_WEEKS) {  
+            gameState.seasonType = 'regular';  
+            gameState.week = 1; // La primera jornada de liga es la semana 1  
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'info');  
+        }  
+        return; // No hay partidos de liga ni eventos de temporada en pretemporada  
+    }  
+  
+  
+    // Validaciones y eventos semanales para temporada regular  
     // 1. Aplicar entrenamiento  
     const trainingResult = applyWeeklyTraining();  
     if (!trainingResult.success && trainingResult.message !== 'No hay un foco de entrenamiento establecido.') {  
@@ -757,7 +913,6 @@ function simulateFullWeek() {
             }  
         }  
     });  
-    // También para cantera  
     gameState.academy.forEach(y => {  
         if (y.isInjured) {  
             y.weeksOut--;  
@@ -784,23 +939,24 @@ function simulateFullWeek() {
     const teamsCopy = [...teams];  
     const matchesThisWeek = [];  
   
-    let myTeamPlayed = false;  
+    // Lógica para asignar los partidos de la jornada  
+    // Por simplicidad, aquí asignamos un oponente aleatorio  
+    let myNextOpponent = null;  
     if (myTeam && teamsCopy.length > 1) {  
         const otherTeams = teamsCopy.filter(t => t !== myTeam);  
-        const opponent = otherTeams[Math.floor(Math.random() * otherTeams.length)];  
-  
+        myNextOpponent = otherTeams[Math.floor(Math.random() * otherTeams.length)];  
+        // Asegurarse de que mi equipo juegue  
         if (Math.random() < 0.5) {  
-            matchesThisWeek.push({ home: myTeam, away: opponent });  
+            matchesThisWeek.push({ home: myTeam, away: myNextOpponent });  
         } else {  
-            matchesThisWeek.push({ home: opponent, away: myTeam });  
+            matchesThisWeek.push({ home: myNextOpponent, away: myTeam });  
         }  
-        myTeamPlayed = true;  
-  
         const indexMyTeam = teamsCopy.indexOf(myTeam);  
         if (indexMyTeam > -1) teamsCopy.splice(indexMyTeam, 1);  
-        const indexOpponent = teamsCopy.indexOf(opponent);  
+        const indexOpponent = teamsCopy.indexOf(myNextOpponent);  
         if (indexOpponent > -1) teamsCopy.splice(indexOpponent, 1);  
     }  
+    gameState.nextOpponent = myNextOpponent; // Guardar el oponente para mostrar en la UI  
   
     while (teamsCopy.length >= 2) {  
         const team1Index = Math.floor(Math.random() * teamsCopy.length);  
@@ -835,6 +991,21 @@ function simulateFullWeek() {
         resetGame();  
     }  
   
+    // Comprobar fin de temporada  
+    if (gameState.week > SEASON_WEEKS) {  
+        endSeason();  
+    }  
+}  
+  
+// Lógica para pretemporada  
+function handlePreseasonWeek() {  
+    addNews(`Semana ${gameState.week} de pretemporada. Busca amistosos o torneos.`, 'info');  
+    // Ejemplo: ofrecer un amistoso aleatorio  
+    if (Math.random() < 0.5 && gameState.staff.segundoEntrenador) {  
+        const opponent = gameState.leagueTeams.filter(t => t !== gameState.team)[Math.floor(Math.random() * (gameState.leagueTeams.length - 1))];  
+        addNews(`[Segundo Entrenador] Hemos recibido una invitación para un amistoso contra el ${opponent}.`, 'info');  
+        // Aquí se podría añadir un modal para aceptar/rechazar el amistoso  
+    }  
 }  
   
 // --------------------------------------------  
@@ -883,57 +1054,69 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
     return { success: true, message: `¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
 }  
   
-// Genera 3 candidatos aleatorios para un rol de staff (ahora con cláusulas)  
-function generateStaffCandidates(role) {  
+// Genera 3 candidatos aleatorios para un rol de staff (ahora con cláusulas y rotación)  
+let currentStaffCandidates = {}; // Cache de candidatos para que no cambien cada vez que se abre el modal  
+  
+function generateStaffCandidates(role, forceNew = false) {  
+    // Si ya tenemos candidatos y no forzamos nuevos, devolver los actuales  
+    if (currentStaffCandidates[role] && !forceNew) {  
+        return currentStaffCandidates[role];  
+    }  
+  
     const candidates = [];  
     const roleConfig = STAFF_ROLES[role];  
-    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego"];  
+    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego", "Miguel", "Sergio", "Elena", "Ricardo", "Carmen", "Javier"];  
   
-    // Factor de la cláusula según la división del jugador y el nivel del staff  
-    let divisionFactor = 1;  
-    if (gameState.division === 'primera') divisionFactor = 1.5;  
-    else if (gameState.division === 'segunda') divisionFactor = 1.0;  
-    else if (gameState.division === 'rfef') divisionFactor = 0.7;  
-  
+    let divisionFactor = DIVISION_MULTIPLIERS[gameState.division.toLowerCase()] || 1;  
   
     for (let i = 0; i < 3; i++) {  
         const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
-        const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5));  
+        const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5)) * divisionFactor;  
         const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
   
-        // Calcular cláusula de rescisión:  
-        // Cierto nivel de aleatoriedad, factor de nivel, factor de división  
-        let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * (0.8 + Math.random() * 0.4)); // Entre 0.8x y 1.2x  
+        let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * (0.8 + Math.random() * 0.4));  
   
         // Los de nivel 1 tienen 50% de probabilidad de ser libres  
         if (level === 1 && Math.random() < 0.5) {  
-            clausula = 0; // Libre  
-        } else if (level <= 2 && Math.random() < 0.2) { // Nivel 2, 20% de probabilidad de ser libre  
+            clausula = 0;  
+        } else if (level <= 2 && Math.random() < 0.2) {  
             clausula = 0;  
         } else {  
-            clausula = Math.max(clausula, 1000); // Mínimo 1000€ si no es libre  
+            clausula = Math.max(clausula, 1000);  
         }  
   
-  
-        candidates.push({ name: name, level: level, salary: salary, role: role, displayName: roleConfig.displayName, clausula: clausula });  
+        candidates.push({ name: name, level: level, salary: salary, role: role, displayName: roleConfig.displayName, clausula: Math.round(clausula) });  
     }  
+    currentStaffCandidates[role] = candidates; // Guardar en caché  
     return candidates;  
 }  
   
 // Contrata staff del modal de candidatos  
 function hireStaffFromCandidates(candidate) {  
-    if (gameState.staff[candidate.role]) {  
-        return { success: false, message: `Ya tienes un ${candidate.displayName} contratado.` };  
+    const existingStaff = gameState.staff[candidate.role];  
+    let indemnization = 0;  
+  
+    if (existingStaff) {  
+        // Calcular indemnización: salario de un año  
+        indemnization = existingStaff.salary * 52;  
+        if (gameState.balance < indemnization + candidate.clausula + candidate.salary) { // balance para indemnizar, cláusula y salario inicial  
+            return { success: false, message: `Dinero insuficiente. Necesitas ${indemnization.toLocaleString('es-ES')}€ para indemnizar a ${existingStaff.name} y pagar al nuevo staff.` };  
+        }  
+        gameState.balance -= indemnization;  
+        addNews(`¡${existingStaff.name} (${existingStaff.displayName}) ha sido despedido con una indemnización de ${indemnization.toLocaleString('es-ES')}€!`, 'warning');  
     }  
-    if (gameState.balance < candidate.clausula) { // Pagar la cláusula si la hay  
+  
+    if (gameState.balance < candidate.clausula) {  
         return { success: false, message: `Dinero insuficiente para pagar la cláusula de ${candidate.clausula.toLocaleString('es-ES')}€.` };  
     }  
-    if (gameState.balance < candidate.salary) { // Verificar salario para la primera semana  
+    if (gameState.balance < candidate.salary) {  
         return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}€/sem.` };  
     }  
   
     gameState.balance -= candidate.clausula;  
     gameState.staff[candidate.role] = candidate;  
+    // Vaciar los candidatos para este rol (simula que los demás firman con otros)  
+    currentStaffCandidates[candidate.role] = null;  
     updateWeeklyFinancials();  
     addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${candidate.clausula.toLocaleString('es-ES')}€)`, 'success');  
     return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
@@ -970,7 +1153,7 @@ function getLineup() {
 function getReservePlayers() {  
     // Jugadores de la plantilla que no están en la alineación y no están lesionados  
     const lineupNames = new Set(gameState.lineup.map(p => p.name));  
-    return gameState.squad.filter(p => !lineupNames.has(p.name) && !p.isInjured);  
+    return gameState.squad.filter(p => !lineupNames.has(p.name));  
 }  
   
 function setLineup(newLineup) {  
@@ -1034,7 +1217,6 @@ function validateLineup(lineupToCheck) {
     if (numMidfielders < 2) return { success: false, message: '¡Error! Necesitas al menos 2 centrocampistas.' };  
     if (numForwards < 1) return { success: false, message: '¡Error! Necesitas al menos 1 delantero.' };  
   
-  
     return { success: true, message: 'Alineación válida.' };  
 }  
   
@@ -1058,7 +1240,17 @@ function loadFromLocalStorage() {
         if (!gameState.newsFeed) gameState.newsFeed = [];  
         if (!gameState.unreadNewsCount) gameState.unreadNewsCount = 0;  
         if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
-        if (!gameState.lineup) gameState.lineup = gameState.squad.slice(0, 11); // Fallback para partidas antiguas  
+        if (!gameState.lineup) gameState.lineup = gameState.squad.slice(0, 11);  
+        if (!gameState.currentSeason) gameState.currentSeason = '2025/2026';  
+        if (!gameState.seasonType) gameState.seasonType = 'preseason';  
+        if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) {  
+             gameState.leagueTeams = TEAMS_DATA[gameState.division.toLowerCase()];  
+             if (!gameState.leagueTeams.includes(gameState.team)) {  
+                gameState.leagueTeams.push(gameState.team);  
+             }  
+        }  
+        if (!gameState.nextOpponent) gameState.nextOpponent = null;  
+  
   
         updateWeeklyFinancials();  
         return { success: true, message: 'Partida cargada.' };  
@@ -1103,9 +1295,10 @@ export {
     setTrainingFocus,  
     applyWeeklyTraining,  
     addNews,  
-    markNewsAsRead, // Nueva función para marcar noticias como leídas  
-    getLineup,      // Nuevas funciones de alineación  
+    markNewsAsRead,  
+    getLineup,  
     getReservePlayers,  
     setLineup,  
-    validateLineup  
+    validateLineup,  
+    endSeason // Exportar endSeason si queremos llamarla manualmente en tests  
 };  
