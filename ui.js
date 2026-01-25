@@ -1,5 +1,4 @@
 // ui.js - Utilidades de interfaz y renderizado
-
 /**
  * Renderiza la tabla de clasificación
  */
