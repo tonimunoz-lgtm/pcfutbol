@@ -30,7 +30,6 @@
             font-size: 1.8em;
             font-weight: bold;
             color: #e94560;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
             letter-spacing: 2px;
         }
         
@@ -52,7 +51,6 @@
             display: flex;
             max-width: 1600px;
             margin: 0 auto;
-            gap: 0;
             min-height: calc(100vh - 60px);
         }
         
@@ -75,7 +73,6 @@
             font-size: 0.85em;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
         
         .menu-item {
@@ -90,14 +87,13 @@
             transition: all 0.2s;
         }
         
-        .menu-item:hover {
-            background: rgba(233, 69, 96, 0.2);
+        .menu-item:hover, .menu-item.active {
+            background: rgba(233, 69, 96, 0.4);
             padding-left: 25px;
         }
         
         .menu-item.active {
             background: #e94560;
-            color: #fff;
             font-weight: bold;
         }
         
@@ -107,19 +103,10 @@
             overflow-y: auto;
         }
         
-        .page {
-            display: none;
-        }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
         
-        .page.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         h1 {
             color: #e94560;
@@ -133,8 +120,6 @@
             color: #e94560;
             font-size: 1.3em;
             margin: 20px 0 10px 0;
-            border-bottom: 1px solid rgba(233, 69, 96, 0.3);
-            padding-bottom: 5px;
         }
         
         .data-grid {
@@ -152,49 +137,14 @@
             text-align: center;
         }
         
-        .data-label {
-            color: #999;
-            font-size: 0.8em;
-            margin-bottom: 8px;
-        }
+        .data-label { color: #999; font-size: 0.8em; margin-bottom: 8px; }
+        .data-value { font-size: 1.8em; font-weight: bold; color: #00ff00; }
+        .data-value.negative { color: #ff3333; }
         
-        .data-value {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #00ff00;
-        }
-        
-        .data-value.negative {
-            color: #ff3333;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            background: rgba(0,0,0,0.3);
-        }
-        
-        thead {
-            background: rgba(233, 69, 96, 0.2);
-        }
-        
-        th {
-            padding: 12px;
-            text-align: left;
-            color: #e94560;
-            border: 1px solid rgba(233, 69, 96, 0.3);
-            font-weight: bold;
-        }
-        
-        td {
-            padding: 10px 12px;
-            border: 1px solid rgba(233, 69, 96, 0.15);
-        }
-        
-        tr:hover {
-            background: rgba(233, 69, 96, 0.1);
-        }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; background: rgba(0,0,0,0.3); }
+        th { padding: 12px; text-align: left; color: #e94560; background: rgba(233, 69, 96, 0.2); font-weight: bold; border: 1px solid rgba(233, 69, 96, 0.3); }
+        td { padding: 10px; border: 1px solid rgba(233, 69, 96, 0.15); }
+        tr:hover { background: rgba(233, 69, 96, 0.1); }
         
         .btn {
             background: linear-gradient(180deg, #e94560 0%, #c73446 100%);
@@ -208,19 +158,8 @@
             margin: 5px 5px 5px 0;
         }
         
-        .btn:hover {
-            background: linear-gradient(180deg, #ff5577 0%, #e94560 100%);
-            transform: translateY(-1px);
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.85em;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(180deg, #c73446 0%, #a02537 100%);
-        }
+        .btn:hover { background: linear-gradient(180deg, #ff5577 0%, #e94560 100%); transform: translateY(-1px); }
+        .btn-sm { padding: 6px 12px; font-size: 0.85em; }
         
         .modal {
             display: none;
@@ -235,9 +174,7 @@
             justify-content: center;
         }
         
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
         
         .modal-content {
             background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);
@@ -250,41 +187,7 @@
             overflow-y: auto;
         }
         
-        .modal-close {
-            float: right;
-            color: #e94560;
-            font-size: 2em;
-            cursor: pointer;
-        }
-        
-        .form-group {
-            margin: 15px 0;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #e94560;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid #e94560;
-            color: #fff;
-            border-radius: 3px;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            background: rgba(233, 69, 96, 0.2);
-            border-color: #ff5577;
-        }
+        .modal-close { float: right; color: #e94560; font-size: 2em; cursor: pointer; }
         
         .player-card {
             background: rgba(233, 69, 96, 0.08);
@@ -297,21 +200,6 @@
             align-items: center;
         }
         
-        .player-info {
-            flex: 1;
-        }
-        
-        .player-name {
-            color: #e94560;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-        
-        .player-stats {
-            font-size: 0.85em;
-            color: #999;
-        }
-        
         .alert {
             padding: 12px;
             margin: 10px 0;
@@ -319,50 +207,22 @@
             border: 1px solid;
         }
         
-        .alert-info {
-            background: rgba(233, 69, 96, 0.1);
-            border-color: #e94560;
-            color: #e94560;
-        }
+        .alert-info { background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #e94560; }
+        .alert-success { background: rgba(0, 255, 0, 0.1); border-color: #00ff00; color: #00ff00; }
         
-        .alert-success {
-            background: rgba(0, 255, 0, 0.1);
-            border-color: #00ff00;
-            color: #00ff00;
-        }
-        
-        .alert-danger {
-            background: rgba(255, 51, 51, 0.1);
-            border-color: #ff3333;
-            color: #ff3333;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-            border-bottom: 2px solid rgba(233, 69, 96, 0.3);
-        }
-        
-        .tab-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            font-weight: bold;
-        }
-        
-        .tab-btn.active {
-            color: #e94560;
-            border-bottom-color: #e94560;
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #e94560;
+            color: #fff;
+            border-radius: 3px;
+            margin-bottom: 10px;
         }
         
         @media (max-width: 768px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #e94560; }
-            .header { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
@@ -373,7 +233,7 @@
             <div class="info-box">Equipo: <span id="teamName">-</span></div>
             <div class="info-box">Jornada: <span id="weekNo">1</span></div>
             <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div>
-            <button class="btn btn-small" onclick="openModal('gameMode')">Nuevo Juego</button>
+            <button class="btn btn-sm" onclick="openModal('gameMode')">Nuevo Juego</button>
         </div>
     </div>
     
@@ -396,7 +256,6 @@
                 <div class="menu-title">🎯 PARTIDO</div>
                 <button class="menu-item" onclick="switchPage('tactics')">Tácticas</button>
                 <button class="menu-item" onclick="switchPage('match')">Próximo</button>
-                <button class="menu-item" onclick="switchPage('history')">Historial</button>
             </div>
             
             <div class="menu-section">
@@ -416,8 +275,6 @@
             <!-- DASHBOARD -->
             <div id="dashboard" class="page active">
                 <h1>📊 Dashboard del Club</h1>
-                <div id="warningAlert"></div>
-                
                 <div class="data-grid">
                     <div class="data-box">
                         <div class="data-label">Posición</div>
@@ -444,31 +301,20 @@
                         <div class="data-value" id="dashAcademy">0</div>
                     </div>
                 </div>
-                
                 <h2>Estado del Club</h2>
                 <table>
                     <tr><td>Dinero en Caja:</td><td id="dashBalance">0€</td></tr>
-                    <tr><td>Ingresos Semanales:</td><td id="dashIncome">10000€</td></tr>
-                    <tr><td>Gastos Semanales:</td><td id="dashExpenses">6000€</td></tr>
-                    <tr><td>Balance Semanal:</td><td id="dashWeekly">+4000€</td></tr>
-                    <tr><td>Capacidad Estadio:</td><td id="dashCapacity">50000</td></tr>
+                    <tr><td>Ingresos Semanales:</td><td id="dashIncome">10500€</td></tr>
+                    <tr><td>Gastos Semanales:</td><td id="dashExpenses">8000€</td></tr>
+                    <tr><td>Balance Semanal:</td><td id="dashWeekly">+2500€</td></tr>
                 </table>
             </div>
             
             <!-- CLASIFICACIÓN -->
             <div id="standings" class="page">
                 <h1>📈 Clasificación Liga</h1>
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchStandings('liga')">Primera División</button>
-                    <button class="tab-btn" onclick="switchStandings('segunda')">Segunda División</button>
-                    <button class="tab-btn" onclick="switchStandings('ref')">Primera RFEF</button>
-                </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>
                     <tbody id="standingsTable"></tbody>
                 </table>
             </div>
@@ -477,300 +323,158 @@
             <div id="squad" class="page">
                 <h1>👥 Plantilla</h1>
                 <button class="btn" onclick="openModal('signPlayer')">+ Fichar Jugador</button>
-                <button class="btn btn-small" style="background: #666;" onclick="sortSquad()">Ordenar por Nivel</button>
                 <div id="squadList" style="margin-top: 20px;"></div>
             </div>
             
-            <!-- MERCADO DE FICHAJES -->
+            <!-- MERCADO -->
             <div id="transfers" class="page">
                 <h1>🔄 Mercado de Fichajes</h1>
-                <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro. Algunos jugadores están disponibles en cesión (préstamo).</div>
-                
-                <h2>Búsqueda Avanzada</h2>
-                <div class="form-group">
-                    <label>Posición:</label>
-                    <select id="filterPosition" onchange="filterPlayers()">
-                        <option value="">Todas</option>
-                        <option value="POR">Portero</option>
-                        <option value="DEF">Defensa</option>
-                        <option value="CED">Centrocampista Defensa</option>
-                        <option value="MED">Centrocampista</option>
-                        <option value="EXT">Extremo</option>
-                        <option value="DEL">Delantero</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Edad Máxima:</label>
-                    <input type="number" id="filterAge" min="16" max="40" value="40" onchange="filterPlayers()">
-                </div>
-                <div class="form-group">
-                    <label>Nivel Mínimo:</label>
-                    <input type="number" id="filterLevel" min="50" max="99" value="50" onchange="filterPlayers()">
-                </div>
-                
-                <h2>Jugadores Disponibles</h2>
-                <div id="transferMarket"></div>
+                <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro.</div>
+                <button class="btn" onclick="openModal('signPlayer')">Ver Jugadores Disponibles</button>
+                <div id="transferMarket" style="margin-top: 20px;"></div>
             </div>
             
-            <!-- CANTERA Y JUVENILES -->
+            <!-- CANTERA -->
             <div id="academy" class="page">
                 <h1>🎓 Academia y Cantera</h1>
-                <div class="alert alert-info">📈 Los jóvenes suben de media según partidos jugados: 5-10 partidos +1, 10-20 +2, 20+ +3. ¡Saca talentos baratos y revalúalos!</div>
-                
                 <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven</button>
                 <div id="academyList" style="margin-top: 20px;"></div>
             </div>
             
             <!-- TÁCTICAS -->
             <div id="tactics" class="page">
-                <h1>🎯 Tácticas y Alineación</h1>
-                
-                <h2>Formación</h2>
-                <select id="formationSelect" onchange="updateFormation()">
-                    <option value="433">4-3-3 Equilibrada</option>
-                    <option value="442">4-4-2 Clásica</option>
-                    <option value="352">3-5-2 Ofensiva</option>
-                    <option value="541">5-4-1 Defensiva</option>
-                    <option value="451">4-5-1 Mixta</option>
-                </select>
-                
-                <h2>Mentalidad Táctica</h2>
-                <select id="mentalitySelect" onchange="updateMentality()">
-                    <option value="defensive">Defensiva (más seguridad)</option>
-                    <option value="balanced">Equilibrada</option>
-                    <option value="offensive">Ofensiva (más riesgo)</option>
-                </select>
-                
-                <h2>Alineación Inicial (Próximo Partido)</h2>
-                <table id="lineupTable"></table>
+                <h1>🎯 Tácticas</h1>
+                <div class="form-group" style="margin: 20px 0;">
+                    <label>Formación:</label>
+                    <select id="formationSelect" onchange="updateFormation()">
+                        <option value="433">4-3-3 Equilibrada</option>
+                        <option value="442">4-4-2 Clásica</option>
+                        <option value="352">3-5-2 Ofensiva</option>
+                        <option value="541">5-4-1 Defensiva</option>
+                    </select>
+                    <label>Mentalidad:</label>
+                    <select id="mentalitySelect" onchange="updateMentality()">
+                        <option value="defensive">Defensiva</option>
+                        <option value="balanced" selected>Equilibrada</option>
+                        <option value="offensive">Ofensiva</option>
+                    </select>
+                </div>
             </div>
             
             <!-- PRÓXIMO PARTIDO -->
             <div id="match" class="page">
                 <h1>⚽ Próximo Partido</h1>
                 <div id="matchInfo" style="margin: 30px 0;"></div>
-                
-                <h2>Modo de Visualización</h2>
-                <button class="btn" onclick="playMatch('result')">⏩ Solo Resultado</button>
-                <button class="btn" onclick="playMatch('summary')">📊 Resumen Detallado</button>
-                <button class="btn" onclick="playMatch('simulate')">🤖 Simulación en Vivo</button>
-            </div>
-            
-            <!-- HISTORIAL -->
-            <div id="history" class="page">
-                <h1>📜 Historial de Partidos</h1>
-                <div id="matchHistory"></div>
+                <button class="btn" onclick="playMatch()">Jugar Partido</button>
             </div>
             
             <!-- FINANZAS -->
             <div id="finance" class="page">
-                <h1>💼 Finanzas del Club</h1>
+                <h1>💼 Finanzas</h1>
                 <div class="data-grid">
                     <div class="data-box">
                         <div class="data-label">Ingresos/Semana</div>
-                        <div class="data-value" id="weeklyIncome">0€</div>
+                        <div class="data-value" id="weeklyIncome">10500€</div>
                     </div>
                     <div class="data-box">
                         <div class="data-label">Gastos/Semana</div>
-                        <div class="data-value negative" id="weeklyExpenses">0€</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">Saldo Semanal</div>
-                        <div class="data-value" id="weeklySaldo">0€</div>
+                        <div class="data-value negative" id="weeklyExpenses">8000€</div>
                     </div>
                 </div>
-                
-                <h2>📊 Ingresos</h2>
-                <table>
-                    <tr><td>Derechos de Televisión</td><td id="tvIncome">5000€/sem</td></tr>
-                    <tr><td>Patrocinios</td><td id="sponsorIncome">3000€/sem</td></tr>
-                    <tr><td>Venta de Entradas</td><td id="ticketIncome">2000€/sem</td></tr>
-                    <tr><td>Merchandising</td><td id="merchIncome">500€/sem</td></tr>
-                    <tr style="font-weight: bold; background: rgba(233, 69, 96, 0.1);"><td>TOTAL INGRESOS</td><td id="totalIncome">10500€/sem</td></tr>
-                </table>
-                
-                <h2>💸 Gastos</h2>
-                <table>
-                    <tr><td>Salarios Jugadores</td><td id="salariesExpense">6000€/sem</td></tr>
-                    <tr><td>Mantenimiento Estadio</td><td id="maintenanceExpense">1000€/sem</td></tr>
-                    <tr><td>Personal Técnico</td><td id="staffExpense">500€/sem</td></tr>
-                    <tr><td>Otros Gastos</td><td id="otherExpense">500€/sem</td></tr>
-                    <tr style="font-weight: bold; background: rgba(233, 69, 96, 0.1);"><td>TOTAL GASTOS</td><td id="totalExpense">8000€/sem</td></tr>
-                </table>
             </div>
             
             <!-- INSTALACIONES -->
             <div id="facilities" class="page">
-                <h1>🏟️ Instalaciones del Club</h1>
-                
-                <h2>Estadio</h2>
-                <table>
-                    <tr><td>Capacidad Actual:</td><td id="stadCapacity">50000</td></tr>
-                    <tr><td>Ingresos por Partido:</td><td id="stadIncome">~2000€</td></tr>
-                    <tr><td>Estado:</td><td>Bueno</td></tr>
-                </table>
+                <h1>🏟️ Instalaciones</h1>
                 <button class="btn" onclick="expandStadium()">Expandir Estadio (+50.000€)</button>
-                <p style="font-size: 0.85em; color: #999; margin-top: 10px;">Aumentar capacidad = más ingresos por entradas</p>
-                
-                <h2>Centro de Entrenamiento</h2>
-                <table>
-                    <tr><td>Nivel:</td><td id="trainingLevel">3</td></tr>
-                    <tr><td>Efectividad:</td><td id="trainingEffective">75%</td></tr>
-                </table>
-                <button class="btn" onclick="improveFacilities()">Mejorar Instalaciones (+30.000€)</button>
-                <p style="font-size: 0.85em; color: #999; margin-top: 10px;">Mejores instalaciones = progreso más rápido de jugadores</p>
+                <button class="btn" onclick="improveFacilities()">Mejorar Entrenamientos (+30.000€)</button>
             </div>
             
-            <!-- PERSONAL TÉCNICO -->
+            <!-- STAFF -->
             <div id="staff" class="page">
                 <h1>👔 Personal del Club</h1>
-                <div class="alert alert-info">El personal técnico influye en fichajes, scouting y desarrollo de jugadores.</div>
-                
-                <h2>Equipo Técnico</h2>
                 <table>
-                    <tr>
-                        <td>🏥 Médico Principal</td>
-                        <td><span id="medico">Contratado</span></td>
-                        <td><button class="btn btn-small">Cambiar (5.000€)</button></td>
-                    </tr>
-                    <tr>
-                        <td>🧪 Entrenador Físico</td>
-                        <td><span id="entrenador">Contratado</span></td>
-                        <td><button class="btn btn-small">Cambiar (3.000€)</button></td>
-                    </tr>
-                    <tr>
-                        <td>🎬 Analista Vídeo</td>
-                        <td><span id="analista">No contratado</span></td>
-                        <td><button class="btn btn-small" onclick="hireStaff('analista')">Contratar (4.000€)</button></td>
-                    </tr>
-                    <tr>
-                        <td>🧠 Ojeador (Scout)</td>
-                        <td><span id="scout">Contratado</span></td>
-                        <td><button class="btn btn-small">Cambiar (2.000€)</button></td>
-                    </tr>
-                    <tr>
-                        <td>📋 Secretario Técnico</td>
-                        <td><span id="secretario">Contratado</span></td>
-                        <td><button class="btn btn-small">Cambiar (3.000€)</button></td>
-                    </tr>
+                    <tr><td>🏥 Médico</td><td id="medico">Contratado</td><td><button class="btn btn-sm">Cambiar</button></td></tr>
+                    <tr><td>🧪 Entrenador Físico</td><td id="entrenador">Contratado</td><td><button class="btn btn-sm">Cambiar</button></td></tr>
+                    <tr><td>🎬 Analista Vídeo</td><td id="analista">No contratado</td><td><button class="btn btn-sm" onclick="hireStaff('analista')">Contratar</button></td></tr>
                 </table>
             </div>
             
             <!-- OPCIONES -->
             <div id="settings" class="page">
-                <h1>⚙️ Opciones del Juego</h1>
+                <h1>⚙️ Opciones</h1>
                 <button class="btn" onclick="saveGame()">💾 Guardar Partida</button>
                 <button class="btn" onclick="loadGame()">📂 Cargar Partida</button>
-                <button class="btn btn-danger" onclick="resetGame()" style="margin-top: 20px;">🔄 Reiniciar Juego</button>
+                <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="resetGame()">🔄 Reiniciar</button>
             </div>
         </div>
     </div>
     
-    <!-- MODAL: MODO JUEGO -->
+    <!-- MODALES -->
     <div id="gameModeModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('gameMode')">&times;</span>
-            <h1>Selecciona Modo de Juego</h1>
-            
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px; font-size: 1.1em;" onclick="startGameMode('manager')">🏅 Liga Manager</button>
-            <p style="margin: 15px 0; color: #999; line-height: 1.6;">Dirección indefinida de tu club. No hay despido obligatorio por malos resultados, solo por mala gestión económica (varias semanas en números rojos) o plantilla insuficiente (menos de 16 jugadores).</p>
-            
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px; font-size: 1.1em;" onclick="startGameMode('promanager')">🚀 Liga Promanager</button>
-            <p style="margin: 15px 0; color: #999; line-height: 1.6;">Comienza como entrenador en un club modesto de Segunda División o Primera RFEF. Cumple objetivos para ascender y recibir ofertas de clubes de mayor categoría. Si fracasas en objetivos anuales, ¡puedes ser destituido!</p>
+            <h1>Modo de Juego</h1>
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('manager')">🏅 Liga Manager</button>
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('promanager')">🚀 Liga Promanager</button>
         </div>
     </div>
     
-    <!-- MODAL: SELECCIONAR EQUIPO -->
     <div id="selectTeamModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('selectTeam')">&times;</span>
             <h1>Selecciona tu Equipo</h1>
-            
-            <div style="margin: 20px 0;">
-                <h2>Primera División</h2>
-                <div id="ligaList"></div>
-            </div>
-            
-            <div style="margin: 20px 0;">
-                <h2>Segunda División</h2>
-                <div id="segundaList"></div>
-            </div>
-            
-            <div style="margin: 20px 0;">
-                <h2>Primera RFEF (Grupo 1)</h2>
-                <div id="refGrupo1List"></div>
-            </div>
-            
-            <div style="margin: 20px 0;">
-                <h2>Primera RFEF (Grupo 2)</h2>
-                <div id="refGrupo2List"></div>
-            </div>
+            <h2>Primera División</h2>
+            <div id="ligaList"></div>
+            <h2>Segunda División</h2>
+            <div id="segundaList"></div>
+            <h2>Primera RFEF</h2>
+            <div id="refList"></div>
         </div>
     </div>
     
-    <!-- MODAL: FICHAR JUGADOR -->
     <div id="signPlayerModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('signPlayer')">&times;</span>
-            <h1>Fichar Jugador Profesional</h1>
-            <p style="color: #999; margin-bottom: 15px;">Selecciona un jugador disponible en el mercado. Algunos disponibles en cesión (préstamo).</p>
+            <h1>Fichar Jugador</h1>
             <div id="availablePlayersList"></div>
         </div>
     </div>
     
-    <!-- MODAL: CANTERA -->
     <div id="signYoungsterModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>
-            <h1>Contratar Joven de Cantera</h1>
-            <p style="color: #999; margin-bottom: 15px;">Los jóvenes suben de media con partidos jugados. Investiga talentos en ligas menores para comprar barato.</p>
+            <h1>Contratar Joven</h1>
             <div id="availableYoungstersList"></div>
         </div>
     </div>
 
-    <script src="data.js"></script>
-    <script>
-        // ESTADO GLOBAL
-        let game = {
-            team: null,
-            division: null,
-            balance: 100000,
-            week: 1,
-            squad: [],
-            academy: [],
-            standings: {},
-            matchHistory: [],
-            gameMode: null,
-            formation: '433',
-            mentality: 'balanced',
-            stadiumCapacity: 50000,
-            trainingLevel: 3,
-            weeklyIncome: 10500,
-            weeklyExpenses: 8000,
-            staff: {
-                medico: true,
-                entrenador: true,
-                analista: false,
-                scout: true,
-                secretario: true
-            }
-        };
+    <script type="module">
+        import { generateAvailablePlayers, generateAvailableYoungsters } from './players.js';
+        import { 
+            getGameState, 
+            updateGameState, 
+            initStandings, 
+            selectTeam, 
+            signPlayer, 
+            signYoungster, 
+            playMatch,
+            expandStadium,
+            improveFacilities,
+            hireStaff,
+            saveToFirebase,
+            loadFromFirebase
+        } from './gameLogic.js';
+        import { TEAMS_DATA } from './config.js';
         
-        function switchPage(pageId) {
+        window.switchPage = function(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             event.target.classList.add('active');
-        }
+        };
         
-        function switchStandings(division) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            renderStandings(division);
-        }
-        
-        function openModal(type) {
+        window.openModal = function(type) {
             if (type === 'gameMode') {
                 document.getElementById('gameModeModal').classList.add('active');
             } else if (type === 'selectTeam') {
@@ -783,411 +487,333 @@
                 document.getElementById('signYoungsterModal').classList.add('active');
                 renderAvailableYoungsters();
             }
-        }
+        };
         
-        function closeModal(type) {
+        window.closeModal = function(type) {
             document.getElementById(type + 'Modal').classList.remove('active');
-        }
+        };
         
-        function startGameMode(mode) {
-            game.gameMode = mode;
-            closeModal('gameMode');
-            openModal('selectTeam');
-        }
+        window.startGameMode = function(mode) {
+            window.gameMode = mode;
+            window.closeModal('gameMode');
+            window.openModal('selectTeam');
+        };
         
         function renderTeamSelectors() {
-            const teamsData = getTeamsData();
-            
-            document.getElementById('ligaList').innerHTML = teamsData.primera.map(team => `
-                <button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeam('${team}', 'primera')">
+            document.getElementById('ligaList').innerHTML = TEAMS_DATA.primera.map(team => 
+                `<button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeamAndStart('${team}', 'primera')">
                     ${team}
-                </button>
-            `).join('');
-            
-            document.getElementById('segundaList').innerHTML = teamsData.segunda.map(team => `
-                <button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeam('${team}', 'segunda')">
+                </button>`
+            ).join('');
+            document.getElementById('segundaList').innerHTML = TEAMS_DATA.segunda.map(team => 
+                `<button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeamAndStart('${team}', 'segunda')">
                     ${team}
-                </button>
-            `).join('');
-            
-            document.getElementById('refGrupo1List').innerHTML = teamsData.refGrupo1.map(team => `
-                <button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeam('${team}', 'rfef1')">
-                    ${team}
-                </button>
-            `).join('');
-            
-            document.getElementById('refGrupo2List').innerHTML = teamsData.refGrupo2.map(team => `
-                <button style="display: block; width: 100%; padding: 10px; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; color: #fff; cursor: pointer; border-radius: 3px;" onclick="selectTeam('${team}', 'rfef2')">
-                    ${team}
-                </button>
-            `).join('');
+                </button>`
+            ).join('');
         }
         
-        function selectTeam(teamName, divisionType) {
-            game.team = teamName;
-            game.division = divisionType;
-            game.standings = initStandings();
-            game.squad = [];
-            game.academy = [];
-            game.balance = game.gameMode === 'promanager' ? 50000 : 100000;
-            game.week = 1;
-            
-            closeModal('selectTeam');
+        window.selectTeamAndStart = function(team, division) {
+            selectTeam(team, division, window.gameMode);
+            const state = getGameState();
+            state.standings = initStandings(division === 'primera' ? TEAMS_DATA.primera : TEAMS_DATA.segunda);
+            updateGameState(state);
             updateDisplay();
-            switchPage('dashboard');
-        }
+            window.closeModal('selectTeam');
+            window.switchPage('dashboard');
+        };
         
-        function initStandings() {
-            const standings = {};
-            const teamsData = getTeamsData();
-            let allTeams = [...teamsData.primera];
-            if (game.division === 'segunda') allTeams = [...teamsData.segunda];
-            if (game.division === 'rfef1') allTeams = [...teamsData.refGrupo1];
-            if (game.division === 'rfef2') allTeams = [...teamsData.refGrupo2];
+        window.updateDisplay = function() {
+            const state = getGameState();
+            document.getElementById('teamName').textContent = state.team || '-';
+            document.getElementById('weekNo').textContent = state.week;
+            document.getElementById('balanceDisplay').textContent = state.balance + '€';
+            document.getElementById('dashSquad').textContent = state.squad.length;
+            document.getElementById('dashAcademy').textContent = state.academy.length;
+            document.getElementById('dashBalance').textContent = state.balance + '€';
+            document.getElementById('dashIncome').textContent = state.weeklyIncome + '€';
+            document.getElementById('dashExpenses').textContent = state.weeklyExpenses + '€';
+            document.getElementById('dashWeekly').textContent = (state.weeklyIncome - state.weeklyExpenses) + '€';
             
-            allTeams.forEach(team => {
-                standings[team] = { pts: 0, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 };
-            });
-            return standings;
-        }
-        
-        function updateDisplay() {
-            document.getElementById('teamName').textContent = game.team || '-';
-            document.getElementById('weekNo').textContent = game.week;
-            document.getElementById('balanceDisplay').textContent = game.balance + '€';
-            
-            const teamStats = game.standings[game.team];
-            if (teamStats) {
-                const sorted = Object.entries(game.standings).sort((a, b) => b[1].pts - a[1].pts);
-                const pos = sorted.findIndex(([name]) => name === game.team) + 1;
-                
-                document.getElementById('dashPos').textContent = pos;
-                document.getElementById('dashPts').textContent = teamStats.pts;
-                document.getElementById('dashPJ').textContent = teamStats.pj;
-                document.getElementById('dashGoals').textContent = teamStats.gf;
-            }
-            
-            document.getElementById('dashSquad').textContent = game.squad.length;
-            document.getElementById('dashAcademy').textContent = game.academy.length;
-            document.getElementById('dashBalance').textContent = game.balance + '€';
-            document.getElementById('dashCapacity').textContent = game.stadiumCapacity;
-            document.getElementById('weeklyIncome').textContent = game.weeklyIncome + '€';
-            document.getElementById('weeklyExpenses').textContent = game.weeklyExpenses + '€';
-            document.getElementById('weeklySaldo').textContent = (game.weeklyIncome - game.weeklyExpenses) + '€';
-            
-            renderStandings('liga');
+            renderStandings();
             renderSquad();
             renderAcademy();
             renderNextMatch();
-        }
+        };
         
-        function renderStandings(div) {
+        function renderStandings() {
+            const state = getGameState();
             const tbody = document.getElementById('standingsTable');
-            const sorted = Object.entries(game.standings).sort((a, b) => {
-                if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
-                return (b[1].gf - b[1].gc) - (a[1].gf - a[1].gc);
-            });
+            const sorted = Object.entries(state.standings).sort((a, b) => b[1].pts - a[1].pts);
             
             tbody.innerHTML = sorted.map(([team, stats], i) => `
-                <tr style="${team === game.team ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
-                    <td>${i + 1}</td>
-                    <td><strong>${team}</strong></td>
-                    <td>${stats.pj}</td><td>${stats.g}</td><td>${stats.e}</td><td>${stats.p}</td>
-                    <td>${stats.gf}</td><td>${stats.gc}</td><td>${stats.gf - stats.gc}</td>
-                    <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
+                <tr style="${team === state.team ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
+                    <td>${i + 1}</td><td><strong>${team}</strong></td><td>${stats.pj}</td><td>${stats.g}</td><td>${stats.e}</td><td>${stats.p}</td>
+                    <td>${stats.gf}</td><td>${stats.gc}</td><td>${stats.gf - stats.gc}</td><td style="color: #00ff00;">${stats.pts}</td>
                 </tr>
             `).join('');
         }
         
         function renderSquad() {
+            const state = getGameState();
             const list = document.getElementById('squadList');
-            if (game.squad.length === 0) {
-                list.innerHTML = '<div class="alert alert-info">No hay jugadores en plantilla. ¡Ficha algunos!</div>';
+            if (state.squad.length === 0) {
+                list.innerHTML = '<div class="alert alert-info">No hay jugadores. ¡Ficha algunos!</div>';
                 return;
             }
-            
-            const sorted = game.squad.sort((a, b) => b.overall - a.overall);
-            list.innerHTML = sorted.map(p => `
+            list.innerHTML = state.squad.map(p => `
                 <div class="player-card">
-                    <div class="player-info">
-                        <div class="player-name">${p.name}</div>
-                        <div class="player-stats">${p.position} | ${p.age}a | Nivel ${p.overall}/100 | ${p.salary}€/sem</div>
-                    </div>
-                    <button class="btn btn-small" onclick="sellPlayer('${p.name}')">Vender</button>
+                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">${p.position} | ${p.age}a | Nivel ${p.overall}</div></div>
+                    <button class="btn btn-sm" onclick="sellPlayerConfirm('${p.name}')">Vender</button>
                 </div>
             `).join('');
         }
         
         function renderAcademy() {
+            const state = getGameState();
             const list = document.getElementById('academyList');
-            if (game.academy.length === 0) {
-                list.innerHTML = '<div class="alert alert-info">No hay jóvenes en cantera. ¡Contrata talentos!</div>';
+            if (state.academy.length === 0) {
+                list.innerHTML = '<div class="alert alert-info">No hay jóvenes. ¡Contrata talentos!</div>';
                 return;
             }
-            
-            list.innerHTML = game.academy.map(p => `
+            list.innerHTML = state.academy.map(p => `
                 <div class="player-card">
-                    <div class="player-info">
-                        <div class="player-name">${p.name}</div>
-                        <div class="player-stats">Edad ${p.age} | Nivel ${p.overall}/100 | Potencial ${p.potential}/100 | Partidos ${p.matches || 0}</div>
-                    </div>
-                    <button class="btn btn-small" onclick="promoteYoungster('${p.name}')">Ascender</button>
+                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">Edad ${p.age} | Nivel ${p.overall}/100 | Potencial ${p.potential}</div></div>
+                    <button class="btn btn-sm" onclick="promoteConfirm('${p.name}')">Ascender</button>
                 </div>
             `).join('');
         }
         
         function renderAvailablePlayers() {
             const players = generateAvailablePlayers();
-            const div = document.getElementById('availablePlayersList');
-            div.innerHTML = players.map(p => `
+            document.getElementById('availablePlayersList').innerHTML = players.map(p => `
                 <div class="player-card">
-                    <div class="player-info">
-                        <div class="player-name">${p.name} ${p.loan ? '(Cesión)' : ''}</div>
-                        <div class="player-stats">${p.position} | ${p.age}a | Nivel ${p.overall}/100 | ${p.salary}€/sem ${p.cost ? '| Coste: ' + p.cost + '€' : ''}</div>
-                    </div>
-                    <button class="btn btn-small" onclick="signPlayer('${p.name}', ${p.overall}, ${p.salary}, '${p.position}', ${p.age}, ${p.cost || 0})">Fichar${p.loan ? ' (Préstamo)' : ''}</button>
+                    <div><div style="color: #e94560; font-weight: bold;">${p.name}</div><div style="font-size: 0.85em; color: #999;">${p.position} | ${p.age}a | Nivel ${p.overall} | ${p.salary}€/sem | ${p.cost}€</div></div>
+                    <button class="btn btn-sm" onclick="fichPlayerConfirm('${JSON.stringify(p).replace(/"/g, '&quot;')}')">Fichar</button>
                 </div>
             `).join('');
         }
         
         function renderAvailableYoungsters() {
             const youngsters = generateAvailableYoungsters();
-            const div = document.getElementById('availableYoungstersList');
-            div.innerHTML = youngsters.map(y => `
+            document.getElementById('availableYoungstersList').innerHTML = youngsters.map(y => `
                 <div class="player-card">
-                    <div class="player-info">
-                        <div class="player-name">${y.name}</div>
-                        <div class="player-stats">Edad ${y.age} | Nivel actual ${y.overall}/100 | Potencial ${y.potential}/100 | Coste: ${y.cost}€</div>
-                    </div>
-                    <button class="btn btn-small" onclick="signYoungster('${y.name}', ${y.age}, ${y.potential}, ${y.cost}, ${y.overall})">Contratar</button>
+                    <div><div style="color: #e94560; font-weight: bold;">${y.name}</div><div style="font-size: 0.85em; color: #999;">Edad ${y.age} | Nivel ${y.overall}/100 | Potencial ${y.potential}/100 | ${y.cost}€</div></div>
+                    <button class="btn btn-sm" onclick="fichYoungsterConfirm('${JSON.stringify(y).replace(/"/g, '&quot;')}')">Contratar</button>
                 </div>
             `).join('');
         }
         
-        function generateAvailablePlayers() {
-            const playerNames = ['Vinicius', 'Rodri', 'Bellingham', 'Haaland', 'Lewandowski', 'Mbappé', 'Koundé', 'Martínez', 'Alaba', 'Pedri', 'Gavi', 'Osimhen', 'Vlahovic', 'Lautaro', 'Grealish'];
-            const positions = ['POR', 'DEF', 'CED', 'MED', 'EXT', 'DEL'];
-            
-            return playerNames.map(name => ({
-                name,
-                position: positions[Math.floor(Math.random() * positions.length)],
-                age: 20 + Math.floor(Math.random() * 15),
-                overall: 70 + Math.floor(Math.random() * 25),
-                salary: 2000 + Math.floor(Math.random() * 8000),
-                cost: 50000 + Math.floor(Math.random() * 200000),
-                loan: Math.random() > 0.7
-            }));
-        }
-        
-        function generateAvailableYoungsters() {
-            const youngsterNames = ['Gavi', 'Casadó', 'Vinícius Jr', 'Tombás', 'Marín', 'Segurola', 'Araujo', 'Vidal', 'Hernández', 'Ruiz'];
-            
-            return youngsterNames.map(name => ({
-                name,
-                age: 16 + Math.floor(Math.random() * 4),
-                overall: 50 + Math.floor(Math.random() * 20),
-                potential: 75 + Math.floor(Math.random() * 20),
-                cost: 10000 + Math.floor(Math.random() * 100000)
-            }));
-        }
-        
-        function signPlayer(name, overall, salary, pos, age, cost) {
-            if (game.balance < cost) {
-                alert('No tienes dinero suficiente. Necesitas ' + cost + '€');
-                return;
-            }
-            if (game.squad.length >= 25) {
-                alert('Plantilla completa (máx. 25 jugadores)');
-                return;
-            }
-            game.squad.push({ name, overall, salary, position: pos, age, goals: 0, assists: 0, matches: 0 });
-            game.balance -= cost;
-            game.weeklyExpenses += salary;
-            closeModal('signPlayer');
-            updateDisplay();
-            alert('¡' + name + ' fichado!');
-        }
-        
-        function signYoungster(name, age, potential, cost, overall) {
-            if (game.balance < cost) {
-                alert('No tienes dinero suficiente');
-                return;
-            }
-            game.academy.push({ name, age, potential, overall, salary: 300, cost, matches: 0 });
-            game.balance -= cost;
-            closeModal('signYoungster');
-            updateDisplay();
-            alert('¡' + name + ' contratado en cantera!');
-        }
-        
-        function promoteYoungster(name) {
-            const youngster = game.academy.find(y => y.name === name);
-            if (!youngster) return;
-            
-            game.squad.push({
-                name: youngster.name,
-                overall: youngster.overall,
-                salary: 1500,
-                position: 'DEL',
-                age: youngster.age,
-                goals: 0,
-                assists: 0,
-                matches: youngster.matches
-            });
-            
-            game.academy = game.academy.filter(y => y.name !== name);
-            game.weeklyExpenses += 1500;
-            updateDisplay();
-            alert(name + ' ascendido a primer equipo');
-        }
-        
-        function sellPlayer(name) {
-            const player = game.squad.find(p => p.name === name);
-            if (!player) return;
-            
-            const salePrice = player.overall * 5000;
-            game.balance += salePrice;
-            game.squad = game.squad.filter(p => p.name !== name);
-            game.weeklyExpenses -= player.salary;
-            updateDisplay();
-            alert(name + ' vendido por ' + salePrice + '€');
-        }
-        
-        function filterPlayers() {
-            // Implementar filtros
-        }
-        
         function renderNextMatch() {
-            const rivals = Object.keys(game.standings).filter(t => t !== game.team);
+            const state = getGameState();
+            const rivals = Object.keys(state.standings).filter(t => t !== state.team);
             const rival = rivals[Math.floor(Math.random() * rivals.length)];
             document.getElementById('matchInfo').innerHTML = `
-                <div style="text-align: center; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; padding: 40px; border-radius: 3px; font-size: 1.3em;">
-                    <div style="color: #e94560; margin-bottom: 20px;"><strong>${game.team}</strong></div>
+                <div style="text-align: center; background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; padding: 40px; border-radius: 3px;">
+                    <div style="color: #e94560; font-size: 1.3em; margin-bottom: 20px;"><strong>${state.team}</strong></div>
                     <div style="color: #999; margin-bottom: 20px;">vs</div>
-                    <div style="color: #e94560;"><strong>${rival}</strong></div>
-                    <div style="color: #999; margin-top: 20px; font-size: 0.9em;">Jornada ${game.week}</div>
+                    <div style="color: #e94560; font-size: 1.3em;"><strong>${rival}</strong></div>
                 </div>
             `;
         }
         
-        function playMatch(mode) {
-            const rivals = Object.keys(game.standings).filter(t => t !== game.team);
+        window.fichPlayerConfirm = function(playerJson) {
+            const player = JSON.parse(playerJson.replace(/&quot;/g, '"'));
+            const result = signPlayer(player);
+            if (result.success) {
+                alert(result.message);
+                window.updateDisplay();
+                window.closeModal('signPlayer');
+            } else {
+                alert('Error: ' + result.message);
+            }
+        };
+        
+        window.fichYoungsterConfirm = function(youngsterJson) {
+            const youngster = JSON.parse(youngsterJson.replace(/&quot;/g, '"'));
+            const result = signYoungster(youngster);
+            if (result.success) {
+                alert(result.message);
+                window.updateDisplay();
+                window.closeModal('signYoungster');
+            } else {
+                alert('Error: ' + result.message);
+            }
+        };
+        
+        window.sellPlayerConfirm = function(name) {
+            if (confirm('¿Vender a ' + name + '?')) {
+                const state = getGameState();
+                const player = state.squad.find(p => p.name === name);
+                if (player) {
+                    const salePrice = player.overall * 5000 + (player.matches * 1000);
+                    state.balance += salePrice;
+                    state.squad = state.squad.filter(p => p.name !== name);
+                    state.weeklyExpenses -= player.salary;
+                    updateGameState(state);
+                    alert(name + ' vendido por ' + salePrice + '€');
+                    window.updateDisplay();
+                }
+            }
+        };
+        
+        window.promoteConfirm = function(name) {
+            const state = getGameState();
+            const youngster = state.academy.find(y => y.name === name);
+            if (youngster && state.squad.length < 25) {
+                state.squad.push({
+                    name: youngster.name,
+                    position: 'DEL',
+                    age: youngster.age,
+                    overall: youngster.overall,
+                    salary: 1500,
+                    goals: 0,
+                    assists: 0,
+                    matches: youngster.matches
+                });
+                state.academy = state.academy.filter(y => y.name !== name);
+                state.weeklyExpenses += 1500;
+                updateGameState(state);
+                alert(name + ' ascendido a primer equipo');
+                window.updateDisplay();
+            }
+        };
+        
+        window.playMatch = function() {
+            const state = getGameState();
+            const rivals = Object.keys(state.standings).filter(t => t !== state.team);
             const rival = rivals[Math.floor(Math.random() * rivals.length)];
-            const myGoals = Math.floor(Math.random() * 5);
-            const rivalGoals = Math.floor(Math.random() * 5);
             
-            game.standings[game.team].pj++;
-            game.standings[rival].pj++;
-            game.standings[game.team].gf += myGoals;
-            game.standings[game.team].gc += rivalGoals;
-            game.standings[rival].gf += rivalGoals;
-            game.standings[rival].gc += myGoals;
+            let myGoals = Math.floor(Math.random() * 5);
+            let rivalGoals = Math.floor(Math.random() * 5);
+            
+            if (state.mentality === 'offensive') myGoals += 1;
+            if (state.mentality === 'defensive') rivalGoals = Math.max(0, rivalGoals - 1);
+            
+            state.standings[state.team].pj++;
+            state.standings[rival].pj++;
+            state.standings[state.team].gf += myGoals;
+            state.standings[state.team].gc += rivalGoals;
+            state.standings[rival].gf += rivalGoals;
+            state.standings[rival].gc += myGoals;
             
             if (myGoals > rivalGoals) {
-                game.standings[game.team].pts += 3;
-                game.standings[game.team].g++;
-                game.standings[rival].p++;
+                state.standings[state.team].pts += 3;
+                state.standings[state.team].g++;
+                state.standings[rival].p++;
             } else if (myGoals < rivalGoals) {
-                game.standings[rival].pts += 3;
-                game.standings[rival].g++;
-                game.standings[game.team].p++;
+                state.standings[rival].pts += 3;
+                state.standings[rival].g++;
+                state.standings[state.team].p++;
             } else {
-                game.standings[game.team].pts += 1;
-                game.standings[game.team].e++;
-                game.standings[rival].pts += 1;
-                game.standings[rival].e++;
+                state.standings[state.team].pts += 1;
+                state.standings[state.team].e++;
+                state.standings[rival].pts += 1;
+                state.standings[rival].e++;
             }
             
-            game.matchHistory.push({ week: game.week, home: game.team, away: rival, score: `${myGoals}-${rivalGoals}` });
-            game.week++;
-            game.balance += 3000;
+            state.matchHistory.push({
+                week: state.week,
+                home: state.team,
+                away: rival,
+                score: `${myGoals}-${rivalGoals}`
+            });
             
-            alert(`${game.team} ${myGoals} - ${rivalGoals} ${rival}\n\nModo: ${mode}`);
-            updateDisplay();
-        }
+            state.week++;
+            state.balance += 3000;
+            updateGameState(state);
+            
+            alert(`${state.team} ${myGoals} - ${rivalGoals} ${rival}\n\n¡Partido completado!`);
+            window.updateDisplay();
+        };
         
-        function updateFormation() {
-            alert('Formación: ' + document.getElementById('formationSelect').value);
-        }
+        window.updateFormation = function() {
+            const formation = document.getElementById('formationSelect').value;
+            const state = getGameState();
+            state.formation = formation;
+            updateGameState(state);
+            alert('Formación actualizada');
+        };
         
-        function updateMentality() {
-            alert('Mentalidad: ' + document.getElementById('mentalitySelect').value);
-        }
+        window.updateMentality = function() {
+            const mentality = document.getElementById('mentalitySelect').value;
+            const state = getGameState();
+            state.mentality = mentality;
+            updateGameState(state);
+            alert('Mentalidad táctica actualizada');
+        };
         
-        function expandStadium() {
-            if (game.balance < 50000) {
+        window.expandStadium = function() {
+            const state = getGameState();
+            if (state.balance < 50000) {
                 alert('Dinero insuficiente. Necesitas 50.000€');
                 return;
             }
-            game.balance -= 50000;
-            game.stadiumCapacity += 10000;
-            game.weeklyIncome += 500;
-            updateDisplay();
-            alert('¡Estadio expandido a ' + game.stadiumCapacity + ' espectadores!');
-        }
+            state.balance -= 50000;
+            state.stadiumCapacity += 10000;
+            state.weeklyIncome += 500;
+            updateGameState(state);
+            alert('¡Estadio expandido a ' + state.stadiumCapacity + ' espectadores!');
+            window.updateDisplay();
+        };
         
-        function improveFacilities() {
-            if (game.balance < 30000) {
+        window.improveFacilities = function() {
+            const state = getGameState();
+            if (state.balance < 30000) {
                 alert('Dinero insuficiente. Necesitas 30.000€');
                 return;
             }
-            game.balance -= 30000;
-            game.trainingLevel++;
-            updateDisplay();
-            alert('¡Centro de entrenamiento mejorado a nivel ' + game.trainingLevel + '!');
-        }
+            state.balance -= 30000;
+            state.trainingLevel++;
+            updateGameState(state);
+            alert('¡Centro de entrenamiento mejorado a nivel ' + state.trainingLevel + '!');
+            window.updateDisplay();
+        };
         
-        function hireStaff(position) {
-            const cost = { analista: 4000 };
-            if (game.balance < cost[position]) {
+        window.hireStaff = function(position) {
+            const state = getGameState();
+            const costs = { analista: 4000, scout: 3000, medico: 5000, entrenador: 3000 };
+            const cost = costs[position] || 0;
+            
+            if (state.balance < cost) {
                 alert('Dinero insuficiente');
                 return;
             }
-            game.balance -= cost[position];
-            game.staff[position] = true;
-            game.weeklyExpenses += 500;
-            updateDisplay();
-            alert('Personal contratado');
-        }
+            
+            state.balance -= cost;
+            state.staff[position] = true;
+            state.weeklyExpenses += 500;
+            updateGameState(state);
+            alert('Personal contratado exitosamente');
+            window.updateDisplay();
+        };
         
-        function sortSquad() {
-            game.squad.sort((a, b) => b.overall - a.overall);
-            renderSquad();
-        }
+        window.saveGame = function() {
+            const state = getGameState();
+            localStorage.setItem('pcfutbol-save', JSON.stringify(state));
+            alert('Partida guardada en dispositivo');
+        };
         
-        function saveGame() {
-            localStorage.setItem('pcfutbol-save', JSON.stringify(game));
-            alert('Partida guardada correctamente');
-        }
-        
-        function loadGame() {
+        window.loadGame = function() {
             const saved = localStorage.getItem('pcfutbol-save');
             if (saved) {
-                game = JSON.parse(saved);
-                updateDisplay();
+                const state = JSON.parse(saved);
+                updateGameState(state);
                 alert('Partida cargada');
+                window.updateDisplay();
             } else {
-                alert('No hay partida guardada');
+                alert('No hay partida guardada en el dispositivo');
             }
-        }
+        };
         
-        function resetGame() {
-            if (confirm('¿Estás seguro?')) {
-                game = { team: null, division: null, balance: 100000, week: 1, squad: [], academy: [], standings: {}, matchHistory: [], gameMode: null, formation: '433', mentality: 'balanced', stadiumCapacity: 50000, trainingLevel: 3, weeklyIncome: 10500, weeklyExpenses: 8000, staff: { medico: true, entrenador: true, analista: false, scout: true, secretario: true } };
-                document.getElementById('gameModeModal').classList.add('active');
+        window.resetGame = function() {
+            if (confirm('¿Estás seguro de que quieres reiniciar completamente?')) {
+                localStorage.removeItem('pcfutbol-save');
+                location.reload();
             }
-        }
+        };
         
-        function getTeamsData() {
-            return {
-                primera: ['Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Athletic Club', 'Villarreal', 'Real Sociedad', 'Real Betis', 'Valencia', 'Girona', 'Mallorca', 'Las Palmas', 'Rayo Vallecano', 'Sevilla', 'Osasuna', 'Celta', 'Real Oviedo', 'RCD Español', 'Valladolid', 'Levante', 'Elche'],
-                segunda: ['Albacete', 'Andorra', 'Alcorcón', 'Eibar', 'Huesca', 'Ferrol', 'Tenerife', 'Sabadell', 'Mirandés', 'Burgos', 'Lugo', 'Córdoba', 'Ibiza', 'Alcoyano', 'Real Unión', 'Zaragoza', 'Lleida', 'Málaga', 'Cádiz', 'Ponferradina'],
-                refGrupo1: ['AD Alcalá', 'Cerdanyola', 'Talavera', 'Fuenlabrada', 'Alcalá', 'Getafe B', 'Torrejón', 'Alcorcón B', 'Móstoles', 'Cieza'],
-                refGrupo2: ['Mérida', 'Utrera', 'Coria', 'Extremadura', 'Villanovense', 'Córdoba B', 'Linares', 'San Roque', 'Poli Ejido', 'Jaén']
-            };
-        }
-        
-        // Iniciar
+        // Inicializar
+        window.updateDisplay();
         document.getElementById('gameModeModal').classList.add('active');
     </script>
 </body>
