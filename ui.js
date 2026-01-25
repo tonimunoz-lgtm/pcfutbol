@@ -1,5 +1,6 @@
 // ui.js - Renderizado y UI  
   
+import * as gameLogic from './gameLogic.js'; // Importar gameLogic para usar sus funciones y obtener el estado  
 import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS } from './config.js'; // Importar FORMATIONS  
   
 function renderStandingsTable(standings, currentTeam) {  
@@ -265,14 +266,29 @@ function renderAvailableYoungstersMarket(youngsters) {
 function renderNextMatchCard(homeTeam, awayTeam, week) {  
     const matchInfo = document.getElementById('matchInfo');  
     if (!matchInfo) return;  
-    matchInfo.innerHTML = `  
-        <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
-            <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${homeTeam}</div>  
-            <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
-            <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${awayTeam}</div>  
-            <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${week}</div>  
-        </div>  
-    `;  
+    const state = gameLogic.getGameState();  
+    const opponent = state.nextOpponent || 'Rival Indefinido'; // Usar el oponente predefinido  
+  
+    let matchDisplay = '';  
+    if (state.seasonType === 'preseason') {  
+        matchDisplay = `  
+            <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
+                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">PRETEMPORADA</div>  
+                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">Semana ${state.week}</div>  
+                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">¡A preparar la temporada!</div>  
+            </div>  
+        `;  
+    } else {  
+        matchDisplay = `  
+            <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
+                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${state.team}</div>  
+                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
+                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponent}</div>  
+                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week}</div>  
+            </div>  
+        `;  
+    }  
+    matchInfo.innerHTML = matchDisplay;  
 }  
   
 function updateDashboardStats(state) {  
@@ -323,7 +339,7 @@ function updateDashboardStats(state) {
     const newsFeedElem = document.getElementById('newsFeed');  
     if (newsFeedElem) {  
         newsFeedElem.innerHTML = state.newsFeed.map(news => `  
-            <div class="alert ${news.type === 'error' ? 'alert-warning' : news.type === 'warning' ? 'alert-warning' : news.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">  
+            <div class="alert ${news.type === 'error' ? 'alert-error' : news.type === 'warning' ? 'alert-warning' : news.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">  
                 <strong>Semana ${news.week}:</strong> ${news.message}  
             </div>  
         `).join('');  
@@ -331,9 +347,15 @@ function updateDashboardStats(state) {
     // Actualizar contador de noticias no leídas en el botón del dashboard  
     const dashButton = document.querySelector('button[onclick="switchPage(\'dashboard\', this)"]');  
     if (dashButton && state.unreadNewsCount > 0) {  
-        dashButton.innerHTML = `Dashboard <span style="background: #ff3333; border-radius: 50%; padding: 2px 6px; font-size: 0.7em;">${state.unreadNewsCount}</span>`;  
+        dashButton.innerHTML = `Dashboard <span style="background: #ff3333; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7em;">${state.unreadNewsCount}</span>`;  
     } else if (dashButton) {  
         dashButton.innerHTML = `Dashboard`;  
+    }  
+  
+    // Desactivar botón de simular si hay noticias sin leer  
+    const simulateButton = document.getElementById('simulateWeekButton');  
+    if (simulateButton) {  
+        simulateButton.disabled = state.unreadNewsCount > 0;  
     }  
 }  
   
@@ -355,9 +377,18 @@ function refreshUI(state) {
         window.closeModal('negotiation');  
     }  
   
-    const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
-    const nextRival = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
-    renderNextMatchCard(state.team, nextRival, state.week);  
+    // Determinar el próximo rival de la liga o mensaje de pretemporada  
+    let opponentName = 'Rival Indefinido';  
+    if (state.seasonType === 'preseason') {  
+        opponentName = 'Pretemporada';  
+    } else if (state.nextOpponent) {  
+        opponentName = state.nextOpponent;  
+    } else {  
+        // Generar un rival aleatorio si no hay uno definido (para la UI del próximo partido)  
+        const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
+        opponentName = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
+    }  
+    renderNextMatchCard(state.team, opponentName, state.week);  
 }  
   
 // Exportar todas las funciones necesarias  
