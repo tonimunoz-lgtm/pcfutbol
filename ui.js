@@ -1,4 +1,5 @@
 // ui.js - Utilidades de interfaz y renderizado
+
 /**
  * Renderiza la tabla de clasificación
  */
@@ -179,62 +180,6 @@ function updateDashboardStats(state, standings) {
     }
 }
 
-/**
- * Modal de negociación
- */
-function showNegotiationModal(playerName, playerOverall, playerSalary) {
-    const newSalary = Math.floor(playerSalary * 0.8 + Math.random() * (playerSalary * 0.4));
-    const reduction = playerSalary - newSalary;
-    
-    return confirm(
-        `NEGOCIACIÓN CON ${playerName}\n\n` +
-        `Salario actual: ${playerSalary}€/sem\n` +
-        `Propuesta: ${newSalary}€/sem\n` +
-        `Ahorro: ${reduction}€/sem\n\n` +
-        `¿Aceptar propuesta?`
-    );
-}
-
-/**
- * Simula todos los partidos de otros equipos
- */
-function simulateOtherMatches(standings, currentTeam) {
-    const teams = Object.keys(standings);
-    
-    for (let i = 0; i < teams.length; i++) {
-        for (let j = i + 1; j < teams.length; j++) {
-            if (teams[i] !== currentTeam && teams[j] !== currentTeam) {
-                const goals1 = Math.floor(Math.random() * 5);
-                const goals2 = Math.floor(Math.random() * 5);
-                
-                standings[teams[i]].pj++;
-                standings[teams[j]].pj++;
-                standings[teams[i]].gf += goals1;
-                standings[teams[i]].gc += goals2;
-                standings[teams[j]].gf += goals2;
-                standings[teams[j]].gc += goals1;
-                
-                if (goals1 > goals2) {
-                    standings[teams[i]].pts += 3;
-                    standings[teams[i]].g++;
-                    standings[teams[j]].p++;
-                } else if (goals1 < goals2) {
-                    standings[teams[j]].pts += 3;
-                    standings[teams[j]].g++;
-                    standings[teams[i]].p++;
-                } else {
-                    standings[teams[i]].pts += 1;
-                    standings[teams[i]].e++;
-                    standings[teams[j]].pts += 1;
-                    standings[teams[j]].e++;
-                }
-            }
-        }
-    }
-    
-    return standings;
-}
-
 export { 
     renderStandingsTable, 
     renderSquadList, 
@@ -242,7 +187,5 @@ export {
     renderAvailablePlayersMarket,
     renderAvailableYoungstersMarket,
     renderNextMatchCard,
-    updateDashboardStats,
-    showNegotiationModal,
-    simulateOtherMatches
+    updateDashboardStats
 };
