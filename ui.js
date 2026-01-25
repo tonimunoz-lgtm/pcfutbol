@@ -1,7 +1,7 @@
 // ui.js - Renderizado y UI  
   
-import * as gameLogic from './gameLogic.js'; // Importar gameLogic para usar sus funciones y obtener el estado  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS } from './config.js'; // Importar FORMATIONS  
+import * as gameLogic from './gameLogic.js';  
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js'; // Importar PRESEASON_WEEKS, SEASON_WEEKS  
   
 function renderStandingsTable(standings, currentTeam) {  
     const tbody = document.getElementById('standingsTable');  
@@ -263,18 +263,17 @@ function renderAvailableYoungstersMarket(youngsters) {
 }  
   
   
-function renderNextMatchCard(homeTeam, awayTeam, week) {  
+function renderNextMatchCard(homeTeam, opponentName, week) {  
     const matchInfo = document.getElementById('matchInfo');  
     if (!matchInfo) return;  
     const state = gameLogic.getGameState();  
-    const opponent = state.nextOpponent || 'Rival Indefinido'; // Usar el oponente predefinido  
   
     let matchDisplay = '';  
     if (state.seasonType === 'preseason') {  
         matchDisplay = `  
             <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
-                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">PRETEMPORADA</div>  
-                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">Semana ${state.week}</div>  
+                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">PRETEMPORADA ${state.currentSeason}</div>  
+                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">Semana ${state.week} de ${PRESEASON_WEEKS}</div>  
                 <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">¡A preparar la temporada!</div>  
             </div>  
         `;  
@@ -283,8 +282,8 @@ function renderNextMatchCard(homeTeam, awayTeam, week) {
             <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
                 <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${state.team}</div>  
                 <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
-                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponent}</div>  
-                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week}</div>  
+                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponentName}</div>  
+                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week} de ${SEASON_WEEKS}</div>  
             </div>  
         `;  
     }  
@@ -293,7 +292,7 @@ function renderNextMatchCard(homeTeam, awayTeam, week) {
   
 function updateDashboardStats(state) {  
     document.getElementById('teamName').textContent = state.team || '-';  
-    document.getElementById('weekNo').textContent = state.week;  
+    document.getElementById('weekNo').textContent = `${state.week} (${state.currentSeason})`;  
     document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + '€';  
   
     const teamStats = state.standings[state.team];  
@@ -304,7 +303,7 @@ function updateDashboardStats(state) {
         if (dgB !== dgA) return dgB - dgA;  
         return b[1].gf - a[1].gf;  
     });  
-    const position = sorted.findIndex(([name]) => name === state.team) + 1;  
+    const position = teamStats ? sorted.findIndex(([name]) => name === state.team) + 1 : '-';  
   
     document.getElementById('dashPos').textContent = position;  
     document.getElementById('dashPts').textContent = teamStats?.pts || 0;  
@@ -335,7 +334,6 @@ function updateDashboardStats(state) {
         }  
     }  
   
-    // Renderizar noticias  
     const newsFeedElem = document.getElementById('newsFeed');  
     if (newsFeedElem) {  
         newsFeedElem.innerHTML = state.newsFeed.map(news => `  
@@ -344,7 +342,6 @@ function updateDashboardStats(state) {
             </div>  
         `).join('');  
     }  
-    // Actualizar contador de noticias no leídas en el botón del dashboard  
     const dashButton = document.querySelector('button[onclick="switchPage(\'dashboard\', this)"]');  
     if (dashButton && state.unreadNewsCount > 0) {  
         dashButton.innerHTML = `Dashboard <span style="background: #ff3333; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7em;">${state.unreadNewsCount}</span>`;  
@@ -352,21 +349,18 @@ function updateDashboardStats(state) {
         dashButton.innerHTML = `Dashboard`;  
     }  
   
-    // Desactivar botón de simular si hay noticias sin leer  
     const simulateButton = document.getElementById('simulateWeekButton');  
     if (simulateButton) {  
         simulateButton.disabled = state.unreadNewsCount > 0;  
     }  
 }  
   
-// Refresca toda la UI  
 function refreshUI(state) {  
     updateDashboardStats(state);  
     renderStandingsTable(state.standings, state.team);  
     renderSquadList(state.squad, state.team);  
     renderAcademyList(state.academy);  
   
-    // Si estamos en la página de alineación, refrescarla  
     if (document.getElementById('lineup').classList.contains('active')) {  
         window.renderLineupPageUI();  
     }  
@@ -377,21 +371,10 @@ function refreshUI(state) {
         window.closeModal('negotiation');  
     }  
   
-    // Determinar el próximo rival de la liga o mensaje de pretemporada  
-    let opponentName = 'Rival Indefinido';  
-    if (state.seasonType === 'preseason') {  
-        opponentName = 'Pretemporada';  
-    } else if (state.nextOpponent) {  
-        opponentName = state.nextOpponent;  
-    } else {  
-        // Generar un rival aleatorio si no hay uno definido (para la UI del próximo partido)  
-        const rivals = Object.keys(state.standings).filter(t => t !== state.team);  
-        opponentName = rivals.length > 0 ? rivals[Math.floor(Math.random() * rivals.length)] : 'Equipo IA';  
-    }  
+    const opponentName = state.nextOpponent || 'Rival Indefinido';  
     renderNextMatchCard(state.team, opponentName, state.week);  
 }  
   
-// Exportar todas las funciones necesarias  
 export {  
     renderStandingsTable,  
     renderSquadList,  
