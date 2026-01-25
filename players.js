@@ -36,16 +36,37 @@ function generateRandomName() {
   
 // Función para calcular el Overall a partir de los atributos y la posición  
 export function calculateOverall(player) {  
-    const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position] || {};  
+    const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
+    if (!weights) {  
+        console.warn(`Pesos de atributos no definidos para la posición: ${player.position}. Usando pesos por defecto.`);  
+        // Si no hay pesos específicos para la posición, usar un promedio simple o pesos por defecto  
+        let overallSum = 0;  
+        for (const attr of ATTRIBUTES) {  
+            overallSum += (player[attr] || 0);  
+        }  
+        return Math.round(overallSum / ATTRIBUTES.length);  
+    }  
+  
     let overallSum = 0;  
     let totalWeight = 0;  
   
     for (const attr of ATTRIBUTES) {  
-        const weight = weights[attr] || (1 / ATTRIBUTES.length); // Peso por defecto si no está especificado  
+        const weight = weights[attr] || 0; // Si el atributo no tiene peso específico, su peso es 0  
         overallSum += (player[attr] || 0) * weight;  
         totalWeight += weight;  
     }  
-    return Math.round(overallSum / totalWeight); // Asegurarse de que el overall está entre 0-100  
+  
+    // Evitar división por cero si no hay pesos definidos o son todos cero  
+    if (totalWeight === 0) {  
+        // Fallback a un cálculo simple si los pesos no suman a un valor significativo  
+        let simpleOverallSum = 0;  
+        for (const attr of ATTRIBUTES) {  
+            simpleOverallSum += (player[attr] || 0);  
+        }  
+        return Math.round(simpleOverallSum / ATTRIBUTES.length);  
+    }  
+  
+    return Math.round(overallSum / totalWeight);  
 }  
   
   
@@ -67,7 +88,7 @@ function generateRandomFoot() {
 // Jugadores de élite (referencia para generar otros) - Ahora con atributos  
 const ELITE_PLAYERS_BASE = [  
   { name: 'Vinicius Jr', position: 'EXT', age: 24, salary: 15000, value: 180000, club: 'Real Madrid', EN: 70, VE: 95, RE: 85, AG: 90, CA: 75, EF: 90, MO: 90, AT: 92, DF: 60, foot: 'Diestro' },  
-  { name: 'Rodri', position: 'MED', age: 27, salary: 12000, value: 150000, club: 'Man City', EN: 85, VE: 75, RE: 90, AG: 80, CA: 85, EF: 80, MO: 90, AT: 80, DF: 90, foot: 'Diestro' },  
+  { name: 'Rodri', position: 'MC', age: 27, salary: 12000, value: 150000, club: 'Man City', EN: 85, VE: 75, RE: 90, AG: 80, CA: 85, EF: 80, MO: 90, AT: 80, DF: 90, foot: 'Diestro' },  
   { name: 'Bellingham', position: 'MCO', age: 21, salary: 10000, value: 120000, club: 'Real Madrid', EN: 75, VE: 85, RE: 85, AG: 88, CA: 85, EF: 88, MO: 90, AT: 90, DF: 70, foot: 'Diestro' },  
   { name: 'Haaland', position: 'DC', age: 24, salary: 18000, value: 200000, club: 'Man City', EN: 60, VE: 90, RE: 80, AG: 80, CA: 90, EF: 95, MO: 90, AT: 93, DF: 40, foot: 'Zurdo' },  
   { name: 'Mbappé', position: 'EXT', age: 25, salary: 16000, value: 190000, club: 'PSG', EN: 65, VE: 97, RE: 88, AG: 92, CA: 80, EF: 92, MO: 90, AT: 95, DF: 55, foot: 'Diestro' },  
@@ -79,11 +100,11 @@ const ELITE_PLAYERS_BASE = [
 ];  
   
 const YOUNGSTERS_BASE = [  
-  { name: 'Gavi Paéz', age: 19, salary: 1000, value: 50000, club: 'FC Barcelona', EN: 65, VE: 70, RE: 75, AG: 78, CA: 68, EF: 70, MO: 75, AT: 72, DF: 65, foot: 'Diestro', potential: 92 },  
-  { name: 'Casadó', age: 18, salary: 800, value: 40000, club: 'FC Barcelona', EN: 60, VE: 65, RE: 70, AG: 70, CA: 65, EF: 68, MO: 70, AT: 65, DF: 60, foot: 'Diestro', potential: 88 },  
-  { name: 'Ethan Ampadu', age: 21, salary: 1200, value: 55000, club: 'Leeds', EN: 70, VE: 68, RE: 72, AG: 70, CA: 70, EF: 68, MO: 75, AT: 60, DF: 75, foot: 'Diestro', potential: 86 },  
-  { name: 'Alejandro Balde', age: 19, salary: 900, value: 45000, club: 'FC Barcelona', EN: 60, VE: 75, RE: 70, AG: 72, CA: 60, EF: 65, MO: 70, AT: 68, DF: 70, foot: 'Zurdo', potential: 85 },  
-  { name: 'Ansu Fati', age: 21, salary: 1500, value: 60000, club: 'Brighton', EN: 55, VE: 80, RE: 75, AG: 80, CA: 70, EF: 80, MO: 78, AT: 82, DF: 50, foot: 'Diestro', potential: 87 },  
+  { name: 'Gavi Paéz', position: 'MC', age: 19, salary: 1000, value: 50000, club: 'FC Barcelona', EN: 65, VE: 70, RE: 75, AG: 78, CA: 68, EF: 70, MO: 75, AT: 72, DF: 65, foot: 'Diestro', potential: 92 },  
+  { name: 'Casadó', position: 'MC', age: 18, salary: 800, value: 40000, club: 'FC Barcelona', EN: 60, VE: 65, RE: 70, AG: 70, CA: 65, EF: 68, MO: 70, AT: 65, DF: 60, foot: 'Diestro', potential: 88 },  
+  { name: 'Ethan Ampadu', position: 'DFC', age: 21, salary: 1200, value: 55000, club: 'Leeds', EN: 70, VE: 68, RE: 72, AG: 70, CA: 70, EF: 68, MO: 75, AT: 60, DF: 75, foot: 'Diestro', potential: 86 },  
+  { name: 'Alejandro Balde', position: 'LI', age: 19, salary: 900, value: 45000, club: 'FC Barcelona', EN: 60, VE: 75, RE: 70, AG: 72, CA: 60, EF: 65, MO: 70, AT: 68, DF: 70, foot: 'Zurdo', potential: 85 },  
+  { name: 'Ansu Fati', position: 'EXT', age: 21, salary: 1500, value: 60000, club: 'Brighton', EN: 55, VE: 80, RE: 75, AG: 80, CA: 70, EF: 80, MO: 78, AT: 82, DF: 50, foot: 'Diestro', potential: 87 },  
 ];  
   
   
@@ -111,7 +132,7 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
     player.potential = player.overall + Math.floor(Math.random() * (100 - player.overall)); // Potencial siempre mayor o igual al overall  
   
     player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000); // Salario basado en overall y edad  
-    player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 10); // Valor de mercado  
+    player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5); // Valor de mercado  
   
     // Estado inicial de un jugador para el mercado  
     player.transferListed = Math.random() < 0.3; // 30% de posibilidades de estar transferible  
@@ -152,7 +173,7 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, isStar = fa
   
     youngster.salary = Math.floor(youngster.overall * 50 + Math.random() * 200); // Salario de juvenil  
     youngster.value = Math.floor(youngster.overall * 1000 + youngster.potential * 500 + youngster.salary * 5);  
-    youngster.cost = youngster.value; // Para canteranos, el coste inicial es su valor  
+    youngster.cost = youngster.value; // Para canteranos, el coste inicial es el valor  
   
     return youngster;  
 }  
@@ -169,8 +190,9 @@ function initPlayerDatabase() {
             ...p,  
             matches: 0,  
             form: 80 + Math.floor(Math.random() * 10), // Estado de forma inicial para élite  
-            // overall y potential se recalcularán si no vienen ya calculados  
         };  
+        // overall y potential se calculan si no vienen ya calculados en ELITE_PLAYERS_BASE  
+        // (ya vienen predefinidos en ELITE_PLAYERS_BASE, pero esta es una capa de seguridad)  
         if (!fullPlayer.overall) fullPlayer.overall = calculateOverall(fullPlayer);  
         if (!fullPlayer.potential) fullPlayer.potential = fullPlayer.overall + Math.floor(Math.random() * (100 - fullPlayer.overall));  
   
@@ -201,6 +223,7 @@ function initYoungsterDatabase() {
             matches: 0,  
             form: 70 + Math.floor(Math.random() * 10)  
         };  
+        // similar a ELITE_PLAYERS_BASE, el overall y potential ya vienen  
         if (!fullYoungster.overall) fullYoungster.overall = calculateOverall(fullYoungster);  
         if (!fullYoungster.potential) fullYoungster.potential = fullYoungster.overall + Math.floor(Math.random() * (95 - fullYoungster.overall));  
         if (!fullYoungster.cost) fullYoungster.cost = fullYoungster.value;  
@@ -285,5 +308,5 @@ export {
     getYoungsterMarket,  
     initPlayerDatabase,  
     initYoungsterDatabase,  
-    calculateOverall // Exportar calculateOverall para que lo use gameLogic.js  
+    calculateOverall // calculateOverall se exporta aquí en su definición.  
 };  
