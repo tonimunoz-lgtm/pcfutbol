@@ -1,8 +1,8 @@
 // gameLogic.js - Lógica central del juego  
   
-import { TEAMS_DATA } from './config.js';  
+import { TEAMS_DATA, ATTRIBUTES, POSITION_ATTRIBUTE_WEIGHTS } from './config.js';  
 // Importamos las nuevas funciones del market  
-import { getPlayerMarket, getYoungsterMarket, initPlayerDatabase, initYoungsterDatabase } from './players.js';  
+import { getPlayerMarket, getYoungsterMarket, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall } from './players.js';  
   
 // Estado global del juego  
 const gameState = {  
@@ -17,7 +17,7 @@ const gameState = {
     merchandisingRevenue: 500,  
     staff: {  
         medico: null,  
-        entrenador: null,  
+        entrenador: null, // Entrenador para mejorar atributos  
         analista: null,  
         scout: null,  
         secretario: null // El secretario técnico será clave en negociaciones  
@@ -35,10 +35,15 @@ const gameState = {
     merchandisingPrice: 10,  
     merchandisingItemsSold: 0,  
     // Estado de negociación activa  
-    negotiatingPlayer: null, // El jugador con el que se está negociando  
-    negotiationStep: 0,      // 0: Ninguna, 1: Con Jugador, 2: Con Club  
-    playerOffer: null,       // Detalles de la oferta al jugador  
-    clubOffer: null,         // Detalles de la oferta al club  
+    negotiatingPlayer: null,  
+    negotiationStep: 0,  
+    playerOffer: null,  
+    clubOffer: null,  
+    // Atributos para el entrenamiento  
+    trainingFocus: {  
+        playerIndex: -1, // Índice del jugador en la plantilla que se entrena  
+        attribute: null // Atributo a mejorar  
+    }  
 };  
   
 // --------------------------------------------  
@@ -63,36 +68,58 @@ function initStandings(teamsArray) {
 }  
   
 // --------------------------------------------  
-// Generación de plantilla inicial  
+// Generación de plantilla inicial (ahora con atributos detallados)  
 function generateInitialSquad() {  
     const positions = ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'MI', 'MD', 'DC'];  
-    return positions.map((pos, idx) => ({  
-        name: `Jugador ${idx + 1}`,  
-        age: 18 + Math.floor(Math.random() * 10),  
-        overall: 50 + Math.floor(Math.random() * 20),  
-        potential: 60 + Math.floor(Math.random() * 30),  
-        position: positions[Math.floor(Math.random() * positions.length)], // Posición aleatoria  
-        salary: Math.floor(1000 + Math.random() * 3000),  
-        value: Math.floor(5000 + Math.random() * 15000), // Valor inicial  
-        club: gameState.team, // Su club es el nuestro  
-        matches: 0  
-    }));  
+    return positions.map((pos, idx) => {  
+        const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
+        const player = {  
+            name: `Jugador ${idx + 1}`,  
+            age: 18 + Math.floor(Math.random() * 10),  
+            position: pos,  
+            foot: foot,  
+            matches: 0,  
+            form: 70 + Math.floor(Math.random() * 20), // 70-90 de forma inicial  
+            // Atributos aleatorios para jugadores iniciales  
+            ...ATTRIBUTES.reduce((acc, attr) => {  
+                acc[attr] = 40 + Math.floor(Math.random() * 40); // Atributos entre 40 y 80  
+                return acc;  
+            }, {})  
+        };  
+        player.overall = calculatePlayerOverall(player);  
+        player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall)); // Potencial siempre mayor  
+        player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000); // Salario basado en overall y edad  
+        player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5); // Valor de mercado  
+  
+        return player;  
+    });  
 }  
   
-// Generación cantera  
+// Generación cantera (ahora con atributos detallados)  
 function generateInitialAcademy() {  
     const academy = [];  
     for (let i = 0; i < 5; i++) {  
-        academy.push({  
+        const foot = Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro');  
+        const player = {  
             name: `Juvenil ${i + 1}`,  
             age: 16 + Math.floor(Math.random() * 2),  
-            overall: 40 + Math.floor(Math.random() * 15),  
-            potential: 60 + Math.floor(Math.random() * 30),  
-            salary: Math.floor(200 + Math.random() * 500), // Salario para juveniles  
-            value: Math.floor(1000 + Math.random() * 5000),  
-            club: gameState.team, // Su club es el nuestro (cantera)  
-            matches: 0  
-        });  
+            position: 'MC', // Posición inicial genérica  
+            foot: foot,  
+            matches: 0,  
+            form: 60 + Math.floor(Math.random() * 20),  
+            // Atributos aleatorios para juveniles iniciales  
+            ...ATTRIBUTES.reduce((acc, attr) => {  
+                acc[attr] = 30 + Math.floor(Math.random() * 30); // Atributos entre 30 y 60  
+                return acc;  
+            }, {})  
+        };  
+        player.overall = calculatePlayerOverall(player);  
+        player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall));  
+        player.salary = Math.floor(player.overall * 50 + Math.random() * 200); // Salario para juveniles  
+        player.value = Math.floor(player.overall * 1000 + player.potential * 500 + player.salary * 5);  
+        player.cost = player.value;  
+  
+        academy.push(player);  
     }  
     return academy;  
 }  
@@ -134,8 +161,18 @@ function signPlayer(player) {
     if (gameState.squad.length >= 25) {  
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
     }  
-    // No verificamos balance aquí porque ya se debería haber hecho en la negociación  
-    gameState.squad.push(player);  
+    // Añadimos los atributos al jugador firmado si no los tiene (ej. de los generados aleatoriamente)  
+    const newPlayer = { ...player };  
+    ATTRIBUTES.forEach(attr => {  
+        if (newPlayer[attr] === undefined) {  
+            newPlayer[attr] = 50 + Math.floor(Math.random() * 30); // Atributo base por defecto  
+        }  
+    });  
+    newPlayer.overall = calculatePlayerOverall(newPlayer); // Recalcular overall  
+    newPlayer.form = 70 + Math.floor(Math.random() * 20); // Forma inicial  
+    newPlayer.matches = 0; // Resetear partidos jugados al fichar  
+  
+    gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
     return { success: true, message: `${player.name} ha sido fichado.` };  
 }  
@@ -148,8 +185,12 @@ function signYoungster(youngster) {
         return { success: false, message: 'La cantera está completa (15 jóvenes max).' };  
     }  
   
-    gameState.balance -= youngster.cost;  
-    gameState.academy.push({ ...youngster, club: gameState.team }); // Asignar al club  
+    const newYoungster = { ...youngster, club: gameState.team };  
+    newYoungster.overall = calculatePlayerOverall(newYoungster); // Asegurar overall calculado  
+    newYoungster.form = 60 + Math.floor(Math.random() * 20); // Forma inicial  
+  
+    gameState.balance -= newYoungster.cost;  
+    gameState.academy.push(newYoungster);  
     updateWeeklyFinancials();  
     return { success: true, message: `${youngster.name} ha sido contratado para la cantera.` };  
 }  
@@ -164,17 +205,14 @@ function promoteYoungster(name) {
     }  
   
     const youngster = gameState.academy.splice(index, 1)[0];  
-    gameState.squad.push({  
-        name: youngster.name,  
-        age: youngster.age,  
-        overall: youngster.overall,  
-        potential: youngster.potential,  
-        position: youngster.position || 'MC', // Si no tiene posición, le damos una  
-        salary: Math.floor(1500 + Math.random() * 1000),  
-        value: youngster.value || Math.floor(youngster.overall * 5000),  
-        club: gameState.team,  
-        matches: 0  
-    });  
+    const promotedPlayer = { ...youngster };  
+    promotedPlayer.position = promotedPlayer.position || 'MC';  
+    promotedPlayer.salary = Math.floor(promotedPlayer.overall * 150 + Math.random() * 1000); // Salario acorde a su overall  
+    promotedPlayer.value = Math.floor(promotedPlayer.overall * 2000 + promotedPlayer.potential * 500 + promotedPlayer.salary * 5);  
+    promotedPlayer.club = gameState.team;  
+    promotedPlayer.matches = 0; // Se resetean los partidos jugados en la cantera  
+  
+    gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
     return { success: true, message: `${youngster.name} ha sido ascendido a la primera plantilla.` };  
 }  
@@ -193,18 +231,17 @@ function sellPlayer(name) {
 }  
   
 // --------------------------------------------  
-// Negociaciones (NUEVO)  
+// Negociaciones  
 // --------------------------------------------  
   
 function startNegotiation(player) {  
-    // Reiniciar cualquier negociación previa  
     gameState.negotiatingPlayer = null;  
     gameState.negotiationStep = 0;  
     gameState.playerOffer = null;  
     gameState.clubOffer = null;  
   
     gameState.negotiatingPlayer = player;  
-    gameState.negotiationStep = 1; // Iniciar con el jugador  
+    gameState.negotiationStep = 1;  
   
     return { success: true, message: `Iniciando negociación con ${player.name}.` };  
 }  
@@ -213,30 +250,24 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
-    let acceptanceChance = 0.5; // Base de aceptación del jugador  
+    let acceptanceChance = 0.5;  
   
-    // Impacto del salario (cuanto más cerca de su expectativa/valor, mejor)  
     const salaryFactor = offeredSalary / player.salary;  
-    if (salaryFactor > 1.5) acceptanceChance += 0.3; // Mucho más de lo que pide  
+    if (salaryFactor > 1.5) acceptanceChance += 0.3;  
     else if (salaryFactor > 1.2) acceptanceChance += 0.15;  
-    else if (salaryFactor < 0.8) acceptanceChance -= 0.2; // Muy por debajo  
+    else if (salaryFactor < 0.8) acceptanceChance -= 0.2;  
   
-    // Incentivos: cada incentivo aumenta un poco la probabilidad  
     if (offeredBonus) acceptanceChance += 0.05;  
     if (offeredCar) acceptanceChance += 0.05;  
     if (offeredHouse) acceptanceChance += 0.05;  
     if (offeredMerchPercent) acceptanceChance += 0.03;  
     if (offeredTicketPercent) acceptanceChance += 0.03;  
   
-    // Fama del jugador vs nuestro club  
     if (player.overall > 80 && gameState.popularity < 60) acceptanceChance -= 0.1;  
-  
-    // Si es cedible, es más fácil que acepte su salario base  
     if (player.loanListed && offeredSalary >= player.salary) acceptanceChance += 0.2;  
   
-    // Roll the dice  
     const roll = Math.random();  
-    const secretaryEffect = gameState.staff.secretario ? 0.1 : 0; // El secretario mejora un poco la negociación  
+    const secretaryEffect = gameState.staff.secretario ? 0.1 : 0;  
     acceptanceChance += secretaryEffect;  
   
     const accepted = roll < acceptanceChance;  
@@ -250,14 +281,13 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             merchPercent: offeredMerchPercent,  
             ticketPercent: offeredTicketPercent  
         };  
-        gameState.negotiationStep = 2; // Pasar a negociar con el club  
+        gameState.negotiationStep = 2;  
         return { success: true, message: `${player.name} ha aceptado tu oferta personal. Ahora a negociar con su club, el ${player.club}.` };  
     } else {  
-        // El jugador puede pedir más o simplemente rechazar  
-        if (roll > 0.8) { // Rechazo total  
+        if (roll > 0.8) {  
             endNegotiation();  
             return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.` };  
-        } else { // Pide un poco más  
+        } else {  
             return { success: false, message: `${player.name} encuentra tu oferta insuficiente. Podrías subir el salario o añadir más incentivos.` };  
         }  
     }  
@@ -267,18 +297,15 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
-    if (player.loanListed && isLoan) { // Es una cesión  
-        // Aquí la oferta es cuánto de su salario nos hacemos cargo  
-        const myWageContribution = offerAmount; // offerAmount es el porcentaje de salario  
+    if (player.loanListed && isLoan) {  
+        const myWageContribution = offerAmount;  
         if (myWageContribution < 0 || myWageContribution > 100) {  
              return { success: false, message: 'La contribución salarial debe ser un porcentaje entre 0 y 100.' };  
         }  
   
         const actualWageToPay = player.salary * (myWageContribution / 100);  
-        // Si el club original ya contribuye, sumamos  
-        const finalWageForUs = actualWageToPay - player.loanWageContribution;  
+        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0); // Si el club original contribuye  
   
-        // El club acepta si la contribución es razonable (por encima de un mínimo)  
         let acceptanceChance = 0.5;  
         if (myWageContribution >= 80) acceptanceChance += 0.3;  
         else if (myWageContribution >= 50) acceptanceChance += 0.1;  
@@ -289,41 +316,38 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
   
         if (accepted) {  
             gameState.clubOffer = { type: 'loan', wageContribution: myWageContribution, finalWageForUs };  
-            endNegotiation(true); // Terminar negociación, fichaje exitoso  
-            // Añadir al jugador a la plantilla  
+            endNegotiation(true);  
             const newPlayer = {  
                 ...player,  
-                salary: finalWageForUs, // Nuestro club solo paga esta parte del salario  
-                loan: true, // Marcar como cedido  
-                club: gameState.team // Ahora está en nuestro club  
+                salary: finalWageForUs,  
+                loan: true,  
+                club: gameState.team  
             };  
-            return signPlayer(newPlayer); // Usa signPlayer para añadirlo  
+            return signPlayer(newPlayer);  
         } else {  
             endNegotiation();  
             return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.` };  
         }  
   
-    } else { // Es un traspaso  
-        const playerAskingPrice = player.askingPrice; // Precio que pide el club  
+    } else {  
+        const playerAskingPrice = player.askingPrice;  
   
         let acceptanceChance = 0.5;  
-        // La oferta debe ser razonable  
         const offerFactor = offerAmount / playerAskingPrice;  
-        if (offerFactor >= 1) acceptanceChance += 0.3; // Ofrece lo que pide o más  
+        if (offerFactor >= 1) acceptanceChance += 0.3;  
         else if (offerFactor >= 0.8) acceptanceChance += 0.1;  
-        else if (offerFactor < 0.6) acceptanceChance -= 0.3; // Muy por debajo  
+        else if (offerFactor < 0.6) acceptanceChance -= 0.3;  
   
-        // Intercambio de jugadores (simplificado: aumenta la chance)  
         if (playerExchange.length > 0) {  
             const totalExchangeValue = playerExchange.reduce((sum, pName) => {  
                 const p = gameState.squad.find(s => s.name === pName);  
                 return sum + (p ? p.value : 0);  
             }, 0);  
-            acceptanceChance += (totalExchangeValue / player.value) * 0.1; // 10% del valor del jugador a intercambiar  
+            acceptanceChance += (totalExchangeValue / player.value) * 0.1;  
         }  
   
         const roll = Math.random();  
-        const secretaryEffect = gameState.staff.secretario ? 0.1 : 0; // El secretario mejora un poco la negociación  
+        const secretaryEffect = gameState.staff.secretario ? 0.1 : 0;  
         acceptanceChance += secretaryEffect;  
   
         const accepted = roll < acceptanceChance;  
@@ -333,49 +357,92 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
                 endNegotiation();  
                 return { success: false, message: 'No tienes suficiente dinero para esta oferta.' };  
             }  
-            gameState.balance -= offerAmount; // Pagar el traspaso  
+            gameState.balance -= offerAmount;  
             playerExchange.forEach(pName => {  
                 const index = gameState.squad.findIndex(p => p.name === pName);  
                 if (index !== -1) {  
-                    gameState.squad.splice(index, 1); // Quitar jugador de nuestra plantilla  
-                    // Opcional: añadirlo al club de origen  
+                    gameState.squad.splice(index, 1);  
                 }  
             });  
   
-            // Añadir el jugador a la plantilla  
             const newPlayer = {  
                 ...player,  
-                salary: gameState.playerOffer.salary, // Con el salario acordado  
+                salary: gameState.playerOffer.salary,  
                 loan: false,  
-                club: gameState.team // Ahora está en nuestro club  
+                club: gameState.team  
             };  
-            endNegotiation(true); // Terminar negociación, fichaje exitoso  
-            return signPlayer(newPlayer); // Usa signPlayer para añadirlo  
+            endNegotiation(true);  
+            return signPlayer(newPlayer);  
         } else {  
-            // El club puede pedir más o rechazar  
             if (roll > 0.8) {  
                 endNegotiation();  
                 return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.` };  
             } else {  
-                return { success: false, message: `El ${player.club} ha rechazenado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
             }  
         }  
     }  
 }  
   
 function endNegotiation(success = false) {  
-    const player = gameState.negotiatingPlayer;  
-    if (success) {  
-        // Si fue exitoso, el jugador ya se añadió en offerToClub  
-        console.log(`Negociación con ${player.name} finalizada con éxito.`);  
-    } else {  
-        console.log(`Negociación con ${player.name} finalizada sin éxito.`);  
-    }  
-  
+    console.log(`Negociación con ${gameState.negotiatingPlayer?.name || 'jugador desconocido'} finalizada ${success ? 'con éxito' : 'sin éxito'}.`);  
     gameState.negotiatingPlayer = null;  
     gameState.negotiationStep = 0;  
     gameState.playerOffer = null;  
     gameState.clubOffer = null;  
+}  
+  
+// --------------------------------------------  
+// Entrenamiento (NUEVO)  
+// --------------------------------------------  
+function setTrainingFocus(playerIndex, attribute) {  
+    if (playerIndex < 0 || playerIndex >= gameState.squad.length) {  
+        return { success: false, message: 'Jugador no válido.' };  
+    }  
+    if (!ATTRIBUTES.includes(attribute)) {  
+        return { success: false, message: 'Atributo no válido para entrenar.' };  
+    }  
+  
+    gameState.trainingFocus = { playerIndex, attribute };  
+    return { success: true, message: `Entrenamiento enfocado en ${attribute} para ${gameState.squad[playerIndex].name}.` };  
+}  
+  
+function applyWeeklyTraining() {  
+    if (!gameState.staff.entrenador) {  
+        return { success: false, message: 'No tienes un entrenador contratado para realizar entrenamientos.' };  
+    }  
+    if (gameState.trainingFocus.playerIndex === -1 || !gameState.trainingFocus.attribute) {  
+        return { success: false, message: 'No hay un foco de entrenamiento establecido.' };  
+    }  
+  
+    const player = gameState.squad[gameState.trainingFocus.playerIndex];  
+    const attribute = gameState.trainingFocus.attribute;  
+    const currentAttrValue = player[attribute];  
+    const potentialAttrValue = player.potential; // El potencial del jugador limita el crecimiento de sus atributos  
+  
+    if (currentAttrValue >= potentialAttrValue) { // El atributo ya alcanzó su potencial máximo  
+        return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.` };  
+    }  
+  
+    // Calcular mejora del atributo  
+    let improvementChance = 0.3; // Base de mejora  
+    let improvementAmount = 1;   // Cuánto mejora  
+  
+    // Influencia del nivel de instalaciones y entrenador  
+    improvementChance += (gameState.trainingLevel * 0.05); // +5% por cada nivel de entrenamiento  
+    // El atributo entrenador del staff afectaría aquí, por ahora solo si está contratado  
+    if (gameState.staff.entrenador) improvementChance += 0.1;  
+  
+    // Reducir mejora si el atributo está cerca del potencial  
+    if (currentAttrValue >= potentialAttrValue - 5) improvementChance *= 0.5;  
+  
+    if (Math.random() < improvementChance) {  
+        player[attribute] = Math.min(100, currentAttrValue + improvementAmount);  
+        player.overall = calculatePlayerOverall(player); // Recalcular overall  
+        return { success: true, message: `${player.name} ha mejorado su ${attribute} a ${player[attribute]}!` };  
+    } else {  
+        return { success: false, message: `${player.name} no ha mostrado mejoras en ${attribute} esta semana.` };  
+    }  
 }  
   
   
@@ -410,6 +477,7 @@ function playMatch(homeTeamName, awayTeamName) {
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20);  
     let teamMentality = 'balanced';  
   
+    // Para calcular el overall del equipo, usamos la media de overall de sus jugadores  
     if (homeTeamName === gameState.team) {  
         homeTeamOverall = gameState.squad.reduce((sum, p) => sum + p.overall, 0) / gameState.squad.length;  
         teamMentality = gameState.mentality;  
@@ -437,18 +505,39 @@ function playMatch(homeTeamName, awayTeamName) {
     gameState.squad.forEach(p => {  
         if (Math.random() < 0.7) { // El jugador participa  
             p.matches++;  
-            if (p.matches % 5 === 0 && p.overall < p.potential) p.overall++; // +1 por cada 5 partidos  
-            if (p.matches % 10 === 0 && p.overall < p.potential) p.overall++; // Otro +1 por cada 10 partidos  
-            if (p.matches % 20 === 0 && p.overall < p.potential) p.overall++; // Otro +1 por cada 20 partidos  
+            // Actualizar la forma del jugador  
+            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1))); // Pequeñas variaciones  
+            if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
+                const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
+                const draw = (homeGoals === awayGoals);  
+                if (myResult) p.form = Math.min(100, p.form + 2); // Sube más la forma si ganamos  
+                else if (draw) p.form = Math.min(100, p.form + 1);  
+                else p.form = Math.max(0, p.form - 2); // Baja si perdemos  
+            }  
+  
+            // Aumento de overall por partidos (basado en PCF7)  
+            if (p.overall < p.potential) {  
+                if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+                if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
+            }  
+        } else {  
+            // Jugadores que no juegan también pueden variar su forma, pero menos  
+            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
         }  
     });  
   
     gameState.academy.forEach(y => {  
         if (Math.random() < 0.3) {  
             y.matches++;  
-            if (y.matches % 5 === 0 && y.overall < y.potential) y.overall++;  
-            if (y.matches % 10 === 0 && y.overall < y.potential) y.overall++;  
-            if (y.matches % 20 === 0 && y.overall < y.potential) y.overall++;  
+            y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.5 ? 1 : -1)));  
+            if (y.overall < y.potential) {  
+                if (y.matches % 5 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+                if (y.matches % 10 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+                if (y.matches % 20 === 0) y.overall = Math.min(y.potential, y.overall + 1);  
+            }  
+        } else {  
+            y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.7 ? 1 : -1)));  
         }  
     });  
   
@@ -480,6 +569,15 @@ function playMatch(homeTeamName, awayTeamName) {
 }  
   
 function simulateFullWeek() {  
+    // Aplicar entrenamiento antes de los partidos de la semana  
+    const trainingResult = applyWeeklyTraining();  
+    if (trainingResult.success) {  
+        console.log(`[Entrenamiento] ${trainingResult.message}`);  
+    } else if (trainingResult.message !== 'No hay un foco de entrenamiento establecido.') {  
+        console.log(`[Entrenamiento] ${trainingResult.message}`);  
+    }  
+  
+  
     const teams = Object.keys(gameState.standings);  
     const myTeam = gameState.team;  
   
@@ -619,7 +717,6 @@ function loadFromLocalStorage() {
   
 function resetGame() {  
     localStorage.removeItem('pcfutbol-save');  
-    // También reiniciamos la base de datos de jugadores del market  
     initPlayerDatabase();  
     initYoungsterDatabase();  
     window.location.reload();  
@@ -645,11 +742,12 @@ export {
     loadFromLocalStorage,  
     resetGame,  
     initStandings,  
-    // Nuevos exports para el mercado y negociación  
     getPlayerMarket,  
     getYoungsterMarket,  
     startNegotiation,  
     offerToPlayer,  
     offerToClub,  
-    endNegotiation  
+    endNegotiation,  
+    setTrainingFocus, // Exportar las nuevas funciones de entrenamiento  
+    applyWeeklyTraining  
 };  
