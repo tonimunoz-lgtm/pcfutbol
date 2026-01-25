@@ -77,7 +77,7 @@ function renderAcademyList(academy) {
                     Nivel ${p.overall}/100 |  
                     Potencial ${p.potential}/100 |  
                     ${p.matches || 0} partidos |  
-                    Progreso: ${Math.floor(((p.matches || 0) / 25) * 100)}%  
+                    Progreso: ${Math.floor(((p.matches || 0) / 20) * 100)}% <!-- 20 partidos para 100% de progreso -->  
                 </div>  
             </div>  
             <div style="display: flex; gap: 5px;">  
@@ -87,32 +87,35 @@ function renderAcademyList(academy) {
     `).join('');  
 }  
   
-function renderAvailablePlayersMarket(players) {  
-    const list = document.getElementById('availablePlayersList');  
+// Nueva función para renderizar el mercado de jugadores (con botón de negociar)  
+function renderPlayerMarketList(players) {  
+    const list = document.getElementById('availablePlayersSearchResult');  
     if (!list) return;  
     if (!players || players.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">No hay jugadores disponibles en el mercado.</div>';  
+        list.innerHTML = '<div class="alert alert-info">No se encontraron jugadores que coincidan con los criterios.</div>';  
         return;  
     }  
   
     list.innerHTML = players.map(p => `  
         <div class="player-card">  
             <div style="flex: 1;">  
-                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">  
-                    ${p.name} ${p.loan ? '(📋 Cesión)' : ''}  
-                </div>  
+                <div style="color: #e94560; font-weight: bold; margin-bottom: 5px;">${p.name}</div>  
                 <div style="font-size: 0.85em; color: #999;">  
-                    ${p.position} | ${p.age} años | Nivel ${p.overall}/100 |  
-                    Salario: ${p.salary.toLocaleString('es-ES')}€/sem | ${p.loan ? 'Gratis' : 'Coste: ' + p.cost.toLocaleString('es-ES') + '€'}  
+                    ${p.position} | ${p.age} años | Nivel ${p.overall}/100 | Potencial ${p.potential}/100<br>  
+                    Club: ${p.club} | Salario: ${p.salary.toLocaleString('es-ES')}€/sem | Valor: ${p.value.toLocaleString('es-ES')}€<br>  
+                    ${p.transferListed ? `<span style="color: orange;">En Venta: ${p.askingPrice.toLocaleString('es-ES')}€</span>` : ''}  
+                    ${p.loanListed ? `<span style="color: lightblue;">Cedible (paga ${p.loanWageContribution.toLocaleString('es-ES')}€ de salario)</span>` : ''}  
+                    ${!p.transferListed && !p.loanListed ? 'No Transferible' : ''}  
                 </div>  
             </div>  
-            <button class="btn btn-sm" onclick="window.fichPlayerConfirm('${encodeURIComponent(JSON.stringify(p))}')">  
-                Fichar${p.loan ? ' (Préstamo)' : ''}  
+            <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
+                Negociar  
             </button>  
         </div>  
     `).join('');  
 }  
   
+// Renderiza jóvenes del mercado  
 function renderAvailableYoungstersMarket(youngsters) {  
     const list = document.getElementById('availableYoungstersList');  
     if (!list) return;  
@@ -137,6 +140,7 @@ function renderAvailableYoungstersMarket(youngsters) {
     `).join('');  
 }  
   
+  
 function renderNextMatchCard(homeTeam, awayTeam, week) {  
     const matchInfo = document.getElementById('matchInfo');  
     if (!matchInfo) return;  
@@ -151,11 +155,9 @@ function renderNextMatchCard(homeTeam, awayTeam, week) {
 }  
   
 function updateDashboardStats(state) {  
-    // Actualizar elementos del header  
     document.getElementById('teamName').textContent = state.team || '-';  
     document.getElementById('weekNo').textContent = state.week;  
     document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + '€';  
-  
   
     const teamStats = state.standings[state.team];  
     const sorted = Object.entries(state.standings).sort((a, b) => {  
@@ -214,7 +216,8 @@ export {
     renderStandingsTable,  
     renderSquadList,  
     renderAcademyList,  
-    renderAvailablePlayersMarket,  
+    // Eliminamos renderAvailablePlayersMarket de aquí, ahora se usa renderPlayerMarketList  
+    renderPlayerMarketList,  
     renderAvailableYoungstersMarket,  
     renderNextMatchCard,  
     updateDashboardStats,  
