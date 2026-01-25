@@ -21,9 +21,16 @@ const TEAMS_DATA = {
         'Albacete', 'Andorra', 'Alcorcón', 'Eibar', 'Huesca', 'Ferrol', 'Tenerife', 'Sabadell', 'Mirandés', 'Burgos',  
         'Lugo', 'Córdoba', 'Ibiza', 'Alcoyano', 'Real Unión', 'Zaragoza', 'Lleida', 'Málaga', 'Cádiz', 'Ponferradina'  
     ],  
-    rfef: [  
-        'AD Alcalá', 'Cerdanyola', 'Talavera', 'Fuenlabrada', 'Alcalá', 'Getafe B', 'Torrejón', 'Alcorcón B', 'Móstoles', 'Cieza',  
-        'Mérida', 'Utrera', 'Coria', 'Extremadura', 'Villanovense', 'Córdoba B', 'Linares', 'San Roque', 'Poli Ejido', 'Jaén'  
+    rfef: [ // Primera RFEF con dos grupos  
+        // Grupo 1 (ejemplo)  
+        'RC Deportivo', 'FC Barcelona B', 'Real Madrid Castilla', 'Racing Ferrol', 'Celta B',  
+        'Rayo Majadahonda', 'Cultural Leonesa', 'Real Unión', 'SD Logroñés', 'Unionistas Salamanca',  
+        // Grupo 2 (ejemplo)  
+        'Córdoba CF', 'AD Ceuta FC', 'CD Castellón', 'Alcoyano', 'Atlético Baleares',  
+        'Linares Deportivo', 'UD Ibiza', 'CF Intercity', 'Antequera CF', 'Recreativo Granada',  
+        // Otros equipos RFEF para completar si no son 20 por grupo  
+        'CD Numancia', 'UD Logroñés', 'San Fernando CD', 'UD Melilla', 'UE Cornellà', 'CF Fuenlabrada',  
+        'Atlético Sanluqueño', 'Mérida AD', 'Algeciras CF', 'Real Murcia CF'  
     ]  
 };  
   
@@ -55,13 +62,15 @@ const POSITION_ATTRIBUTE_WEIGHTS = {
     'DC': { EN: 0.05, VE: 0.15, RE: 0.1, AG: 0.1, CA: 0.15, EF: 0.2, MO: 0.1, AT: 0.15, DF: 0.0 },  
 };  
   
+  
 const FORMATIONS = {  
-    '433': { name: '4-3-3', type: 'Equilibrada' },  
-    '442': { name: '4-4-2', type: 'Clásica' },  
-    '352': { name: '3-5-2', type: 'Ofensiva' },  
-    '541': { name: '5-4-1', type: 'Defensiva' },  
-    '451': { name: '4-5-1', type: 'Mixta' }  
+    '433': { name: '4-3-3', layout: ['POR', 'LD', 'DFC', 'DFC', 'LI', 'MC', 'MC', 'MCO', 'EXT', 'EXT', 'DC'] },  
+    '442': { name: '4-4-2', layout: ['POR', 'LD', 'DFC', 'DFC', 'LI', 'MD', 'MC', 'MC', 'MI', 'DC', 'DC'] },  
+    '352': { name: '3-5-2', layout: ['POR', 'DFC', 'DFC', 'DFC', 'MD', 'MC', 'MCO', 'MC', 'MI', 'DC', 'DC'] },  
+    '541': { name: '5-4-1', layout: ['POR', 'LD', 'DFC', 'DFC', 'DFC', 'LI', 'MD', 'MC', 'MC', 'MI', 'DC'] },  
+    '451': { name: '4-5-1', layout: ['POR', 'LD', 'DFC', 'DFC', 'LI', 'MD', 'MC', 'MCO', 'MC', 'MI', 'DC'] }  
 };  
+  
   
 const DIVISION_MULTIPLIERS = {  
     primera: 1.2,  
@@ -70,14 +79,17 @@ const DIVISION_MULTIPLIERS = {
 };  
   
 // --- Configuración del STAFF ---  
+// levelCostMultiplier: factor para calcular la cláusula de rescisión por nivel  
+// baseClausula: cantidad base de la cláusula, se multiplica por el nivel y por el factor de división.  
 const STAFF_ROLES = {  
-    medico: { displayName: 'Médico', minSalary: 800, maxSalary: 2500, baseEffect: 0.5 }, // Afecta recuperación de lesiones  
-    entrenador: { displayName: 'Entrenador Físico', minSalary: 700, maxSalary: 2000, baseEffect: 0.4 }, // Afecta entrenamiento de atributos (no porteros)  
-    entrenadorPorteros: { displayName: 'Entrenador de Porteros', minSalary: 600, maxSalary: 1800, baseEffect: 0.4 }, // Afecta entrenamiento de porteros  
-    fisio: { displayName: 'Fisioterapeuta', minSalary: 750, maxSalary: 2200, baseEffect: 0.5 }, // Afecta probabilidad de lesión  
-    analista: { displayName: 'Analista de Vídeo', minSalary: 600, maxSalary: 1500, baseEffect: 0.05 }, // Pequeños boosts en partidos  
-    scout: { displayName: 'Ojeador', minSalary: 700, maxSalary: 2000, baseEffect: 0.05 }, // Afecta calidad de jugadores en el mercado  
-    segundoEntrenador: { displayName: 'Segundo Entrenador', minSalary: 1000, maxSalary: 3000, baseEffect: 0.0 } // Genera consejos y noticias  
+    medico: { displayName: 'Médico', minSalary: 800, maxSalary: 2500, baseClausula: 5000, levelCostMultiplier: 1.5 },  
+    entrenador: { displayName: 'Entrenador Físico', minSalary: 700, maxSalary: 2000, baseClausula: 4000, levelCostMultiplier: 1.5 },  
+    entrenadorPorteros: { displayName: 'Entrenador de Porteros', minSalary: 600, maxSalary: 1800, baseClausula: 3500, levelCostMultiplier: 1.5 },  
+    fisio: { displayName: 'Fisioterapeuta', minSalary: 750, maxSalary: 2200, baseClausula: 4500, levelCostMultiplier: 1.5 },  
+    analista: { displayName: 'Analista de Vídeo', minSalary: 600, maxSalary: 1500, baseClausula: 3000, levelCostMultiplier: 1.5 },  
+    scout: { displayName: 'Ojeador', minSalary: 700, maxSalary: 2000, baseClausula: 4000, levelCostMultiplier: 1.5 },  
+    secretario: { displayName: 'Secretario Técnico', minSalary: 1000, maxSalary: 3000, baseClausula: 6000, levelCostMultiplier: 1.5 },  
+    segundoEntrenador: { displayName: 'Segundo Entrenador', minSalary: 1000, maxSalary: 3000, baseClausula: 7000, levelCostMultiplier: 1.5 }  
 };  
   
 // Multiplicadores de efecto del staff por nivel (1-5)  
@@ -90,8 +102,10 @@ const STAFF_LEVEL_EFFECTS = {
 };  
   
 // --- Configuración de Lesiones ---  
-const BASE_INJURY_PROB_PER_MATCH = 0.05; // 5% de probabilidad base por jugador por partido  
-const BASE_RECOVERY_TIME_WEEKS = { min: 2, max: 8 }; // Tiempo base de recuperación en semanas  
+// La probabilidad base de lesión por partido jugado por un jugador  
+const BASE_INJURY_PROB_PER_MATCH = 0.005; // 0.5% (antes 5%, que era muy alto)  
+// Rango de tiempo de recuperación en semanas si no hay fisio/médico bueno  
+const BASE_RECOVERY_TIME_WEEKS = { min: 4, max: 12 };  
   
 export {  
     firebaseAvailable,  
@@ -103,8 +117,8 @@ export {
     POSITION_ATTRIBUTE_WEIGHTS,  
     FORMATIONS,  
     DIVISION_MULTIPLIERS,  
-    STAFF_ROLES,         // Exportar roles y configuración de staff  
-    STAFF_LEVEL_EFFECTS, // Exportar efectos de nivel de staff  
-    BASE_INJURY_PROB_PER_MATCH, // Exportar configuración de lesiones  
+    STAFF_ROLES,  
+    STAFF_LEVEL_EFFECTS,  
+    BASE_INJURY_PROB_PER_MATCH,  
     BASE_RECOVERY_TIME_WEEKS  
 };  
