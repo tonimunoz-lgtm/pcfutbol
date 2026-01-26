@@ -1491,7 +1491,7 @@
             window.updateFacilitiesDisplay(gameLogic.getGameState());    
         };    
     
-        function updateFacilitiesDisplay(state) {
+       /* function updateFacilitiesDisplay(state) {
     const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');
     const currentTrainingLevel = document.getElementById('currentTrainingLevel');
     const stadiumNameDisplay = document.getElementById('stadiumNameDisplay');
@@ -1511,7 +1511,36 @@
         stadiumImageContainer.innerHTML = '<p style="color: #999;">No hay imagen del estadio disponible</p>';
     }
 }  
-        window.updateFacilitiesDisplay = updateFacilitiesDisplay; // Hacerla global    
+        window.updateFacilitiesDisplay = updateFacilitiesDisplay; // Hacerla global    */
+
+      function updateFacilitiesDisplay(state) {
+    const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');
+    const currentTrainingLevel = document.getElementById('currentTrainingLevel');
+    const stadiumNameDisplay = document.getElementById('stadiumNameDisplay');
+    const stadiumImageContainer = document.getElementById('stadiumImageContainer');
+    
+    if (currentStadiumCapacity) {
+        currentStadiumCapacity.textContent = state.stadiumCapacity.toLocaleString('es-ES');
+    }
+    if (currentTrainingLevel) {
+        currentTrainingLevel.textContent = state.trainingLevel;
+    }
+    if (stadiumNameDisplay) {
+        stadiumNameDisplay.textContent = state.stadiumName || 'Estadio Municipal';
+    }
+    
+    // Mostrar imagen del estadio si existe
+    if (stadiumImageContainer) {
+        if (state.stadiumImage) {
+            stadiumImageContainer.innerHTML = `
+                <img src="${state.stadiumImage}" 
+                     style="max-width: 100%; max-height: 300px; border: 2px solid #e94560; border-radius: 10px; display: block; margin: 0 auto;">
+            `;
+        } else {
+            stadiumImageContainer.innerHTML = '<p style="color: #999; text-align: center;">No hay imagen del estadio disponible</p>';
+        }
+    }
+}  
     
         function updateStaffDisplay(state) {    
             Object.keys(STAFF_ROLES).forEach(role => {    
@@ -1810,6 +1839,25 @@
             }    
         });    
 
+// En index.html, en la función que actualiza la UI
+function updateHeaderWithTeamLogo(state) {
+    const teamNameElement = document.getElementById('teamName');
+    if (teamNameElement && state.team) {
+        const storedData = localStorage.getItem(`team_data_${state.team}`);
+        if (storedData) {
+            const teamData = JSON.parse(storedData);
+            if (teamData.logo) {
+                teamNameElement.innerHTML = `
+                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px; border-radius: 3px;">
+                    ${state.team}
+                `;
+                return;
+            }
+        }
+        teamNameElement.textContent = state.team;
+    }
+}
+        
 // Exponer globalmente para injectors
     window.gameLogic = gameLogic;
     window.ui = ui;
