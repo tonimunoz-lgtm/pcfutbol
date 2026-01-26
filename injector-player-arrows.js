@@ -1,17 +1,30 @@
 // injector-player-arrows.js
 (function() {
-    const originalRenderAttributes = window.renderPlayerAttributes || function(player, containerId) {};
-
-    window.renderPlayerAttributes = function(player, containerId) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        ATTRIBUTES.forEach(attr => {
-            const prevValue = player.previousAttributes ? player.previousAttributes[attr] || 0 : 0;
-            const currentValue = player[attr] || 0;
-            const upArrow = currentValue > prevValue ? ' <span style="color:green; font-size:0.8em;">&#9650;</span>' : '';
-            container.innerHTML += `<li>${attr}: ${currentValue}${upArrow}</li>`;
-        });
-        // Guardar valores actuales para comparaciones futuras
-        player.previousAttributes = { ...player };
-    };
+    // Esperar a que la UI esté cargada
+    window.addEventListener('DOMContentLoaded', () => {
+        // Guardar atributos anteriores al aplicar entrenamiento
+        const originalApplyTraining = window.gameLogic?.applyWeeklyTraining;
+        if (originalApplyTraining) {
+            window.gameLogic.applyWeeklyTraining = function() {
+                const state = window.gameLogic.getGameState();
+                const playerIndex = state.trainingFocus.playerIndex;
+                
+                if (playerIndex >= 0 && playerIndex < state.squad.length) {
+                    const player = state.squad[playerIndex];
+                    // Guardar valores anteriores
+                    if (!player.previousAttributes) {
+                        player.previousAttributes = {};
+                    }
+                    ATTRIBUTES.forEach(attr => {
+                        player.previousAttributes[attr] = player[attr] || 0;
+                    });
+                }
+                
+                // Llamar a la función original
+                return originalApplyTraining.call(this);
+            };
+        }
+        
+        console.log('✓ Player arrows injector loaded');
+    });
 })();
