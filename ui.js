@@ -430,29 +430,44 @@ function renderCalendarPage(state) {
 }  
   
   
-function refreshUI(state) {  
-    updateDashboardStats(state);  
-    renderStandingsTable(state.standings, state.team);  
-    renderSquadList(state.squad, state.team);  
-    renderAcademyList(state.academy);  
-  
-    // Si la página activa es la de calendario, re-renderizarla  
-    if (document.getElementById('calendar').classList.contains('active')) {  
-        renderCalendarPage(state);  
-    }  
-    if (document.getElementById('lineup').classList.contains('active')) {  
-        window.renderLineupPageUI();  
-    }  
-  
-    if (state.negotiationStep > 0) {  
-        window.updateNegotiationModal();  
-    } else {  
-        window.closeModal('negotiation');  
-    }  
-  
-    const opponentName = state.nextOpponent || 'Rival Indefinido';  
-    renderNextMatchCard(state.team, opponentName, state.week);  
-}  
+function refreshUI(state) {
+    updateDashboardStats(state);
+    renderStandingsTable(state.standings, state.team);
+    renderSquadList(state.squad, state.team);
+    renderAcademyList(state.academy);
+    
+    // Actualizar header con logo
+    const teamNameElement = document.getElementById('teamName');
+    if (teamNameElement && state.team) {
+        const storedData = localStorage.getItem(`team_data_${state.team}`);
+        if (storedData) {
+            const teamData = JSON.parse(storedData);
+            if (teamData.logo) {
+                teamNameElement.innerHTML = `
+                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
+                    ${state.team}
+                `;
+            } else {
+                teamNameElement.textContent = state.team;
+            }
+        } else {
+            teamNameElement.textContent = state.team;
+        }
+    }
+
+    if (document.getElementById('lineup').classList.contains('active')) {
+        window.renderLineupPageUI();
+    }
+
+    if (state.negotiationStep > 0) {
+        window.updateNegotiationModal();
+    } else {
+        window.closeModal('negotiation');
+    }
+
+    const opponentName = state.nextOpponent || 'Rival Indefinido';
+    renderNextMatchCard(state.team, opponentName, state.week);
+}
 
 // Función para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
