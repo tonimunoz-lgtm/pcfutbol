@@ -1,5 +1,5 @@
 // config.js - Configuración y datos globales  
-
+  
 let firebaseAvailable = false;  
 let db = null;  
 let auth = null;  
@@ -24,7 +24,6 @@ const TEAMS_DATA = {
         'Villarreal B', 'AD Alcorcón', 'SD Amorebieta', 'FC Andorra', 'CD Eldense',  
         'Racing de Ferrol', 'Elche CF'  
     ],  
-    // *** CAMBIO AQUI ***  
     rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 23/24  
         'RC Deportivo', 'FC Barcelona Atlètic', 'Real Madrid Castilla', 'Cultural Leonesa', 'Unionistas Salamanca CF',  
         'Celta Fortuna', 'Rayo Majadahonda', 'SD Logroñés', 'Osasuna Promesas', 'Real Sociedad B',  
@@ -138,9 +137,8 @@ const STAFF_LEVEL_EFFECTS = {
 const BASE_INJURY_PROB_PER_MATCH = 0.005;  
 const BASE_RECOVERY_TIME_WEEKS = { min: 3, max: 10 };  
   
-// *** CAMBIO AQUI: Ahora la temporada regular tiene 38 jornadas para todas las divisiones (20 equipos -> 19 jornadas ida y 19 vuelta) ***  
-const SEASON_WEEKS = 38;   
-const PRESEASON_WEEKS = 4;  
+// ELIMINADA: const SEASON_WEEKS = 38; // El número de semanas de la temporada ahora se calculará dinámicamente.  
+const PRESEASON_WEEKS = 4; // Número de semanas de pretemporada, esto se mantiene fijo.  
   
 const PROMOTION_RELEGATION = {  
     primera: {  
@@ -150,7 +148,6 @@ const PROMOTION_RELEGATION = {
         promote: 3, // 2 directos, 1 playoff (simulado como 3 directos para simplificar)  
         relegate: 4  
     },  
-    // *** CAMBIO AQUI: Promoción/Relegación para RFEF ***  
     rfef_grupo1: { // Por ejemplo, los 2 primeros de cada grupo ascienden a Segunda  
         promote: 2,  
         relegate: 4 // Los últimos 4 de cada grupo descienden a Tercera RFEF (no implementado en el juego)  
@@ -175,7 +172,7 @@ export {
     STAFF_LEVEL_EFFECTS,  
     BASE_INJURY_PROB_PER_MATCH,  
     BASE_RECOVERY_TIME_WEEKS,  
-    SEASON_WEEKS,  
+    // ELIMINADA: SEASON_WEEKS, // Ya no se exporta una constante fija  
     PRESEASON_WEEKS,  
     PROMOTION_RELEGATION  
 };  
