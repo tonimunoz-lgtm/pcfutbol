@@ -1480,3 +1480,13 @@ export {
     generateLeagueCalendar,  
     getSeasonCalendar  
 };  
+// Al final de gameLogic.js, añadir:
+// Exponer funciones globalmente para injectors
+if (typeof window !== 'undefined') {
+    window.gameLogic = {
+        getGameState,
+        updateGameState,
+        selectTeamWithInitialSquad,
+        // ... otras funciones que necesites exponer
+    };
+}
