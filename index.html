@@ -627,16 +627,33 @@
                 </table>    
             </div>    
     
-            <!-- INSTALACIONES -->    
-            <div id="facilities" class="page">    
-                <h1>🏟️ Instalaciones</h1>    
-                <h2>Estadio</h2>    
-                <p>Capacidad actual: <span id="currentStadiumCapacity">0</span></p>    
-                <button class="btn" onclick="window.expandStadium()">Expandir Estadio (+10.000 asientos - 50.000€)</button>    
-                <h2>Centro de Entrenamiento</h2>    
-                <p>Nivel actual: <span id="currentTrainingLevel">1</span></p>    
-                <button class="btn" onclick="window.improveFacilities()">Mejorar Entrenamientos (30.000€)</button>    
-            </div>    
+           <!-- INSTALACIONES -->
+<div id="facilities" class="page">
+    <h1>🏟️ Instalaciones</h1>
+    
+    <!-- Sección del Estadio -->
+    <div style="background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; padding: 20px; border-radius: 5px; margin-bottom: 30px;">
+        <h2>Estadio</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <p style="margin-bottom: 10px;"><strong>Nombre:</strong> <span id="stadiumNameDisplay" style="color: #00ff00;">-</span></p>
+                <p style="margin-bottom: 10px;"><strong>Capacidad actual:</strong> <span id="currentStadiumCapacity" style="color: #00ff00;">0</span> espectadores</p>
+                <button class="btn" onclick="window.expandStadium()">Expandir Estadio (+10.000 asientos - 50.000€)</button>
+            </div>
+            <div id="stadiumImageContainer" style="text-align: center;">
+                <p style="color: #999;">No hay imagen del estadio disponible</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección del Centro de Entrenamiento -->
+    <div style="background: rgba(233, 69, 96, 0.1); border: 1px solid #e94560; padding: 20px; border-radius: 5px;">
+        <h2>Centro de Entrenamiento</h2>
+        <p style="margin-bottom: 15px;"><strong>Nivel actual:</strong> <span id="currentTrainingLevel" style="color: #00ff00; font-size: 1.5em;">1</span></p>
+        <p style="color: #999; margin-bottom: 15px; font-size: 0.9em;">Un mejor centro de entrenamiento mejora la efectividad de los entrenamientos individuales</p>
+        <button class="btn" onclick="window.improveFacilities()">Mejorar Entrenamientos (30.000€)</button>
+    </div>
+</div>
     
             <!-- COMERCIAL (Nueva sección) -->    
             <div id="commercial" class="page">    
