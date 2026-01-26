@@ -160,75 +160,101 @@
             }
         },
 
-        saveTeamData: function() {
-            if (!this.currentTeam) {
-                alert('Selecciona un equipo primero');
-                return;
-            }
+       saveTeamData: function() {
+    if (!this.currentTeam) {
+        alert('Selecciona un equipo primero');
+        return;
+    }
 
-            const logoFile = document.getElementById('adminTeamLogo').files[0];
-            const stadiumFile = document.getElementById('adminStadiumImage').files[0];
+    const logoFile = document.getElementById('adminTeamLogo').files[0];
+    const stadiumFile = document.getElementById('adminStadiumImage').files[0];
 
-            const teamData = {
-                stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
-                stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
-                initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
-                logo: null,
-                stadiumImage: null
-            };
+    const teamData = {
+        stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
+        stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
+        initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
+        logo: null,
+        stadiumImage: null
+    };
 
-            // Cargar datos existentes para no perder las imágenes si no se cambian
-            const existingData = localStorage.getItem(`team_data_${this.currentTeam}`);
-            if (existingData) {
-                const existing = JSON.parse(existingData);
-                teamData.logo = existing.logo;
-                teamData.stadiumImage = existing.stadiumImage;
-            }
+    // Cargar datos existentes para no perder las imágenes si no se cambian
+    const existingData = localStorage.getItem(`team_data_${this.currentTeam}`);
+    if (existingData) {
+        const existing = JSON.parse(existingData);
+        teamData.logo = existing.logo;
+        teamData.stadiumImage = existing.stadiumImage;
+    }
 
-            // Procesar archivos de imagen
-            const promises = [];
+    // Procesar archivos de imagen
+    const promises = [];
 
-            if (logoFile) {
-                promises.push(
-                    new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            teamData.logo = e.target.result;
-                            resolve();
-                        };
-                        reader.readAsDataURL(logoFile);
-                    })
-                );
-            }
+    if (logoFile) {
+        promises.push(
+            new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    teamData.logo = e.target.result;
+                    resolve();
+                };
+                reader.readAsDataURL(logoFile);
+            })
+        );
+    }
 
-            if (stadiumFile) {
-                promises.push(
-                    new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            teamData.stadiumImage = e.target.result;
-                            resolve();
-                        };
-                        reader.readAsDataURL(stadiumFile);
-                    })
-                );
-            }
+    if (stadiumFile) {
+        promises.push(
+            new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    teamData.stadiumImage = e.target.result;
+                    resolve();
+                };
+                reader.readAsDataURL(stadiumFile);
+            })
+        );
+    }
 
-            Promise.all(promises).then(() => {
-                // Guardar en localStorage
-                localStorage.setItem(`team_data_${this.currentTeam}`, JSON.stringify(teamData));
+    Promise.all(promises).then(() => {
+        // Guardar en localStorage
+        localStorage.setItem(`team_data_${this.currentTeam}`, JSON.stringify(teamData));
+        
+        // *** NUEVO: Si es el equipo actual, actualizar el estado del juego ***
+        if (window.gameLogic) {
+            const state = window.gameLogic.getGameState();
+            if (state.team === this.currentTeam) {
+                console.log('🔄 Actualizando datos del equipo actual en el juego...');
+                state.teamLogo = teamData.logo;
+                state.stadiumImage = teamData.stadiumImage;
+                state.stadiumName = teamData.stadiumName;
+                state.stadiumCapacity = teamData.stadiumCapacity;
                 
-                alert(`✅ Datos guardados para ${this.currentTeam}:\n\n` +
-                      `🏟️ Estadio: ${teamData.stadiumName}\n` +
-                      `👥 Capacidad: ${teamData.stadiumCapacity.toLocaleString()}\n` +
-                      `💰 Presupuesto: ${teamData.initialBudget.toLocaleString()}€\n` +
-                      `🛡️ Escudo: ${teamData.logo ? 'Sí' : 'No'}\n` +
-                      `📷 Foto estadio: ${teamData.stadiumImage ? 'Sí' : 'No'}`);
+                window.gameLogic.updateGameState(state);
                 
-                // Recargar los datos para mostrar las previews actualizadas
-                this.loadTeamData();
-            });
-        },
+                // Forzar actualización de la UI
+                if (window.ui && window.ui.refreshUI) {
+                    window.ui.refreshUI(state);
+                }
+                
+                // Actualizar página de instalaciones si está activa
+                if (document.getElementById('facilities').classList.contains('active')) {
+                    const updateFacilitiesDisplay = window.updateFacilitiesDisplay || 
+                        function() { console.warn('updateFacilitiesDisplay no disponible'); };
+                    updateFacilitiesDisplay(state);
+                }
+            }
+        }
+        
+        alert(`✅ Datos guardados para ${this.currentTeam}:\n\n` +
+              `🏟️ Estadio: ${teamData.stadiumName}\n` +
+              `👥 Capacidad: ${teamData.stadiumCapacity.toLocaleString()}\n` +
+              `💰 Presupuesto: ${teamData.initialBudget.toLocaleString()}€\n` +
+              `🛡️ Escudo: ${teamData.logo ? 'Sí' : 'No'}\n` +
+              `📷 Foto estadio: ${teamData.stadiumImage ? 'Sí' : 'No'}`);
+        
+        // Recargar los datos para mostrar las previews actualizadas
+        this.loadTeamData();
+    });
+}
 
         exportAllData: function() {
             const allData = {};
