@@ -6,10 +6,14 @@ import {
     FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Eliminado SEASON_WEEKS de aquí  
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
-  
+import { getTeamData, saveTeamData } from './teamData.js';
+
 // Estado global del juego  
 const gameState = {  
-    team: null,  
+    team: null, 
+    teamLogo: null, // NUEVO
+    stadiumImage: null, // NUEVO
+    stadiumName: 'Estadio', // NUEVO
     week: 1,  
     division: 'Primera', // La división actual del equipo del jugador (puede ser 'rfef_grupo1' etc.)  
     squad: [],  
@@ -276,53 +280,65 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     setLineup(availablePlayers.slice(0, 11)); // Usa setLineup para asegurar 11 jugadores  
 }  
   
-function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {  
-    gameState.team = teamName;  
-    gameState.division = divisionType;  
-    gameState.gameMode = gameMode;  
-    gameState.currentSeason = '2025/2026';  
-    gameState.seasonType = 'preseason';  
-    gameState.matchHistory = []; // Asegurarse de que el historial de partidos esté vacío al inicio  
-  
-    gameState.squad = generateInitialSquad();  
-    gameState.academy = generateInitialAcademy();  
-  
-    let teamsInDivision = TEAMS_DATA[divisionType];  
-    if (!teamsInDivision) {  
-        console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);  
-        teamsInDivision = TEAMS_DATA.primera;  
-        gameState.division = 'primera';  
-    }  
-  
-    if (!teamsInDivision.includes(gameState.team)) {  
-        teamsInDivision.push(gameState.team);  
-    }  
-    gameState.leagueTeams = teamsInDivision;  
-    gameState.standings = initStandings(teamsInDivision);  
-    // NEW: Generar calendario inicial  
-    gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);  
-    gameState.maxSeasonWeeks = teamsInDivision.length * 2 - 2; // Establecer el máximo de semanas de la temporada  
-  
-    if (divisionType === 'primera') {  
-        gameState.popularity = 65;  
-        gameState.fanbase = 25000;  
-        gameState.stadiumCapacity = 15000;  
-        gameState.ticketPrice = 30;  
-    } else if (divisionType === 'segunda') {  
-        gameState.popularity = 50;  
-        gameState.fanbase = 10000;  
-        gameState.stadiumCapacity = 8000;  
-        gameState.ticketPrice = 20;  
-    } else { // RFEF (rfef_grupo1 o rfef_grupo2)  
-        gameState.popularity = 35;  
-        gameState.fanbase = 5000;  
-        gameState.stadiumCapacity = 5000;  
-        gameState.ticketPrice = 15;  
-    }  
-  
-    addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');  
-    updateWeeklyFinancials();  
-}  
+function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
+    gameState.team = teamName;
+    gameState.division = divisionType;
+    gameState.gameMode = gameMode;
+    gameState.currentSeason = '2025/2026';
+    gameState.seasonType = 'preseason';
+
+    gameState.squad = generateInitialSquad();
+    gameState.academy = generateInitialAcademy();
+
+    // *** NUEVO: Cargar datos personalizados del equipo ***
+    const teamData = getTeamData(teamName);
+    gameState.teamLogo = teamData.logo;
+    gameState.stadiumImage = teamData.stadiumImage;
+    gameState.stadiumName = teamData.stadiumName || 'Estadio';
+    gameState.stadiumCapacity = teamData.stadiumCapacity || 5000;
+    
+    // Usar presupuesto inicial personalizado
+    const customBudget = teamData.initialBudget;
+
+    let teamsInDivision = TEAMS_DATA[divisionType];
+    if (!teamsInDivision) {
+        console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);
+        teamsInDivision = TEAMS_DATA.primera;
+        gameState.division = 'primera';
+    }
+
+    if (!teamsInDivision.includes(gameState.team)) {
+        teamsInDivision.push(gameState.team);
+    }
+    gameState.leagueTeams = teamsInDivision;
+    gameState.standings = initStandings(teamsInDivision);
+    gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
+
+    // Establecer presupuesto según división (pero usar el personalizado si existe)
+    if (customBudget) {
+        gameState.balance = customBudget;
+    } else {
+        if (divisionType === 'primera') {
+            gameState.balance = 50000000;
+            gameState.popularity = 65;
+            gameState.fanbase = 25000;
+            gameState.ticketPrice = 30;
+        } else if (divisionType === 'segunda') {
+            gameState.balance = 20000000;
+            gameState.popularity = 50;
+            gameState.fanbase = 10000;
+            gameState.ticketPrice = 20;
+        } else { // RFEF
+            gameState.balance = 5000000;
+            gameState.popularity = 35;
+            gameState.fanbase = 5000;
+            gameState.ticketPrice = 15;
+        }
+    }
+
+    addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    updateWeeklyFinancials();
+}
   
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
