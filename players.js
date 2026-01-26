@@ -1,5 +1,6 @@
 // players.js - Base de datos de jugadores profesionales y cantera  
-  
+
+
 import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS, TEAMS_DATA } from './config.js';  
   
 // Combinar todos los equipos de TEAMS_DATA para la generación de jugadores de la IA  
