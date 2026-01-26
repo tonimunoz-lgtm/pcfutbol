@@ -1491,12 +1491,26 @@
             window.updateFacilitiesDisplay(gameLogic.getGameState());    
         };    
     
-        function updateFacilitiesDisplay(state) {    
-            const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');    
-            const currentTrainingLevel = document.getElementById('currentTrainingLevel');    
-            if (currentStadiumCapacity) currentStadiumCapacity.textContent = state.stadiumCapacity.toLocaleString('es-ES');    
-            if (currentTrainingLevel) currentTrainingLevel.textContent = state.trainingLevel;    
-        }    
+        function updateFacilitiesDisplay(state) {
+    const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');
+    const currentTrainingLevel = document.getElementById('currentTrainingLevel');
+    const stadiumNameDisplay = document.getElementById('stadiumNameDisplay');
+    const stadiumImageContainer = document.getElementById('stadiumImageContainer');
+    
+    if (currentStadiumCapacity) currentStadiumCapacity.textContent = state.stadiumCapacity.toLocaleString('es-ES');
+    if (currentTrainingLevel) currentTrainingLevel.textContent = state.trainingLevel;
+    if (stadiumNameDisplay) stadiumNameDisplay.textContent = state.stadiumName || 'Estadio Municipal';
+    
+    // Mostrar imagen del estadio si existe
+    if (stadiumImageContainer && state.stadiumImage) {
+        stadiumImageContainer.innerHTML = `
+            <img src="${state.stadiumImage}" 
+                 style="max-width: 100%; max-height: 300px; border: 2px solid #e94560; border-radius: 10px; display: block;">
+        `;
+    } else if (stadiumImageContainer) {
+        stadiumImageContainer.innerHTML = '<p style="color: #999;">No hay imagen del estadio disponible</p>';
+    }
+}  
         window.updateFacilitiesDisplay = updateFacilitiesDisplay; // Hacerla global    
     
         function updateStaffDisplay(state) {    
