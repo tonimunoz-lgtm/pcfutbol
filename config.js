@@ -24,6 +24,7 @@ const TEAMS_DATA = {
         'Villarreal B', 'AD Alcorcón', 'SD Amorebieta', 'FC Andorra', 'CD Eldense',  
         'Racing de Ferrol', 'Elche CF'  
     ],  
+    // *** CAMBIO AQUI ***  
     rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 23/24  
         'RC Deportivo', 'FC Barcelona Atlètic', 'Real Madrid Castilla', 'Cultural Leonesa', 'Unionistas Salamanca CF',  
         'Celta Fortuna', 'Rayo Majadahonda', 'SD Logroñés', 'Osasuna Promesas', 'Real Sociedad B',  
@@ -137,7 +138,8 @@ const STAFF_LEVEL_EFFECTS = {
 const BASE_INJURY_PROB_PER_MATCH = 0.005;  
 const BASE_RECOVERY_TIME_WEEKS = { min: 3, max: 10 };  
   
-const SEASON_WEEKS = 38;  
+// *** CAMBIO AQUI: Ahora la temporada regular tiene 38 jornadas para todas las divisiones (20 equipos -> 19 jornadas ida y 19 vuelta) ***  
+const SEASON_WEEKS = 38;   
 const PRESEASON_WEEKS = 4;  
   
 const PROMOTION_RELEGATION = {  
@@ -148,9 +150,14 @@ const PROMOTION_RELEGATION = {
         promote: 3, // 2 directos, 1 playoff (simulado como 3 directos para simplificar)  
         relegate: 4  
     },  
-    rfef: { // Para RFEF, asumimos que 4 ascienden (2 de cada grupo) y 0 descienden según tu indicación  
-        promote: 4, // Estos 4 saldrían del top de ambos grupos combinados, o 2 de cada grupo.  
-        relegate: 0  
+    // *** CAMBIO AQUI: Promoción/Relegación para RFEF ***  
+    rfef_grupo1: { // Por ejemplo, los 2 primeros de cada grupo ascienden a Segunda  
+        promote: 2,  
+        relegate: 4 // Los últimos 4 de cada grupo descienden a Tercera RFEF (no implementado en el juego)  
+    },  
+    rfef_grupo2: {  
+        promote: 2,  
+        relegate: 4  
     }  
 };  
   
