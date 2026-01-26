@@ -1,118 +1,163 @@
+// injector-mobile.js
 (function() {
-    function applyMobileUI() {
-        const isMobile = window.innerWidth <= 768;
-        if (!isMobile) return; // Solo aplicar en móviles
+    console.log('🚀 Injector Mobile cargado');
 
-        // 1️⃣ Ocultar sidebar original
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) sidebar.style.display = 'none';
-
-        // 2️⃣ Ajustar contenedores principales
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-            mainContent.style.padding = '10px';
-            mainContent.style.width = '100%';
-            mainContent.style.overflowX = 'hidden';
+    // --- Estilos CSS responsivos ---
+    const mobileStyles = document.createElement('style');
+    mobileStyles.id = 'mobile-injector-styles';
+    mobileStyles.innerHTML = `
+        /* Contenedor principal a pantalla completa y centrado */
+        body, html {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
         }
 
-        // 3️⃣ Hacer que todos los modales sean scrollables
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            modal.style.maxHeight = '90vh';
-            modal.style.overflowY = 'auto';
-            modal.style.padding = '10px';
-        });
-
-        // 4️⃣ Adaptar pitch
-        const pitchContainer = document.getElementById('pitchContainer');
-        if (pitchContainer) {
-            pitchContainer.style.width = '100%';
-            pitchContainer.style.height = '400px';
-            pitchContainer.style.overflowX = 'auto';
-            pitchContainer.style.overflowY = 'hidden';
-            pitchContainer.style.position = 'relative';
+        /* Hacer que las páginas ocupen todo el ancho y se centren */
+        .page {
+            width: 100% !important;
+            max-width: 100vw;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
-        // 5️⃣ Adaptar listas largas (reserves, mercado, staff)
-        ['reservesList', 'marketList', 'staffCandidatesList'].forEach(id => {
-            const list = document.getElementById(id);
-            if (list) {
-                list.style.maxHeight = '300px';
-                list.style.overflowY = 'auto';
-            }
-        });
-
-        // 6️⃣ Crear menú móvil flotante
-        function createMobileMenu() {
-            if (document.getElementById('mobileMenu')) return;
-
-            const menu = document.createElement('div');
-            menu.id = 'mobileMenu';
-            menu.style.position = 'fixed';
-            menu.style.bottom = '0';
-            menu.style.left = '0';
-            menu.style.width = '100%';
-            menu.style.background = '#e94560';
-            menu.style.display = 'flex';
-            menu.style.justifyContent = 'space-around';
-            menu.style.padding = '8px 0';
-            menu.style.zIndex = '9999';
-            menu.style.borderTop = '2px solid #fff';
-
-            const sections = [
-                { name: 'Dashboard', page: 'dashboard' },
-                { name: 'Alineación', page: 'lineup' },
-                { name: 'Mercado', page: 'market' },
-                { name: 'Entrenamiento', page: 'training' },
-                { name: 'Finanzas', page: 'finance' }
-            ];
-
-            sections.forEach(sec => {
-                const btn = document.createElement('button');
-                btn.textContent = sec.name;
-                btn.style.flex = '1';
-                btn.style.margin = '0 4px';
-                btn.style.padding = '8px';
-                btn.style.fontSize = '12px';
-                btn.style.background = '#fff';
-                btn.style.color = '#e94560';
-                btn.style.border = 'none';
-                btn.style.borderRadius = '5px';
-                btn.style.cursor = 'pointer';
-                btn.onclick = () => {
-                    const menuItem = document.querySelector(`.menu-item[onclick="window.switchPage('${sec.page}', this)"]`);
-                    if(menuItem) window.switchPage(sec.page, menuItem);
-                };
-                menu.appendChild(btn);
-            });
-
-            document.body.appendChild(menu);
+        /* Contenedor principal tipo flex para centrado */
+        #dashboard, #lineupContainer, #marketContainer, #trainingContainer, #financeContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
-        createMobileMenu();
 
-        // 7️⃣ Ajustes para botones y tablas largas
-        const tables = document.querySelectorAll('table');
-        tables.forEach(table => {
-            table.style.width = '100%';
-            table.style.display = 'block';
-            table.style.overflowX = 'auto';
-        });
+        /* Ajustar botones y inputs para touch */
+        button, input, select {
+            font-size: 1rem !important;
+            padding: 0.6em 1em !important;
+            margin: 5px 0 !important;
+        }
 
-        // 8️⃣ Ajuste general de tipografía y botones
-        document.querySelectorAll('button').forEach(btn => {
-            btn.style.fontSize = '14px';
-            btn.style.padding = '6px 8px';
-        });
-        document.querySelectorAll('input, select').forEach(el => {
-            el.style.fontSize = '14px';
-            el.style.width = '100%';
-            el.style.boxSizing = 'border-box';
-            el.style.marginBottom = '6px';
-        });
+        /* Pitch responsivo */
+        #pitchContainer {
+            width: 95vw !important;
+            max-width: 500px;
+            height: auto !important;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .pitch-position-placeholder {
+            width: 18vw !important;
+            height: 12vw !important;
+            min-width: 60px;
+            min-height: 40px;
+            margin: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 0.7rem;
+            flex-direction: column;
+        }
+
+        .pitch-player {
+            font-size: 0.65rem;
+            text-align: center;
+            cursor: grab;
+            margin: 2px 0;
+        }
+
+        #reservesList {
+            width: 95vw !important;
+            max-width: 500px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .draggable-player {
+            padding: 5px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* Modales responsivos */
+        .modal-content {
+            width: 90vw !important;
+            max-width: 450px !important;
+            margin: 0 auto !important;
+        }
+
+        /* Menú inferior flotante */
+        #bottomMenu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 0;
+            z-index: 9999;
+        }
+
+        #bottomMenu button {
+            flex: 1;
+            margin: 0 2px;
+            font-size: 0.85rem;
+        }
+
+        /* Ajustar tablas, listas y sliders */
+        table, ul, ol {
+            width: 95% !important;
+            overflow-x: auto;
+        }
+
+        /* Ajuste de imágenes */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+    `;
+    document.head.appendChild(mobileStyles);
+
+    // --- Crear menú inferior si no existe ---
+    if (!document.getElementById('bottomMenu')) {
+        const bottomMenu = document.createElement('div');
+        bottomMenu.id = 'bottomMenu';
+        bottomMenu.innerHTML = `
+            <button onclick="switchPage('dashboard', this)">Dashboard</button>
+            <button onclick="switchPage('lineup', this)">Alineación</button>
+            <button onclick="switchPage('market', this)">Mercado</button>
+            <button onclick="switchPage('training', this)">Entrenamiento</button>
+            <button onclick="switchPage('finance', this)">Finanzas</button>
+        `;
+        document.body.appendChild(bottomMenu);
     }
 
-    // Ejecutar al cargar y al redimensionar
-    window.addEventListener('load', applyMobileUI);
-    window.addEventListener('resize', applyMobileUI);
-    console.log('✅ Inyector móvil cargado y aplicado.');
+    // --- Ajuste dinámico de pitch y elementos al redimensionar ---
+    window.addEventListener('resize', () => {
+        document.querySelectorAll('.pitch-position-placeholder').forEach(slot => {
+            const width = Math.min(window.innerWidth * 0.18, 80);
+            const height = width * 0.65;
+            slot.style.width = width + 'px';
+            slot.style.height = height + 'px';
+        });
+    });
+
+    console.log('📱 UI móvil adaptativa activada');
 })();
