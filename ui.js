@@ -1,5 +1,4 @@
 // ui.js - Renderizado y UI  
-  
 import * as gameLogic from './gameLogic.js';  
 import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js';  
   
