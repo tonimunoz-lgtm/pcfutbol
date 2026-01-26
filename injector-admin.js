@@ -1,102 +1,118 @@
 // injector-admin.js
 (function() {
     window.openAdminPanel = function() {
+        if (!window.currentUser || window.currentUser.role !== 'admin') {
+            alert('No tienes permisos de administrador');
+            return;
+        }
+        
         // Crear modal si no existe
         if (!document.getElementById('adminModal')) {
             const modal = document.createElement('div');
             modal.id = 'adminModal';
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.background = '#fff';
-            modal.style.border = '2px solid #000';
-            modal.style.padding = '20px';
-            modal.style.zIndex = 9999;
+            modal.className = 'modal';
             modal.innerHTML = `
-                <h2>Panel de Administración</h2>
-                <div>
-                    <label>Equipo: <input id="adminTeamName" type="text" placeholder="Nombre del equipo"></label>
+                <div class="modal-content" style="max-width: 600px;">
+                    <span class="modal-close" onclick="document.getElementById('adminModal').classList.remove('active')">&times;</span>
+                    <h1>🔧 Panel de Administración</h1>
+                    
+                    <h2>Finanzas</h2>
+                    <div style="margin-bottom: 20px;">
+                        <label>Dinero del equipo:</label>
+                        <input id="adminBalance" type="number" step="1000">
+                        <button class="btn btn-sm" onclick="window.adminBackend.updateBalance()">Actualizar</button>
+                    </div>
+                    
+                    <h2>Instalaciones</h2>
+                    <div style="margin-bottom: 20px;">
+                        <label>Capacidad del estadio:</label>
+                        <input id="adminStadiumCapacity" type="number" step="1000">
+                        <button class="btn btn-sm" onclick="window.adminBackend.updateCapacity()">Actualizar</button>
+                    </div>
+                    
+                    <h2>Popularidad</h2>
+                    <div style="margin-bottom: 20px;">
+                        <label>Popularidad (0-100):</label>
+                        <input id="adminPopularity" type="number" min="0" max="100">
+                        <button class="btn btn-sm" onclick="window.adminBackend.updatePopularity()">Actualizar</button>
+                    </div>
+                    
+                    <h2>Jornada</h2>
+                    <div style="margin-bottom: 20px;">
+                        <label>Semana actual:</label>
+                        <input id="adminWeek" type="number" min="1" max="38">
+                        <button class="btn btn-sm" onclick="window.adminBackend.updateWeek()">Actualizar</button>
+                    </div>
+                    
+                    <button class="btn" onclick="window.adminBackend.refreshPanel()">Recargar Datos</button>
+                    <button class="btn" style="background: #c73446;" onclick="document.getElementById('adminModal').classList.remove('active')">Cerrar</button>
                 </div>
-                <div>
-                    <label>Presupuesto: <input id="adminTeamBudget" type="number"></label>
-                    <button onclick="window.adminBackend.updateBudget()">Actualizar</button>
-                </div>
-                <div>
-                    <label>Aforo estadio: <input id="adminStadiumCapacity" type="number"></label>
-                    <button onclick="window.adminBackend.updateCapacity()">Actualizar</button>
-                </div>
-                <div>
-                    <label>Logo: <input id="adminLogoUpload" type="file" accept=".png"></label>
-                    <button onclick="window.adminBackend.uploadLogo()">Subir</button>
-                </div>
-                <div>
-                    <label>Foto estadio: <input id="adminStadiumUpload" type="file" accept=".png"></label>
-                    <button onclick="window.adminBackend.uploadStadium()">Subir</button>
-                </div>
-                <button onclick="document.getElementById('adminModal').style.display='none'">Cerrar</button>
             `;
             document.body.appendChild(modal);
         }
-        document.getElementById('adminModal').style.display = 'block';
+        
+        // Cargar datos actuales
+        window.adminBackend.refreshPanel();
+        document.getElementById('adminModal').classList.add('active');
     };
 
     window.adminBackend = {
-        updateBudget: function() {
-            const name = document.getElementById('adminTeamName').value;
-            const budget = parseInt(document.getElementById('adminTeamBudget').value);
-            const state = gameLogic.getGameState();
-            const team = state.teams.find(t => t.name === name);
-            if (team) {
-                team.budget = budget;
-                gameLogic.updateGameState(state);
-                alert(`Presupuesto de ${name} actualizado a ${budget.toLocaleString()}€`);
-            } else alert('Equipo no encontrado');
+        refreshPanel: function() {
+            if (!window.gameLogic) return;
+            const state = window.gameLogic.getGameState();
+            
+            document.getElementById('adminBalance').value = state.balance || 0;
+            document.getElementById('adminStadiumCapacity').value = state.stadiumCapacity || 0;
+            document.getElementById('adminPopularity').value = state.popularity || 0;
+            document.getElementById('adminWeek').value = state.week || 1;
         },
+        
+        updateBalance: function() {
+            const newBalance = parseInt(document.getElementById('adminBalance').value);
+            if (isNaN(newBalance)) return alert('Valor inválido');
+            
+            const state = window.gameLogic.getGameState();
+            state.balance = newBalance;
+            window.gameLogic.updateGameState(state);
+            window.ui?.refreshUI(state);
+            
+            alert(`Presupuesto actualizado a ${newBalance.toLocaleString('es-ES')}€`);
+        },
+        
         updateCapacity: function() {
-            const name = document.getElementById('adminTeamName').value;
-            const capacity = parseInt(document.getElementById('adminStadiumCapacity').value);
-            const state = gameLogic.getGameState();
-            const team = state.teams.find(t => t.name === name);
-            if (team) {
-                team.stadiumCapacity = capacity;
-                gameLogic.updateGameState(state);
-                alert(`Aforo de ${name} actualizado a ${capacity}`);
-            } else alert('Equipo no encontrado');
+            const newCapacity = parseInt(document.getElementById('adminStadiumCapacity').value);
+            if (isNaN(newCapacity)) return alert('Valor inválido');
+            
+            const state = window.gameLogic.getGameState();
+            state.stadiumCapacity = newCapacity;
+            window.gameLogic.updateGameState(state);
+            window.ui?.refreshUI(state);
+            
+            alert(`Capacidad actualizada a ${newCapacity.toLocaleString('es-ES')} espectadores`);
         },
-        uploadLogo: function() {
-            const fileInput = document.getElementById('adminLogoUpload');
-            const file = fileInput.files[0];
-            if (!file) return alert('Selecciona un archivo');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const state = gameLogic.getGameState();
-                const name = document.getElementById('adminTeamName').value;
-                const team = state.teams.find(t => t.name === name);
-                if (team) {
-                    team.logo = e.target.result;
-                    gameLogic.updateGameState(state);
-                    alert('Logo cargado correctamente');
-                } else alert('Equipo no encontrado');
-            };
-            reader.readAsDataURL(file);
+        
+        updatePopularity: function() {
+            const newPop = parseInt(document.getElementById('adminPopularity').value);
+            if (isNaN(newPop) || newPop < 0 || newPop > 100) return alert('Valor inválido (0-100)');
+            
+            const state = window.gameLogic.getGameState();
+            state.popularity = newPop;
+            window.gameLogic.updateGameState(state);
+            window.ui?.refreshUI(state);
+            
+            alert(`Popularidad actualizada a ${newPop}%`);
         },
-        uploadStadium: function() {
-            const fileInput = document.getElementById('adminStadiumUpload');
-            const file = fileInput.files[0];
-            if (!file) return alert('Selecciona un archivo');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const state = gameLogic.getGameState();
-                const name = document.getElementById('adminTeamName').value;
-                const team = state.teams.find(t => t.name === name);
-                if (team) {
-                    team.stadiumImage = e.target.result;
-                    gameLogic.updateGameState(state);
-                    alert('Imagen del estadio cargada correctamente');
-                } else alert('Equipo no encontrado');
-            };
-            reader.readAsDataURL(file);
+        
+        updateWeek: function() {
+            const newWeek = parseInt(document.getElementById('adminWeek').value);
+            if (isNaN(newWeek) || newWeek < 1) return alert('Valor inválido');
+            
+            const state = window.gameLogic.getGameState();
+            state.week = newWeek;
+            window.gameLogic.updateGameState(state);
+            window.ui?.refreshUI(state);
+            
+            alert(`Semana actualizada a ${newWeek}`);
         }
     };
 })();
