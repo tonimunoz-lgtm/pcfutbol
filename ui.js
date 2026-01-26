@@ -359,20 +359,21 @@ function updateDashboardStats(state) {
 function renderCalendarPage(state) {  
     const calendarContent = document.getElementById('calendarContent');  
     if (!calendarContent) return;  
-  
-    const calendar = gameLogic.getSeasonCalendar();  
+
+    const calendar = state.seasonCalendar; // Usar directamente el calendario del estado  
     if (!calendar || calendar.length === 0) {  
         calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
         return;  
     }  
-  
+
     let calendarHtml = '';  
-    const numJornadas = SEASON_WEEKS; // O el total de semanas en calendar  
-  
+    const numJornadas = state.leagueTeams.length * 2 - 2; // Número de jornadas basado en el número de equipos en la liga, para ida y vuelta.  
+
     for (let i = 1; i <= numJornadas; i++) {  
-        const jornadaMatches = calendar.filter(j => j.week === i).flatMap(j => j);  
+        const jornadaMatches = calendar.filter(match => match.week === i); // Filtra los partidos de la semana 'i'  
+
         if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
-  
+
         calendarHtml += `  
             <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
             <table>  
@@ -388,8 +389,16 @@ function renderCalendarPage(state) {
         jornadaMatches.forEach(match => {  
             const isOurMatch = match.home === state.team || match.away === state.team;  
             const rowClass = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
-            const score = match.week < state.week ? match.homeGoals + '-' + match.awayGoals : '-';  
-  
+
+            // Buscar el resultado en el matchHistory  
+            const playedMatch = state.matchHistory.find(  
+                mh => mh.week === match.week &&  
+                      ((mh.home === match.home && mh.away === match.away) ||  
+                       (mh.home === match.away && mh.away === match.home))  
+            );  
+
+            const score = playedMatch ? playedMatch.score : '-';  
+
             calendarHtml += `  
                 <tr style="${rowClass}">  
                     <td>${match.home}</td>  
@@ -403,9 +412,9 @@ function renderCalendarPage(state) {
             </table>  
         `;  
     }  
-  
+
     calendarContent.innerHTML = calendarHtml;  
-}  
+}
   
   
 function refreshUI(state) {  
