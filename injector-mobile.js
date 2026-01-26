@@ -1,12 +1,11 @@
 // injector-mobile.js
 (function() {
-    console.log('🚀 Injector Mobile cargado');
+    console.log('🚀 Injector Mobile cargado - versión mejorada');
 
     // --- Estilos CSS responsivos para móvil ---
     const mobileStyles = document.createElement('style');
     mobileStyles.id = 'mobile-injector-styles';
     mobileStyles.innerHTML = `
-        /* Reset y layout base */
         body, html {
             width: 100% !important;
             height: 100% !important;
@@ -18,10 +17,10 @@
             color: #fff;
         }
 
-        /* Esconder barra lateral y superos */
-        #sidebar, #superos { display: none !important; }
+        /* Ocultar lateral y superos */
+        #sidebar, #superos, .sidebar, .top-bar { display: none !important; }
 
-        /* Menú superior para móvil */
+        /* Menú superior móvil */
         #topMobileMenu {
             position: fixed;
             top: 0;
@@ -52,11 +51,11 @@
             font-weight: bold;
         }
 
-        /* Páginas centradas y grandes */
+        /* Contenido centrado y grande */
         .page {
             width: 95vw !important;
             max-width: 480px;
-            margin: 60px auto 20px auto; /* margen superior para el menú */
+            margin: 60px auto 20px auto;
             padding: 10px;
             box-sizing: border-box;
             display: flex;
@@ -65,18 +64,15 @@
             text-align: center;
         }
 
-        /* Ajuste general de botones, inputs, selects */
         button, input, select {
             font-size: 1rem !important;
             padding: 10px !important;
             margin: 5px 0 !important;
         }
 
-        /* Pitch responsivo y centrado */
         #pitchContainer {
             width: 90vw !important;
             max-width: 450px;
-            height: auto !important;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -116,14 +112,12 @@
             gap: 5px;
         }
 
-        /* Modales centrados y responsivos */
         .modal-content {
             width: 90vw !important;
             max-width: 400px !important;
             margin: 0 auto !important;
         }
 
-        /* Imágenes */
         img {
             max-width: 100%;
             height: auto;
@@ -131,7 +125,7 @@
     `;
     document.head.appendChild(mobileStyles);
 
-    // --- Crear menú superior si no existe ---
+    // --- Crear menú superior móvil ---
     if (!document.getElementById('topMobileMenu')) {
         const topMenu = document.createElement('div');
         topMenu.id = 'topMobileMenu';
@@ -144,17 +138,34 @@
         `;
         document.body.prepend(topMenu);
 
-        // Funcionalidad de botones
+        // --- Función para cambiar página ---
+        const switchMobilePage = (pageId) => {
+            const targetPage = document.getElementById(pageId);
+            if (!targetPage) return;
+
+            // Intentar usar switchPage del juego si existe
+            if (window.switchPage) {
+                const menuButton = document.querySelector(`.menu-item[onclick*="${pageId}"]`);
+                if(menuButton) {
+                    window.switchPage(pageId, menuButton);
+                } else {
+                    // fallback
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    targetPage.classList.add('active');
+                }
+            } else {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                targetPage.classList.add('active');
+            }
+        };
+
         topMenu.querySelectorAll('button').forEach(btn => {
             btn.addEventListener('click', () => {
                 const page = btn.getAttribute('data-page');
                 // Activar/desactivar estilos de botones
                 topMenu.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                // Mostrar la página
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                const target = document.getElementById(page);
-                if(target) target.classList.add('active');
+                switchMobilePage(page);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         });
@@ -172,5 +183,5 @@
     window.addEventListener('resize', resizePitchSlots);
     resizePitchSlots();
 
-    console.log('📱 UI móvil rediseñada: menú superior, contenido centrado y grande');
+    console.log('📱 UI móvil rediseñada: menú superior funcional, sidebar oculto, contenido centrado');
 })();
