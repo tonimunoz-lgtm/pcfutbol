@@ -6,8 +6,8 @@ import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS,
 const ALL_AI_CLUBS = [  
     ...TEAMS_DATA.primera,  
     ...TEAMS_DATA.segunda,  
-    ...TEAMS_DATA.rfef_grupo1,  
-    ...TEAMS_DATA.rfef_grupo2  
+    ...TEAMS_DATA.rfef_grupo1, // Ahora usa los grupos separados  
+    ...TEAMS_DATA.rfef_grupo2  // Ahora usa los grupos separados  
 ];  
   
 const PLAYER_FIRST_NAMES = [  
@@ -32,37 +32,48 @@ function generateRandomName() {
     do {  
         lastName2Initial = PLAYER_LAST_NAMES[Math.floor(Math.random() * PLAYER_LAST_NAMES.length)][0];  
     } while (lastName2Initial.toLowerCase() === lastName1[0].toLowerCase());  
-      
+        
     return `${firstName} ${lastName1} ${lastName2Initial}.`;  
 }  
   
 export function calculateOverall(player) {  
     const weights = POSITION_ATTRIBUTE_WEIGHTS[player.position];  
     if (!weights) {  
+        // Fallback si la posición del jugador no tiene pesos definidos, promediar todos los atributos.  
+        // Esto es útil si se permiten posiciones no estándar o si un jugador se alinea en una posición "no natural".  
         let overallSum = 0;  
+        let count = 0;  
         for (const attr of ATTRIBUTES) {  
-            overallSum += (player[attr] || 0);  
+            if (player[attr] !== undefined) {  
+                overallSum += player[attr];  
+                count++;  
+            }  
         }  
-        return Math.round(overallSum / ATTRIBUTES.length);  
+        return count > 0 ? Math.round(overallSum / count) : 0;  
     }  
   
     let overallSum = 0;  
     let totalWeight = 0;  
-  
+    
     for (const attr of ATTRIBUTES) {  
         const weight = weights[attr] || 0;  
         overallSum += (player[attr] || 0) * weight;  
         totalWeight += weight;  
     }  
-  
+    
     if (totalWeight === 0) {  
+        // Si no hay pesos definidos o son cero, usar el promedio simple.  
         let simpleOverallSum = 0;  
+        let count = 0;  
         for (const attr of ATTRIBUTES) {  
-            simpleOverallSum += (player[attr] || 0);  
+            if (player[attr] !== undefined) {  
+                simpleOverallSum += player[attr];  
+                count++;  
+            }  
         }  
-        return Math.round(simpleOverallSum / ATTRIBUTES.length);  
+        return count > 0 ? Math.round(simpleOverallSum / count) : 0;  
     }  
-  
+    
     return Math.round(overallSum / totalWeight);  
 }  
   
@@ -259,7 +270,12 @@ function getPlayerMarket(filters = {}, scoutLevel = 0) {
     let finalPlayers = [...filteredPlayers];  
     if (scoutLevel > 0) {  
         const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
-        if (Math.random() < (0.1 * scoutEffectMultiplier)) {  
+        // La probabilidad de encontrar nuevos jugadores debería ser inversamente proporcional al número ya encontrados  
+        const currentFound = finalPlayers.length;  
+        let dynamicScoutChance = 0.1 * scoutEffectMultiplier * (1 - (currentFound / 200)); // Disminuye si ya hay muchos  
+        dynamicScoutChance = Math.max(0.01, dynamicScoutChance); // Mínimo 1% de oportunidad  
+  
+        if (Math.random() < dynamicScoutChance) {  
             const potentialFinds = ALL_AVAILABLE_PLAYERS.filter(p =>  
                 !finalPlayers.some(fp => fp.name === p.name) &&  
                 p.overall > (60 + scoutLevel * 5) &&  
@@ -298,7 +314,11 @@ function getYoungsterMarket(filters = {}, scoutLevel = 0) {
     let finalYoungsters = [...filteredYoungsters];  
     if (scoutLevel > 0) {  
         const scoutEffectMultiplier = STAFF_LEVEL_EFFECTS[scoutLevel]?.scoutQuality || 1;  
-        if (Math.random() < (0.2 * scoutEffectMultiplier)) {  
+        const currentFound = finalYoungsters.length;  
+        let dynamicScoutChance = 0.2 * scoutEffectMultiplier * (1 - (currentFound / 50)); // Disminuye si ya hay muchos  
+        dynamicScoutChance = Math.max(0.02, dynamicScoutChance); // Mínimo 2% de oportunidad  
+  
+        if (Math.random() < dynamicScoutChance) {  
             const potentialFinds = ALL_AVAILABLE_YOUNGSTERS.filter(y =>  
                 !finalYoungsters.some(fy => fy.name === y.name) &&  
                 y.potential > (70 + scoutLevel * 5)  
