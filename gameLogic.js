@@ -3,7 +3,7 @@ import {
     TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
     STAFF_ROLES, STAFF_LEVEL_EFFECTS, DIVISION_MULTIPLIERS,  
     BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS,  
-    FORMATIONS, SEASON_WEEKS, PRESEASON_WEEKS, PROMOTION_RELEGATION  
+    FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Eliminado SEASON_WEEKS de aquí  
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
   
@@ -58,7 +58,9 @@ const gameState = {
     cupProgress: 0,  
     europeanProgress: 0,  
     // NEW: Para almacenar el calendario de la temporada  
-    seasonCalendar: []   
+    seasonCalendar: [],  
+    // NEW: Máximo de semanas en la temporada (dinámico)  
+    maxSeasonWeeks: 38  
 };  
   
 function getGameState() {  
@@ -107,18 +109,16 @@ function generateLeagueCalendar(teams) {
     const numActualTeams = tempTeams.length;  
     const numRounds = numActualTeams - 1; // Cada equipo juega una vez contra todos  
   
+    // Primera vuelta (ida)  
     for (let round = 0; round < numRounds; round++) {  
-        let jornada = [];  
         for (let i = 0; i < numActualTeams / 2; i++) {  
             const homeTeam = tempTeams[i];  
             const awayTeam = tempTeams[numActualTeams - 1 - i];  
   
             if (homeTeam !== "BYE" && awayTeam !== "BYE") {  
-                // Primera vuelta (ida)  
-                jornada.push({ home: homeTeam, away: awayTeam, week: round + 1 });  
+                schedule.push({ home: homeTeam, away: awayTeam, week: round + 1, homeGoals: null, awayGoals: null });  
             }  
         }  
-        schedule.push(jornada);  
   
         // Rotar los equipos (mantener el primer equipo fijo)  
         const lastTeam = tempTeams.pop();  
@@ -126,9 +126,14 @@ function generateLeagueCalendar(teams) {
     }  
   
     // Segunda vuelta (vuelta)  
-    const secondHalfSchedule = schedule.map(jornada =>  
-        jornada.map(match => ({ home: match.away, away: match.home, week: match.week + numRounds }))  
-    );  
+    // Crear una nueva lista de partidos para la segunda vuelta, invirtiendo local/visitante  
+    const secondHalfSchedule = schedule.map(match => ({  
+        home: match.away,  
+        away: match.home,  
+        week: match.week + numRounds, // Sumar numRounds para que las semanas sean consecutivas  
+        homeGoals: null,  
+        awayGoals: null  
+    }));  
   
     // Combinar y ordenar por semana  
     const fullSchedule = [...schedule, ...secondHalfSchedule];  
@@ -218,24 +223,21 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     const newSeasonName = `${nextSeasonYear}/${nextSeasonYear + 1}`;  
   
     gameState.week = 1;  
-    gameState.matchHistory = [];  
-    gameState.standings = {};  
-    gameState.newsFeed = [];  
+    gameState.matchHistory = []; // Limpiar historial de partidos  
+    gameState.standings = {}; // Reiniciar clasificación  
+    gameState.newsFeed = []; // Limpiar noticias  
     gameState.unreadNewsCount = 0;  
     gameState.seasonType = 'preseason';  
     gameState.currentSeason = newSeasonName;  
     gameState.division = nextDivisionKey; // Usar la clave exacta de la división  
   
-    // *** CAMBIO AQUI: La liga se genera solo con los equipos de la división específica del jugador ***  
     let teamsInNewDivision = TEAMS_DATA[nextDivisionKey];  
-    if (!teamsInNewDivision) { // Fallback por si la clave no existe (ej. para viejos guardados o errores)  
+    if (!teamsInNewDivision) {  
         console.error(`División no encontrada en TEAMS_DATA: ${nextDivisionKey}. Usando Primera por defecto.`);  
         teamsInNewDivision = TEAMS_DATA.primera;  
         gameState.division = 'primera';  
     }  
   
-    // Asegurarse de que el equipo del jugador está en la lista de equipos de la liga.  
-    // Esto es especialmente importante si el equipo asciende/desciende y no estaba en la lista original del TEAMS_DATA de la nueva división.  
     if (!teamsInNewDivision.includes(gameState.team)) {  
         teamsInNewDivision.push(gameState.team);  
     }  
@@ -244,29 +246,30 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
     // NEW: Generar el calendario para la nueva temporada  
     gameState.seasonCalendar = generateLeagueCalendar(teamsInNewDivision);  
+    gameState.maxSeasonWeeks = teamsInNewDivision.length * 2 - 2; // Actualizar el máximo de semanas  
   
     addNews(`¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
     initPlayerDatabase();  
     initYoungsterDatabase();  
-        
-    gameState.squad.forEach(p => {     
-        p.age++;     
-        p.matches = 0;     
-        p.form = 70 + Math.floor(Math.random()*20);     
-        p.isInjured = false;     
-        p.weeksOut = 0;    
-        if (p.age > 35 && Math.random() < 0.2) {    
-            addNews(`${p.name} se ha retirado del fútbol.`, 'info');    
-            gameState.squad = gameState.squad.filter(player => player.name !== p.name);    
-        }    
-    });    
-    gameState.academy.forEach(p => {     
-        p.age++;     
-        p.matches = 0;     
-        p.form = 60 + Math.floor(Math.random()*20);     
-        p.isInjured = false;     
-        p.weeksOut = 0;     
-    });    
+          
+    gameState.squad.forEach(p => {       
+        p.age++;       
+        p.matches = 0;       
+        p.form = 70 + Math.floor(Math.random()*20);       
+        p.isInjured = false;       
+        p.weeksOut = 0;      
+        if (p.age > 35 && Math.random() < 0.2) {      
+            addNews(`${p.name} se ha retirado del fútbol.`, 'info');      
+            gameState.squad = gameState.squad.filter(player => player.name !== p.name);      
+        }      
+    });      
+    gameState.academy.forEach(p => {       
+        p.age++;       
+        p.matches = 0;       
+        p.form = 60 + Math.floor(Math.random()*20);       
+        p.isInjured = false;       
+        p.weeksOut = 0;       
+    });      
   
     // Reestablecer alineación por defecto con los mejores jugadores aptos  
     const availablePlayers = gameState.squad.filter(p => !p.isInjured).sort((a,b) => b.overall - a.overall);  
@@ -275,18 +278,17 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
 function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {  
     gameState.team = teamName;  
-    // La divisionType ya es la clave exacta de la división (ej. 'primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2')  
     gameState.division = divisionType;  
     gameState.gameMode = gameMode;  
     gameState.currentSeason = '2025/2026';  
     gameState.seasonType = 'preseason';  
+    gameState.matchHistory = []; // Asegurarse de que el historial de partidos esté vacío al inicio  
   
     gameState.squad = generateInitialSquad();  
     gameState.academy = generateInitialAcademy();  
   
-    // *** CAMBIO AQUI: Obtener equipos directamente del grupo especificado ***  
     let teamsInDivision = TEAMS_DATA[divisionType];  
-    if (!teamsInDivision) { // Fallback en caso de que la divisionType no sea válida  
+    if (!teamsInDivision) {  
         console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);  
         teamsInDivision = TEAMS_DATA.primera;  
         gameState.division = 'primera';  
@@ -299,6 +301,7 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);  
     // NEW: Generar calendario inicial  
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);  
+    gameState.maxSeasonWeeks = teamsInDivision.length * 2 - 2; // Establecer el máximo de semanas de la temporada  
   
     if (divisionType === 'primera') {  
         gameState.popularity = 65;  
@@ -632,12 +635,12 @@ function getPlayerMarket(filters = {}) {
     const scoutLevel = gameState.staff.scout?.level || 0;  
     return getPlayerMarketData(filters, scoutLevel);  
 }  
-
+  
 function getYoungsterMarket(filters = {}) {  
     const scoutLevel = gameState.staff.scout?.level || 0;  
     return getYoungsterMarketData(filters, scoutLevel);  
-}
-
+}  
+  
   
 const calculateTeamEffectiveOverall = (teamSquad) => {  
     const availablePlayers = teamSquad.filter(p => !p.isInjured);  
@@ -883,13 +886,11 @@ function endSeason() {
   
     let seasonSummary = `¡Fin de la temporada ${currentSeason}!\n`;  
   
-    // *** CAMBIO AQUI: Lógica de ascenso/descenso por división específica ***  
     const promoReleConfig = PROMOTION_RELEGATION[currentDivision];  
   
     if (currentDivision.includes('rfef')) { // Aplica tanto para rfef_grupo1 como rfef_grupo2  
         const numPromote = promoReleConfig.promote;  
-        // Solo los equipos de la división del jugador son considerados para el ascenso/descenso  
-        const teamsInMyGroup = gameState.leagueTeams;   
+        const teamsInMyGroup = gameState.leagueTeams;  
         const sortedMyGroup = teams.filter(([teamName]) => teamsInMyGroup.includes(teamName));  
         const myTeamRankInGroup = sortedMyGroup.findIndex(([name]) => name === gameState.team) + 1;  
   
@@ -898,12 +899,12 @@ function endSeason() {
             nextDivisionKey = 'segunda';  
         } else if (myTeamRankInGroup > (teamsInMyGroup.length - promoReleConfig.relegate)) {  
             seasonSummary += `¡Has descendido a Tercera RFEF! Es hora de reconstruir.\n`;  
-            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1  
+            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1 (o elegir aleatoriamente si hay más grupos)  
         }  
         else {  
             seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
         }  
-          
+            
         const promotedTeams = sortedMyGroup.slice(0, numPromote);  
         seasonSummary += `Equipos que ascienden de tu grupo a Segunda: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
         const relegatedTeams = sortedMyGroup.slice(-promoReleConfig.relegate);  
@@ -921,7 +922,6 @@ function endSeason() {
         const relegatedTeams = teams.slice(-numRelegate);  
         if (myTeamRank > teams.length - numRelegate) {  
             seasonSummary += `¡Has descendido a Primera RFEF! Es hora de reconstruir.\n`;  
-            // Para la RFEF, alternamos entre grupo1 y grupo2 si desciendes.  
             nextDivisionKey = Math.random() < 0.5 ? 'rfef_grupo1' : 'rfef_grupo2';  
         } else if (myTeamRank > numPromote) {  
             seasonSummary += `Tu equipo permanece en Segunda División.\n`;  
@@ -972,9 +972,6 @@ function simulateFullWeek() {
         return { myMatch: null, forcedLoss: false }; // En pretemporada no hay resultados de liga  
     }  
   
-    // *** CAMBIO: la validación de alineación se mueve a simulateWeek en index.html,  
-    // pero aquí ejecutamos la penalización si fue inválida y se decidió continuar ***  
-  
     // Guardar el estado de la alineación ANTES de la simulación de partidos  
     const preSimLineupValidation = validateLineup(gameState.lineup);  
   
@@ -1006,12 +1003,10 @@ function simulateFullWeek() {
     if (gameState.week % 4 === 0) {  
         boardMessages();  
     }  
-      
+        
     // Obtener los partidos de la jornada actual de nuestro calendario  
-    const currentWeekMatches = gameState.seasonCalendar.filter(jornada =>   
-        jornada.some(match => match.week === gameState.week)  
-    ).flatMap(jornada => jornada);  
-  
+    // Corrección: Filtrar directamente del seasonCalendar (que ya es un array plano de partidos)  
+    const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
   
     // Simular el partido de nuestro equipo primero  
     let myTeamMatch = currentWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);  
@@ -1019,7 +1014,7 @@ function simulateFullWeek() {
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) { // Si la alineación era inválida, forzar derrota 0-3  
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
-              
+                
             let homeGoals = 0;  
             let awayGoals = 0;  
   
@@ -1037,24 +1032,24 @@ function simulateFullWeek() {
             if(ourStats) {  
                 ourStats.pj++;  
                 ourStats.p++;  
-                ourStats.gc += (myTeamMatch.home === gameState.team ? 3 : 0);  
-                ourStats.gf += (myTeamMatch.home === gameState.team ? 0 : 3); // Goles a favor del rival, nuestros en contra  
+                ourStats.gf += (myTeamMatch.home === gameState.team ? 0 : 3); // Si somos locales, metemos 0; si visitantes, metemos 0 y el rival 3  
+                ourStats.gc += (myTeamMatch.home === gameState.team ? 3 : 0); // Si somos locales, encajamos 3; si visitantes, encajamos 3 y el rival 0  
             }  
             if(opponentStats) {  
                 opponentStats.pj++;  
                 opponentStats.g++;  
-                opponentStats.gf += (myTeamMatch.home === gameState.team ? 3 : 0);  
-                opponentStats.gc += (myTeamMatch.home === gameState.team ? 0 : 3); // Goles en contra del rival, nuestros a favor  
+                opponentStats.gf += (myTeamMatch.home === gameState.team ? 3 : 0); // Si somos locales, rival mete 3; si visitantes, rival mete 3  
+                opponentStats.gc += (myTeamMatch.home === gameState.team ? 0 : 3); // Si somos locales, rival encaja 0; si visitantes, rival encaja 0  
                 opponentStats.pts += 3;  
             }  
-              
+                
             gameState.matchHistory.push({  
                 week: gameState.week,  
                 home: myTeamMatch.home,  
                 away: myTeamMatch.away,  
-                score: `${homeGoals}-${awayGoals} (Derrota por alineación indebida)`  
+                score: `${homeGoals}-${awayGoals}` // Usar los goles forzados para el historial  
             });  
-              
+                
             myMatchResult = {  
                 home: myTeamMatch.home,  
                 away: myTeamMatch.away,  
@@ -1070,11 +1065,11 @@ function simulateFullWeek() {
         } else { // Si la alineación es válida, jugar el partido normalmente  
             const result = playMatch(myTeamMatch.home, myTeamMatch.away);  
             myMatchResult = {  
-                home: myMatchResult?.home || result.homeTeam,  
-                away: myMatchResult?.away || result.awayTeam,  
-                homeGoals: myMatchResult?.homeGoals || result.homeGoals,  
-                awayGoals: myMatchResult?.awayGoals || result.awayGoals,  
-                score: `${myMatchResult?.homeGoals || result.homeGoals}-${myMatchResult?.awayGoals || result.awayGoals}`,  
+                home: result.homeTeam,  
+                away: result.awayTeam,  
+                homeGoals: result.homeGoals,  
+                awayGoals: result.awayGoals,  
+                score: `${result.homeGoals}-${result.awayGoals}`,  
             };  
         }  
     }  
@@ -1082,7 +1077,14 @@ function simulateFullWeek() {
   
     // Simular el resto de partidos de la jornada  
     currentWeekMatches.filter(match => match !== myTeamMatch).forEach(match => {  
-        playMatch(match.home, match.away);  
+        // Solo jugar partidos que no hayan sido ya jugados por nuestro equipo  
+        const alreadyPlayed = gameState.matchHistory.some(mh =>  
+            mh.week === gameState.week &&  
+            ((mh.home === match.home && mh.away === match.away) || (mh.home === match.away && mh.away === match.home))  
+        );  
+        if (!alreadyPlayed) {  
+            playMatch(match.home, match.away);  
+        }  
     });  
   
     gameState.week++;  
@@ -1099,10 +1101,11 @@ function simulateFullWeek() {
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
     }  
   
-    if (gameState.week > SEASON_WEEKS) {  
+    // Usar gameState.maxSeasonWeeks en lugar de SEASON_WEEKS  
+    if (gameState.week > gameState.maxSeasonWeeks) {  
         endSeason();  
     }  
-      
+        
     // NEW: Devolver el resultado de nuestro partido  
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
 }  
@@ -1110,8 +1113,7 @@ function simulateFullWeek() {
 function handlePreseasonWeek() {  
     addNews(`Semana ${gameState.week} de pretemporada.`, 'system');  
     if (Math.random() < 0.5) {  
-        // En pretemporada, podemos jugar contra cualquiera de la división actual  
-        const currentDivisionTeams = gameState.leagueTeams; // Usar gameState.leagueTeams que ya está filtrado por la división  
+        const currentDivisionTeams = gameState.leagueTeams;  
         const potentialOpponents = currentDivisionTeams.filter(t => t !== gameState.team);  
         if (potentialOpponents.length > 0) {  
             const opponent = potentialOpponents[Math.floor(Math.random() * potentialOpponents.length)];  
@@ -1180,8 +1182,6 @@ function generateStaffCandidates(role, forceNew = false) {
     const roleConfig = STAFF_ROLES[role];  
     const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego", "Miguel", "Sergio", "Elena", "Ricardo", "Carmen", "Javier"];  
   
-    // Usar el gameState.division para determinar el multiplicador  
-    // Si la división es 'rfef_grupo1' o 'rfef_grupo2', usar la clave 'rfef_grupo1' para el multiplicador (asumiendo que tienen el mismo factor)  
     const divisionForMultiplier = gameState.division.includes('rfef') ? 'rfef_grupo1' : gameState.division;  
     const divisionFactor = DIVISION_MULTIPLIERS[divisionForMultiplier] || 1;  
   
@@ -1264,42 +1264,42 @@ function getReservePlayers() {
 }  
   
 function setLineup(newLineup) {  
-    // Asegurarse de que la nueva alineación no tenga más de 11 jugadores    
-    if (newLineup.length > 11) {  
-        // Esto no debería pasar con la lógica actual, pero es una salvaguarda    
+    // Asegurarse de que la nueva alineación no tenga más de 11 jugadores      
+    if (newLineUp.length > 11) {  
+        // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
         console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
-        newLineup = newLineup.slice(0, 11);  
+        newLineUp = newLineUp.slice(0, 11);  
     }  
-        
-    // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11    
-    // Esto es importante para que siempre haya 11 en `gameState.lineup`    
-    if (newLineup.length < 11) {  
+          
+    // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
+    // Esto es importante para que siempre haya 11 en `gameState.lineup`      
+    if (newLineUp.length < 11) {  
         const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
-        const currentLineupNames = new Set(newLineup.map(p => p.name));  
+        const currentLineupNames = new Set(newLineUp.map(p => p.name));  
         const playersToFill = availableSquadPlayers  
                                 .filter(p => !currentLineupNames.has(p.name))  
                                 .sort((a,b) => b.overall - a.overall)  
-                                .slice(0, 11 - newLineup.length);  
-            
-        gameState.lineup = [...newLineup, ...playersToFill];  
-        // Asegurarse de que no hay más de 11 después de rellenar    
+                                .slice(0, 11 - newLineUp.length);  
+              
+        gameState.lineup = [...newLineUp, ...playersToFill];  
+        // Asegurarse de que no hay más de 11 después de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
         }  
     } else {  
-        gameState.lineup = newLineup;  
+        gameState.lineup = newLineUp;  
     }  
   
-    // Asegurarse de que todos los jugadores en gameState.lineup existen en gameState.squad    
+    // Asegurarse de que todos los jugadores en gameState.lineup existen en gameState.squad      
     const validPlayers = gameState.lineup.every(p => gameState.squad.some(s => s.name === p.name));  
     if (!validPlayers) {  
-        // Si hay jugadores en la alineación que ya no están en la plantilla (ej. vendidos),    
-        // limpiar y reconstruir la alineación    
+        // Si hay jugadores en la alineación que ya no están en la plantilla (ej. vendidos),      
+        // limpiar y reconstruir la alineación      
         console.warn("Jugadores en la alineación no encontrados en la plantilla. Reconstruyendo alineación.");  
         const currentSquadNames = new Set(gameState.squad.map(p => p.name));  
         const filteredLineup = gameState.lineup.filter(p => currentSquadNames.has(p.name));  
         gameState.lineup = filteredLineup;  
-        // Rellenar de nuevo si es necesario    
+        // Rellenar de nuevo si es necesario      
         if (gameState.lineup.length < 11) {  
             const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
             const currentFilteredLineupNames = new Set(filteredLineup.map(p => p.name));  
@@ -1310,11 +1310,10 @@ function setLineup(newLineup) {
             gameState.lineup = [...gameState.lineup, ...playersToFill];  
         }  
     }  
-    
+      
     return { success: true, message: 'Alineación guardada correctamente.' };  
 }  
   
-// *** CAMBIO AQUI: Modificación de validateLineup ***  
 function validateLineup(lineupToCheck) {  
     if (!Array.isArray(lineupToCheck) || lineupToCheck.length !== 11) {  
         return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
@@ -1353,10 +1352,7 @@ function validateLineup(lineupToCheck) {
     if (!hasGK) {  
         return { success: false, message: '¡Error! Necesitas al menos un portero en la alineación.' };  
     }  
-      
-    // Si la idea es que "cualquier jugador puede jugar en cualquier puesto",  
-    // eliminamos las restricciones sobre el número de defensas, centrocampistas y delanteros.  
-    // Solo se requiere un portero y 10 jugadores de campo.  
+        
     if (numNonGkPlayers !== 10) {  
         return { success: false, message: '¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
     }  
@@ -1381,26 +1377,26 @@ function loadFromLocalStorage() {
         if (!gameState.newsFeed) gameState.newsFeed = [];  
         if (!gameState.unreadNewsCount) gameState.unreadNewsCount = 0;  
         if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
-            
-        // Si no hay alineación o está incompleta, rellenar    
+              
+        // Si no hay alineación o está incompleta, rellenar      
         if (!gameState.lineup || gameState.lineup.length === 0) {  
             gameState.lineup = gameState.squad.slice(0, 11);  
         } else if (gameState.lineup.length < 11) {  
-            setLineup(gameState.lineup); // setLineup ya rellena automáticamente    
+            setLineup(gameState.lineup); // setLineup ya rellena automáticamente      
         }  
-            
+              
         if (!gameState.currentSeason) gameState.currentSeason = '2025/2026';  
         if (!gameState.seasonType) gameState.seasonType = 'preseason';  
         if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) {  
-            // Reconstruir leagueTeams basado en la división actual para evitar errores    
-            const divisionKey = gameState.division;   
+            // Reconstruir leagueTeams basado en la división actual para evitar errores      
+            const divisionKey = gameState.division;  
             let teamsInDivision = TEAMS_DATA[divisionKey];  
             if (!teamsInDivision) { // Fallback si la división es desconocida (old saves or malformed data)  
                 console.warn(`División "${divisionKey}" no encontrada al cargar. Usando 'primera' por defecto.`);  
-                teamsInDivision = TEAMS_DATA.primera;   
+                teamsInDivision = TEAMS_DATA.primera;  
                 gameState.division = 'primera'; // Forzar a una división conocida  
             }  
-    
+      
             if (!teamsInDivision.includes(gameState.team)) {  
                 teamsInDivision.push(gameState.team);  
             }  
@@ -1411,11 +1407,15 @@ function loadFromLocalStorage() {
             console.log("Generando calendario al cargar partida.");  
             gameState.seasonCalendar = generateLeagueCalendar(gameState.leagueTeams);  
         }  
-  
+        // NEW: Asegurar que maxSeasonWeeks esté definido  
+        if (!gameState.maxSeasonWeeks || gameState.maxSeasonWeeks === 0) {  
+            gameState.maxSeasonWeeks = gameState.leagueTeams.length * 2 - 2;  
+        }  
+    
         if (!gameState.nextOpponent) gameState.nextOpponent = null;  
         // NEW: Recalcular nextOpponent si la partida se cargó sin él (o con uno desactualizado)  
-        if (!gameState.nextOpponent && gameState.seasonCalendar.length > 0 && gameState.week <= SEASON_WEEKS) {  
-            const matchesForCurrentWeek = gameState.seasonCalendar.filter(jornada => jornada.some(m => m.week === gameState.week)).flatMap(j => j);  
+        if (!gameState.nextOpponent && gameState.seasonCalendar.length > 0 && gameState.week <= gameState.maxSeasonWeeks) {  
+            const matchesForCurrentWeek = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
             const myMatch = matchesForCurrentWeek.find(match => match.home === gameState.team || match.away === gameState.team);  
             if (myMatch) {  
                 gameState.nextOpponent = (myMatch.home === gameState.team) ? myMatch.away : myMatch.home;  
@@ -1423,7 +1423,7 @@ function loadFromLocalStorage() {
                 gameState.nextOpponent = "No hay oponente"; // Por si no hay partido para nuestra semana  
             }  
         }  
-          
+            
         updateWeeklyFinancials();  
         return { success: true, message: 'Partida cargada.' };  
     }  
@@ -1441,7 +1441,7 @@ function resetGame() {
 function getSeasonCalendar() {  
     return gameState.seasonCalendar;  
 }  
-    
+      
 export {  
     getGameState,  
     updateGameState,  
@@ -1478,5 +1478,5 @@ export {
     validateLineup,  
     // NEW EXPORTS  
     generateLeagueCalendar,  
-    getSeasonCalendar   
+    getSeasonCalendar  
 };  
