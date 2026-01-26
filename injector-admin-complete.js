@@ -236,10 +236,8 @@
                 }
                 
                 // Actualizar página de instalaciones si está activa
-                if (document.getElementById('facilities').classList.contains('active')) {
-                    const updateFacilitiesDisplay = window.updateFacilitiesDisplay || 
-                        function() { console.warn('updateFacilitiesDisplay no disponible'); };
-                    updateFacilitiesDisplay(state);
+                if (window.updateFacilitiesDisplay) {
+                    window.updateFacilitiesDisplay(state);
                 }
             }
         }
