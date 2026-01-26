@@ -1,22 +1,29 @@
-// injector-mobile.js
+// injector-supermobile.js
 (function() {
-    console.log('🚀 Injector Mobile - versión menú superior funcional');
+    console.log('🚀 Injector Super Mobile activado');
 
-    // --- Estilos móviles ---
-    const mobileStyles = document.createElement('style');
-    mobileStyles.innerHTML = `
+    // --- Detectar móvil/tableta ---
+    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+    if (!isMobile) return; // Solo aplicar en móviles/tabletas
+
+    // --- Estilos profesionales móviles ---
+    const style = document.createElement('style');
+    style.innerHTML = `
         body, html {
-            width: 100% !important;
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
             font-family: Arial, sans-serif;
             overflow-x: hidden;
             background: #111;
             color: #fff;
         }
 
+        /* Ocultar barras originales */
         #sidebar, #superos, .sidebar, .top-bar { display: none !important; }
 
+        /* Menú superior fijo */
         #topMobileMenu {
             position: fixed;
             top: 0;
@@ -27,63 +34,63 @@
             justify-content: space-around;
             padding: 10px 0;
             z-index: 9999;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-
         #topMobileMenu button {
             flex: 1;
             margin: 0 3px;
             font-size: 1rem;
-            padding: 10px 5px;
+            padding: 12px 0;
             color: #fff;
             background: rgba(255,255,255,0.1);
             border: none;
             border-radius: 5px;
+            font-weight: bold;
         }
-
         #topMobileMenu button.active {
             background: #fff;
             color: #e94560;
-            font-weight: bold;
         }
 
+        /* Páginas adaptadas */
         .page {
-            width: 95vw !important;
-            max-width: 480px;
-            margin: 60px auto 20px auto;
-            padding: 10px;
-            box-sizing: border-box;
-            display: none; /* Oculto por defecto */
+            display: none;
             flex-direction: column;
             align-items: center;
-            text-align: center;
+            justify-content: flex-start;
+            width: 95vw;
+            max-width: 480px;
+            margin: 70px auto 20px auto; /* espacio para menú superior */
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
         }
-
         .page.active {
-            display: flex !important; /* Solo la activa se ve */
+            display: flex;
         }
 
-        button, input, select {
+        /* Inputs y botones grandes */
+        input, select, button {
             font-size: 1rem !important;
             padding: 10px !important;
             margin: 5px 0 !important;
         }
 
+        /* Pitch adaptado */
         #pitchContainer {
             width: 90vw !important;
             max-width: 450px;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            margin: 15px 0;
             position: relative;
+            margin: 15px 0;
         }
-
         .pitch-position-placeholder {
             width: 16vw !important;
             height: 12vw !important;
             min-width: 60px;
-            min-height: 40px;
+            min-height: 45px;
             margin: 2px;
             display: flex;
             align-items: center;
@@ -122,7 +129,7 @@
             height: auto;
         }
     `;
-    document.head.appendChild(mobileStyles);
+    document.head.appendChild(style);
 
     // --- Crear menú superior ---
     if (!document.getElementById('topMobileMenu')) {
@@ -137,47 +144,31 @@
         `;
         document.body.prepend(topMenu);
 
-        const switchMobilePage = (pageId) => {
-            // Ocultar todas las páginas
+        const switchPageMobile = (pageId) => {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-            // Mostrar la página objetivo
             const targetPage = document.getElementById(pageId);
             if (!targetPage) return;
 
-            // Usar switchPage si existe
             if (window.switchPage) {
-                const menuButton = document.querySelector(`.menu-item[onclick*="${pageId}"]`);
-                if(menuButton) {
-                    window.switchPage(pageId, menuButton);
-                    targetPage.classList.add('active');
-                } else {
-                    targetPage.classList.add('active');
-                }
-            } else {
-                targetPage.classList.add('active');
+                const menuBtn = document.querySelector(`.menu-item[onclick*="${pageId}"]`);
+                if(menuBtn) window.switchPage(pageId, menuBtn);
             }
 
-            // Scroll al top
+            targetPage.classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         topMenu.querySelectorAll('button').forEach(btn => {
             btn.addEventListener('click', () => {
-                const page = btn.getAttribute('data-page');
-
-                // Actualizar botón activo
                 topMenu.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                // Cambiar página
-                switchMobilePage(page);
+                switchPageMobile(btn.getAttribute('data-page'));
             });
         });
     }
 
-    // --- Ajuste de pitch ---
-    const resizePitchSlots = () => {
+    // --- Ajuste dinámico del pitch ---
+    const resizePitch = () => {
         document.querySelectorAll('.pitch-position-placeholder').forEach(slot => {
             const width = Math.min(window.innerWidth * 0.16, 80);
             const height = width * 0.75;
@@ -185,8 +176,8 @@
             slot.style.height = height + 'px';
         });
     };
-    window.addEventListener('resize', resizePitchSlots);
-    resizePitchSlots();
+    window.addEventListener('resize', resizePitch);
+    resizePitch();
 
-    console.log('📱 Móvil: menú superior funcional, sidebar oculto, páginas exclusivas por botón');
+    console.log('📱 SuperDisplay Mobile listo');
 })();
