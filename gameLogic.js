@@ -290,15 +290,33 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
-    // *** NUEVO: Cargar datos personalizados del equipo ***
-    const teamData = getTeamData(teamName);
-    gameState.teamLogo = teamData.logo;
-    gameState.stadiumImage = teamData.stadiumImage;
-    gameState.stadiumName = teamData.stadiumName || 'Estadio';
-    gameState.stadiumCapacity = teamData.stadiumCapacity || 5000;
+    // *** CARGAR DATOS PERSONALIZADOS DEL EQUIPO ***
+    const customDataKey = `team_data_${teamName}`;
+    const storedData = localStorage.getItem(customDataKey);
     
-    // Usar presupuesto inicial personalizado
-    const customBudget = teamData.initialBudget;
+    if (storedData) {
+        console.log(`✓ Cargando datos personalizados para ${teamName}`);
+        const teamData = JSON.parse(storedData);
+        
+        // Aplicar datos personalizados
+        gameState.teamLogo = teamData.logo || null;
+        gameState.stadiumImage = teamData.stadiumImage || null;
+        gameState.stadiumName = teamData.stadiumName || teamName + ' Stadium';
+        gameState.stadiumCapacity = teamData.stadiumCapacity || 10000;
+        
+        console.log('Datos cargados:', {
+            logo: !!teamData.logo,
+            stadiumImage: !!teamData.stadiumImage,
+            stadiumName: teamData.stadiumName,
+            capacity: teamData.stadiumCapacity
+        });
+    } else {
+        console.log(`⚠️ No hay datos personalizados para ${teamName}, usando valores por defecto`);
+        gameState.teamLogo = null;
+        gameState.stadiumImage = null;
+        gameState.stadiumName = teamName + ' Stadium';
+        gameState.stadiumCapacity = 10000;
+    }
 
     let teamsInDivision = TEAMS_DATA[divisionType];
     if (!teamsInDivision) {
@@ -314,9 +332,9 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
 
-    // Establecer presupuesto según división (pero usar el personalizado si existe)
-    if (customBudget) {
-        gameState.balance = customBudget;
+    // Establecer presupuesto según datos personalizados o división
+    if (storedData && JSON.parse(storedData).initialBudget) {
+        gameState.balance = JSON.parse(storedData).initialBudget;
     } else {
         if (divisionType === 'primera') {
             gameState.balance = 50000000;
@@ -328,7 +346,7 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
             gameState.popularity = 50;
             gameState.fanbase = 10000;
             gameState.ticketPrice = 20;
-        } else { // RFEF
+        } else {
             gameState.balance = 5000000;
             gameState.popularity = 35;
             gameState.fanbase = 5000;
