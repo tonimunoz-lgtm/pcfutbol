@@ -1265,7 +1265,7 @@ function getReservePlayers() {
   
 function setLineup(newLineup) {  
     // Asegurarse de que la nueva alineación no tenga más de 11 jugadores      
-    if (newLineUp.length > 11) {  
+    if (newLineup.length > 11) {  
         // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
         console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
         newLineUp = newLineUp.slice(0, 11);  
