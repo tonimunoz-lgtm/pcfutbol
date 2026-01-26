@@ -254,7 +254,7 @@
         // Recargar los datos para mostrar las previews actualizadas
         this.loadTeamData();
     });
-}
+},
 
         exportAllData: function() {
             const allData = {};
