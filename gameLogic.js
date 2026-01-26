@@ -628,15 +628,16 @@ function applyWeeklyTraining() {
     }  
 }  
   
-function getPlayerMarket(filters = {}, scoutLevel = 0) {  
-    let scoutLevel = gameState.staff.scout?.level || 0;  
+function getPlayerMarket(filters = {}) {  
+    const scoutLevel = gameState.staff.scout?.level || 0;  
     return getPlayerMarketData(filters, scoutLevel);  
 }  
-  
-function getYoungsterMarket(filters = {}, scoutLevel = 0) {  
-    let scoutLevel = gameState.staff.scout?.level || 0;  
+
+function getYoungsterMarket(filters = {}) {  
+    const scoutLevel = gameState.staff.scout?.level || 0;  
     return getYoungsterMarketData(filters, scoutLevel);  
-}  
+}
+
   
 const calculateTeamEffectiveOverall = (teamSquad) => {  
     const availablePlayers = teamSquad.filter(p => !p.isInjured);  
