@@ -3,6 +3,19 @@
 import * as gameLogic from './gameLogic.js';  
 import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
   
+// ui.js - Añadir al principio del archivo
+
+function getTeamLogo(teamName, size = '25px') {
+    const storedData = localStorage.getItem(`team_data_${teamName}`);
+    if (storedData) {
+        const teamData = JSON.parse(storedData);
+        if (teamData.logo) {
+            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
+        }
+    }
+    return ''; // Sin logo
+}
+
 function renderStandingsTable(standings, currentTeam) {
     const tbody = document.getElementById('standingsTable');
     if (!tbody) return;
@@ -18,7 +31,7 @@ function renderStandingsTable(standings, currentTeam) {
     tbody.innerHTML = sorted.map(([team, stats], i) => `
         <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
             <td><strong>${i + 1}</strong></td>
-            <td>${renderTeamLogo(team, '25px')}<strong>${team}</strong></td>
+            <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>
             <td>${stats.pj}</td>
             <td>${stats.g}</td>
             <td>${stats.e}</td>
