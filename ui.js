@@ -355,12 +355,69 @@ function updateDashboardStats(state) {
     }  
 }  
   
+// NEW: Función para renderizar la página de calendario  
+function renderCalendarPage(state) {  
+    const calendarContent = document.getElementById('calendarContent');  
+    if (!calendarContent) return;  
+  
+    const calendar = gameLogic.getSeasonCalendar();  
+    if (!calendar || calendar.length === 0) {  
+        calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
+        return;  
+    }  
+  
+    let calendarHtml = '';  
+    const numJornadas = SEASON_WEEKS; // O el total de semanas en calendar  
+  
+    for (let i = 1; i <= numJornadas; i++) {  
+        const jornadaMatches = calendar.filter(j => j.week === i).flatMap(j => j);  
+        if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
+  
+        calendarHtml += `  
+            <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
+            <table>  
+                <thead>  
+                    <tr>  
+                        <th>Local</th>  
+                        <th>Visitante</th>  
+                        <th>Resultado</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+        `;  
+        jornadaMatches.forEach(match => {  
+            const isOurMatch = match.home === state.team || match.away === state.team;  
+            const rowClass = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
+            const score = match.week < state.week ? match.homeGoals + '-' + match.awayGoals : '-';  
+  
+            calendarHtml += `  
+                <tr style="${rowClass}">  
+                    <td>${match.home}</td>  
+                    <td>${match.away}</td>  
+                    <td>${score}</td>  
+                </tr>  
+            `;  
+        });  
+        calendarHtml += `  
+                </tbody>  
+            </table>  
+        `;  
+    }  
+  
+    calendarContent.innerHTML = calendarHtml;  
+}  
+  
+  
 function refreshUI(state) {  
     updateDashboardStats(state);  
     renderStandingsTable(state.standings, state.team);  
     renderSquadList(state.squad, state.team);  
     renderAcademyList(state.academy);  
   
+    // Si la página activa es la de calendario, re-renderizarla  
+    if (document.getElementById('calendar').classList.contains('active')) {  
+        renderCalendarPage(state);  
+    }  
     if (document.getElementById('lineup').classList.contains('active')) {  
         window.renderLineupPageUI();  
     }  
@@ -383,6 +440,7 @@ export {
     renderAvailableYoungstersMarket,  
     renderNextMatchCard,  
     updateDashboardStats,  
-    refreshUI  
+    refreshUI,  
+    // NEW EXPORT  
+    renderCalendarPage   
 };  
-
