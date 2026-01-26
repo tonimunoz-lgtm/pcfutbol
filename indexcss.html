@@ -1,0 +1,1510 @@
+<!DOCTYPE html>  
+<html lang="es">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>PC Fútbol Manager 2025/26</title>  
+    <!-- Enlazar al nuevo archivo CSS -->  
+    <link rel="stylesheet" href="styles.css">  
+    <!-- Si tienes imágenes decorativas (balón, papeles, etc.), podrías precargarlas aquí o en el HTML -->  
+    <!-- Por ejemplo: -->  
+    <!-- <link rel="preload" href="assets/ball.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/paper.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/clipboard.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/stadium.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/tactic_board.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/magnifying_glass.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/result_screen.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/calendar_icon.png" as="image"> -->  
+    <!-- <link rel="preload" href="assets/team_icon.png" as="image"> -->  
+</head>  
+<body>  
+    <div class="header">  
+        <div class="header-title">⚽ PC FÚTBOL MANAGER 25/26</div>  
+        <div class="header-info">  
+            <div class="info-box">Equipo: <span id="teamName">-</span></div>  
+            <div class="info-box">Jornada: <span id="weekNo">1</span></div>  
+            <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div>  
+            <button class="btn btn-sm" onclick="openModal('gameMode')">Nuevo Juego</button>  
+        </div>  
+    </div>  
+  
+    <div class="container">  
+        <div class="sidebar">  
+            <div class="menu-section">  
+                <div class="menu-title">📊 INFORMACIÓN</div>  
+                <button class="menu-item active" onclick="switchPage('dashboard', this)">Dashboard</button>  
+                <button class="menu-item" onclick="switchPage('standings', this)">Clasificación</button>  
+                <button class="menu-item" onclick="switchPage('calendar', this)">Calendario</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">👥 PLANTILLA</div>  
+                <button class="menu-item" onclick="switchPage('squad', this)">Plantilla</button>  
+                <button class="menu-item" onclick="switchPage('transfers', this)">Mercado</button>  
+                <button class="menu-item" onclick="switchPage('academy', this)">Cantera</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">🎯 PARTIDO</div>  
+                <button class="menu-item" onclick="switchPage('lineup', this)">Alineación</button>  
+                <button class="menu-item" onclick="switchPage('tactics', this)">Tácticas</button>  
+                <button class="menu-item" onclick="switchPage('match', this)">Próximo</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">💼 GESTIÓN</div>  
+                <button class="menu-item" onclick="switchPage('finance', this)">Finanzas</button>  
+                <button class="menu-item" onclick="switchPage('facilities', this)">Instalaciones</button>  
+                <button class="menu-item" onclick="switchPage('commercial', this)">Comercial</button>  
+                <button class="menu-item" onclick="switchPage('staff', this)">Staff</button>  
+            </div>  
+  
+            <div class="menu-section">  
+                <div class="menu-title">⚙️ SISTEMA</div>  
+                <button class="menu-item" onclick="switchPage('settings', this)">Opciones</button>  
+            </div>  
+        </div>  
+  
+        <div class="main">  
+            <!-- DASHBOARD -->  
+            <div id="dashboard" class="page active">  
+                <!-- Secciones copiadas de la imagen -->  
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;">  
+                    <!-- Columna Izquierda (Seguimiento y Mercado) -->  
+                    <div style="flex: 1; min-width: 280px; max-width: 400px;">  
+                        <h2 style="margin-top: 0;">SEGUIMIENTO</h2>  
+                        <div class="menu-grid-buttons" style="grid-template-columns: 1fr;">  
+                            <button class="main-menu-button" onclick="switchPage('standings', this)">  
+                                <img src="assets/result_screen.png" alt="Resultados Icon" style="height: 30px; margin-right: 10px;">  
+                                RESULTADOS  
+                            </button>  
+                            <button class="main-menu-button" onclick="switchPage('standings', this)">  
+                                <img src="assets/clipboard.png" alt="Clasificación Icon" style="height: 30px; margin-right: 10px;">  
+                                CLASIFICACIÓN  
+                            </button>  
+                            <button class="main-menu-button" onclick="switchPage('calendar', this)">  
+                                <img src="assets/calendar_icon.png" alt="Calendario Icon" style="height: 30px; margin-right: 10px;">  
+                                CALENDARIO  
+                            </button>  
+                        </div>  
+                        <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center;">  
+                            <button class="btn btn-sm">SALIR</button>  
+                            <button class="btn btn-sm">GRABAR LIGA</button>  
+                        </div>  
+  
+                        <h2 style="margin-top: 30px;">MERCADO</h2>  
+                        <div class="menu-grid-buttons" style="grid-template-columns: 1fr;">  
+                            <button class="main-menu-button red" onclick="switchPage('transfers', this)">  
+                                <img src="assets/laptop.png" alt="Fichar Icon" style="height: 30px; margin-right: 10px;">  
+                                FICHAR  
+                            </button>  
+                            <button class="main-menu-button red" onclick="switchPage('squad', this)">  
+                                <img src="assets/paper.png" alt="Plantilla Icon" style="height: 30px; margin-right: 10px;">  
+                                PLANTILLA  
+                            </button>  
+                            <button class="main-menu-button red" onclick="switchPage('staff', this)">  
+                                <img src="assets/team_icon.png" alt="Empleados Icon" style="height: 30px; margin-right: 10px;">  
+                                EMPLEADOS  
+                            </button>  
+                        </div>  
+                    </div>  
+  
+                    <!-- Columna Central (Jugadores/Equipos) -->  
+                    <div style="flex: 1; min-width: 280px; max-width: 350px; display: flex; flex-direction: column; align-items: center;">  
+                        <h2 style="margin-top: 0; text-align: center;">MENU PROMANAGER</h2>  
+                        <div class="center-menu-container">  
+                            <button class="center-menu-button">CPU</button>  
+                            <button class="center-menu-button">J.C. Álvarez</button>  
+                            <button class="center-menu-button active-player">Cádiz</button> <!-- Ejemplo de equipo activo -->  
+                            <button class="center-menu-button">Guadix</button>  
+                            <button class="center-menu-button">Kalimero</button>  
+                            <button class="center-menu-button">JUG 1</button>  
+                            <div class="center-menu-icon">  
+                                <img src="assets/ball.png" alt="Ball Icon">  
+                            </div>  
+                        </div>  
+                    </div>  
+  
+                    <!-- Columna Derecha (Partido y Finanzas/Noticias) -->  
+                    <div style="flex: 1; min-width: 280px; max-width: 400px;">  
+                        <h2 style="margin-top: 0;">PARTIDO</h2>  
+                        <div class="menu-grid-buttons" style="grid-template-columns: 1fr;">  
+                            <button class="main-menu-button blue" onclick="switchPage('lineup', this)">  
+                                <img src="assets/tactic_board.png" alt="Alineación Icon" style="height: 30px; margin-right: 10px;">  
+                                ALINEACIÓN  
+                            </button>  
+                            <button class="main-menu-button blue" onclick="switchPage('tactics', this)">  
+                                <img src="assets/tactic_board.png" alt="Tácticas Icon" style="height: 30px; margin-right: 10px;">  
+                                TÁCTICAS  
+                            </button>  
+                            <button class="main-menu-button blue" onclick="switchPage('match', this)">  
+                                <img src="assets/magnifying_glass.png" alt="Ver Rival Icon" style="height: 30px; margin-right: 10px;">  
+                                VER RIVAL  
+                            </button>  
+                        </div>  
+                        <h2 style="margin-top: 30px;">ENTRENADOR</h2>  
+                        <div class="menu-grid-buttons" style="grid-template-columns: repeat(2, 1fr);">  
+                            <button class="main-menu-button" onclick="switchPage('finance', this)">  
+                                <img src="assets/news_icon.png" alt="Noticias Icon" style="height: 30px; margin-right: 10px;">  
+                                NOTICIAS  
+                            </button>  
+                            <button class="main-menu-button" onclick="switchPage('finance', this)">  
+                                <img src="assets/follow_icon.png" alt="Seguir Icon" style="height: 30px; margin-right: 10px;">  
+                                SEGUIR  
+                            </button>  
+                        </div>  
+  
+                        <h2 style="margin-top: 30px;">FINANZAS</h2>  
+                        <div class="news-panel">  
+                            <h3>NOTICIAS</h3>  
+                            <div id="dashboardNewsPanel">  
+                                <!-- Las noticias se cargarán aquí -->  
+                            </div>  
+                            <button class="btn" onclick="switchPage('dashboard', this)">Seguir</button>  
+                            <img src="assets/stadium.png" alt="Estadio" class="stadio-preview">  
+                        </div>  
+                    </div>  
+                </div>  
+  
+                <!-- Los elementos originales del dashboard que ya tienes -->  
+                <div id="warningAlert" style="display: none; margin-top: 20px;"></div>  
+                <div class="data-grid" style="margin-top: 20px;">  
+                    <div class="data-box">  
+                        <div class="data-label">Posición</div>  
+                        <div class="data-value" id="dashPos">-</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Puntos</div>  
+                        <div class="data-value" id="dashPts">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">PJ</div>  
+                        <div class="data-value" id="dashPJ">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Goles</div>  
+                        <div class="data-value" id="dashGoals">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Jugadores</div>  
+                        <div class="data-value" id="dashSquad">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Juveniles</div>  
+                        <div class="data-value" id="dashAcademy">0</div>  
+                    </div>  
+                </div>  
+                <h2>Estado Financiero</h2>  
+                <table>  
+                    <tr><td>Dinero en Caja:</td><td id="dashBalance">0€</td></tr>  
+                    <tr><td>Ingresos Semanales:</td><td id="dashIncome">0€</td></tr>  
+                    <tr><td>Gastos Semanales:</td><td id="dashExpenses">0€</td></tr>  
+                    <tr><td>Balance Semanal:</td><td id="dashWeekly" class="data-value">+0€</td></tr>  
+                </table>  
+                <h2>Últimas Noticias (completo)</h2>  
+                <div id="newsFeed">  
+                    <div class="alert alert-info">No hay noticias recientes.</div>  
+                </div>  
+            </div>  
+  
+            <!-- CLASIFICACIÓN -->  
+            <div id="standings" class="page">  
+                <h1>📈 Clasificación Liga</h1>  
+                <table>  
+                    <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>  
+                    <tbody id="standingsTable"></tbody>  
+                </table>  
+            </div>  
+  
+            <!-- CALENDARIO -->  
+            <div id="calendar" class="page">  
+                <h1>📅 Calendario de Partidos</h1>  
+                <div id="calendarContent">  
+                    <div class="alert alert-info">Aquí se mostrarán los partidos de tu división.</div>  
+                </div>  
+            </div>  
+  
+            <!-- PLANTILLA -->  
+            <div id="squad" class="page">  
+                <h1>👥 Plantilla</h1>  
+                <div id="squadList" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- MERCADO -->  
+            <div id="transfers" class="page">  
+                <h1>🔄 Mercado de Fichajes</h1>  
+                <div class="alert alert-info">💡 Busca talentos jóvenes para comprar barato y revender caro, o refuerza tu equipo.</div>  
+                <h2>Buscar Jugadores</h2>  
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">  
+                    <input type="text" id="marketSearchName" placeholder="Nombre del jugador" style="width: 150px;">  
+                    <select id="marketPosition" style="width: 120px;">  
+                        <option value="ALL">Posición</option>  
+                        <!-- Opciones de posición se cargarán dinámicamente -->  
+                    </select>  
+                    <input type="number" id="marketMinOverall" placeholder="Media min." min="1" max="99" style="width: 100px;">  
+                    <input type="number" id="marketMaxAge" placeholder="Edad max." min="16" max="40" style="width: 100px;">  
+                    <label style="display:flex; align-items:center; gap: 5px;"><input type="checkbox" id="marketTransferListed" style="width:auto;"> Transferibles</label>  
+                    <label style="display:flex; align-items:center; gap: 5px;"><input type="checkbox" id="marketLoanListed" style="width:auto;"> Cedibles</label>  
+                    <button class="btn btn-sm" onclick="searchPlayersMarket()">Buscar</button>  
+                    <button class="btn btn-sm btn-red" onclick="clearPlayerMarketFilters()">Limpiar</button>  
+                </div>  
+                <div id="availablePlayersSearchResult" style="margin-top: 20px;">  
+                    <div class="alert alert-info">Utiliza los filtros de búsqueda para encontrar jugadores.</div>  
+                </div>  
+                <h2>Contratar Jóvenes de Cantera</h2>  
+                <div id="availableYoungstersList" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- CANTERA -->  
+            <div id="academy" class="page">  
+                <h1>🎓 Academia y Cantera</h1>  
+                <button class="btn" onclick="openModal('signYoungster')">+ Contratar Joven de Mercado</button>  
+                <div id="academyList" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- ALINEACIÓN -->  
+            <div id="lineup" class="page">  
+                <h1>⚽ Alineación</h1>  
+                <p class="alert alert-info" id="lineupMessage">Arrastra y suelta jugadores para configurar tu alineación. Los jugadores lesionados no pueden ser alineados.</p>  
+                <div class="pitch-container" id="pitchContainer">  
+                    <!-- Aquí se renderizarán los 11 titulares -->  
+                </div>  
+                <div class="reserves-container">  
+                    <h2>Suplentes y No Convocados</h2>  
+                    <div class="reserves-list" id="reservesList">  
+                        <!-- Aquí se renderizarán los suplentes -->  
+                    </div>  
+                </div>  
+                <button class="btn" style="margin-top: 20px;" onclick="saveLineup()">Guardar Alineación</button>  
+            </div>  
+  
+            <!-- TÁCTICAS -->  
+            <div id="tactics" class="page">  
+                <h1>🎯 Tácticas</h1>  
+                <div class="form-group" style="margin: 20px 0;">  
+                    <label style="display: block; margin-bottom: 5px;">Formación:</label>  
+                    <select id="formationSelect" onchange="updateFormation()">  
+                        <option value="433">4-3-3 Ofensiva</option>  
+                        <option value="442">4-4-2 Clásica</option>  
+                        <option value="352">3-5-2 Ultra Ofensiva</option>  
+                        <option value="541">5-4-1 Defensiva</option>  
+                        <option value="451">4-5-1 Contención</option>  
+                    </select>  
+                    <label style="display: block; margin-top: 15px; margin-bottom: 5px;">Mentalidad:</label>  
+                    <select id="mentalitySelect" onchange="updateMentality()">  
+                        <option value="defensive">Defensiva</option>  
+                        <option value="balanced" selected>Equilibrada</option>  
+                        <option value="offensive">Ofensiva</option>  
+                    </select>  
+                </div>  
+            </div>  
+  
+            <!-- PRÓXIMO PARTIDO -->  
+            <div id="match" class="page">  
+                <h1>⚽ Simular Jornada</h1>  
+                <div id="matchInfo" style="margin: 30px 0;">  
+                    <!-- Aquí se mostrará la información del próximo partido -->  
+                </div>  
+                <button class="btn" id="simulateWeekButton" onclick="simulateWeek()">Simular Jornada Completa</button>  
+                <div id="lastMatchResult" style="margin-top: 20px;"></div>  
+            </div>  
+  
+            <!-- FINANZAS -->  
+            <div id="finance" class="page">  
+                <h1>💼 Finanzas</h1>  
+                <div class="data-grid">  
+                    <div class="data-box">  
+                        <div class="data-label">Ingresos/Semana</div>  
+                        <div class="data-value" id="financeWeeklyIncome">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Gastos/Semana</div>  
+                        <div class="data-value negative" id="financeWeeklyExpenses">0€</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Balance Actual</div>  
+                        <div class="data-value" id="financeBalance">0€</div>  
+                    </div>  
+                </div>  
+                <h2>Detalle de Ingresos</h2>  
+                <table>  
+                    <tr><td>Capacidad Estadio:</td><td id="financeStadiumCapacity">0</td></tr>  
+                    <tr><td>Asistencia Esperada:</td><td id="financeExpectedAttendance">0</td></tr>  
+                    <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="5" max="100" onchange="setTicketPriceFromInput()">€</td></tr>  
+                    <tr><td>Popularidad del Club:</td><td id="financePopularity">0%</td></tr>  
+                    <tr><td>Fanbase:</td><td id="financeFanbase">0</td></tr>  
+                    <tr><td>Merchandising vendido:</td><td id="financeMerchandisingItemsSold">0</td></tr>  
+                    <tr><td>Precio Merchandising:</td><td><input type="number" id="merchandisingPriceInput" min="1" max="50" onchange="setMerchandisingPriceFromInput()">€</td></tr>  
+                    <tr><td>Ingresos Merchandising:</td><td id="financeMerchandisingRevenue">0€</td></tr>  
+                </table>  
+            </div>  
+  
+            <!-- INSTALACIONES -->  
+            <div id="facilities" class="page">  
+                <h1>🏟️ Instalaciones</h1>  
+                <h2>Estadio</h2>  
+                <p>Capacidad actual: <span id="currentStadiumCapacity">0</span></p>  
+                <button class="btn" onclick="expandStadium()">Expandir Estadio (+10.000 asientos - 50.000€)</button>  
+                <h2>Centro de Entrenamiento</h2>  
+                <p>Nivel actual: <span id="currentTrainingLevel">1</span></p>  
+                <button class="btn" onclick="improveFacilities()">Mejorar Entrenamientos (30.000€)</button>  
+            </div>  
+  
+            <!-- COMERCIAL (Nueva sección) -->  
+            <div id="commercial" class="page">  
+                <h1>🛒 Gestión Comercial</h1>  
+                <div class="data-grid">  
+                    <div class="data-box">  
+                        <div class="data-label">Popularidad del Club</div>  
+                        <div class="data-value" id="commercialPopularity">0%</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Base de Fans</div>  
+                        <div class="data-value" id="commercialFanbase">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Merchandising Vendido (semana)</div>  
+                        <div class="data-value" id="commercialItemsSold">0</div>  
+                    </div>  
+                    <div class="data-box">  
+                        <div class="data-label">Ingresos Merchandising (semana)</div>  
+                        <div class="data-value" id="commercialMerchRevenue">0€</div>  
+                    </div>  
+                </div>  
+                <h2>Ajustes Comerciales</h2>  
+                <p>Ajusta el precio de tus entradas y merchandising para maximizar beneficios. Ten en cuenta que precios muy altos pueden reducir la popularidad y la asistencia.</p>  
+                <div style="margin-top: 20px;">  
+                    <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>€):</label>  
+                    <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" oninput="updateTicketPriceDisplay(this.value)" onchange="setTicketPriceFromSlider(this.value)">  
+                    <span id="ticketPriceSliderValue">20</span>€  
+                </div>  
+                <div style="margin-top: 15px;">  
+                    <label style="display: block; margin-bottom: 5px;">Precio del Merchandising (actual: <span id="currentMerchandisingPrice">0</span>€):</label>  
+                    <input type="range" id="merchandisingPriceSlider" min="1" max="50" value="10" oninput="updateMerchandisingPriceDisplay(this.value)" onchange="setMerchandisingPriceFromSlider(this.value)">  
+                    <span id="merchandisingPriceSliderValue">10</span>€  
+                </div>  
+            </div>  
+  
+            <!-- STAFF -->  
+            <div id="staff" class="page">  
+                <h1>👔 Personal del Club</h1>  
+                <table>  
+                    <thead><tr><th>Rol</th><th>Nombre</th><th>Nivel</th><th>Salario</th><th>Cláusula</th><th>Acciones</th></tr></thead>  
+                    <tbody>  
+                        <tr><td>🏥 Médico</td><td id="staffMedicoName"></td><td id="staffMedicoLevel"></td><td id="staffMedicoSalary"></td><td id="staffMedicoClausula"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="openHireStaffModal('medico')"></button></td></tr>  
+                        <tr><td>🧪 Entrenador Físico</td><td id="staffEntrenadorName"></td><td id="staffEntrenadorLevel"></td><td id="staffEntrenadorSalary"></td><td id="staffEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="openHireStaffModal('entrenador')"></button></td></tr>  
+                        <tr><td>⚽ Entrenador Porteros</td><td id="staffEntrenadorPorterosName"></td><td id="staffEntrenadorPorterosLevel"></td><td id="staffEntrenadorPorterosSalary"></td><td id="staffEntrenadorPorterosClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenadorPorteros" onclick="openHireStaffModal('entrenadorPorteros')"></button></td></tr>  
+                        <tr><td>🩹 Fisioterapeuta</td><td id="staffFisioName"></td><td id="staffFisioLevel"></td><td id="staffFisioSalary"></td><td id="staffFisioClausula"></td><td><button class="btn btn-sm" id="btnHireFisio" onclick="openHireStaffModal('fisio')"></button></td></tr>  
+                        <tr><td>🎬 Analista Vídeo</td><td id="staffAnalistaName"></td><td id="staffAnalistaLevel"></td><td id="staffAnalistaSalary"></td><td id="staffAnalistaClausula"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="openHireStaffModal('analista')"></button></td></tr>  
+                        <tr><td>🔍 Ojeador</td><td id="staffScoutName"></td><td id="staffScoutLevel"></td><td id="staffScoutSalary"></td><td id="staffScoutClausula"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="openHireStaffModal('scout')"></button></td></tr>  
+                        <tr><td>✍️ Secretario Técnico</td><td id="staffSecretarioName"></td><td id="staffSecretarioLevel"></td><td id="staffSecretarioSalary"></td><td id="staffSecretarioClausula"></td><td><button class="btn btn-sm" id="btnHireSecretario" onclick="openHireStaffModal('secretario')"></button></td></tr>  
+                        <tr><td>🧑‍🏫 Segundo Entrenador</td><td id="staffSegundoEntrenadorName"></td><td id="staffSegundoEntrenadorLevel"></td><td id="staffSegundoEntrenadorSalary"></td><td id="staffSegundoEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireSegundoEntrenador" onclick="openHireStaffModal('segundoEntrenador')"></button></td></tr>  
+                    </tbody>  
+                </table>  
+            </div>  
+  
+            <!-- OPCIONES -->  
+            <div id="settings" class="page">  
+                <h1>⚙️ Opciones</h1>  
+                <button class="btn" onclick="saveGame()">💾 Guardar Partida</button>  
+                <button class="btn" onclick="loadGame()">📂 Cargar Partida</button>  
+                <button class="btn btn-red" style="margin-top: 20px;" onclick="resetGame()">🔄 Reiniciar</button>  
+            </div>  
+        </div>  
+    </div>  
+  
+    <!-- MODALES -->  
+    <div id="gameModeModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('gameMode')">&times;</span>  
+            <h1>Modo de Juego</h1>  
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('manager')">🏅 Liga Manager (Empezar con equipo preexistente)</button>  
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="startGameMode('promanager')">🚀 Liga Promanager (Empezar desde abajo)</button>  
+        </div>  
+    </div>  
+  
+    <div id="selectTeamModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('selectTeam')">&times;</span>  
+            <h1>Selecciona tu Equipo</h1>  
+            <h2>Primera División</h2>  
+            <div id="primeraList" class="team-selection-list"></div>  
+            <h2>Segunda División</h2>  
+            <div id="segundaList" class="team-selection-list"></div>  
+            <h2>Primera RFEF Grupo 1</h2>  
+            <div id="rfef_grupo1List" class="team-selection-list"></div>  
+            <h2>Primera RFEF Grupo 2</h2>  
+            <div id="rfef_grupo2List" class="team-selection-list"></div>  
+        </div>  
+    </div>  
+  
+    <div id="signYoungsterModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('signYoungster')">&times;</span>  
+            <h1>Contratar Joven</h1>  
+            <div id="availableYoungstersList"></div>  
+        </div>  
+    </div>  
+  
+    <!-- MODAL DE NEGOCIACIÓN -->  
+    <div id="negotiationModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="endNegotiationUI(false)">&times;</span>  
+            <h1>Negociación de Fichajes</h1>  
+  
+            <div class="negotiation-player-info">  
+                <h3><span id="negotiationPlayerName"></span> (<span id="negotiationPlayerClub"></span>)</h3>  
+                <p>Posición: <span id="negotiationPlayerPosition"></span> | Edad: <span id="negotiationPlayerAge"></span> | Media: <span id="negotiationPlayerOverall"></span> | Potencial: <span id="negotiationPlayerPotential"></span></p>  
+                <p>Salario Actual: <span id="negotiationPlayerCurrentSalary"></span>€/sem | Valor de Mercado: <span id="negotiationPlayerValue"></span>€</p>  
+                <p id="negotiationPlayerAskingPrice" style="display: none;"><span style="color: orange; font-weight: bold;">Precio solicitado: <span id="negotiationPlayerAskingPriceValue"></span>€</span></p>  
+                <p id="negotiationPlayerLoanInfo" style="display: none;"><span style="color: lightblue; font-weight: bold;">Cedible (club actual paga <span id="negotiationPlayerLoanContribution"></span>€/sem)</span></p>  
+            </div>  
+  
+            <!-- PASO 1: Oferta al Jugador -->  
+            <div id="negotiationStep1" class="negotiation-step">  
+                <h2>Paso 1: Ofrecer Contrato Personal a <span id="negotiationPlayerNameStep1"></span></h2>  
+                <label for="offeredSalary">Salario Semanal:</label>  
+                <input type="number" id="offeredSalary" value="0" min="0" step="100">€  
+  
+                <div class="negotiation-incentives">  
+                    <div><input type="checkbox" id="offeredBonus"><label for="offeredBonus">Prima por Fichaje</label></div>  
+                    <div><input type="checkbox" id="offeredCar"><label for="offeredCar">Coche</label></div>  
+                    <div><input type="checkbox" id="offeredHouse"><label for="offeredHouse">Casa</label></div>  
+                    <div><input type="checkbox" id="offeredMerchPercent"><label for="offeredMerchPercent">% Merchandising</label></div>  
+                    <div><input type="checkbox" id="offeredTicketPercent"><label for="offeredTicketPercent">% Entradas</label></div>  
+                </div>  
+                <button class="btn" onclick="submitPlayerOffer()">Hacer Oferta al Jugador</button>  
+                <button class="btn btn-red" onclick="endNegotiationUI(false)">Cancelar Negociación</button>  
+            </div>  
+  
+            <!-- PASO 2: Oferta al Club -->  
+            <div id="negotiationStep2" class="negotiation-step" style="display: none;">  
+                <h2>Paso 2: Negociar con el Club <span id="negotiationPlayerClubStep2"></span></h2>  
+                <p id="negotiationClubMessage"></p>  
+  
+                <!-- Si es cesión -->  
+                <div id="negotiationLoanOffer" style="display: none;">  
+                    <label for="loanWageContribution">¿Qué porcentaje de su salario semanal pagarías? (Actual: <span id="loanPlayerSalaryExample"></span>€)</label>  
+                    <input type="range" id="loanWageContribution" min="0" max="100" value="50" oninput="document.getElementById('loanWageContributionValue').textContent=this.value+'%'">  
+                    <span id="loanWageContributionValue">50</span>%  
+                    <p class="alert alert-info">El club de origen paga <span id="loanClubContributionInfo"></span>€ de su salario actual.</p>  
+                    <button class="btn" onclick="submitLoanOffer()">Hacer Oferta de Cesión</button>  
+                </div>  
+  
+                <!-- Si es traspaso -->  
+                <div id="negotiationTransferOffer" style="display: none;">  
+                    <label for="offerAmount">Cantidad de Traspaso:</label>  
+                    <input type="number" id="offerAmount" value="0" min="0" step="1000">€  
+                    <label style="margin-top: 15px;">Jugadores a incluir en el intercambio (opcional):</label>  
+                    <select id="playerExchangeSelect" multiple style="min-height: 100px;">  
+                        <!-- Opciones cargadas dinámicamente -->  
+                    </select>  
+                    <button class="btn" onclick="submitTransferOffer()">Hacer Oferta de Traspaso</button>  
+                </div>  
+                <button class="btn btn-red" style="margin-top: 10px;" onclick="endNegotiationUI(false)">Cancelar Negociación</button>  
+            </div>  
+  
+        </div>  
+    </div>  
+  
+    <!-- MODAL DE ENTRENAMIENTO -->  
+    <div id="trainingModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('training')">&times;</span>  
+            <h1>Entrenamiento Individual</h1>  
+  
+            <div class="training-player-info">  
+                <h3>Jugador: <span id="trainingPlayerName"></span></h3>  
+                <p>Posición: <span id="trainingPlayerPosition"></span> | Media: <span id="trainingPlayerOverall"></span> | Potencial: <span id="trainingPlayerPotential"></span></p>  
+                <p>Atributos actuales:</p>  
+                <ul id="trainingPlayerAttributes" style="list-style: none; display: flex; flex-wrap: wrap; gap: 10px;"></ul>  
+            </div>  
+  
+            <p class="alert alert-info" id="trainingInfoMessage">Selecciona un atributo para que <span id="trainingPlayerNameInfo"></span> se enfoque esta semana.</p>  
+            <div id="trainingStaffWarning" class="alert alert-warning" style="display: none;">  
+                ⚠️ ¡Advertencia! No tienes un entrenador físico contratado. El entrenamiento será menos efectivo.  
+            </div>  
+             <div id="trainingGkStaffWarning" class="alert alert-warning" style="display: none;">  
+                ⚠️ ¡Advertencia! No tienes un entrenador de porteros contratado. El entrenamiento para POR será menos efectivo.  
+            </div>  
+  
+            <div class="attribute-selection" style="margin-top: 20px;">  
+                <p>Seleccionar atributo para entrenar:</p>  
+                <div id="attributeRadioButtons">  
+                    <!-- Los radio buttons se generarán aquí -->  
+                </div>  
+            </div>  
+  
+            <button class="btn" style="margin-top: 20px;" onclick="submitTrainingFocus()">Establecer Foco de Entrenamiento</button>  
+            <button class="btn btn-red" style="margin-top: 20px;" onclick="closeModal('training')">Cerrar</button>  
+        </div>  
+    </div>  
+  
+    <!-- MODAL DE CONTRATAR STAFF -->  
+    <div id="hireStaffModal" class="modal">  
+        <div class="modal-content">  
+            <span class="modal-close" onclick="closeModal('hireStaff')">&times;</span>  
+            <h1>Contratar Personal: <span id="staffRoleDisplayName"></span></h1>  
+            <p>Selecciona un candidato para el puesto de <span id="staffRoleDisplayNameInfo"></span>.</p>  
+            <div id="staffCandidatesList" style="margin-top: 20px;">  
+                <!-- Candidatos se cargarán aquí -->  
+            </div>  
+            <button class="btn btn-red" style="margin-top: 20px;" onclick="closeModal('hireStaff')">Cancelar</button>  
+        </div>  
+    </div>  
+  
+    <!-- NEW MODAL: Match Result -->  
+    <div id="matchResultModal" class="modal">  
+        <div class="modal-content" style="text-align: center; max-width: 500px; padding: 40px;">  
+            <h1 id="matchResultTitle" style="margin-bottom: 20px;"></h1>  
+            <div id="matchResultDetails" style="font-size: 1.5em; font-weight: bold;"></div>  
+            <p id="matchResultMessage" style="margin-top: 20px; font-size: 1.1em;"></p>  
+        </div>  
+    </div>  
+  
+  
+    <script type="module">  
+        import * as gameLogic from './gameLogic.js';  
+        import * as ui from './ui.js';  
+        import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js';  
+        import { getPlayerMarket, getYoungsterMarket } from './players.js';  
+  
+  
+        // --- Funciones globales expuestas para el HTML ---  
+        window.negotiatePlayer = function(playerName) {  
+            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía. Esto sería para renovaciones, subidas de sueldo, etc.`);  
+            console.log(`Intentando negociar con ${playerName}`);  
+        };  
+  
+         // --- Variables y funciones para Drag & Drop (alineación) ---  
+        let draggedPlayer = null; // Objeto completo del jugador que se arrastra  
+  
+        window.allowDrop = function(ev) {  
+            ev.preventDefault();  
+            // Resaltar el slot de destino  
+            ev.currentTarget.classList.add('highlight');  
+        };  
+  
+        window.drag = function(ev, playerJson) {  
+            const player = JSON.parse(decodeURIComponent(playerJson));  
+            if (player.isInjured) {  
+                ev.preventDefault(); // No permitir arrastrar jugadores lesionados  
+                alert("Los jugadores lesionados no pueden ser alineados.");  
+                return;  
+            }  
+            draggedPlayer = player;  
+            ev.dataTransfer.setData("text/plain", playerJson);  
+            ev.dataTransfer.effectAllowed = "move"; // Indicar que es un movimiento  
+            console.log("Arrastrando:", draggedPlayer.name);  
+        };  
+  
+        window.drop = function(ev, targetSlotId) {  
+            ev.preventDefault();  
+            ev.currentTarget.classList.remove('highlight'); // Quitar resaltado  
+  
+            const state = gameLogic.getGameState();  
+            let currentLineup = gameLogic.getLineup(); // Obtener la alineación actual  
+            let currentSquad = state.squad; // Referencia a toda la plantilla  
+  
+            const droppedPlayer = draggedPlayer;  
+            if (!droppedPlayer || droppedPlayer.isInjured) return; // No permitir soltar lesionados  
+  
+            const isDroppedPlayerInCurrentLineup = currentLineup.some(p => p && p.name === droppedPlayer.name);  
+            // const playerInReserves = currentSquad.find(p => p.name === droppedPlayer.name && !currentLineup.some(lp => lp && lp.name === p.name)); // Esta variable no se usa directamente en la lógica  
+  
+            let newProposedLineup = [...currentLineup]; // Copia de la alineación para modificar  
+            // let playerMovedFromSlot = false; // Bandera no se usa directamente en la lógica actual  
+  
+            if (targetSlotId.startsWith('pitch-slot-')) { // Soltar en un slot de alineación  
+                const targetIndex = parseInt(targetSlotId.replace('pitch-slot-', ''));  
+                const playerAlreadyInTargetSlot = newProposedLineup[targetIndex];  
+  
+                if (playerAlreadyInTargetSlot && playerAlreadyInTargetSlot.name === droppedPlayer.name) {  
+                    return; // Soltar un jugador sobre sí mismo en el mismo slot  
+                }  
+  
+                if (isDroppedPlayerInCurrentLineup) { // El jugador arrastrado ya estaba en el campo  
+                    const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
+                    if (sourceIndex !== -1) {  
+                        newProposedLineup[sourceIndex] = playerAlreadyInTargetSlot; // Mover el que estaba en el destino al origen  
+                        newProposedLineup[targetIndex] = droppedPlayer; // Mover el arrastrado al destino  
+                        // playerMovedFromSlot = true; // No se usa  
+                    }  
+                } else { // El jugador arrastrado viene de reservas  
+                    newProposedLineup[targetIndex] = droppedPlayer;  
+                    // if (playerAlreadyInTargetSlot) {  
+                        // El jugador que estaba en el slot va a reservas (se maneja en renderLineupPageUI)  
+                        // Por ahora, solo necesitamos actualizar la alineación.  
+                    // }  
+                }  
+            } else if (targetSlotId === 'reservesList') { // Soltar en el área de reservas  
+                if (isDroppedPlayerInCurrentLineup) { // El jugador arrastrado venía del campo  
+                    const sourceIndex = newProposedLineup.findIndex(p => p && p.name === droppedPlayer.name);  
+                    if (sourceIndex !== -1) {  
+                        newProposedLineup[sourceIndex] = null; // Vaciar el slot en el campo  
+                        // playerMovedFromSlot = true; // No se usa  
+                    }  
+                } else { // El jugador ya estaba en reservas, no hacer nada (o reordenar, pero eso es más complejo)  
+                    return;  
+                }  
+            }  
+  
+            // Filtrar los nulls de la alineación (slots vacíos) y reconstruir  
+            const finalLineupPlayers = newProposedLineup.filter(p => p !== null);  
+  
+            // Simplemente actualizamos la alineación con la nueva propuesta  
+            gameLogic.setLineup(finalLineupPlayers); // Guardar la nueva alineación (puede ser < 11 si se vació un slot)  
+            renderLineupPageUI(); // Volver a renderizar la UI  
+            draggedPlayer = null; // Resetear  
+        };  
+  
+        window.dragleave = function(ev) {  
+            ev.preventDefault();  
+            ev.currentTarget.classList.remove('highlight');  
+        };  
+  
+        window.switchPage = function(pageId, element) {  
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
+            document.getElementById(pageId).classList.add('active');  
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));  
+            element.classList.add('active');  
+  
+            const state = gameLogic.getGameState();  
+            if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);  
+            if (pageId === 'academy') ui.renderAcademyList(state.academy);  
+            if (pageId === 'transfers') {  
+                searchPlayersMarket();  
+                renderAvailableYoungsters();  
+            }  
+            if (pageId === 'match') {  
+                ui.renderNextMatchCard(state.team, state.nextOpponent, state.week);  
+                document.getElementById('lastMatchResult').innerHTML = ''; // Limpiar el resultado anterior  
+                // Opcional: mostrar el último resultado en la página de partido si ya hubo uno  
+                const lastMatch = state.matchHistory[state.matchHistory.length - 1];  
+                if (lastMatch && lastMatch.week === state.week - 1) { // Mostrar el resultado de la semana anterior  
+                    document.getElementById('lastMatchResult').innerHTML = `  
+                        <div class="alert alert-info">Último resultado: ${lastMatch.home} ${lastMatch.score} ${lastMatch.away}</div>  
+                    `;  
+                }  
+            }  
+            if (pageId === 'finance') updateFinanceDisplay(state);  
+            if (pageId === 'facilities') updateFacilitiesDisplay(state);  
+            if (pageId === 'commercial') updateCommercialDisplay(state);  
+            if (pageId === 'staff') updateStaffDisplay(state);  
+            if (pageId === 'tactics') updateTacticsDisplay(state);  
+            if (pageId === 'lineup') renderLineupPageUI();  
+            if (pageId === 'dashboard') gameLogic.markNewsAsRead();  
+            if (pageId === 'calendar') ui.renderCalendarPage(state);  
+        };  
+  
+        window.openModal = function(type) {  
+            if (type === 'gameMode') {  
+                document.getElementById('gameModeModal').classList.add('active');  
+            } else if (type === 'selectTeam') {  
+                document.getElementById('selectTeamModal').classList.add('active');  
+                renderTeamSelectors();  
+            } else if (type === 'signYoungster') {  
+                document.getElementById('signYoungsterModal').classList.add('active');  
+                renderAvailableYoungsters();  
+            } else if (type === 'negotiation') {  
+                document.getElementById('negotiationModal').classList.add('active');  
+            } else if (type === 'training') {  
+                document.getElementById('trainingModal').classList.add('active');  
+            } else if (type === 'hireStaff') {  
+                document.getElementById('hireStaffModal').classList.add('active');  
+            } else if (type === 'matchResult') {  
+                document.getElementById('matchResultModal').classList.add('active');  
+            }  
+        };  
+  
+        window.closeModal = function(type) {  
+            document.getElementById(type + 'Modal').classList.remove('active');  
+        };  
+  
+        window.startGameMode = function(mode) {  
+            window.gameMode = mode;  
+            window.closeModal('gameMode');  
+            window.openModal('selectTeam');  
+        };  
+  
+        function renderTeamSelectors() {  
+            const createTeamButtons = (divisionKey, listId) => {  
+                const listElement = document.getElementById(listId);  
+                if (!listElement) return;  
+  
+                const teamsToRender = TEAMS_DATA[divisionKey]; // Now directly use the key for the specific group  
+  
+                listElement.innerHTML = teamsToRender.map(team =>  
+                    `<button class="btn" style="width: 100%; margin: 5px 0;" onclick="selectTeamAndStart('${team}', '${divisionKey}')">  
+                        ${team}  
+                    </button>`  
+                ).join('');  
+            };  
+  
+            createTeamButtons('primera', 'primeraList');  
+            createTeamButtons('segunda', 'segundaList');  
+            createTeamButtons('rfef_grupo1', 'rfef_grupo1List');  
+            createTeamButtons('rfef_grupo2', 'rfef_grupo2List');  
+        }  
+  
+        window.selectTeamAndStart = function(teamName, division) {  
+            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);  
+            ui.refreshUI(gameLogic.getGameState());  
+            window.closeModal('selectTeam');  
+            const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+            if(dashboardButton) {  
+                window.switchPage('dashboard', dashboardButton);  
+            }  
+        };  
+  
+        window.searchPlayersMarket = function() {  
+            const filters = {  
+                searchName: document.getElementById('marketSearchName').value,  
+                position: document.getElementById('marketPosition').value,  
+                minOverall: parseInt(document.getElementById('marketMinOverall').value) || 0,  
+                maxAge: parseInt(document.getElementById('marketMaxAge').value) || 100,  
+                transferListed: document.getElementById('marketTransferListed').checked,  
+                loanListed: document.getElementById('marketLoanListed').checked  
+            };  
+            const players = gameLogic.getPlayerMarket(filters);  
+            ui.renderPlayerMarketList(players);  
+        };  
+  
+        window.clearPlayerMarketFilters = function() {  
+            document.getElementById('marketSearchName').value = '';  
+            document.getElementById('marketPosition').value = 'ALL';  
+            document.getElementById('marketMinOverall').value = '';  
+            document.getElementById('marketMaxAge').value = '';  
+            document.getElementById('marketTransferListed').checked = false;  
+            document.getElementById('marketLoanListed').checked = false;  
+            searchPlayersMarket();  
+        };  
+  
+        function renderAvailableYoungsters() {  
+            const youngsters = gameLogic.getYoungsterMarket();  
+            ui.renderAvailableYoungstersMarket(youngsters);  
+        }  
+  
+        window.fichYoungsterConfirm = function(encodedYoungsterJson) {  
+            const youngster = JSON.parse(decodeURIComponent(encodedYoungsterJson));  
+            const result = gameLogic.signYoungster(youngster);  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            if (result.success) {  
+                window.closeModal('signYoungster');  
+            }  
+        };  
+  
+        window.sellPlayerConfirm = function(name) {  
+            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {  
+                const result = gameLogic.sellPlayer(name);  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+            }  
+        };  
+  
+        window.promoteConfirm = function(name) {  
+            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {  
+                const result = gameLogic.promoteYoungster(name);  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+            }  
+        };  
+  
+        window.simulateWeek = async function() {  
+            const state = gameLogic.getGameState();  
+  
+            // 1. Validar alineación y mostrar advertencia del segundo entrenador  
+            const lineupValidation = gameLogic.validateLineup(state.lineup);  
+            if (!lineupValidation.success) {  
+                // Si hay un segundo entrenador, el aviso es más formal y bloqueante  
+                if (state.staff.segundoEntrenador) {  
+                    alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada. (La jornada no avanzará)`);  
+                    gameLogic.addNews(`[Segundo Entrenador - CRÍTICO] Alineación inválida: ${lineupValidation.message}. Por favor, corrige.`, 'error');  
+                    window.switchPage('lineup', document.querySelector('.menu-item[onclick="switchPage(\'lineup\', this)"]')); // Mover a la página de alineación  
+                    return; // Detener la simulación  
+                } else {  
+                    // Si no hay segundo entrenador, el aviso es menos formal y no bloqueante (se procede con la penalización)  
+                    alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida. (La jornada continuará)`);  
+                    gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');  
+                }  
+            }  
+              
+            // 2. Simular la semana y obtener el resultado de nuestro partido  
+            const simulationResult = gameLogic.simulateFullWeek(); // This now returns info about our match result  
+            ui.refreshUI(gameLogic.getGameState()); // Actualizar la UI inmediatamente después de la simulación  
+  
+            // 3. Mostrar el resultado de nuestro partido en un modal  
+            if (simulationResult && simulationResult.myMatch) {  
+                const myMatch = simulationResult.myMatch;  
+                const matchResultTitle = document.getElementById('matchResultTitle');  
+                const matchResultDetails = document.getElementById('matchResultDetails');  
+                const matchResultMessage = document.getElementById('matchResultMessage');  
+  
+                matchResultDetails.innerHTML = `${myMatch.home} ${myMatch.score} ${myMatch.away}`;  
+                  
+                // Determinar el color y texto del título  
+                let titleText = '';  
+                let titleColor = '';  
+                let messageText = '';  
+  
+                if (simulationResult.forcedLoss) {  
+                    titleText = 'DERROTA (por alineación indebida)';  
+                    titleColor = 'red';  
+                    messageText = '¡Tu equipo perdió 0-3 debido a una alineación inválida!';  
+                } else {  
+                    if (myMatch.home === state.team) { // Nuestro partido en casa  
+                        if (parseInt(myMatch.score.split('-')[0]) > parseInt(myMatch.score.split('-')[1])) {  
+                            titleText = '¡VICTORIA!';  
+                            titleColor = '#00ff00';  
+                        } else if (parseInt(myMatch.score.split('-')[0]) === parseInt(myMatch.score.split('-')[1])) {  
+                            titleText = 'EMPATE';  
+                            titleColor = 'orange';  
+                        } else {  
+                            titleText = 'DERROTA';  
+                            titleColor = 'red';  
+                        }  
+                    } else { // Nuestro partido fuera de casa  
+                        if (parseInt(myMatch.score.split('-')[1]) > parseInt(myMatch.score.split('-')[0])) {  
+                            titleText = '¡VICTORIA!';  
+                            titleColor = '#00ff00';  
+                        } else if (parseInt(myMatch.score.split('-')[1]) === parseInt(myMatch.score.split('-')[0])) {  
+                            titleText = 'EMPATE';  
+                            titleColor = 'orange';  
+                        } else {  
+                            titleText = 'DERROTA';  
+                            titleColor = 'red';  
+                        }  
+                    }  
+                }  
+  
+                matchResultTitle.textContent = titleText;  
+                matchResultTitle.style.color = titleColor;  
+                matchResultMessage.textContent = messageText;  
+                matchResultMessage.style.color = titleColor; // El mensaje usa el mismo color  
+  
+                window.openModal('matchResult');  
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar por 5 segundos  
+                window.closeModal('matchResult');  
+            }  
+  
+            // 4. Redirigir al dashboard  
+            switchPage('dashboard', document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]'));  
+        };  
+  
+        window.startNegotiationUI = function(encodedPlayerJson) {  
+            const player = JSON.parse(decodeURIComponent(encodedPlayerJson));  
+            const result = gameLogic.startNegotiation(player);  
+            if (result.success) {  
+                window.updateNegotiationModal();  
+                openModal('negotiation');  
+            } else {  
+                alert('Error: ' + result.message);  
+            }  
+        };  
+  
+        window.updateNegotiationModal = function() {  
+            const state = gameLogic.getGameState();  
+            const player = state.negotiatingPlayer;  
+  
+            if (!player) {  
+                closeModal('negotiation');  
+                return;  
+            }  
+  
+            document.getElementById('negotiationPlayerName').textContent = player.name;  
+            document.getElementById('negotiationPlayerNameStep1').textContent = player.name;  
+            document.getElementById('negotiationPlayerClub').textContent = player.club;  
+            document.getElementById('negotiationPlayerClubStep2').textContent = player.club;  
+            document.getElementById('negotiationPlayerPosition').textContent = player.position;  
+            document.getElementById('negotiationPlayerAge').textContent = player.age;  
+            document.getElementById('negotiationPlayerOverall').textContent = player.overall;  
+            document.getElementById('negotiationPlayerPotential').textContent = player.potential;  
+            document.getElementById('negotiationPlayerCurrentSalary').textContent = player.salary.toLocaleString('es-ES');  
+            document.getElementById('negotiationPlayerValue').textContent = player.value.toLocaleString('es-ES');  
+  
+            const askingPriceElem = document.getElementById('negotiationPlayerAskingPrice');  
+            const loanInfoElem = document.getElementById('negotiationPlayerLoanInfo');  
+            if (player.transferListed) {  
+                askingPriceElem.style.display = 'block';  
+                document.getElementById('negotiationPlayerAskingPriceValue').textContent = player.askingPrice.toLocaleString('es-ES') + '€';  
+                loanInfoElem.style.display = 'none';  
+            } else if (player.loanListed) {  
+                askingPriceElem.style.display = 'none';  
+                loanInfoElem.style.display = 'block';  
+                document.getElementById('negotiationPlayerLoanContribution').textContent = (player.loanWageContribution || 0).toLocaleString('es-ES');  
+            } else {  
+                askingPriceElem.style.display = 'none';  
+                loanInfoElem.style.display = 'none';  
+            }  
+  
+            document.getElementById('negotiationStep1').style.display = 'none';  
+            document.getElementById('negotiationStep2').style.display = 'none';  
+  
+            if (state.negotiationStep === 1) {  
+                document.getElementById('negotiationStep1').style.display = 'block';  
+                document.getElementById('offeredSalary').value = player.salary;  
+                document.getElementById('offeredBonus').checked = false;  
+                document.getElementById('offeredCar').checked = false;  
+                document.getElementById('offeredHouse').checked = false;  
+                document.getElementById('offeredMerchPercent').checked = false;  
+                document.getElementById('offeredTicketPercent').checked = false;  
+  
+            } else if (state.negotiationStep === 2) {  
+                document.getElementById('negotiationStep2').style.display = 'block';  
+  
+                const negotiationLoanOffer = document.getElementById('negotiationLoanOffer');  
+                const negotiationTransferOffer = document.getElementById('negotiationTransferOffer');  
+  
+                negotiationLoanOffer.style.display = 'none';  
+                negotiationTransferOffer.style.display = 'none';  
+  
+                document.getElementById('negotiationClubMessage').textContent = `Estás a punto de hacer una oferta a ${player.club} por ${player.name}.`;  
+  
+                if (player.loanListed) {  
+                    negotiationLoanOffer.style.display = 'block';  
+                    document.getElementById('loanPlayerSalaryExample').textContent = player.salary.toLocaleString('es-ES');  
+                    document.getElementById('loanClubContributionInfo').textContent = (player.loanWageContribution || 0).toLocaleString('es-ES');  
+                    document.getElementById('loanWageContribution').value = 50;  
+                    document.getElementById('loanWageContributionValue').textContent = '50%';  
+                } else if (player.transferListed) {  
+                    negotiationTransferOffer.style.display = 'block';  
+                    document.getElementById('offerAmount').value = player.askingPrice;  
+                    populatePlayerExchangeSelect();  
+                }  
+            }  
+        };  
+  
+        window.submitPlayerOffer = function() {  
+            const offeredSalary = parseInt(document.getElementById('offeredSalary').value);  
+            const offeredBonus = document.getElementById('offeredBonus').checked;  
+            const offeredCar = document.getElementById('offeredCar').checked;  
+            const offeredHouse = document.getElementById('offeredHouse').checked;  
+            const offeredMerchPercent = document.getElementById('offeredMerchPercent').checked;  
+            const offeredTicketPercent = document.getElementById('offeredTicketPercent').checked;  
+  
+            const result = gameLogic.offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent);  
+            alert(result.message);  
+            if (result.success) {  
+                window.updateNegotiationModal();  
+            } else {  
+                if (result.message.includes('No está interesado')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        function populatePlayerExchangeSelect() {  
+            const select = document.getElementById('playerExchangeSelect');  
+            select.innerHTML = '';  
+            const state = gameLogic.getGameState();  
+            state.squad.forEach(p => {  
+                const option = document.createElement('option');  
+                option.value = p.name;  
+                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}€`;  
+                select.appendChild(option);  
+            });  
+        }  
+  
+        window.submitLoanOffer = function() {  
+            const loanWageContribution = parseInt(document.getElementById('loanWageContribution').value);  
+            const result = gameLogic.offerToClub(loanWageContribution, [], true);  
+            alert(result.message);  
+            if (result.success) {  
+                endNegotiationUI(true);  
+            } else {  
+                if (result.message.includes('rechazado tu oferta de cesión')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        window.submitTransferOffer = function() {  
+            const offerAmount = parseInt(document.getElementById('offerAmount').value);  
+            const playerExchangeSelect = document.getElementById('playerExchangeSelect');  
+            const selectedPlayers = Array.from(playerExchangeSelect.selectedOptions).map(option => option.value);  
+  
+            const result = gameLogic.offerToClub(offerAmount, selectedPlayers, false);  
+            alert(result.message);  
+            if (result.success) {  
+                endNegotiationUI(true);  
+            } else {  
+                if (result.message.includes('rechazado tu oferta')) {  
+                    endNegotiationUI(false);  
+                }  
+            }  
+        };  
+  
+        window.endNegotiationUI = function(success) {  
+            gameLogic.endNegotiation(success);  
+            closeModal('negotiation');  
+            ui.refreshUI(gameLogic.getGameState());  
+        };  
+  
+        // --- Funciones de Entrenamiento (UI) ---  
+        let currentTrainingPlayerIndex = -1;  
+  
+        window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {  
+            currentTrainingPlayerIndex = playerIndex;  
+            const state = gameLogic.getGameState();  
+            const player = state.squad[playerIndex];  
+  
+            if (!player) return;  
+  
+            document.getElementById('trainingPlayerName').textContent = playerName;  
+            document.getElementById('trainingPlayerNameInfo').textContent = playerName;  
+            document.getElementById('trainingPlayerPosition').textContent = player.position;  
+            document.getElementById('trainingPlayerOverall').textContent = player.overall;  
+            document.getElementById('trainingPlayerPotential').textContent = player.potential;  
+  
+            const attributesList = document.getElementById('trainingPlayerAttributes');  
+            attributesList.innerHTML = '';  
+            ATTRIBUTES.forEach(attr => {  
+                attributesList.innerHTML += `<li style="display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(233, 69, 96, 0.3); padding: 5px; border-radius: 3px;"><strong>${attr}:</strong> ${player[attr] || 0}</li>`;  
+            });  
+  
+            const attributeRadioButtons = document.getElementById('attributeRadioButtons');  
+            attributeRadioButtons.innerHTML = '';  
+            ATTRIBUTES.forEach(attr => {  
+                const checked = (state.trainingFocus.playerIndex === playerIndex && state.trainingFocus.attribute === attr) ? 'checked' : '';  
+                attributeRadioButtons.innerHTML += `  
+                    <div>  
+                        <input type="radio" id="attr_${attr}" name="trainingAttribute" value="${attr}" ${checked}>  
+                        <label for="attr_${attr}">${attr}</label>  
+                    </div>  
+                `;  
+            });  
+  
+            if (!state.staff.entrenador) {  
+                document.getElementById('trainingStaffWarning').style.display = 'block';  
+            } else {  
+                document.getElementById('trainingStaffWarning').style.display = 'none';  
+            }  
+  
+            if (player.position === 'POR' && !state.staff.entrenadorPorteros) {  
+                document.getElementById('trainingGkStaffWarning').style.display = 'block';  
+            } else {  
+                document.getElementById('trainingGkStaffWarning').style.display = 'none';  
+            }  
+  
+            openModal('training');  
+        };  
+  
+        window.submitTrainingFocus = function() {  
+            const selectedAttribute = document.querySelector('input[name="trainingAttribute"]:checked')?.value;  
+            if (!selectedAttribute) {  
+                alert('Por favor, selecciona un atributo para entrenar.');  
+                return;  
+            }  
+  
+            const result = gameLogic.setTrainingFocus(currentTrainingPlayerIndex, selectedAttribute);  
+            alert(result.message);  
+            if (result.success) {  
+                closeModal('training');  
+            }  
+            ui.refreshUI(gameLogic.getGameState());  
+        };  
+  
+        window.openHireStaffModal = function(role) {  
+            document.getElementById('staffRoleDisplayName').textContent = STAFF_ROLES[role].displayName;  
+            document.getElementById('staffRoleDisplayNameInfo').textContent = STAFF_ROLES[role].displayName;  
+  
+            const candidates = gameLogic.generateStaffCandidates(role, true);  
+            const list = document.getElementById('staffCandidatesList');  
+            const state = gameLogic.getGameState();  
+            const existingStaff = state.staff[role];  
+  
+            let indemnizationMessage = '';  
+            if (existingStaff) {  
+                const indemnization = existingStaff.salary * 52;  
+                indemnizationMessage = `<p class="alert alert-warning">Al contratar a un nuevo ${STAFF_ROLES[role].displayName}, se despedirá a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}€ (salario de un año).</p>`;  
+            }  
+  
+            list.innerHTML = indemnizationMessage + candidates.map((c, idx) => `  
+                <div class="staff-candidate">  
+                    <div>  
+                        <strong>${c.name}</strong> (Nivel ${c.level})<br>  
+                        Salario: ${c.salary.toLocaleString('es-ES')}€/semana | Cláusula: ${c.clausula.toLocaleString('es-ES')}€  
+                    </div>  
+                    <button class="btn btn-sm" onclick="hireStaffConfirm('${encodeURIComponent(JSON.stringify(c))}')">Contratar</button>  
+                </div>  
+            `).join('');  
+  
+            openModal('hireStaff');  
+        };  
+  
+        window.hireStaffConfirm = function(encodedCandidateJson) {  
+            const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));  
+            const state = gameLogic.getGameState();  
+            const existingStaff = state.staff[candidate.role];  
+            let confirmationMessage = `¿Estás seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}€/semana y una cláusula de ${candidate.clausula.toLocaleString('es-ES')}€?`;  
+  
+            if (existingStaff) {  
+                const indemnization = existingStaff.salary * 52;  
+                confirmationMessage += `\n\nEsto implicará despedir a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}€ (salario de un año).`;  
+            }  
+  
+            if (confirm(confirmationMessage)) {  
+                const result = gameLogic.hireStaffFromCandidates(candidate);  
+                alert(result.message);  
+                if (result.success) {  
+                    closeModal('hireStaff');  
+                }  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateStaffDisplay(gameLogic.getGameState());  
+            }  
+        };  
+  
+        window.updateFormation = function() {  
+            const state = gameLogic.getGameState();  
+            const newFormation = document.getElementById('formationSelect').value;  
+            const updatedState = { ...state, formation: newFormation };  
+            gameLogic.updateGameState(updatedState);  
+            alert('Formación actualizada a ' + FORMATIONS[updatedState.formation].name);  
+            renderLineupPageUI();  
+        };  
+  
+        window.updateMentality = function() {  
+            const state = gameLogic.getGameState();  
+            const newMentality = document.getElementById('mentalitySelect').value;  
+            const updatedState = { ...state, mentality: newMentality };  
+            gameLogic.updateGameState(updatedState);  
+            alert('Mentalidad táctica actualizada a ' + updatedState.mentality);  
+        };  
+  
+        function updateTacticsDisplay(state) {  
+             const formationSelect = document.getElementById('formationSelect');  
+             const mentalitySelect = document.getElementById('mentalitySelect');  
+             if(formationSelect) formationSelect.value = state.formation;  
+             if(mentalitySelect) mentalitySelect.value = state.mentality;  
+        }  
+  
+        window.expandStadium = function() {  
+            const result = gameLogic.expandStadium();  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            updateFacilitiesDisplay(gameLogic.getGameState());  
+        };  
+  
+        window.improveFacilities = function() {  
+            const result = gameLogic.improveFacilities();  
+            alert(result.message);  
+            ui.refreshUI(gameLogic.getGameState());  
+            updateFacilitiesDisplay(gameLogic.getGameState());  
+        };  
+  
+        function updateFacilitiesDisplay(state) {  
+            const currentStadiumCapacity = document.getElementById('currentStadiumCapacity');  
+            const currentTrainingLevel = document.getElementById('currentTrainingLevel');  
+            if (currentStadiumCapacity) currentStadiumCapacity.textContent = state.stadiumCapacity.toLocaleString('es-ES');  
+            if (currentTrainingLevel) currentTrainingLevel.textContent = state.trainingLevel;  
+        }  
+  
+        function updateStaffDisplay(state) {  
+            Object.keys(STAFF_ROLES).forEach(role => {  
+                const staff = state.staff[role];  
+                const nameElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Name`);  
+                const levelElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Level`);  
+                const salaryElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Salary`);  
+                const clausulaElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Clausula`);  
+                const btnElem = document.getElementById(`btnHire${role.charAt(0).toUpperCase() + role.slice(1)}`);  
+  
+                if (nameElem) nameElem.textContent = staff ? staff.name : 'No Contratado';  
+                if (levelElem) levelElem.textContent = staff ? staff.level : '-';  
+                if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '€' : '-';  
+                if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-'; // Las cláusulas no se aplican una vez contratado  
+                if (btnElem) {  
+                    btnElem.disabled = !!staff;  
+                    btnElem.textContent = staff ? 'Contratado' : 'Contratar';  
+                    if (staff) btnElem.classList.add('btn-green'); // Color verde para contratado  
+                    else btnElem.classList.remove('btn-green');  
+                }  
+            });  
+        }  
+  
+        window.setTicketPriceFromInput = function() {  
+            const input = document.getElementById('ticketPriceInput');  
+            const newPrice = input.value;  
+            const result = gameLogic.setTicketPrice(newPrice);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                updateCommercialDisplay(gameLogic.getGameState());  
+            } else {  
+                alert('Error: ' + result.message);  
+                input.value = gameLogic.getGameState().ticketPrice;  
+            }  
+        };  
+  
+        window.setMerchandisingPriceFromInput = function() {  
+            const input = document.getElementById('merchandisingPriceInput');  
+            const newPrice = input.value;  
+            const result = gameLogic.setMerchandisingPrice(newPrice);  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+                updateCommercialDisplay(gameLogic.getGameState());  
+            } else {  
+                alert('Error: ' + result.message);  
+                input.value = gameLogic.getGameState().merchandisingPrice;  
+            }  
+        };  
+  
+        window.updateTicketPriceDisplay = function(value) {  
+            document.getElementById('ticketPriceSliderValue').textContent = value;  
+        };  
+  
+        window.setTicketPriceFromSlider = function(value) {  
+            const result = gameLogic.setTicketPrice(value);  
+            if (result.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+            } else {  
+                alert('Error: ' + result.message);  
+                document.getElementById('ticketPriceSlider').value = gameLogic.getGameState().ticketPrice;  
+                document.getElementById('ticketPriceSliderValue').textContent = gameLogic.getGameState().ticketPrice;  
+            }  
+        };  
+  
+        window.updateMerchandisingPriceDisplay = function(value) {  
+            document.getElementById('merchandisingPriceSliderValue').textContent = value;  
+        };  
+  
+        window.setMerchandisingPriceFromSlider = function(value) {  
+            const result = gameLogic.setMerchandisingPrice(value);  
+            if (result.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                updateFinanceDisplay(gameLogic.getGameState());  
+            } else {  
+                alert('Error: ' + result.message);  
+                document.getElementById('merchandisingPriceSlider').value = gameLogic.getGameState().merchandisingPrice;  
+                document.getElementById('merchandisingPriceSliderValue').textContent = gameLogic.getGameState().merchandisingPrice;  
+            }  
+        };  
+  
+        function updateFinanceDisplay(state) {  
+            document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
+            document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');  
+  
+            let expectedAttendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));  
+            expectedAttendance = Math.max(0, Math.min(state.stadiumCapacity, expectedAttendance));  
+            document.getElementById('financeExpectedAttendance').textContent = expectedAttendance.toLocaleString('es-ES');  
+  
+            const ticketPriceInput = document.getElementById('ticketPriceInput');  
+            if (ticketPriceInput) ticketPriceInput.value = state.ticketPrice;  
+  
+            document.getElementById('financePopularity').textContent = state.popularity + '%';  
+            document.getElementById('financeFanbase').textContent = state.fanbase.toLocaleString('es-ES');  
+            document.getElementById('financeMerchandisingItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
+  
+            const merchandisingPriceInput = document.getElementById('merchandisingPriceInput');  
+            if (merchandisingPriceInput) merchandisingPriceInput.value = state.merchandisingPrice;  
+  
+            document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
+        }  
+  
+        function updateCommercialDisplay(state) {  
+            document.getElementById('commercialPopularity').textContent = state.popularity + '%';  
+            document.getElementById('commercialFanbase').textContent = state.fanbase.toLocaleString('es-ES');  
+            document.getElementById('commercialItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');  
+            document.getElementById('commercialMerchRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';  
+  
+            const ticketPriceSlider = document.getElementById('ticketPriceSlider');  
+            const merchandisingPriceSlider = document.getElementById('merchandisingPriceSlider');  
+  
+            if (ticketPriceSlider) {  
+                ticketPriceSlider.value = state.ticketPrice;  
+                document.getElementById('currentTicketPrice').textContent = state.ticketPrice;  
+                document.getElementById('ticketPriceSliderValue').textContent = state.ticketPrice;  
+            }  
+            if (merchandisingPriceSlider) {  
+                merchandisingPriceSlider.value = state.merchandisingPrice;  
+                document.getElementById('currentMerchandisingPrice').textContent = state.merchandisingPrice;  
+                document.getElementById('merchandisingPriceSliderValue').textContent = state.merchandisingPrice;  
+            }  
+        }  
+  
+  
+ // --- Funciones de Alineación (UI) ---  
+        window.renderLineupPageUI = function() {  
+            const state = gameLogic.getGameState();  
+            const currentFormation = FORMATIONS[state.formation];  
+            let lineup = gameLogic.getLineup();  
+            let reserves = gameLogic.getReservePlayers();  
+  
+            const pitchContainer = document.getElementById('pitchContainer');  
+            const reservesList = document.getElementById('reservesList');  
+                
+            pitchContainer.innerHTML = '';  
+            reservesList.innerHTML = '';  
+  
+            // Calcular las dimensiones de los slots (cada slot ocupa 18% del ancho y 10% del alto)  
+            const slotWidth = 18; // % del ancho del contenedor  
+            const slotHeight = 10; // % del alto del contenedor  
+  
+            // Crear los placeholders de posición en el campo  
+            currentFormation.layout.forEach((posData, index) => {  
+                const slot = document.createElement('div');  
+                slot.classList.add('pitch-position-placeholder');  
+                slot.id = `pitch-slot-${index}`;  
+                    
+                // Posicionamiento absoluto basado en las coordenadas x, y de la formación  
+                // El campo tiene 5 columnas (0 a 4) y 9 filas (0 a 8)  
+                const leftOffset = posData.x * (100 / 5) + ( (100 / 5) - slotWidth ) / 2;  
+                const topOffset = posData.y * (100 / 8) + ( (100 / 8) - slotHeight ) / 2;  
+  
+                slot.style.left = `${leftOffset}%`;  
+                slot.style.top = `${topOffset}%`;  
+                slot.style.width = `${slotWidth}%`;  
+                slot.style.height = `${slotHeight}%`;  
+  
+                slot.textContent = posData.pos; // Mostrar la posición esperada del slot  
+                slot.ondragover = window.allowDrop;  
+                slot.ondragleave = window.dragleave;  
+                slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);  
+  
+                const playerInSlot = lineup[index];  
+                if (playerInSlot) {  
+                    const playerDiv = document.createElement('div');  
+                    playerDiv.classList.add('pitch-player');  
+                    if (playerInSlot.isInjured) playerDiv.classList.add('injured');  
+                    playerDiv.draggable = true;  
+                    playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));  
+                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;  
+                    playerDiv.dataset.playername = playerInSlot.name;  
+                    slot.appendChild(playerDiv);  
+                }  
+                pitchContainer.appendChild(slot);  
+            });  
+    
+            // Renderizar los suplentes (jugadores no en alineación)  
+            reserves.forEach(player => {  
+                const playerDiv = document.createElement('div');  
+                playerDiv.classList.add('draggable-player');  
+                if (player.isInjured) playerDiv.classList.add('injured');  
+                playerDiv.draggable = true;  
+                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));  
+                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;  
+                playerDiv.dataset.playername = player.name;  
+                reservesList.appendChild(playerDiv);  
+            });  
+    
+            reservesList.ondragover = window.allowDrop;  
+            reservesList.ondragleave = window.dragleave;  
+            reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');  
+    
+            const lineupMessageElem = document.getElementById('lineupMessage');  
+            if (lineupMessageElem) {  
+                const validation = gameLogic.validateLineup(lineup);  
+                if (!validation.success) {  
+                    lineupMessageElem.className = 'alert alert-warning';  
+                    lineupMessageElem.innerHTML = `⚠️ Advertencia: ${validation.message}`;  
+                } else {  
+                    lineupMessageElem.className = 'alert alert-info';  
+                    lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;  
+                }  
+            }  
+        };  
+    
+        window.saveLineup = function() {  
+            const state = gameLogic.getGameState();  
+            const currentFormation = FORMATIONS[state.formation];  
+            const newLayout = Array(11).fill(null); // Array para la nueva alineación  
+    
+            // Recoger jugadores del campo  
+            currentFormation.layout.forEach((posData, index) => {  
+                const slot = document.getElementById(`pitch-slot-${index}`);  
+                const playerDiv = slot?.querySelector('.pitch-player');  
+                if (playerDiv) {  
+                    const playerName = playerDiv.dataset.playername;  
+                    const fullPlayer = state.squad.find(p => p.name === playerName);  
+                    if (fullPlayer) {  
+                        newLayout[index] = fullPlayer;  
+                    }  
+                }  
+            });  
+    
+            const validationResult = gameLogic.validateLineup(newLayout);  
+            if (!validationResult.success) {  
+                alert(`Error al guardar la alineación: ${validationResult.message}`);  
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar: ${validationResult.message}`, 'error');  
+                renderLineupPageUI(); // Volver a renderizar para mostrar el estado actual  
+                return;  
+            }  
+    
+            const result = gameLogic.setLineup(newLayout);  
+            if (result.success) {  
+                gameLogic.addNews('¡Alineación guardada con éxito!', 'success');  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                renderLineupPageUI();  
+            } else {  
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar la alineación: ${result.message}`, 'error');  
+                alert(`Error al guardar la alineación: ${result.message}`);  
+            }  
+        };  
+          
+        window.saveGame = function() {  
+            const result = gameLogic.saveToLocalStorage();  
+            alert(result.message);  
+        };  
+    
+        window.loadGame = function() {  
+            const result = gameLogic.loadFromLocalStorage();  
+            if (result.success) {  
+                alert(result.message);  
+                ui.refreshUI(gameLogic.getGameState());  
+                const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+                if(dashboardButton) {  
+                    window.switchPage('dashboard', dashboardButton);  
+                }  
+            } else {  
+                alert(result.message);  
+            }  
+        };  
+    
+        window.resetGame = function() {  
+            if (confirm('¿Estás seguro de que quieres reiniciar completamente el juego? Toda tu partida se perderá.')) {  
+                gameLogic.resetGame();  
+            }  
+        };  
+    
+        document.addEventListener('DOMContentLoaded', () => {  
+            const marketPositionSelect = document.getElementById('marketPosition');  
+            POSITIONS.forEach(pos => {  
+                const option = document.createElement('option');  
+                option.value = pos;  
+                option.textContent = pos;  
+                marketPositionSelect.appendChild(option);  
+            });  
+    
+            const formationSelect = document.getElementById('formationSelect');  
+            Object.keys(FORMATIONS).forEach(key => {  
+                const option = document.createElement('option');  
+                option.value = key;  
+                option.textContent = FORMATIONS[key].name;  
+                formationSelect.appendChild(option);  
+            });  
+                
+            const savedStateResult = gameLogic.loadFromLocalStorage();  
+            if (savedStateResult.success) {  
+                ui.refreshUI(gameLogic.getGameState());  
+                const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
+                if(dashboardButton) {  
+                    window.switchPage('dashboard', dashboardButton);  
+                }  
+            } else {  
+                window.openModal('gameMode');  
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
+            }  
+        });  
+  
+  
+    </script>  
+</body>  
+</html>  
