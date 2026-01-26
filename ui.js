@@ -1,7 +1,7 @@
 // ui.js - Renderizado y UI  
-
+  
 import * as gameLogic from './gameLogic.js';  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS, SEASON_WEEKS } from './config.js';  
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
   
 function renderStandingsTable(standings, currentTeam) {  
     const tbody = document.getElementById('standingsTable');  
@@ -283,7 +283,7 @@ function renderNextMatchCard(homeTeam, opponentName, week) {
                 <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${state.team}</div>  
                 <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
                 <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponentName}</div>  
-                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week} de ${SEASON_WEEKS}</div>  
+                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week} de ${state.maxSeasonWeeks}</div>  
             </div>  
         `;  
     }  
@@ -355,25 +355,25 @@ function updateDashboardStats(state) {
     }  
 }  
   
-// NEW: Función para renderizar la página de calendario  
+// NEW: Función para renderizar la página de calendario (modificada)  
 function renderCalendarPage(state) {  
     const calendarContent = document.getElementById('calendarContent');  
     if (!calendarContent) return;  
-
+  
     const calendar = state.seasonCalendar; // Usar directamente el calendario del estado  
     if (!calendar || calendar.length === 0) {  
         calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
         return;  
     }  
-
+  
     let calendarHtml = '';  
-    const numJornadas = state.leagueTeams.length * 2 - 2; // Número de jornadas basado en el número de equipos en la liga, para ida y vuelta.  
-
+    const numJornadas = state.maxSeasonWeeks; // Usar el máximo de semanas definido en el estado  
+  
     for (let i = 1; i <= numJornadas; i++) {  
         const jornadaMatches = calendar.filter(match => match.week === i); // Filtra los partidos de la semana 'i'  
-
+  
         if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
-
+  
         calendarHtml += `  
             <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
             <table>  
@@ -388,19 +388,19 @@ function renderCalendarPage(state) {
         `;  
         jornadaMatches.forEach(match => {  
             const isOurMatch = match.home === state.team || match.away === state.team;  
-            const rowClass = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
-
+            const rowStyle = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
+  
             // Buscar el resultado en el matchHistory  
             const playedMatch = state.matchHistory.find(  
-                mh => mh.week === match.week &&  
+                mh => mh.week === i &&  
                       ((mh.home === match.home && mh.away === match.away) ||  
                        (mh.home === match.away && mh.away === match.home))  
             );  
-
+  
             const score = playedMatch ? playedMatch.score : '-';  
-
+  
             calendarHtml += `  
-                <tr style="${rowClass}">  
+                <tr style="${rowStyle}">  
                     <td>${match.home}</td>  
                     <td>${match.away}</td>  
                     <td>${score}</td>  
@@ -412,9 +412,9 @@ function renderCalendarPage(state) {
             </table>  
         `;  
     }  
-
+  
     calendarContent.innerHTML = calendarHtml;  
-}
+}  
   
   
 function refreshUI(state) {  
@@ -451,5 +451,5 @@ export {
     updateDashboardStats,  
     refreshUI,  
     // NEW EXPORT  
-    renderCalendarPage   
+    renderCalendarPage  
 };  
