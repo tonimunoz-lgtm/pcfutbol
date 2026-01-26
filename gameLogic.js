@@ -1273,7 +1273,7 @@ function setLineup(newLineup) {
           
     // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
     // Esto es importante para que siempre haya 11 en `gameState.lineup`      
-    if (newLineUp.length < 11) {  
+    if (newLineup.length < 11) {  
         const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
         const currentLineupNames = new Set(newLineUp.map(p => p.name));  
         const playersToFill = availableSquadPlayers  
