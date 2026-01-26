@@ -420,6 +420,7 @@
                 <div class="menu-title">📊 INFORMACIÓN</div>  
                 <button class="menu-item active" onclick="switchPage('dashboard', this)">Dashboard</button>  
                 <button class="menu-item" onclick="switchPage('standings', this)">Clasificación</button>  
+                <button class="menu-item" onclick="switchPage('calendar', this)">Calendario</button> <!-- NEW -->  
             </div>  
   
             <div class="menu-section">  
@@ -501,6 +502,14 @@
                     <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>  
                     <tbody id="standingsTable"></tbody>  
                 </table>  
+            </div>  
+  
+            <!-- CALENDARIO --> <!-- NEW PAGE -->  
+            <div id="calendar" class="page">  
+                <h1>📅 Calendario de Partidos</h1>  
+                <div id="calendarContent">  
+                    <div class="alert alert-info">Aquí se mostrarán los partidos de tu división.</div>  
+                </div>  
             </div>  
   
             <!-- PLANTILLA -->  
@@ -710,8 +719,10 @@
             <div id="primeraList" class="team-selection-list"></div>  
             <h2>Segunda División</h2>  
             <div id="segundaList" class="team-selection-list"></div>  
-            <h2>Primera RFEF</h2>  
-            <div id="rfefList" class="team-selection-list"></div>  
+            <h2>Primera RFEF Grupo 1</h2> <!-- NEW TEXT -->  
+            <div id="rfef_grupo1List" class="team-selection-list"></div> <!-- NEW ID -->  
+            <h2>Primera RFEF Grupo 2</h2> <!-- NEW TEXT -->  
+            <div id="rfef_grupo2List" class="team-selection-list"></div> <!-- NEW ID -->  
         </div>  
     </div>  
   
@@ -830,6 +841,15 @@
         </div>  
     </div>  
   
+    <!-- NEW MODAL: Match Result -->  
+    <div id="matchResultModal" class="modal">  
+        <div class="modal-content" style="text-align: center; max-width: 500px; padding: 40px;">  
+            <h1 id="matchResultTitle" style="color: #00ff00; margin-bottom: 20px;"></h1>  
+            <div id="matchResultDetails" style="font-size: 1.5em; font-weight: bold;"></div>  
+            <p id="matchResultMessage" style="margin-top: 20px; font-size: 1.1em; color: #e94560;"></p>  
+        </div>  
+    </div>  
+  
   
     <script type="module">  
         import * as gameLogic from './gameLogic.js';  
@@ -924,7 +944,7 @@
             // Esta parte es más compleja para manejar todos los casos de drag&drop.  
             // Una forma más sencilla es simplemente actualizar la alineación y dejar que `renderLineupPageUI`  
             // recalcule las reservas y los slots.  
-              
+                
             // Simplemente actualizamos la alineación con la nueva propuesta  
             gameLogic.setLineup(finalLineupPlayers); // Guardar la nueva alineación (puede ser < 11 si se vació un slot)  
             renderLineupPageUI(); // Volver a renderizar la UI  
@@ -966,6 +986,7 @@
             if (pageId === 'tactics') updateTacticsDisplay(state);  
             if (pageId === 'lineup') renderLineupPageUI();  
             if (pageId === 'dashboard') gameLogic.markNewsAsRead();  
+            if (pageId === 'calendar') ui.renderCalendarPage(state); // NEW  
         };  
   
         window.openModal = function(type) {  
@@ -983,6 +1004,8 @@
                 document.getElementById('trainingModal').classList.add('active');  
             } else if (type === 'hireStaff') {  
                 document.getElementById('hireStaffModal').classList.add('active');  
+            } else if (type === 'matchResult') { // NEW  
+                document.getElementById('matchResultModal').classList.add('active');  
             }  
         };  
   
@@ -1001,14 +1024,7 @@
                 const listElement = document.getElementById(listId);  
                 if (!listElement) return;  
   
-                let teamsToRender = [];  
-                // La clave divisionKey puede ser 'rfef' o 'primera' o 'segunda'.  
-                // En config.js, RFEF está dividido en rfef_grupo1 y rfef_grupo2.  
-                if (divisionKey === 'rfef') {  
-                    teamsToRender = [...TEAMS_DATA.rfef_grupo1, ...TEAMS_DATA.rfef_grupo2];  
-                } else {  
-                    teamsToRender = TEAMS_DATA[divisionKey];  
-                }  
+                const teamsToRender = TEAMS_DATA[divisionKey]; // Now directly use the key for the specific group  
   
                 listElement.innerHTML = teamsToRender.map(team =>  
                     `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="selectTeamAndStart('${team}', '${divisionKey}')">  
@@ -1019,20 +1035,13 @@
   
             createTeamButtons('primera', 'primeraList');  
             createTeamButtons('segunda', 'segundaList');  
-            createTeamButtons('rfef', 'rfefList'); // Usamos 'rfef' para la UI del modal  
+            createTeamButtons('rfef_grupo1', 'rfef_grupo1List'); // Use specific IDs  
+            createTeamButtons('rfef_grupo2', 'rfef_grupo2List'); // Use specific IDs  
         }  
   
         window.selectTeamAndStart = function(teamName, division) {  
-            // Necesitamos pasar la clave exacta de la división a gameLogic (ej. 'rfef_grupo1')  
-            let actualDivisionKey = division;  
-            if (division === 'rfef') {  
-                if (TEAMS_DATA.rfef_grupo1.includes(teamName)) {  
-                    actualDivisionKey = 'rfef_grupo1';  
-                } else if (TEAMS_DATA.rfef_grupo2.includes(teamName)) {  
-                    actualDivisionKey = 'rfef_grupo2';  
-                }  
-            }  
-            gameLogic.selectTeamWithInitialSquad(teamName, actualDivisionKey, window.gameMode);  
+            // division ya es la clave exacta de la división (ej. 'rfef_grupo1')  
+            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);  
             ui.refreshUI(gameLogic.getGameState());  
             window.closeModal('selectTeam');  
             const dashboardButton = document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]');  
@@ -1095,24 +1104,79 @@
             }  
         };  
   
-        window.simulateWeek = function() {  
+        // *** CAMBIO AQUI: Lógica de simulación con visualización y advertencia ***  
+        window.simulateWeek = async function() { // Added async  
             const state = gameLogic.getGameState();  
-            /*if (state.unreadNewsCount > 0) {  
-                alert('¡Atención! Tienes mensajes importantes sin leer en el Dashboard. No puedes simular la jornada hasta que los hayas revisado.');  
-                switchPage('dashboard', document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]'));  
-                return;  
-            }  */
   
-            // gameLogic.simulateFullWeek() ya maneja la validación de la alineación y la penalización si es temporada regular  
-            gameLogic.simulateFullWeek();  
+            // 1. Validar alineación y mostrar advertencia del segundo entrenador  
+            const lineupValidation = gameLogic.validateLineup(state.lineup);  
+            if (!lineupValidation.success) {  
+                // Si hay un segundo entrenador, el aviso es más formal y bloqueante  
+                if (state.staff.segundoEntrenador) {  
+                    alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada. (La jornada no avanzará)`);  
+                    gameLogic.addNews(`[Segundo Entrenador - CRÍTICO] Alineación inválida: ${lineupValidation.message}. Por favor, corrige.`, 'error');  
+                    window.switchPage('lineup', document.querySelector('.menu-item[onclick="switchPage(\'lineup\', this)"]')); // Mover a la página de alineación  
+                    return; // Detener la simulación  
+                } else {  
+                    // Si no hay segundo entrenador, el aviso es menos formal y no bloqueante (se procede con la penalización)  
+                    alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida. (La jornada continuará)`);  
+                    gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');  
+                }  
+            }  
+              
+            // 2. Simular la semana y obtener el resultado de nuestro partido  
+            const simulationResult = gameLogic.simulateFullWeek(); // This now returns info about our match result  
             ui.refreshUI(gameLogic.getGameState());  
   
-            const lastMatch = gameLogic.getGameState().matchHistory[gameLogic.getGameState().matchHistory.length - 1];  
-            if (lastMatch) {  
-                document.getElementById('lastMatchResult').innerHTML = `  
-                    <div class="alert alert-info">Último resultado: ${lastMatch.home} ${lastMatch.score} ${lastMatch.away}</div>  
-                `;  
+            // 3. Mostrar el resultado de nuestro partido en un modal  
+            if (simulationResult && simulationResult.myMatch) {  
+                const myMatch = simulationResult.myMatch;  
+                const matchResultTitle = document.getElementById('matchResultTitle');  
+                const matchResultDetails = document.getElementById('matchResultDetails');  
+                const matchResultMessage = document.getElementById('matchResultMessage');  
+  
+                matchResultDetails.innerHTML = `${myMatch.home} ${myMatch.score} ${myMatch.away}`;  
+                if (myMatch.home === state.team) {  
+                    if (parseInt(myMatch.score.split('-')[0]) > parseInt(myMatch.score.split('-')[1])) {  
+                        matchResultTitle.textContent = '¡VICTORIA!';  
+                        matchResultTitle.style.color = '#00ff00';  
+                        matchResultMessage.textContent = '';  
+                    } else if (parseInt(myMatch.score.split('-')[0]) === parseInt(myMatch.score.split('-')[1])) {  
+                        matchResultTitle.textContent = 'EMPATE';  
+                        matchResultTitle.style.color = 'orange';  
+                        matchResultMessage.textContent = '';  
+                    } else {  
+                        matchResultTitle.textContent = 'DERROTA';  
+                        matchResultTitle.style.color = 'red';  
+                        matchResultMessage.textContent = '';  
+                    }  
+                } else { // Away game  
+                    if (parseInt(myMatch.score.split('-')[1]) > parseInt(myMatch.score.split('-')[0])) {  
+                        matchResultTitle.textContent = '¡VICTORIA!';  
+                        matchResultTitle.style.color = '#00ff00';  
+                        matchResultMessage.textContent = '';  
+                    } else if (parseInt(myMatch.score.split('-')[1]) === parseInt(myMatch.score.split('-')[0])) {  
+                        matchResultTitle.textContent = 'EMPATE';  
+                        matchResultTitle.style.color = 'orange';  
+                        matchResultMessage.textContent = '';  
+                    } else {  
+                        matchResultTitle.textContent = 'DERROTA';  
+                        matchResultTitle.style.color = 'red';  
+                        matchResultMessage.textContent = '';  
+                    }  
+                }  
+                if (simulationResult.forcedLoss) {  
+                    matchResultTitle.textContent = 'DERROTA (por alineación indebida)';  
+                    matchResultTitle.style.color = 'red';  
+                    matchResultMessage.textContent = '¡Tu equipo perdió 0-3 debido a una alineación inválida!';  
+                }  
+  
+                window.openModal('matchResult');  
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds  
+                window.closeModal('matchResult');  
             }  
+  
+            // 4. Redirigir al dashboard  
             switchPage('dashboard', document.querySelector('.menu-item[onclick="switchPage(\'dashboard\', this)"]'));  
         };  
   
@@ -1264,9 +1328,9 @@
             closeModal('negotiation');  
             ui.refreshUI(gameLogic.getGameState());  
         };  
-
+  
         // --- Funciones de Entrenamiento (UI) ---  
-        let currentTrainingPlayerIndex = -1; 
+        let currentTrainingPlayerIndex = -1;  
   
         window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {  
             currentTrainingPlayerIndex = playerIndex;  
@@ -1549,8 +1613,8 @@
                 document.getElementById('merchandisingPriceSliderValue').textContent = state.merchandisingPrice;  
             }  
         }  
-
-        
+  
+  
  // --- Funciones de Alineación (UI) ---  
         window.renderLineupPageUI = function() {  
             const state = gameLogic.getGameState();  
@@ -1560,7 +1624,7 @@
   
             const pitchContainer = document.getElementById('pitchContainer');  
             const reservesList = document.getElementById('reservesList');  
-              
+                
             pitchContainer.innerHTML = '';  
             reservesList.innerHTML = '';  
   
@@ -1573,7 +1637,7 @@
                 const slot = document.createElement('div');  
                 slot.classList.add('pitch-position-placeholder');  
                 slot.id = `pitch-slot-${index}`;  
-                  
+                    
                 // Posicionamiento absoluto basado en las coordenadas x, y de la formación  
                 // El campo tiene 5 columnas (0 a 4) y 9 filas (0 a 8)  
                 const leftOffset = posData.x * (100 / 5) + ( (100 / 5) - slotWidth ) / 2;  
@@ -1602,7 +1666,7 @@
                 }  
                 pitchContainer.appendChild(slot);  
             });  
-  
+    
             // Renderizar los suplentes (jugadores no en alineación)  
             reserves.forEach(player => {  
                 const playerDiv = document.createElement('div');  
@@ -1614,11 +1678,11 @@
                 playerDiv.dataset.playername = player.name;  
                 reservesList.appendChild(playerDiv);  
             });  
-  
+    
             reservesList.ondragover = window.allowDrop;  
             reservesList.ondragleave = window.dragleave;  
             reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');  
-  
+    
             const lineupMessageElem = document.getElementById('lineupMessage');  
             if (lineupMessageElem) {  
                 const validation = gameLogic.validateLineup(lineup);  
@@ -1631,12 +1695,12 @@
                 }  
             }  
         };  
-  
+    
         window.saveLineup = function() {  
             const state = gameLogic.getGameState();  
             const currentFormation = FORMATIONS[state.formation];  
             const newLayout = Array(11).fill(null); // Array para la nueva alineación  
-  
+    
             // Recoger jugadores del campo  
             currentFormation.layout.forEach((posData, index) => {  
                 const slot = document.getElementById(`pitch-slot-${index}`);  
@@ -1649,7 +1713,7 @@
                     }  
                 }  
             });  
-  
+    
             const validationResult = gameLogic.validateLineup(newLayout);  
             if (!validationResult.success) {  
                 alert(`Error al guardar la alineación: ${validationResult.message}`);  
@@ -1657,7 +1721,7 @@
                 renderLineupPageUI(); // Volver a renderizar para mostrar el estado actual  
                 return;  
             }  
-  
+    
             const result = gameLogic.setLineup(newLayout);  
             if (result.success) {  
                 gameLogic.addNews('¡Alineación guardada con éxito!', 'success');  
@@ -1669,12 +1733,12 @@
                 alert(`Error al guardar la alineación: ${result.message}`);  
             }  
         };  
-        
+          
         window.saveGame = function() {  
             const result = gameLogic.saveToLocalStorage();  
             alert(result.message);  
         };  
-  
+    
         window.loadGame = function() {  
             const result = gameLogic.loadFromLocalStorage();  
             if (result.success) {  
@@ -1688,13 +1752,13 @@
                 alert(result.message);  
             }  
         };  
-  
+    
         window.resetGame = function() {  
             if (confirm('¿Estás seguro de que quieres reiniciar completamente el juego? Toda tu partida se perderá.')) {  
                 gameLogic.resetGame();  
             }  
         };  
-  
+    
         document.addEventListener('DOMContentLoaded', () => {  
             const marketPositionSelect = document.getElementById('marketPosition');  
             POSITIONS.forEach(pos => {  
@@ -1703,7 +1767,7 @@
                 option.textContent = pos;  
                 marketPositionSelect.appendChild(option);  
             });  
-  
+    
             const formationSelect = document.getElementById('formationSelect');  
             Object.keys(FORMATIONS).forEach(key => {  
                 const option = document.createElement('option');  
@@ -1711,7 +1775,7 @@
                 option.textContent = FORMATIONS[key].name;  
                 formationSelect.appendChild(option);  
             });  
-              
+                
             const savedStateResult = gameLogic.loadFromLocalStorage();  
             if (savedStateResult.success) {  
                 ui.refreshUI(gameLogic.getGameState());  
@@ -1724,8 +1788,8 @@
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));  
             }  
         });  
-
-
+  
+  
     </script>  
 </body>  
 </html>  
