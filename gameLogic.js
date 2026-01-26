@@ -1275,7 +1275,7 @@ function setLineup(newLineup) {
     // Esto es importante para que siempre haya 11 en `gameState.lineup`      
     if (newLineup.length < 11) {  
         const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
-        const currentLineupNames = new Set(newLineUp.map(p => p.name));  
+        const currentLineupNames = new Set(newLineup.map(p => p.name));  
         const playersToFill = availableSquadPlayers  
                                 .filter(p => !currentLineupNames.has(p.name))  
                                 .sort((a,b) => b.overall - a.overall)  
