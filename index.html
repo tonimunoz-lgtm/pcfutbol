@@ -1809,6 +1809,14 @@
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));    
             }    
         });    
+
+// Exponer globalmente para injectors
+    window.gameLogic = gameLogic;
+    window.ui = ui;
+    window.TEAMS_DATA = TEAMS_DATA; // IMPORTANTE: Exportar TEAMS_DATA
+    window.ATTRIBUTES = ATTRIBUTES;
+    window.POSITIONS = POSITIONS;
+    window.FORMATIONS = FORMATIONS;
         
     </script>   
 
