@@ -1268,7 +1268,7 @@ function setLineup(newLineup) {
     if (newLineup.length > 11) {  
         // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
         console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
-        newLineUp = newLineUp.slice(0, 11);  
+        newLineUp = newLineup.slice(0, 11);  
     }  
           
     // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
@@ -1279,7 +1279,7 @@ function setLineup(newLineup) {
         const playersToFill = availableSquadPlayers  
                                 .filter(p => !currentLineupNames.has(p.name))  
                                 .sort((a,b) => b.overall - a.overall)  
-                                .slice(0, 11 - newLineUp.length);  
+                                .slice(0, 11 - newLineup.length);  
               
         gameState.lineup = [...newLineUp, ...playersToFill];  
         // Asegurarse de que no hay más de 11 después de rellenar      
@@ -1287,7 +1287,7 @@ function setLineup(newLineup) {
             gameState.lineup = gameState.lineup.slice(0, 11);  
         }  
     } else {  
-        gameState.lineup = newLineUp;  
+        gameState.lineup = newLineup;  
     }  
   
     // Asegurarse de que todos los jugadores en gameState.lineup existen en gameState.squad      
