@@ -1,99 +1,118 @@
-// injector-mobile.js
 (function() {
-    // --- 1️⃣ Detectar móvil ---
-    function isMobile() {
-        return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
+    function applyMobileUI() {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) return; // Solo aplicar en móviles
 
-    if (!isMobile()) return; // No aplicar si no es móvil
-
-    console.log('📱 Modo móvil activado');
-
-    // --- 2️⃣ Ajustes generales de estilo ---
-    function applyGlobalMobileStyles() {
-        document.body.style.fontSize = '14px';
-        document.body.style.padding = '0';
-        document.body.style.margin = '0';
-        document.body.style.overflowX = 'hidden';
-        document.querySelectorAll('button').forEach(btn => {
-            btn.style.padding = '12px 10px';
-            btn.style.fontSize = '14px';
-        });
-        document.querySelectorAll('input, select').forEach(input => {
-            input.style.fontSize = '14px';
-        });
-    }
-
-    // --- 3️⃣ Ajustes de contenedores principales ---
-    function adjustContainers() {
-        const pitch = document.getElementById('pitchContainer');
-        const reserves = document.getElementById('reservesList');
+        // 1️⃣ Ocultar sidebar original
         const sidebar = document.querySelector('.sidebar');
-        const header = document.querySelector('header');
-
-        if (pitch) {
-            pitch.style.width = '100%';
-            pitch.style.height = 'auto';
-        }
-        if (reserves) {
-            reserves.style.display = 'flex';
-            reserves.style.flexDirection = 'column';
-            reserves.style.width = '100%';
-        }
         if (sidebar) sidebar.style.display = 'none';
-        if (header) header.style.fontSize = '14px';
-    }
 
-    // --- 4️⃣ Ajustes de modales ---
-    function adjustModals() {
-        document.querySelectorAll('.modal-content').forEach(modal => {
-            modal.style.width = '90%';
-            modal.style.maxWidth = '90%';
-            modal.style.maxHeight = '80vh';
+        // 2️⃣ Ajustar contenedores principales
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.style.padding = '10px';
+            mainContent.style.width = '100%';
+            mainContent.style.overflowX = 'hidden';
+        }
+
+        // 3️⃣ Hacer que todos los modales sean scrollables
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.style.maxHeight = '90vh';
             modal.style.overflowY = 'auto';
             modal.style.padding = '10px';
-            modal.style.fontSize = '14px';
         });
-    }
 
-    // --- 5️⃣ Ajustes de alineación / pitch ---
-    function adjustPitchUI() {
-        const pitchSlots = document.querySelectorAll('.pitch-position-placeholder, .pitch-player');
-        pitchSlots.forEach(slot => {
-            slot.style.fontSize = '12px';
-            slot.style.minHeight = '50px';
-            slot.style.minWidth = '50px';
-        });
-    }
-
-    // --- 6️⃣ Ajustes de mercado / listas de jugadores ---
-    function adjustMarketUI() {
-        const marketList = document.getElementById('marketPlayersList') || document.getElementById('reservesList');
-        if (marketList) {
-            marketList.style.display = 'flex';
-            marketList.style.flexDirection = 'column';
-            marketList.style.width = '100%';
+        // 4️⃣ Adaptar pitch
+        const pitchContainer = document.getElementById('pitchContainer');
+        if (pitchContainer) {
+            pitchContainer.style.width = '100%';
+            pitchContainer.style.height = '400px';
+            pitchContainer.style.overflowX = 'auto';
+            pitchContainer.style.overflowY = 'hidden';
+            pitchContainer.style.position = 'relative';
         }
 
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.style.width = '100%';
-            btn.style.marginBottom = '8px';
+        // 5️⃣ Adaptar listas largas (reserves, mercado, staff)
+        ['reservesList', 'marketList', 'staffCandidatesList'].forEach(id => {
+            const list = document.getElementById(id);
+            if (list) {
+                list.style.maxHeight = '300px';
+                list.style.overflowY = 'auto';
+            }
+        });
+
+        // 6️⃣ Crear menú móvil flotante
+        function createMobileMenu() {
+            if (document.getElementById('mobileMenu')) return;
+
+            const menu = document.createElement('div');
+            menu.id = 'mobileMenu';
+            menu.style.position = 'fixed';
+            menu.style.bottom = '0';
+            menu.style.left = '0';
+            menu.style.width = '100%';
+            menu.style.background = '#e94560';
+            menu.style.display = 'flex';
+            menu.style.justifyContent = 'space-around';
+            menu.style.padding = '8px 0';
+            menu.style.zIndex = '9999';
+            menu.style.borderTop = '2px solid #fff';
+
+            const sections = [
+                { name: 'Dashboard', page: 'dashboard' },
+                { name: 'Alineación', page: 'lineup' },
+                { name: 'Mercado', page: 'market' },
+                { name: 'Entrenamiento', page: 'training' },
+                { name: 'Finanzas', page: 'finance' }
+            ];
+
+            sections.forEach(sec => {
+                const btn = document.createElement('button');
+                btn.textContent = sec.name;
+                btn.style.flex = '1';
+                btn.style.margin = '0 4px';
+                btn.style.padding = '8px';
+                btn.style.fontSize = '12px';
+                btn.style.background = '#fff';
+                btn.style.color = '#e94560';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '5px';
+                btn.style.cursor = 'pointer';
+                btn.onclick = () => {
+                    const menuItem = document.querySelector(`.menu-item[onclick="window.switchPage('${sec.page}', this)"]`);
+                    if(menuItem) window.switchPage(sec.page, menuItem);
+                };
+                menu.appendChild(btn);
+            });
+
+            document.body.appendChild(menu);
+        }
+        createMobileMenu();
+
+        // 7️⃣ Ajustes para botones y tablas largas
+        const tables = document.querySelectorAll('table');
+        tables.forEach(table => {
+            table.style.width = '100%';
+            table.style.display = 'block';
+            table.style.overflowX = 'auto';
+        });
+
+        // 8️⃣ Ajuste general de tipografía y botones
+        document.querySelectorAll('button').forEach(btn => {
+            btn.style.fontSize = '14px';
+            btn.style.padding = '6px 8px';
+        });
+        document.querySelectorAll('input, select').forEach(el => {
+            el.style.fontSize = '14px';
+            el.style.width = '100%';
+            el.style.boxSizing = 'border-box';
+            el.style.marginBottom = '6px';
         });
     }
 
-    // --- 7️⃣ Aplicar todos los ajustes ---
-    function applyMobileUI() {
-        applyGlobalMobileStyles();
-        adjustContainers();
-        adjustModals();
-        adjustPitchUI();
-        adjustMarketUI();
-        console.log('✅ UI móvil aplicada');
-    }
-
-    // Ejecutar al cargar el DOM y al cambiar tamaño
-    document.addEventListener('DOMContentLoaded', applyMobileUI);
+    // Ejecutar al cargar y al redimensionar
+    window.addEventListener('load', applyMobileUI);
     window.addEventListener('resize', applyMobileUI);
-
     console.log('✅ Inyector móvil cargado y aplicado.');
 })();
