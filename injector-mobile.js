@@ -1,103 +1,99 @@
-// == Injector Móvil Premium ==
+// injector-mobile.js
 (function() {
-    const isMobile = window.innerWidth <= 768;
-    if (!isMobile) return;
-    console.log('🌟 Modo Móvil Activado');
+    // --- 1️⃣ Detectar móvil ---
+    function isMobile() {
+        return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
 
-    // Agregar clase body mobile
-    document.body.classList.add('mobile-mode');
+    if (!isMobile()) return; // No aplicar si no es móvil
 
-    // Estilos generales
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Botones más grandes y fáciles de tocar */
-        .btn { 
-            padding: 12px 20px !important; 
-            font-size: 1.1em !important; 
-            width: 100% !important; 
-        }
+    console.log('📱 Modo móvil activado');
 
-        /* Modales a pantalla completa con bordes redondeados */
-        .modal {
-            width: 95% !important;
-            height: 90% !important;
-            top: 5% !important;
-            left: 2.5% !important;
-            border-radius: 10px;
-            padding: 15px;
-            overflow-y: auto;
-        }
-
-        /* Listas desplazables táctiles */
-        #reservesList, #marketList, #staffCandidatesList {
-            max-height: 300px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Texto más legible */
-        body, .page, .pitch-player, .draggable-player, .staff-candidate {
-            font-size: 14px !important;
-        }
-
-        /* Pitch y draggables más grandes para dedos */
-        .pitch-player, .draggable-player {
-            min-height: 50px !important;
-            font-size: 1em !important;
-            padding: 8px !important;
-        }
-
-        /* Imagen del estadio centrada y responsiva */
-        #stadiumImageContainer img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-            display: block;
-            margin: 10px auto;
-        }
-
-        /* Inputs y sliders más grandes */
-        input, select {
-            font-size: 1em !important;
-            padding: 8px !important;
-        }
-
-        /* Mensajes y alertas más visibles */
-        .alert {
-            font-size: 0.95em !important;
-            padding: 8px !important;
-        }
-
-        /* Ajuste de la alineación en pantalla pequeña */
-        #pitchContainer {
-            min-height: 400px;
-            position: relative;
-        }
-        .pitch-position-placeholder {
-            font-size: 0.8em !important;
-        }
-
-        /* Aumentar hitbox de los elementos táctiles */
-        .draggable-player:hover, .pitch-player:hover, .btn:hover {
-            transform: scale(1.02);
-            transition: 0.2s;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Función para actualizar draggables dinámicamente
-    function enlargeDraggables() {
-        document.querySelectorAll('.draggable-player, .pitch-player').forEach(div => {
-            div.style.minHeight = '50px';
-            div.style.fontSize = '1em';
-            div.style.padding = '8px';
+    // --- 2️⃣ Ajustes generales de estilo ---
+    function applyGlobalMobileStyles() {
+        document.body.style.fontSize = '14px';
+        document.body.style.padding = '0';
+        document.body.style.margin = '0';
+        document.body.style.overflowX = 'hidden';
+        document.querySelectorAll('button').forEach(btn => {
+            btn.style.padding = '12px 10px';
+            btn.style.fontSize = '14px';
+        });
+        document.querySelectorAll('input, select').forEach(input => {
+            input.style.fontSize = '14px';
         });
     }
-    enlargeDraggables();
 
-    // Observar cambios dinámicos (por ejemplo, al renderizar la alineación)
-    const observer = new MutationObserver(enlargeDraggables);
-    observer.observe(document.body, { childList: true, subtree: true });
+    // --- 3️⃣ Ajustes de contenedores principales ---
+    function adjustContainers() {
+        const pitch = document.getElementById('pitchContainer');
+        const reserves = document.getElementById('reservesList');
+        const sidebar = document.querySelector('.sidebar');
+        const header = document.querySelector('header');
+
+        if (pitch) {
+            pitch.style.width = '100%';
+            pitch.style.height = 'auto';
+        }
+        if (reserves) {
+            reserves.style.display = 'flex';
+            reserves.style.flexDirection = 'column';
+            reserves.style.width = '100%';
+        }
+        if (sidebar) sidebar.style.display = 'none';
+        if (header) header.style.fontSize = '14px';
+    }
+
+    // --- 4️⃣ Ajustes de modales ---
+    function adjustModals() {
+        document.querySelectorAll('.modal-content').forEach(modal => {
+            modal.style.width = '90%';
+            modal.style.maxWidth = '90%';
+            modal.style.maxHeight = '80vh';
+            modal.style.overflowY = 'auto';
+            modal.style.padding = '10px';
+            modal.style.fontSize = '14px';
+        });
+    }
+
+    // --- 5️⃣ Ajustes de alineación / pitch ---
+    function adjustPitchUI() {
+        const pitchSlots = document.querySelectorAll('.pitch-position-placeholder, .pitch-player');
+        pitchSlots.forEach(slot => {
+            slot.style.fontSize = '12px';
+            slot.style.minHeight = '50px';
+            slot.style.minWidth = '50px';
+        });
+    }
+
+    // --- 6️⃣ Ajustes de mercado / listas de jugadores ---
+    function adjustMarketUI() {
+        const marketList = document.getElementById('marketPlayersList') || document.getElementById('reservesList');
+        if (marketList) {
+            marketList.style.display = 'flex';
+            marketList.style.flexDirection = 'column';
+            marketList.style.width = '100%';
+        }
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.style.width = '100%';
+            btn.style.marginBottom = '8px';
+        });
+    }
+
+    // --- 7️⃣ Aplicar todos los ajustes ---
+    function applyMobileUI() {
+        applyGlobalMobileStyles();
+        adjustContainers();
+        adjustModals();
+        adjustPitchUI();
+        adjustMarketUI();
+        console.log('✅ UI móvil aplicada');
+    }
+
+    // Ejecutar al cargar el DOM y al cambiar tamaño
+    document.addEventListener('DOMContentLoaded', applyMobileUI);
+    window.addEventListener('resize', applyMobileUI);
 
     console.log('✅ Inyector móvil cargado y aplicado.');
 })();
