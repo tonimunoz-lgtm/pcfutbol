@@ -1,0 +1,964 @@
+/* styles.css - Estilos globales del juego PC Fútbol Manager */  
+  
+/* ------------------- 1. Base y Reset ------------------- */  
+* {  
+    margin: 0;  
+    padding: 0;  
+    box-sizing: border-box;  
+}  
+  
+body {  
+    font-family: 'Arial', sans-serif; /* Fuente estándar para asegurar compatibilidad */  
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); /* Fondo degradado oscuro */  
+    color: #fff; /* Color de texto principal */  
+    min-height: 100vh; /* Ocupa al menos la altura completa de la ventana */  
+    overflow-x: hidden; /* Evita el scroll horizontal */  
+    display: flex; /* Para centrar contenido si es necesario */  
+    flex-direction: column;  
+}  
+  
+/* ------------------- 2. Estilos del Encabezado (Header) ------------------- */  
+.header {  
+    background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%); /* Degradado para el encabezado */  
+    border-bottom: 3px solid #e94560; /* Borde inferior rojo */  
+    padding: 10px 20px;  
+    display: flex;  
+    justify-content: space-between;  
+    align-items: center;  
+    position: sticky; /* Sticky para que se mantenga en la parte superior al hacer scroll */  
+    top: 0;  
+    z-index: 100; /* Asegura que esté por encima de otros elementos */  
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */  
+    gap: 10px; /* Espacio entre elementos del header */  
+}  
+  
+.header-title {  
+    font-size: 1.8em;  
+    font-weight: bold;  
+    color: #e94560; /* Color rojo vibrante */  
+    letter-spacing: 2px;  
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5); /* Sombra para el texto del título */  
+    white-space: nowrap; /* Evita que el título se rompa */  
+}  
+  
+.header-info {  
+    display: flex;  
+    gap: 20px;  
+    align-items: center;  
+    font-size: 0.9em;  
+    flex-wrap: wrap; /* Permite que los info-box se envuelvan */  
+    justify-content: flex-end; /* Alinea a la derecha en móvil */  
+}  
+  
+.info-box {  
+    background: rgba(233, 69, 96, 0.1);  
+    border: 1px solid #e94560;  
+    padding: 8px 15px;  
+    border-radius: 3px;  
+    box-shadow: inset 0 0 5px rgba(233, 69, 96, 0.2); /* Sombra interior */  
+}  
+  
+/* ------------------- 3. Contenedor Principal (Container) ------------------- */  
+.container {  
+    display: flex;  
+    max-width: 1600px; /* Ancho máximo para el contenido principal */  
+    margin: 0 auto; /* Centrar el contenedor */  
+    min-height: calc(100vh - 60px); /* Resta la altura del header */  
+    flex-grow: 1; /* Permite que ocupe el espacio restante */  
+}  
+  
+/* ------------------- 4. Barra Lateral (Sidebar) ------------------- */  
+.sidebar {  
+    width: 200px;  
+    background: linear-gradient(180deg, #0f3460 0%, #162a45 100%); /* Degradado para la sidebar */  
+    border-right: 2px solid #e94560; /* Borde derecho rojo */  
+    padding: 15px 0;  
+    overflow-y: auto; /* Permite scroll vertical si hay muchos elementos */  
+    flex-shrink: 0; /* Evita que la sidebar se encoja */  
+}  
+  
+.menu-section {  
+    padding: 10px 0;  
+    border-bottom: 1px solid rgba(233, 69, 96, 0.3); /* Separador entre secciones */  
+}  
+  
+.menu-section:last-child {  
+    border-bottom: none; /* Eliminar borde de la última sección */  
+}  
+  
+.menu-title {  
+    padding: 8px 15px;  
+    color: #e94560;  
+    font-size: 0.85em;  
+    font-weight: bold;  
+    text-transform: uppercase;  
+    letter-spacing: 0.8px;  
+    margin-bottom: 5px;  
+}  
+  
+.menu-item {  
+    padding: 10px 15px;  
+    color: #fff;  
+    cursor: pointer;  
+    background: transparent;  
+    border: none;  
+    width: 100%;  
+    text-align: left;  
+    font-size: 0.9em;  
+    transition: all 0.2s ease-in-out;  
+    border-left: 3px solid transparent; /* Para el indicador activo */  
+}  
+  
+.menu-item:hover {  
+    background: rgba(233, 69, 96, 0.2); /* Fondo más claro al pasar el ratón */  
+    padding-left: 20px; /* Efecto visual de "salto" */  
+    border-left-color: #e94560;  
+}  
+  
+.menu-item.active {  
+    background: #e94560; /* Fondo rojo para el elemento activo */  
+    font-weight: bold;  
+    padding-left: 25px; /* Más indentación para el activo */  
+    border-left-color: #fff; /* Borde blanco para el activo */  
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);  
+}  
+  
+/* ------------------- 5. Contenido Principal (Main) ------------------- */  
+.main {  
+    flex: 1; /* Ocupa el espacio restante */  
+    padding: 20px;  
+    overflow-y: auto; /* Permite scroll vertical */  
+    background: rgba(0,0,0,0.1); /* Ligero fondo para el área principal */  
+    border-left: 1px solid rgba(233, 69, 96, 0.2); /* Separador sutil */  
+}  
+  
+.page { display: none; }  
+.page.active { display: block; animation: fadeIn 0.3s ease; }  
+  
+@keyframes fadeIn {  
+    from { opacity: 0; transform: translateY(10px); }  
+    to { opacity: 1; transform: translateY(0); }  
+}  
+  
+h1 {  
+    color: #e94560;  
+    font-size: 1.8em;  
+    margin-bottom: 20px;  
+    border-bottom: 2px solid #e94560;  
+    padding-bottom: 10px;  
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);  
+}  
+  
+h2 {  
+    color: #e94560;  
+    font-size: 1.3em;  
+    margin: 20px 0 10px 0;  
+    border-bottom: 1px dashed rgba(233, 69, 96, 0.3);  
+    padding-bottom: 5px;  
+}  
+  
+/* ------------------- 6. Elementos de Datos y Tablas ------------------- */  
+.data-grid {  
+    display: grid;  
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Columnas responsivas */  
+    gap: 15px;  
+    margin: 15px 0;  
+}  
+  
+.data-box {  
+    background: rgba(233, 69, 96, 0.1);  
+    border: 1px solid #e94560;  
+    padding: 15px;  
+    border-radius: 3px;  
+    text-align: center;  
+    box-shadow: 0 0 8px rgba(0,0,0,0.3);  
+}  
+  
+.data-label { color: #ccc; font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; }  
+.data-value { font-size: 1.8em; font-weight: bold; color: #00ff00; } /* Verde para valores positivos */  
+.data-value.negative { color: #ff3333; } /* Rojo para valores negativos */  
+  
+table {  
+    width: 100%;  
+    border-collapse: collapse; /* Colapsar bordes de celda */  
+    margin: 15px 0;  
+    background: rgba(0,0,0,0.3); /* Fondo semitransparente para tablas */  
+    border-radius: 5px;  
+    overflow: hidden; /* Asegura que los bordes redondeados se apliquen al contenido */  
+}  
+th, td {  
+    padding: 10px 12px;  
+    text-align: left;  
+    border: 1px solid rgba(233, 69, 96, 0.15); /* Bordes sutiles */  
+    font-size: 0.9em;  
+}  
+th {  
+    color: #e94560;  
+    background: rgba(233, 69, 96, 0.2);  
+    font-weight: bold;  
+    text-transform: uppercase;  
+    letter-spacing: 0.5px;  
+    border-color: rgba(233, 69, 96, 0.3);  
+}  
+td {  
+    color: #e0e0e0;  
+}  
+tr:nth-child(even) { /* Filas alternas para mejor legibilidad */  
+    background: rgba(0,0,0,0.2);  
+}  
+tr:hover {  
+    background: rgba(233, 69, 96, 0.1);  
+}  
+  
+/* Estilos para el texto de tablas de datos específicos (ej. finanzas) */  
+table td:first-child {  
+    font-weight: bold;  
+    color: #e94560;  
+}  
+  
+/* ------------------- 7. Botones (Btn) - Inspirados en la imagen ------------------- */  
+.btn {  
+    /* Fondo degradado y color de texto */  
+    background: linear-gradient(180deg, #6699ff 0%, #4477ee 100%); /* Azul fuerte, similar a la imagen */  
+    color: white;  
+    padding: 10px 20px;  
+    border: none;  
+    border-radius: 5px; /* Bordes ligeramente más redondeados */  
+    cursor: pointer;  
+    font-weight: bold;  
+    transition: all 0.2s ease-in-out;  
+    margin: 5px 5px 5px 0;  
+    text-transform: uppercase;  
+    letter-spacing: 0.5px;  
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4); /* Sombra para dar profundidad */  
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);  
+}  
+  
+.btn:hover:not(:disabled) {  
+    background: linear-gradient(180deg, #88bbee 0%, #6699ff 100%); /* Degradado más claro al pasar el ratón */  
+    transform: translateY(-2px); /* Pequeño efecto de elevación */  
+    box-shadow: 0 6px 12px rgba(0,0,0,0.6);  
+}  
+.btn:active:not(:disabled) {  
+    transform: translateY(0); /* Efecto de "clic" */  
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);  
+}  
+.btn:disabled {  
+    opacity: 0.6; /* Menor opacidad para deshabilitados */  
+    cursor: not-allowed;  
+    background: linear-gradient(180deg, #555 0%, #333 100%); /* Fondo gris para deshabilitados */  
+    box-shadow: none;  
+}  
+  
+.btn-sm {  
+    padding: 6px 12px;  
+    font-size: 0.85em;  
+    border-radius: 3px;  
+}  
+  
+/* Estilos de botones específicos para la imagen (ej. rojos, verdes) */  
+.btn.btn-red { /* Para botones como "Vender" o "Limpiar" */  
+    background: linear-gradient(180deg, #e94560 0%, #c73446 100%);  
+}  
+.btn.btn-red:hover:not(:disabled) {  
+    background: linear-gradient(180deg, #ff5577 0%, #e94560 100%);  
+}  
+.btn.btn-green { /* Si hubiera botones de "Comprar", "Confirmar" */  
+    background: linear-gradient(180deg, #00b300 0%, #008000 100%);  
+}  
+.btn.btn-green:hover:not(:disabled) {  
+    background: linear-gradient(180deg, #00cc00 0%, #00b300 100%);  
+}  
+  
+/* Para los botones de las secciones como "RESULTADOS", "CLASIFICACION", "CALENDARIO" */  
+/* Los haré similar a los del menú lateral, pero más grandes y en color verde/azul según la imagen */  
+.menu-grid-buttons {  
+    display: grid;  
+    gap: 15px;  
+    margin-top: 20px;  
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsivo */  
+    max-width: 800px; /* Límite para que no se extiendan demasiado */  
+}  
+  
+.main-menu-button {  
+    background: linear-gradient(180deg, #66cc66 0%, #4CAF50 100%); /* Verde de la imagen */  
+    color: white;  
+    padding: 20px;  
+    border: none;  
+    border-radius: 8px;  
+    font-size: 1.2em;  
+    font-weight: bold;  
+    text-transform: uppercase;  
+    letter-spacing: 1px;  
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);  
+    transition: all 0.2s ease-in-out;  
+    cursor: pointer;  
+    text-align: center;  
+    display: flex;  
+    justify-content: center;  
+    align-items: center;  
+    height: 60px; /* Altura fija para uniformidad */  
+}  
+.main-menu-button:hover {  
+    background: linear-gradient(180deg, #88dd88 0%, #66cc66 100%);  
+    transform: translateY(-3px);  
+    box-shadow: 0 8px 16px rgba(0,0,0,0.7);  
+}  
+  
+.main-menu-button.blue { /* Para los botones de "Alineación", "Tácticas", "Ver Rival" */  
+    background: linear-gradient(180deg, #6699ff 0%, #4477ee 100%);  
+}  
+.main-menu-button.blue:hover {  
+    background: linear-gradient(180deg, #88bbee 0%, #6699ff 100%);  
+}  
+  
+.main-menu-button.red { /* Para los botones de "Fichar", "Plantilla", "Empleados" */  
+    background: linear-gradient(180deg, #e94560 0%, #c73446 100%);  
+}  
+.main-menu-button.red:hover {  
+    background: linear-gradient(180deg, #ff5577 0%, #e94560 100%);  
+}  
+  
+  
+/* ------------------- 8. Modales (Modal) ------------------- */  
+.modal {  
+    display: none;  
+    position: fixed;  
+    z-index: 1000;  
+    left: 0;  
+    top: 0;  
+    width: 100%;  
+    height: 100%;  
+    background: rgba(0,0,0,0.85); /* Fondo oscuro semitransparente */  
+    backdrop-filter: blur(5px); /* Efecto de desenfoque */  
+    align-items: center;  
+    justify-content: center;  
+    animation: fadeInModal 0.2s ease-out;  
+}  
+  
+.modal.active { display: flex; }  
+  
+.modal-content {  
+    background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);  
+    border: 2px solid #e94560;  
+    padding: 30px;  
+    border-radius: 8px; /* Bordes más redondeados */  
+    max-width: 800px; /* Aumento del ancho máximo */  
+    width: 90%;  
+    max-height: 90vh; /* Altura máxima */  
+    overflow-y: auto;  
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7); /* Sombra más pronunciada */  
+    position: relative; /* Para posicionar el botón de cierre */  
+    animation: slideInFromTop 0.3s ease-out;  
+}  
+  
+@keyframes fadeInModal {  
+    from { opacity: 0; }  
+    to { opacity: 1; }  
+}  
+@keyframes slideInFromTop {  
+    from { transform: translateY(-50px) scale(0.9); opacity: 0; }  
+    to { transform: translateY(0) scale(1); opacity: 1; }  
+}  
+  
+.modal-close {  
+    position: absolute;  
+    top: 15px;  
+    right: 20px;  
+    color: #e94560;  
+    font-size: 2.5em; /* Tamaño un poco más grande */  
+    font-weight: bold;  
+    cursor: pointer;  
+    transition: color 0.2s;  
+    line-height: 1; /* Asegura que la 'x' esté centrada */  
+}  
+.modal-close:hover {  
+    color: #ff5577; /* Color más claro al pasar el ratón */  
+}  
+  
+/* ------------------- 9. Alertas y Formularios ------------------- */  
+.alert {  
+    padding: 12px;  
+    margin: 10px 0;  
+    border-radius: 3px;  
+    border: 1px solid;  
+    font-size: 0.95em;  
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);  
+}  
+  
+.alert-info { background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #e94560; }  
+.alert-success { background: rgba(0, 255, 0, 0.1); border-color: #00ff00; color: #00ff00; }  
+.alert-warning { background: rgba(255, 165, 0, 0.1); border-color: orange; color: orange; }  
+.alert-error { background: rgba(255, 0, 0, 0.1); border-color: red; color: red; }  
+  
+input, select {  
+    width: 100%;  
+    padding: 10px;  
+    background: rgba(0,0,0,0.3);  
+    border: 1px solid #e94560;  
+    color: #fff;  
+    border-radius: 3px;  
+    margin-bottom: 10px;  
+    font-size: 1em;  
+    transition: border-color 0.2s, box-shadow 0.2s;  
+}  
+input:focus, select:focus {  
+    outline: none;  
+    border-color: #ff5577;  
+    box-shadow: 0 0 8px rgba(233, 69, 96, 0.5);  
+}  
+label {  
+    display: block;  
+    margin-bottom: 5px;  
+    font-weight: bold;  
+    color: #e94560;  
+}  
+.form-group {  
+    margin-bottom: 15px;  
+}  
+  
+/* ------------------- 10. Estilos Específicos (alineación, negociación, staff) ------------------- */  
+.pitch-container {  
+    position: relative;  
+    width: 100%;  
+    padding-bottom: 75%;  
+    background: #2e7d32; /* Color de campo */  
+    background-image:  
+        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),  
+        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);  
+    background-size: 20% 12.5%, 100% 12.5%;  
+    border-radius: 10px;  
+    overflow: hidden;  
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);  
+    margin-bottom: 20px;  
+}  
+  
+.pitch-position-placeholder {  
+    position: absolute;  
+    width: 18%;  
+    height: 10%;  
+    background: rgba(0,0,0,0.2);  
+    border: 1px dashed rgba(255,255,255,0.5);  
+    border-radius: 5px;  
+    display: flex;  
+    flex-direction: column;  
+    justify-content: center;  
+    align-items: center;  
+    text-align: center;  
+    font-size: 0.7em;  
+    color: rgba(255,255,255,0.7);  
+    transition: background 0.2s;  
+}  
+.pitch-position-placeholder.highlight {  
+    background: rgba(233, 69, 96, 0.4);  
+}  
+  
+.pitch-player {  
+    background: #0f3460;  
+    border: 2px solid #e94560;  
+    padding: 2px 5px;  
+    border-radius: 5px;  
+    font-weight: bold;  
+    color: white;  
+    white-space: nowrap;  
+    overflow: hidden;  
+    text-overflow: ellipsis;  
+    width: 90%;  
+    height: 90%;  
+    display: flex;  
+    flex-direction: column;  
+    justify-content: center;  
+    align-items: center;  
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);  
+    cursor: grab;  
+    user-select: none;  
+}  
+.pitch-player.injured {  
+    background: #c73446;  
+    border-color: red;  
+    cursor: not-allowed;  
+    opacity: 0.7;  
+}  
+.pitch-player span {  
+    font-size: 0.8em;  
+    display: block;  
+    line-height: 1.1;  
+}  
+.pitch-player span:first-child {  
+    font-size: 1em;  
+}  
+  
+.reserves-container {  
+    margin-top: 20px;  
+    border-top: 2px solid #e94560;  
+    padding-top: 20px;  
+}  
+.reserves-list {  
+    display: flex;  
+    flex-wrap: wrap;  
+    gap: 10px;  
+    min-height: 80px;  
+    border: 1px dashed #999;  
+    padding: 10px;  
+    align-content: flex-start;  
+    background: rgba(0,0,0,0.2);  
+    border-radius: 5px;  
+}  
+.draggable-player {  
+    background: #0f3460;  
+    border: 1px solid #e94560;  
+    padding: 5px 10px;  
+    border-radius: 3px;  
+    margin: 5px;  
+    cursor: grab;  
+    white-space: nowrap;  
+    display: inline-flex;  
+    align-items: center;  
+    justify-content: center;  
+    user-select: none;  
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);  
+}  
+.draggable-player.injured {  
+    background: #c73446;  
+    border-color: red;  
+    cursor: not-allowed;  
+    opacity: 0.7;  
+}  
+  
+/* Negociación */  
+.negotiation-player-info {  
+    background: rgba(233, 69, 96, 0.15);  
+    border: 1px solid #e94560;  
+    padding: 15px;  
+    margin-bottom: 20px;  
+    border-radius: 5px;  
+    box-shadow: inset 0 0 8px rgba(233, 69, 96, 0.2);  
+}  
+.negotiation-player-info h3 { color: #00ff00; margin-bottom: 5px; font-size: 1.5em; }  
+.negotiation-player-info p { margin-bottom: 5px; line-height: 1.4; }  
+.negotiation-step {  
+    margin-top: 20px;  
+    border-top: 1px dashed rgba(233, 69, 96, 0.3);  
+    padding-top: 20px;  
+}  
+.negotiation-step label { display: block; margin-bottom: 8px; font-weight: bold; color: #e94560; }  
+.negotiation-step input[type="number"], .negotiation-step input[type="checkbox"] {  
+    width: auto;  
+    margin-right: 10px;  
+}  
+.negotiation-incentives {  
+    display: flex;  
+    flex-wrap: wrap;  
+    gap: 15px;  
+    margin-bottom: 15px;  
+    background: rgba(0,0,0,0.2);  
+    padding: 10px;  
+    border-radius: 5px;  
+}  
+.negotiation-incentives div { display: flex; align-items: center; }  
+  
+/* Entrenamiento */  
+#trainingModal .training-player-info, #hireStaffModal .staff-candidate {  
+    background: rgba(233, 69, 96, 0.15);  
+    border: 1px solid #e94560;  
+    padding: 15px;  
+    margin-bottom: 20px;  
+    border-radius: 5px;  
+    box-shadow: inset 0 0 8px rgba(233, 69, 96, 0.2);  
+}  
+#trainingModal .attribute-selection {  
+    display: flex;  
+    flex-wrap: wrap;  
+    gap: 10px;  
+    justify-content: center;  
+    margin-top: 20px;  
+}  
+#trainingModal .attribute-selection label {  
+    display: inline-block;  
+    background: rgba(233, 69, 96, 0.1);  
+    border: 1px solid #e94560;  
+    padding: 8px 15px;  
+    border-radius: 3px;  
+    cursor: pointer;  
+    transition: background 0.2s, border-color 0.2s;  
+}  
+#trainingModal .attribute-selection label:hover {  
+    background: rgba(233, 69, 96, 0.3);  
+    border-color: #ff5577;  
+}  
+#trainingModal .attribute-selection input[type="radio"]:checked + label {  
+    background: #e94560;  
+    color: #fff;  
+    font-weight: bold;  
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);  
+}  
+#trainingModal .attribute-selection input[type="radio"] {  
+    display: none;  
+}  
+#hireStaffModal .staff-candidate {  
+    display: flex;  
+    justify-content: space-between;  
+    align-items: center;  
+    padding: 10px;  
+    border-bottom: 1px solid rgba(233, 69, 96, 0.3);  
+}  
+#hireStaffModal .staff-candidate:last-child {  
+    border-bottom: none;  
+}  
+#newsFeed {  
+    margin-top: 20px;  
+    max-height: 250px; /* Un poco más de altura */  
+    overflow-y: auto;  
+    border: 1px solid rgba(233, 69, 96, 0.3);  
+    border-radius: 5px;  
+    padding: 10px;  
+    background: rgba(0,0,0,0.3);  
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);  
+}  
+#newsFeed .alert { /* Estilos para las alertas dentro del newsFeed */  
+    margin-bottom: 5px;  
+    margin-top: 0;  
+    border: none; /* Sin borde para elementos individuales dentro del feed */  
+    padding: 8px;  
+}  
+  
+  
+/* ------------------- 11. Responsive Design ------------------- */  
+/* Media query para pantallas más pequeñas (móviles y tabletas pequeñas) */  
+@media (max-width: 768px) {  
+    .header {  
+        flex-direction: column;  
+        align-items: flex-start;  
+    }  
+    .header-info {  
+        justify-content: flex-start;  
+        margin-top: 10px;  
+        gap: 10px;  
+    }  
+    .header-title {  
+        font-size: 1.5em;  
+    }  
+  
+    .container {  
+        flex-direction: column; /* La barra lateral y el contenido se apilan */  
+        padding: 0;  
+    }  
+  
+    .sidebar {  
+        width: 100%; /* La barra lateral ocupa todo el ancho */  
+        max-height: 200px; /* Altura máxima para la barra lateral en móvil */  
+        border-right: none;  
+        border-bottom: 2px solid #e94560; /* Borde inferior */  
+        display: flex;  
+        flex-wrap: wrap; /* Permite que los elementos del menú se envuelvan */  
+        justify-content: center;  
+        padding-bottom: 0;  
+    }  
+    .menu-section {  
+        border-bottom: none;  
+        width: 100%; /* Las secciones ocupan todo el ancho */  
+        padding: 0;  
+    }  
+    .menu-title {  
+        display: none; /* Ocultar títulos de sección en móvil para ahorrar espacio */  
+    }  
+    .menu-item {  
+        padding: 8px 10px;  
+        font-size: 0.85em;  
+        text-align: center;  
+        border-left: none; /* Eliminar borde del indicador activo */  
+        border-bottom: 2px solid transparent; /* Usar borde inferior como indicador */  
+        flex-grow: 1; /* Para que ocupen el espacio equitativamente */  
+    }  
+    .menu-item:hover, .menu-item.active {  
+        padding-left: 10px; /* Reiniciar padding-left */  
+        padding-bottom: 5px;  
+        border-left-color: transparent;  
+        border-bottom-color: #e94560; /* Borde inferior como indicador */  
+    }  
+    .menu-item.active {  
+        border-bottom-color: #fff;  
+    }  
+    /* Para que el menú lateral se vea como pestañas en móvil */  
+    .sidebar .menu-section:nth-of-type(1) .menu-item {  
+        width: auto; /* Permite que los botones tengan su ancho natural */  
+        flex: 1 1 auto; /* Permite que los botones se distribuyan */  
+    }  
+    /* Para agrupar los elementos del menú en una barra horizontal */  
+    .sidebar > .menu-section {  
+        display: flex;  
+        flex-wrap: wrap;  
+        width: 100%;  
+        justify-content: center;  
+        border-bottom: 1px solid rgba(233, 69, 96, 0.3);  
+    }  
+    /* Ajuste para que los botones de menú se dividan equitativamente en la barra lateral móvil */  
+    .sidebar .menu-section button {  
+        flex: 1 1 30%; /* 3 botones por fila aproximadamente */  
+        min-width: 100px; /* Ancho mínimo para cada botón */  
+    }  
+  
+  
+    .main {  
+        padding: 15px;  
+        border-left: none; /* Eliminar borde lateral */  
+    }  
+  
+    h1 {  
+        font-size: 1.5em;  
+        margin-bottom: 15px;  
+    }  
+    h2 {  
+        font-size: 1.1em;  
+        margin: 15px 0 8px 0;  
+    }  
+  
+    .data-grid {  
+        grid-template-columns: 1fr; /* Una sola columna en móvil */  
+    }  
+  
+    th, td {  
+        padding: 8px;  
+        font-size: 0.8em;  
+    }  
+  
+    .btn {  
+        padding: 8px 15px;  
+        font-size: 0.9em;  
+        width: 100%; /* Botones de ancho completo */  
+        margin-right: 0;  
+    }  
+    .btn-sm {  
+        padding: 5px 10px;  
+        font-size: 0.8em;  
+    }  
+  
+    .modal-content {  
+        padding: 20px;  
+        width: 95%;  
+    }  
+    .modal-close {  
+        font-size: 2em;  
+        top: 10px;  
+        right: 15px;  
+    }  
+  
+    /* Ajustes específicos de tablas largas en móvil */  
+    table {  
+        font-size: 0.8em;  
+        display: block; /* Permite scroll horizontal en la tabla */  
+        overflow-x: auto;  
+        white-space: nowrap; /* Evita que el contenido de las celdas se envuelva */  
+    }  
+    /* Asegura que el thead sea visible en scroll horizontal */  
+    table thead {  
+        display: block;  
+        width: fit-content;  
+    }  
+    table tbody {  
+        display: block;  
+        width: fit-content;  
+    }  
+    table tr {  
+        display: inline-block; /* Cada fila como un bloque para scroll horizontal */  
+    }  
+    table th, table td {  
+        min-width: 80px; /* Ancho mínimo para columnas para evitar que se aprieten demasiado */  
+        text-align: center; /* Centrar texto en celdas de tabla */  
+        vertical-align: middle;  
+    }  
+    table th:first-child, table td:first-child {  
+        min-width: 50px; /* Ajuste para la columna de número/posición */  
+    }  
+    .player-card, .staff-candidate {  
+        flex-direction: column;  
+        align-items: flex-start;  
+        gap: 5px;  
+    }  
+    .player-card button, .staff-candidate button {  
+        width: auto; /* Botones más pequeños en cards */  
+    }  
+  
+    /* Asegurar que las imágenes de los botones principales se posicionen correctamente */  
+    .main-menu-button {  
+        height: auto;  
+        padding: 15px 10px;  
+        font-size: 1em;  
+    }  
+    .main-menu-button.blue, .main-menu-button.red {  
+        width: 100%; /* Ajuste para botones principales */  
+    }  
+}  
+  
+/* Media query para pantallas aún más pequeñas (smartphones) */  
+@media (max-width: 480px) {  
+    .header-title {  
+        font-size: 1.3em;  
+    }  
+    .info-box {  
+        padding: 6px 10px;  
+        font-size: 0.8em;  
+    }  
+    .sidebar .menu-section button {  
+        flex: 1 1 45%; /* 2 botones por fila */  
+    }  
+    h1 {  
+        font-size: 1.3em;  
+    }  
+    h2 {  
+        font-size: 1em;  
+    }  
+    .main-menu-button {  
+        font-size: 0.9em;  
+        padding: 12px 8px;  
+    }  
+    .modal-content {  
+        padding: 15px;  
+    }  
+    .modal-close {  
+        font-size: 1.8em;  
+    }  
+    table th, table td {  
+        min-width: 60px;  
+    }  
+}  
+  
+  
+/* Estilos para el centro del menú (circular) que se ve en la imagen */  
+.center-menu-container {  
+    position: relative;  
+    width: 250px; /* Ancho del círculo */  
+    height: 250px; /* Alto del círculo */  
+    border-radius: 50%;  
+    background: radial-gradient(circle at center, #2e4d77 0%, #0f3460 100%); /* Degradado radial para el círculo */  
+    border: 2px solid #e94560; /* Borde rojo */  
+    box-shadow: 0 0 20px rgba(0,0,0,0.7), inset 0 0 15px rgba(233,69,96,0.3);  
+    display: flex;  
+    justify-content: center;  
+    align-items: center;  
+    margin: 40px auto; /* Para centrarlo en la página si no está en la estructura de grid principal */  
+    flex-direction: column;  
+    gap: 5px;  
+    padding: 10px;  
+}  
+.center-menu-button {  
+    background: linear-gradient(180deg, #6699ff 0%, #4477ee 100%);  
+    color: white;  
+    padding: 8px 15px;  
+    border: none;  
+    border-radius: 5px;  
+    cursor: pointer;  
+    font-weight: bold;  
+    font-size: 0.9em;  
+    text-transform: uppercase;  
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);  
+    width: 80%; /* Ocupa la mayor parte del ancho */  
+    text-align: center;  
+    transition: all 0.2s ease-in-out;  
+}  
+.center-menu-button:hover {  
+    background: linear-gradient(180deg, #88bbee 0%, #6699ff 100%);  
+    transform: translateY(-1px);  
+    box-shadow: 0 3px 7px rgba(0,0,0,0.4);  
+}  
+.center-menu-button.active-player {  
+    background: linear-gradient(180deg, #e94560 0%, #c73446 100%); /* Color para el jugador activo */  
+}  
+.center-menu-button.active-player:hover {  
+    background: linear-gradient(180deg, #ff5577 0%, #e94560 100%);  
+}  
+  
+.center-menu-icon {  
+    position: absolute;  
+    bottom: 10px; /* Posicionar en la parte inferior del círculo */  
+    left: 50%;  
+    transform: translateX(-50%);  
+    width: 60px;  
+    height: 60px;  
+    background-color: #4CAF50; /* Color verde */  
+    border-radius: 50%;  
+    display: flex;  
+    justify-content: center;  
+    align-items: center;  
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);  
+    border: 2px solid #e94560;  
+}  
+.center-menu-icon img {  
+    width: 80%;  
+    height: 80%;  
+    filter: brightness(0) invert(1); /* Para hacer el balón blanco si es SVG */  
+}  
+  
+/* Para los elementos flotantes alrededor del círculo central */  
+.floating-element {  
+    position: absolute;  
+    /* Ajusta top, left, right, bottom y transform para posicionarlos */  
+    z-index: 50; /* Menor que el modal pero mayor que el fondo */  
+}  
+.floating-element img {  
+    max-width: 120px; /* Ajusta el tamaño de las imágenes decorativas */  
+    height: auto;  
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); /* Sombra para que destaquen */  
+}  
+  
+/* Estilos de la tabla de noticias/eventos en la imagen (parte derecha inferior) */  
+.news-panel {  
+    background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);  
+    border: 2px solid #e94560;  
+    border-radius: 8px;  
+    padding: 15px;  
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);  
+    margin-top: 20px;  
+    min-height: 200px;  
+}  
+.news-panel h3 {  
+    color: #e94560;  
+    font-size: 1.2em;  
+    margin-bottom: 10px;  
+    border-bottom: 1px dashed rgba(233, 69, 96, 0.3);  
+    padding-bottom: 5px;  
+}  
+.news-item {  
+    display: flex;  
+    align-items: flex-start;  
+    margin-bottom: 10px;  
+    gap: 10px;  
+    font-size: 0.9em;  
+}  
+.news-item-icon {  
+    width: 24px;  
+    height: 24px;  
+    background-color: #0f3460;  
+    border-radius: 50%;  
+    display: flex;  
+    justify-content: center;  
+    align-items: center;  
+    flex-shrink: 0;  
+    border: 1px solid #e94560;  
+}  
+.news-item-icon img {  
+    width: 70%;  
+    height: 70%;  
+    filter: brightness(0) invert(1); /* Para hacer el icono blanco */  
+}  
+.news-item-content p {  
+    margin: 0;  
+    line-height: 1.4;  
+    color: #e0e0e0;  
+}  
+.news-item-content span {  
+    font-size: 0.8em;  
+    color: #aaa;  
+}  
+.news-panel .btn {  
+    margin-top: 15px;  
+    width: 100%;  
+}  
+  
+.stadio-preview { /* Estilo para el pequeño estadio en la esquina inferior derecha del panel de noticias */  
+    width: 100px; /* Tamaño del estadio */  
+    height: auto;  
+    display: block;  
+    margin-top: 10px;  
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));  
+}  
