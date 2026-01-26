@@ -3,33 +3,33 @@
 import * as gameLogic from './gameLogic.js';  
 import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
   
-function renderStandingsTable(standings, currentTeam) {  
-    const tbody = document.getElementById('standingsTable');  
-    if (!tbody) return;  
-  
-    const sorted = Object.entries(standings).sort((a, b) => {  
-        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;  
-        const dgA = a[1].gf - a[1].gc;  
-        const dgB = b[1].gf - b[1].gc;  
-        if (dgB !== dgA) return dgB - dgA;  
-        return b[1].gf - a[1].gf;  
-    });  
-  
-    tbody.innerHTML = sorted.map(([team, stats], i) => `  
-        <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">  
-            <td><strong>${i + 1}</strong></td>  
-            <td><strong>${team}</strong></td>  
-            <td>${stats.pj}</td>  
-            <td>${stats.g}</td>  
-            <td>${stats.e}</td>  
-            <td>${stats.p}</td>  
-            <td>${stats.gf}</td>  
-            <td>${stats.gc}</td>  
-            <td>${stats.gf - stats.gc}</td>  
-            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>  
-        </tr>  
-    `).join('');  
-}  
+function renderStandingsTable(standings, currentTeam) {
+    const tbody = document.getElementById('standingsTable');
+    if (!tbody) return;
+
+    const sorted = Object.entries(standings).sort((a, b) => {
+        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
+        const dgA = a[1].gf - a[1].gc;
+        const dgB = b[1].gf - b[1].gc;
+        if (dgB !== dgA) return dgB - dgA;
+        return b[1].gf - a[1].gf;
+    });
+
+    tbody.innerHTML = sorted.map(([team, stats], i) => `
+        <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
+            <td><strong>${i + 1}</strong></td>
+            <td>${renderTeamLogo(team, '25px')}<strong>${team}</strong></td>
+            <td>${stats.pj}</td>
+            <td>${stats.g}</td>
+            <td>${stats.e}</td>
+            <td>${stats.p}</td>
+            <td>${stats.gf}</td>
+            <td>${stats.gc}</td>
+            <td>${stats.gf - stats.gc}</td>
+            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
+        </tr>
+    `).join('');
+}
   
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
@@ -440,9 +440,22 @@ function refreshUI(state) {
     const opponentName = state.nextOpponent || 'Rival Indefinido';  
     renderNextMatchCard(state.team, opponentName, state.week);  
 }  
-  
+
+// Función para renderizar logo del equipo
+function renderTeamLogo(teamName, size = '30px') {
+    const storedData = localStorage.getItem(`team_data_${teamName}`);
+    if (storedData) {
+        const teamData = JSON.parse(storedData);
+        if (teamData.logo) {
+            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px;">`;
+        }
+    }
+    return ''; // Sin logo
+}
+
 export {  
-    renderStandingsTable,  
+    renderStandingsTable,
+    renderTeamLogo,
     renderSquadList,  
     renderAcademyList,  
     renderPlayerMarketList,  
