@@ -1,5 +1,4 @@
 // config.js - Configuración y datos globales  
-  
 let firebaseAvailable = false;  
 let db = null;  
 let auth = null;  
