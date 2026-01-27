@@ -1,14 +1,30 @@
-// config.js - Configuración y datos globales  
-  
-let firebaseAvailable = false;  
-let db = null;  
-let auth = null;  
-  
-try {  
-    console.log('Firebase disponible pero deshabilitado (usar localStorage)');  
-} catch (e) {  
-    console.log('Firebase no disponible, usando almacenamiento local');  
-}  
+// config.js - Configuración y datos globales
+
+// ==========================================
+// CONFIGURACIÓN DE FIREBASE
+// ==========================================
+
+// Configuración de Firebase
+export const firebaseConfig = {
+    enabled: true, // ⚠️ CAMBIAR A true PARA HABILITAR FIREBASE
+    apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",
+    authDomain: "cuentacuentos-57631.firebaseapp.com",
+    projectId: "cuentacuentos-57631",
+    storageBucket: "cuentacuentos-57631.firebasestorage.app",
+    messagingSenderId: "654911737232",
+    appId: "1:654911737232:web:e87ecaea12351dd3d5b715"
+};
+
+// Variables globales de Firebase (se inicializarán en firebase-config.js)
+let firebaseAvailable = false;
+let db = null;
+let auth = null;
+
+// Exportar para que otros módulos puedan acceder
+export { firebaseAvailable, db, auth };
+
+console.log(firebaseConfig.enabled ? '✅ Firebase HABILITADO' : '⚠️ Firebase DESHABILITADO (usando localStorage)');
+
   
 const TEAMS_DATA = {  
     primera: [ // Primera División (20 equipos) - Basado en 23/24  
