@@ -21,9 +21,11 @@ let currentUserId = null;
 let authReady = false;  
   
 // Promise para esperar a que la autenticación esté lista  
+let resolveAuthReady;  
 const authReadyPromise = new Promise((resolve) => {  
-    window.authReadyResolve = resolve;  
+    resolveAuthReady = resolve; // Captura la función de resolución  
 });  
+window.authReadyPromise = authReadyPromise; // Exponer globalmente  
   
 // Inicializar Firebase  
 if (firebaseConfig.enabled) {  
@@ -45,7 +47,7 @@ if (firebaseConfig.enabled) {
                 console.log('✅ Autenticación anónima iniciada');  
             })  
             .catch(error => {  
-                console.error('❌ Error en autenticación anónima:', error);  
+                console.error('❌ Error en autenticación anónima:', error); // Este es el error auth/admin-restricted-operation  
             });  
   
         // Listener de cambios de autenticación  
@@ -56,9 +58,7 @@ if (firebaseConfig.enabled) {
                 authReady = true;  
                 console.log('✅ Usuario autenticado con UID:', user.uid);  
                 // Resolver la promesa de autenticación lista  
-                if (window.authReadyResolve) {  
-                    window.authReadyResolve(user.uid);  
-                }  
+                resolveAuthReady(user.uid);  
                 // Habilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
                 if (saveBtn) {  
@@ -76,16 +76,24 @@ if (firebaseConfig.enabled) {
                     saveBtn.disabled = true;  
                     saveBtn.style.opacity = '0.5';  
                 }  
+                // Si la autenticación falla por completo o el usuario se desconecta, también se resuelve la promesa  
+                // con null o un identificador de no autenticado.  
+                // Para este caso, si ya se intentó la autenticación, se puede resolver la promesa para no bloquear.  
+                if (!user && authReadyPromise.isResolved !== true) { // Evita resolver múltiples veces  
+                     resolveAuthReady(null); // O un valor que indique no autenticado  
+                }  
             }  
         });  
         console.log('✅ Firebase inicializado correctamente');  
     } catch (error) {  
         console.error('❌ Error inicializando Firebase:', error);  
         window.firebaseConfig = { enabled: false }; // Deshabilitar si hay error  
+        resolveAuthReady(null); // Si Firebase falla al inicializar, resuelve la promesa  
     }  
 } else {  
     console.log('⚠️ Firebase deshabilitado en la configuración');  
     window.firebaseConfig = { enabled: false }; // Asegurarse de que esté deshabilitado globalmente  
+    resolveAuthReady(null); // Si Firebase está deshabilitado, resuelve la promesa  
 }  
   
 // ==========================================  
@@ -112,8 +120,7 @@ async function saveTeamDataToFirebase(teamName, teamData) {
       
     try {  
         console.log(`📤 Guardando datos de equipo en Firebase: ${teamName}...`);  
-        // Asegúrate de que db esté definido y no sea null/undefined aquí  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -154,7 +161,7 @@ async function getTeamDataFromFirebase(teamName) {
   
     try {  
         console.log(`📥 Cargando desde Firebase: ${teamName}...`);  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -221,7 +228,7 @@ async function getAllTeamsDataFromFirebase() {
   
     try {  
         console.log('📥 Cargando todos los equipos desde Firebase...');  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -289,7 +296,7 @@ async function saveGameToCloud(userId, gameId, gameName, gameState) {
             gameState: gameState  
         };  
         // Asegúrate de que db esté definido y no sea null/undefined aquí  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -333,7 +340,7 @@ async function loadUserSavedGames(userId) {
   
     try {  
         console.log(`📥 Cargando partidas guardadas desde Firebase para usuario ${finalUserId}...`);  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -362,9 +369,8 @@ async function loadGameFromCloud(userId, gameId) {
         console.log('⚠️ Firebase no disponible, cargando desde localStorage');  
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
         if (localGames[gameId]) {  
-            if (window.gameLogic) {  
-                window.gameLogic.updateGameState(localGames[gameId].gameState);  
-            }  
+            // Eliminar la actualización de gameState aquí. Debe hacerlo el caller.  
+            // if (window.gameLogic) { window.gameLogic.updateGameState(localGames[gameId].gameState); }  
             return { success: true, data: localGames[gameId] };  
         }  
         return { success: false, message: 'Partida no encontrada' };  
@@ -389,7 +395,7 @@ async function loadGameFromCloud(userId, gameId) {
   
     try {  
         console.log(`📥 Cargando partida ${gameId} desde Firebase para usuario ${finalUserId}...`);  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -400,7 +406,6 @@ async function loadGameFromCloud(userId, gameId) {
             console.log(`✅ Partida ${gameId} cargada desde Firebase`);  
             // NO ACTUALIZAR gameLogic.gameState AQUÍ. DEJAR QUE EL CALLER LO HAGA.  
             // La función loadGameFromCloud solo debería devolver los datos.  
-            // window.gameLogic.updateGameState(gameData.gameState); // <-- ESTA LÍNEA DEBE SER MOVIDA  
             return { success: true, data: gameData };  
         } else {  
             console.log('⚠️ Partida no encontrada en Firebase');  
@@ -441,7 +446,7 @@ async function deleteGameFromCloud(userId, gameId) {
   
     try {  
         console.log(`🗑️ Eliminando partida ${gameId} de Firebase para usuario ${finalUserId}...`);  
-        if (!db) {  
+        if (!db) { // Añadir esta validación  
             console.error('❌ Firestore DB no está inicializado.');  
             return { success: false, error: 'Firestore DB no inicializado' };  
         }  
@@ -469,7 +474,8 @@ window.saveGameToCloud = saveGameToCloud;
 window.loadUserSavedGames = loadUserSavedGames;  
 window.loadGameFromCloud = loadGameFromCloud;  
 window.deleteGameFromCloud = deleteGameFromCloud;  
-window.authReadyPromise = authReadyPromise; // Exponer la promesa  
+// window.authReadyPromise ya se expone al inicio  
+// window.firebaseConfig ya se expone en la inicialización  
   
 // Exportar como módulos ES6  
 export {  
