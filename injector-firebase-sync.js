@@ -13,7 +13,7 @@
     };
 
     // =============================
-    // Helper seguro: carga o crea documento en Firebase
+    // HELPER SEGURO: Cargar o crear documento de equipo en Firebase
     // =============================
     async function getTeamDataFromFirebaseSafe(teamName) {
         if (!isFirebaseEnabled || !window.firebaseDB) return { success: false, data: null };
@@ -42,12 +42,11 @@
     }
 
     // =============================
-    // Función principal: obtener datos de un equipo
+    // EQUIPOS: Obtener datos de un equipo
     // =============================
     window.getTeamData = async function(teamName) {
         console.log(`📥 Cargando datos para ${teamName}...`);
 
-        // Intentar Firebase primero
         const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);
         if (firebaseResult.success && firebaseResult.data) {
             console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
@@ -55,30 +54,26 @@
             return firebaseResult.data;
         }
 
-        // Fallback a localStorage
         const localData = localStorage.getItem(`team_data_${teamName}`);
         if (localData) {
             console.log(`📦 Datos cargados desde localStorage para ${teamName}`);
             return JSON.parse(localData);
         }
 
-        // Último recurso: datos por defecto
-        console.log(`⚠️ No hay datos en Firebase ni en localStorage para ${teamName}, usando valores por defecto`);
+        console.log(`⚠️ No hay datos en Firebase ni localStorage para ${teamName}, usando valores por defecto`);
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
         return defaultTeamData;
     };
 
     // =============================
-    // Función para guardar datos de un equipo
+    // EQUIPOS: Guardar datos de un equipo
     // =============================
     window.saveTeamData = async function(teamName, teamData) {
         console.log(`💾 Guardando datos para ${teamName}...`);
 
-        // Guardar en localStorage siempre
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
         console.log(`✅ Datos guardados en localStorage para ${teamName}`);
 
-        // Guardar en Firebase si está habilitado
         if (isFirebaseEnabled && window.firebaseDB) {
             try {
                 const user = window.firebaseAuth?.currentUser;
@@ -101,7 +96,7 @@
     };
 
     // =============================
-    // Precargar todos los equipos al iniciar
+    // PRECARGAR TODOS LOS EQUIPOS
     // =============================
     if (isFirebaseEnabled && window.firebaseDB) {
         window.addEventListener('DOMContentLoaded', async () => {
@@ -121,6 +116,151 @@
             }
         });
     }
+
+    // =============================
+    // PARTIDAS: Guardar partida en Firebase
+    // =============================
+    async function saveGameToCloud(userId, gameId, gameName, gameState) {
+        if (!window.firebaseConfig?.enabled || !window.firebaseDB) {
+            console.warn('⚠️ Firebase no disponible, guardando solo en localStorage');
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            localGames[gameId] = { id: gameId, name: gameName, team: gameState.team, week: gameState.week, lastSaved: Date.now(), gameState };
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+            return { success: false, error: 'Firebase no disponible' };
+        }
+
+        const user = window.firebaseAuth?.currentUser;
+        if (!user) {
+            console.warn('⚠️ Usuario no autenticado, guardando solo en localStorage');
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            localGames[gameId] = { id: gameId, name: gameName, team: gameState.team, week: gameState.week, lastSaved: Date.now(), gameState };
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+            return { success: false, error: 'Usuario no autenticado' };
+        }
+
+        const gameData = { id: gameId, name: gameName, team: gameState.team, week: gameState.week, division: gameState.division || null, lastSaved: Date.now(), gameState };
+
+        try {
+            const docRef = doc(window.firebaseDB, 'users', userId, 'saved_games', gameId);
+            await setDoc(docRef, gameData);
+            console.log(`✅ Partida ${gameId} guardada en Firebase`);
+
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            localGames[gameId] = gameData;
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+
+            return { success: true };
+        } catch (error) {
+            console.error('❌ Error guardando partida en Firebase:', error);
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            localGames[gameId] = gameData;
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+            return { success: false, error: error.message };
+        }
+    }
+
+    // =============================
+    // PARTIDAS: Cargar todas las partidas de un usuario
+    // =============================
+    async function loadUserSavedGames(userId) {
+        if (!window.firebaseConfig?.enabled || !window.firebaseDB) {
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            return Object.values(localGames);
+        }
+
+        const user = window.firebaseAuth?.currentUser;
+        if (!user) {
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            return Object.values(localGames);
+        }
+
+        try {
+            const querySnapshot = await getDocs(collection(window.firebaseDB, 'users', userId, 'saved_games'));
+            const games = [];
+            querySnapshot.forEach(docSnap => { games.push(docSnap.data()); });
+
+            const localGames = {};
+            games.forEach(game => { localGames[game.id] = game; });
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+
+            console.log(`✅ ${games.length} partidas cargadas desde Firebase`);
+            return games;
+        } catch (error) {
+            console.error('❌ Error cargando partidas desde Firebase:', error);
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            return Object.values(localGames);
+        }
+    }
+
+    // =============================
+    // PARTIDAS: Cargar una partida concreta
+    // =============================
+    async function loadGameFromCloud(userId, gameId) {
+        const user = window.firebaseAuth?.currentUser;
+        if (!window.firebaseConfig?.enabled || !window.firebaseDB || !user) {
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            if (localGames[gameId]) {
+                if (window.gameLogic) window.gameLogic.updateGameState(localGames[gameId].gameState);
+                return { success: true, data: localGames[gameId] };
+            }
+            return { success: false, message: 'Partida no encontrada' };
+        }
+
+        try {
+            const docRef = doc(window.firebaseDB, 'users', userId, 'saved_games', gameId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const gameData = docSnap.data();
+                if (window.gameLogic) window.gameLogic.updateGameState(gameData.gameState);
+
+                const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+                localGames[gameId] = gameData;
+                localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+
+                return { success: true, data: gameData };
+            }
+            return { success: false, message: 'Partida no encontrada en Firebase' };
+        } catch (error) {
+            console.error('❌ Error cargando partida desde Firebase:', error);
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            return localGames[gameId] ? { success: true, data: localGames[gameId] } : { success: false, message: 'Partida no encontrada' };
+        }
+    }
+
+    // =============================
+    // PARTIDAS: Eliminar una partida
+    // =============================
+    async function deleteGameFromCloud(userId, gameId) {
+        const user = window.firebaseAuth?.currentUser;
+        if (!window.firebaseConfig?.enabled || !window.firebaseDB || !user) {
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            delete localGames[gameId];
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+            return { success: true };
+        }
+
+        try {
+            const docRef = doc(window.firebaseDB, 'users', userId, 'saved_games', gameId);
+            await deleteDoc(docRef);
+
+            const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
+            delete localGames[gameId];
+            localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
+
+            return { success: true };
+        } catch (error) {
+            console.error('❌ Error eliminando partida de Firebase:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // =============================
+    // EXPORTAR FUNCIONES DE PARTIDAS GLOBALMENTE
+    // =============================
+    window.saveGameToCloud = saveGameToCloud;
+    window.loadUserSavedGames = loadUserSavedGames;
+    window.loadGameFromCloud = loadGameFromCloud;
+    window.deleteGameFromCloud = deleteGameFromCloud;
 
     console.log('✓ Firebase Sync Injector cargado correctamente');
 })();
