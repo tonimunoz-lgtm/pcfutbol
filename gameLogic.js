@@ -305,32 +305,38 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
             stadiumName: teamData.stadiumName,
             capacity: teamData.stadiumCapacity
         });
+
+        // *** ESTABLECER PRESUPUESTO INICIAL ***
+        // CORREGIR: Usar teamData.initialBudget directamente
+        if (teamData.initialBudget) {
+            gameState.balance = teamData.initialBudget;
+        } else {
+            // Valores por defecto según división
+            if (divisionType === 'primera') {
+                gameState.balance = 50000000;
+                gameState.popularity = 65;
+                gameState.fanbase = 25000;
+                gameState.ticketPrice = 30;
+            } else if (divisionType === 'segunda') {
+                gameState.balance = 20000000;
+                gameState.popularity = 50;
+                gameState.fanbase = 10000;
+                gameState.ticketPrice = 20;
+            } else {
+                gameState.balance = 5000000;
+                gameState.popularity = 35;
+                gameState.fanbase = 5000;
+                gameState.ticketPrice = 15;
+            }
+        }
     } else {
         console.log(`⚠️ No hay datos personalizados para ${teamName}, usando valores por defecto`);
         gameState.teamLogo = null;
         gameState.stadiumImage = null;
         gameState.stadiumName = teamName + ' Stadium';
         gameState.stadiumCapacity = 10000;
-    }
-
-    let teamsInDivision = TEAMS_DATA[divisionType];
-    if (!teamsInDivision) {
-        console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);
-        teamsInDivision = TEAMS_DATA.primera;
-        gameState.division = 'primera';
-    }
-
-    if (!teamsInDivision.includes(gameState.team)) {
-        teamsInDivision.push(gameState.team);
-    }
-    gameState.leagueTeams = teamsInDivision;
-    gameState.standings = initStandings(teamsInDivision);
-    gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
-
-    // Establecer presupuesto según datos personalizados o división
-    if (storedData && JSON.parse(storedData).initialBudget) {
-        gameState.balance = JSON.parse(storedData).initialBudget;
-    } else {
+        
+        // Valores por defecto según división
         if (divisionType === 'primera') {
             gameState.balance = 50000000;
             gameState.popularity = 65;
@@ -348,6 +354,20 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
             gameState.ticketPrice = 15;
         }
     }
+
+    let teamsInDivision = TEAMS_DATA[divisionType];
+    if (!teamsInDivision) {
+        console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);
+        teamsInDivision = TEAMS_DATA.primera;
+        gameState.division = 'primera';
+    }
+
+    if (!teamsInDivision.includes(gameState.team)) {
+        teamsInDivision.push(gameState.team);
+    }
+    gameState.leagueTeams = teamsInDivision;
+    gameState.standings = initStandings(teamsInDivision);
+    gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
 
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
