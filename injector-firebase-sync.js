@@ -12,35 +12,47 @@
         stadiumName: 'Estadio Municipal'
     };
 
-    // Función para cargar datos de un equipo
+    // =============================
+    // Helper seguro: carga o crea documento en Firebase
+    // =============================
+    async function getTeamDataFromFirebaseSafe(teamName) {
+        if (!isFirebaseEnabled || !window.firebaseDB) return { success: false, data: null };
+
+        try {
+            const user = window.firebaseAuth?.currentUser;
+            if (!user) {
+                console.warn('⚠️ Usuario no autenticado, no se puede acceder a Firebase');
+                return { success: false, data: null };
+            }
+
+            const docRef = doc(window.firebaseDB, 'teams_data', teamName);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                return { success: true, data: docSnap.data() };
+            } else {
+                console.log(`⚠️ Documento "${teamName}" no encontrado en Firebase, creando por defecto...`);
+                await setDoc(docRef, defaultTeamData);
+                return { success: true, data: defaultTeamData };
+            }
+        } catch (error) {
+            console.error('❌ Error accediendo a Firebase:', error);
+            return { success: false, data: null, error };
+        }
+    }
+
+    // =============================
+    // Función principal: obtener datos de un equipo
+    // =============================
     window.getTeamData = async function(teamName) {
         console.log(`📥 Cargando datos para ${teamName}...`);
 
-        // Validar Firebase y autenticación
-        if (isFirebaseEnabled && typeof window.getTeamDataFromFirebase === 'function') {
-            try {
-                const user = window.firebaseAuth?.currentUser;
-                if (!user) {
-                    console.warn('⚠️ Usuario no autenticado, usando localStorage como fallback');
-                } else {
-                    const firebaseResult = await window.getTeamDataFromFirebase(teamName);
-
-                    if (firebaseResult.success) {
-                        if (firebaseResult.data) {
-                            console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
-                            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(firebaseResult.data));
-                            return firebaseResult.data;
-                        } else {
-                            console.log(`⚠️ Documento no encontrado en Firebase, creando datos por defecto para ${teamName}`);
-                            await window.saveTeamDataToFirebase(teamName, defaultTeamData);
-                            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
-                            return defaultTeamData;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ Error accediendo a Firebase, usando localStorage como fallback', error);
-            }
+        // Intentar Firebase primero
+        const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);
+        if (firebaseResult.success && firebaseResult.data) {
+            console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
+            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(firebaseResult.data));
+            return firebaseResult.data;
         }
 
         // Fallback a localStorage
@@ -51,20 +63,23 @@
         }
 
         // Último recurso: datos por defecto
-        console.log(`⚠️ No hay datos en Firebase ni localStorage, usando valores por defecto`);
+        console.log(`⚠️ No hay datos en Firebase ni en localStorage para ${teamName}, usando valores por defecto`);
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
         return defaultTeamData;
     };
 
+    // =============================
     // Función para guardar datos de un equipo
+    // =============================
     window.saveTeamData = async function(teamName, teamData) {
         console.log(`💾 Guardando datos para ${teamName}...`);
 
-        // Guardar siempre en localStorage
+        // Guardar en localStorage siempre
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
         console.log(`✅ Datos guardados en localStorage para ${teamName}`);
 
-        if (isFirebaseEnabled && typeof window.saveTeamDataToFirebase === 'function') {
+        // Guardar en Firebase si está habilitado
+        if (isFirebaseEnabled && window.firebaseDB) {
             try {
                 const user = window.firebaseAuth?.currentUser;
                 if (!user) {
@@ -72,14 +87,10 @@
                     return { success: false, message: 'Usuario no autenticado, guardado en localStorage' };
                 }
 
-                const firebaseResult = await window.saveTeamDataToFirebase(teamName, teamData);
-                if (firebaseResult.success) {
-                    console.log(`✅ Datos guardados en Firebase para ${teamName}`);
-                    return { success: true };
-                } else {
-                    console.warn(`⚠️ Error guardando en Firebase, usando localStorage:`, firebaseResult.error);
-                    return { success: false, error: firebaseResult.error };
-                }
+                const docRef = doc(window.firebaseDB, 'teams_data', teamName);
+                await setDoc(docRef, teamData);
+                console.log(`✅ Datos guardados en Firebase para ${teamName}`);
+                return { success: true };
             } catch (error) {
                 console.warn('⚠️ Error guardando en Firebase, usando localStorage', error);
                 return { success: false, error };
@@ -89,22 +100,24 @@
         return { success: true, message: 'Datos guardados en localStorage (Firebase deshabilitado)' };
     };
 
+    // =============================
     // Precargar todos los equipos al iniciar
-    if (isFirebaseEnabled) {
+    // =============================
+    if (isFirebaseEnabled && window.firebaseDB) {
         window.addEventListener('DOMContentLoaded', async () => {
             console.log('🔥 Precargando datos de equipos desde Firebase...');
-            if (typeof window.getAllTeamsDataFromFirebase === 'function') {
-                try {
-                    const allData = await window.getAllTeamsDataFromFirebase();
-                    if (allData.success) {
-                        Object.keys(allData.data).forEach(teamName => {
-                            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(allData.data[teamName]));
-                        });
-                        console.log(`✅ ${Object.keys(allData.data).length} equipos precargados desde Firebase`);
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Error precargando datos de Firebase, usando localStorage como fallback', error);
-                }
+            try {
+                const collectionRef = collection(window.firebaseDB, 'teams_data');
+                const querySnapshot = await getDocs(collectionRef);
+
+                querySnapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    localStorage.setItem(`team_data_${docSnap.id}`, JSON.stringify(data));
+                });
+
+                console.log(`✅ ${querySnapshot.size} equipos precargados desde Firebase`);
+            } catch (error) {
+                console.warn('⚠️ Error precargando datos desde Firebase, usando localStorage como fallback', error);
             }
         });
     }
