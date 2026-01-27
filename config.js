@@ -1,12 +1,9 @@
-// config.js - Configuración y datos globales
-
 // ==========================================
-// CONFIGURACIÓN DE FIREBASE
+// CONFIGURACIÓN DE FIREBASE (Solo config, no exports)
 // ==========================================
 
-// IMPORTANTE: Esta configuración debe estar ANTES de cualquier export
-const firebaseConfig = {
-    enabled: true, // ⚠️ CAMBIAR A true PARA HABILITAR FIREBASE
+const firebaseConfigData = {
+    enabled: true, // ⚠️ true = Firebase habilitado, false = solo localStorage
     apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",
     authDomain: "cuentacuentos-57631.firebaseapp.com",
     projectId: "cuentacuentos-57631",
@@ -15,8 +12,10 @@ const firebaseConfig = {
     appId: "1:654911737232:web:e87ecaea12351dd3d5b715"
 };
 
-console.log(firebaseConfig.enabled ? '✅ Firebase HABILITADO' : '⚠️ Firebase DESHABILITADO (usando localStorage)');
+// Exponer globalmente (no como export de módulo)
+window.firebaseConfigData = firebaseConfigData;
 
+console.log(firebaseConfigData.enabled ? '✅ Firebase HABILITADO' : '⚠️ Firebase DESHABILITADO');
   
 const TEAMS_DATA = {  
     primera: [ // Primera División (20 equipos) - Basado en 23/24  
