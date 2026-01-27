@@ -133,48 +133,45 @@
         }
     };
 
-    // Cargar partida desde la nube
-    window.loadGameFromCloudUI = async function(gameId) {
-        if (!window.currentUserId) {
-            alert('❌ Debes iniciar sesión para cargar partidas');
-            return;
-        }
-
-        if (!confirm('¿Seguro que quieres cargar esta partida? Se perderá el progreso actual no guardado.')) {
-            return;
-        }
-
-        try {
-            // Esperar a que Firebase esté listo
-            if (window.authReadyPromise) {
-                await window.authReadyPromise;
-            }
-
-            const result = await window.loadGameFromCloud(window.currentUserId, gameId);
-            
-            if (result.success) {
-                alert('✅ Partida cargada correctamente');
-                
-                // Refrescar UI
-                if (window.ui && window.gameLogic) {
-                    window.ui.refreshUI(window.gameLogic.getGameState());
-                }
-
-                // Cerrar modal y cambiar a dashboard
-                window.closeSavedGamesModal();
-                
-                const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');
-                if (dashboardButton) {
-                    window.switchPage('dashboard', dashboardButton);
-                }
-            } else {
-                alert('❌ Error al cargar la partida: ' + (result.message || result.error));
-            }
-        } catch (error) {
-            console.error('❌ Error cargando partida:', error);
-            alert('❌ Error al cargar la partida: ' + error.message);
-        }
-    };
+ // Cargar partida desde la nube  
+window.loadGameFromCloudUI = async function(gameId) {  
+    if (!window.currentUserId) {  
+        alert('⚠️ Debes iniciar sesión para cargar partidas');  
+        return;  
+    }  
+    if (!confirm('¿Seguro que quieres cargar esta partida? Se perderá el progreso actual no guardado.')) {  
+        return;  
+    }  
+    try {  
+        if (window.authReadyPromise) {  
+            await window.authReadyPromise;  
+        }  
+        const result = await window.loadGameFromCloud(window.currentUserId, gameId);  
+        if (result.success) {  
+            alert('✅ Partida cargada correctamente');  
+            // Refrescar UI DE LA PARTIDA ACTUALMENTE CARGADA  
+            if (window.ui && window.gameLogic) {  
+                // Actualizar el estado global del juego con los datos cargados  
+                window.gameLogic.updateGameState(result.data.gameState);  
+                window.ui.refreshUI(window.gameLogic.getGameState());  
+            } else {  
+                // Si gameLogic o ui no están disponibles, recargar la página para asegurar la inicialización  
+                console.warn('gameLogic o ui no disponibles después de cargar partida, recargando página.');  
+                location.reload();  
+            }  
+            window.closeSavedGamesModal();  
+            const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');  
+            if (dashboardButton) {  
+                window.switchPage('dashboard', dashboardButton);  
+            }  
+        } else {  
+            alert('❌ Error al cargar la partida: ' + (result.message || result.error));  
+        }  
+    } catch (error) {  
+        console.error('❌ Error cargando partida:', error);  
+        alert('❌ Error al cargar la partida: ' + error.message);  
+    }  
+};  
 
     // Eliminar partida de la nube
     window.deleteGameFromCloudUI = async function(gameId, gameName) {
