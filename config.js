@@ -165,10 +165,7 @@ const PROMOTION_RELEGATION = {
     }  
 };  
   
-export {  
-    firebaseAvailable,  
-    db,  
-    auth,  
+export {      
     TEAMS_DATA,  
     POSITIONS,  
     ATTRIBUTES,  
