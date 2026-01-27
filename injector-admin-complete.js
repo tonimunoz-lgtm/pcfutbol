@@ -284,12 +284,13 @@ importAllData: async function(event) {
             }
         } catch (error) {
             alert('❌ Error al importar los datos: ' + error.message);
-        }
+       }
     };
     reader.readAsText(file);
     
     event.target.value = '';
-
+}
+    }; // <-- Este es el cierre del objeto window.adminBackend
 
     // Auto-activar panel de admin al cargar (para testing)
     window.addEventListener('DOMContentLoaded', () => {
