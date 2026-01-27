@@ -1,18 +1,4 @@
 // injector-firebase-sync.js
-import { 
-    signInAnonymously, 
-    onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import { 
-    getDocs, 
-    doc, 
-    setDoc, 
-    collection, 
-    getDoc, 
-    deleteDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
 (function() {
     console.log('🔥 Firebase Sync Injector cargando...');
 
@@ -29,7 +15,7 @@ import {
     // AUTENTICACIÓN ANÓNIMA
     // =============================
     if (isFirebaseEnabled && window.firebaseAuth) {
-        signInAnonymously(window.firebaseAuth)
+        firebase.auth.signInAnonymously()
             .then(() => console.log('✅ Usuario anónimo autenticado'))
             .catch(err => console.error('❌ Error autenticando anónimo:', err));
     }
@@ -37,17 +23,18 @@ import {
     // =============================
     // ESPERAR A USUARIO ACTIVO
     // =============================
-    onAuthStateChanged(window.firebaseAuth, async (user) => {
+    window.firebaseAuth && window.firebaseAuth.onAuthStateChanged(async function(user) {
         if (user) {
             console.log('Usuario activo:', user.uid);
+
             // Precargar todos los equipos desde Firebase
             if (isFirebaseEnabled && window.firebaseDB) {
                 try {
-                    const snapshot = await getDocs(collection(window.firebaseDB, 'teams_data'));
-                    snapshot.forEach(docSnap => {
+                    const querySnapshot = await firebase.firestore().collection('teams_data').get();
+                    querySnapshot.forEach(docSnap => {
                         localStorage.setItem(`team_data_${docSnap.id}`, JSON.stringify(docSnap.data()));
                     });
-                    console.log(`✅ ${snapshot.size} equipos precargados desde Firebase`);
+                    console.log(`✅ ${querySnapshot.size} equipos precargados desde Firebase`);
                 } catch (error) {
                     console.warn('⚠️ Error precargando equipos desde Firebase, usando localStorage como fallback', error);
                 }
@@ -61,10 +48,10 @@ import {
     async function getTeamDataFromFirebaseSafe(teamName) {
         if (!isFirebaseEnabled || !window.firebaseDB) return { success: false, data: null };
         try {
-            const docRef = doc(window.firebaseDB, 'teams_data', teamName);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) return { success: true, data: docSnap.data() };
-            await setDoc(docRef, defaultTeamData);
+            const docRef = firebase.firestore().collection('teams_data').doc(teamName);
+            const docSnap = await docRef.get();
+            if (docSnap.exists) return { success: true, data: docSnap.data() };
+            await docRef.set(defaultTeamData);
             return { success: true, data: defaultTeamData };
         } catch (error) {
             console.error('❌ Error accediendo a Firebase:', error);
@@ -98,13 +85,12 @@ import {
 
         if (isFirebaseEnabled && window.firebaseDB) {
             try {
-                const user = window.firebaseAuth?.currentUser;
+                const user = window.firebaseAuth.currentUser;
                 if (!user) {
                     console.warn('⚠️ Usuario no autenticado, guardado solo en localStorage');
                     return { success: false };
                 }
-                const docRef = doc(window.firebaseDB, 'teams_data', teamName);
-                await setDoc(docRef, teamData);
+                await firebase.firestore().collection('teams_data').doc(teamName).set(teamData);
                 console.log(`✅ Datos guardados en Firebase para ${teamName}`);
                 return { success: true };
             } catch (error) {
@@ -118,9 +104,9 @@ import {
     // =============================
     // FUNCIONES PARTIDAS
     // =============================
-    async function saveGameToCloud(_, gameId, gameName, gameState) {
-        const user = window.firebaseAuth?.currentUser;
-        const userId = user?.uid;
+    window.saveGameToCloud = async function(_, gameId, gameName, gameState) {
+        const user = window.firebaseAuth.currentUser;
+        const userId = user && user.uid;
 
         if (!userId || !window.firebaseDB) {
             console.warn('⚠️ Firebase no disponible o usuario no autenticado, guardando localmente');
@@ -132,7 +118,8 @@ import {
 
         const gameData = { id: gameId, name: gameName, gameState, lastSaved: Date.now() };
         try {
-            await setDoc(doc(window.firebaseDB, 'users', userId, 'saved_games', gameId), gameData);
+            await firebase.firestore().collection('users').doc(userId)
+                .collection('saved_games').doc(gameId).set(gameData);
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             localGames[gameId] = gameData;
             localStorage.setItem('user_games', JSON.stringify(localGames));
@@ -145,19 +132,19 @@ import {
             localStorage.setItem('user_games', JSON.stringify(localGames));
             return { success: false, error: error.message };
         }
-    }
+    };
 
-    async function loadUserSavedGames(userId) {
+    window.loadUserSavedGames = async function(userId) {
         if (!userId || !window.firebaseDB) {
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             return Object.values(localGames);
         }
 
         try {
-            const snapshot = await getDocs(collection(window.firebaseDB, 'users', userId, 'saved_games'));
+            const snapshot = await firebase.firestore().collection('users').doc(userId)
+                .collection('saved_games').get();
             const games = [];
             snapshot.forEach(docSnap => games.push(docSnap.data()));
-
             const localGames = {};
             games.forEach(game => { localGames[game.id] = game; });
             localStorage.setItem('user_games', JSON.stringify(localGames));
@@ -166,17 +153,18 @@ import {
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             return Object.values(localGames);
         }
-    }
+    };
 
-    async function loadGameFromCloud(userId, gameId) {
+    window.loadGameFromCloud = async function(userId, gameId) {
         if (!userId || !window.firebaseDB) {
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             return localGames[gameId] ? { success: true, data: localGames[gameId] } : { success: false, message: 'Partida no encontrada' };
         }
 
         try {
-            const docSnap = await getDoc(doc(window.firebaseDB, 'users', userId, 'saved_games', gameId));
-            if (!docSnap.exists()) return { success: false, message: 'Partida no encontrada' };
+            const docSnap = await firebase.firestore().collection('users').doc(userId)
+                .collection('saved_games').doc(gameId).get();
+            if (!docSnap.exists) return { success: false, message: 'Partida no encontrada' };
             const gameData = docSnap.data();
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             localGames[gameId] = gameData;
@@ -186,9 +174,9 @@ import {
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             return localGames[gameId] ? { success: true, data: localGames[gameId] } : { success: false, message: 'Partida no encontrada' };
         }
-    }
+    };
 
-    async function deleteGameFromCloud(userId, gameId) {
+    window.deleteGameFromCloud = async function(userId, gameId) {
         if (!userId || !window.firebaseDB) {
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             delete localGames[gameId];
@@ -197,7 +185,8 @@ import {
         }
 
         try {
-            await deleteDoc(doc(window.firebaseDB, 'users', userId, 'saved_games', gameId));
+            await firebase.firestore().collection('users').doc(userId)
+                .collection('saved_games').doc(gameId).delete();
             const localGames = JSON.parse(localStorage.getItem('user_games') || '{}');
             delete localGames[gameId];
             localStorage.setItem('user_games', JSON.stringify(localGames));
@@ -205,17 +194,7 @@ import {
         } catch (error) {
             return { success: false, error: error.message };
         }
-    }
-
-    // =============================
-    // EXPORTAR FUNCIONES GLOBALMENTE
-    // =============================
-    window.saveGameToCloud = saveGameToCloud;
-    window.loadUserSavedGames = loadUserSavedGames;
-    window.loadGameFromCloud = loadGameFromCloud;
-    window.deleteGameFromCloud = deleteGameFromCloud;
-
-    window.getTeamDataFromFirebaseSafe = getTeamDataFromFirebaseSafe;
+    };
 
     console.log('✓ Firebase Sync Injector cargado correctamente');
 })();
