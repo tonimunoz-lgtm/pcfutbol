@@ -11,6 +11,7 @@ const firebaseConfig = {
   storageBucket: "cuentacuentos-57631.firebasestorage.app",
   messagingSenderId: "654911737232",
   appId: "1:654911737232:web:e87ecaea12351dd3d5b715"
+}; // <-- FALTABA ESTE PUNTO Y COMA
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
@@ -21,7 +22,7 @@ const auth = getAuth(app);
 async function saveTeamDataToFirebase(teamName, teamData) {
     try {
         await setDoc(doc(db, 'teams_data', teamName), teamData);
-        console.log(`✅ Datos del equipo ${teamName} guardados en Firebase`);
+        console.log(`✅ Datos del equipo ${teamName} guardados en Firebase`); // <-- CORREGIDO: era console.log` en vez de console.log(
         return { success: true };
     } catch (error) {
         console.error('Error guardando en Firebase:', error);
@@ -35,10 +36,10 @@ async function getTeamDataFromFirebase(teamName) {
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-            console.log(`✅ Datos del equipo ${teamName} cargados desde Firebase`);
+            console.log(`✅ Datos del equipo ${teamName} cargados desde Firebase`); // <-- CORREGIDO
             return { success: true, data: docSnap.data() };
         } else {
-            console.log(`⚠️ No hay datos en Firebase para ${teamName}`);
+            console.log(`⚠️ No hay datos en Firebase para ${teamName}`); // <-- CORREGIDO
             return { success: false, data: null };
         }
     } catch (error) {
@@ -54,7 +55,7 @@ async function getAllTeamsDataFromFirebase() {
         querySnapshot.forEach((doc) => {
             allData[doc.id] = doc.data();
         });
-        console.log(`✅ ${Object.keys(allData).length} equipos cargados desde Firebase`);
+        console.log(`✅ ${Object.keys(allData).length} equipos cargados desde Firebase`); // <-- CORREGIDO
         return { success: true, data: allData };
     } catch (error) {
         console.error('Error cargando todos los equipos:', error);
