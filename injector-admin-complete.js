@@ -289,7 +289,7 @@ importAllData: async function(event) {
     reader.readAsText(file);
     
     event.target.value = '';
-}
+
 
     // Auto-activar panel de admin al cargar (para testing)
     window.addEventListener('DOMContentLoaded', () => {
