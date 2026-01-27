@@ -48,6 +48,11 @@ if (firebaseConfig.enabled) {
             })  
             .catch(error => {  
                 console.error('❌ Error en autenticación anónima:', error); // Este es el error auth/admin-restricted-operation  
+                // Si la autenticación anónima falla al inicio, resolvemos la promesa para no bloquear  
+                if (resolveAuthReady) {  
+                    resolveAuthReady(null);  
+                    resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+                }  
             });  
   
         // Listener de cambios de autenticación  
@@ -58,7 +63,10 @@ if (firebaseConfig.enabled) {
                 authReady = true;  
                 console.log('✅ Usuario autenticado con UID:', user.uid);  
                 // Resolver la promesa de autenticación lista  
-                resolveAuthReady(user.uid);  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                   resolveAuthReady(user.uid);  
+                   resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+                }  
                 // Habilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
                 if (saveBtn) {  
@@ -76,11 +84,10 @@ if (firebaseConfig.enabled) {
                     saveBtn.disabled = true;  
                     saveBtn.style.opacity = '0.5';  
                 }  
-                // Si la autenticación falla por completo o el usuario se desconecta, también se resuelve la promesa  
-                // con null o un identificador de no autenticado.  
-                // Para este caso, si ya se intentó la autenticación, se puede resolver la promesa para no bloquear.  
-                if (!user && authReadyPromise.isResolved !== true) { // Evita resolver múltiples veces  
-                     resolveAuthReady(null); // O un valor que indique no autenticado  
+                // Si no hay usuario y la promesa no se ha resuelto, resuélvela con null  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                    resolveAuthReady(null);  
+                    resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
                 }  
             }  
         });  
@@ -88,12 +95,20 @@ if (firebaseConfig.enabled) {
     } catch (error) {  
         console.error('❌ Error inicializando Firebase:', error);  
         window.firebaseConfig = { enabled: false }; // Deshabilitar si hay error  
-        resolveAuthReady(null); // Si Firebase falla al inicializar, resuelve la promesa  
+        // Si Firebase falla al inicializar, resuelve la promesa para no bloquear  
+        if (resolveAuthReady) {  
+            resolveAuthReady(null);  
+            resolveAuthReady = null;  
+        }  
     }  
 } else {  
     console.log('⚠️ Firebase deshabilitado en la configuración');  
     window.firebaseConfig = { enabled: false }; // Asegurarse de que esté deshabilitado globalmente  
-    resolveAuthReady(null); // Si Firebase está deshabilitado, resuelve la promesa  
+    // Si Firebase está deshabilitado, resuelve la promesa para no bloquear  
+    if (resolveAuthReady) {  
+        resolveAuthReady(null);  
+        resolveAuthReady = null;  
+    }  
 }  
   
 // ==========================================  
@@ -369,8 +384,6 @@ async function loadGameFromCloud(userId, gameId) {
         console.log('⚠️ Firebase no disponible, cargando desde localStorage');  
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
         if (localGames[gameId]) {  
-            // Eliminar la actualización de gameState aquí. Debe hacerlo el caller.  
-            // if (window.gameLogic) { window.gameLogic.updateGameState(localGames[gameId].gameState); }  
             return { success: true, data: localGames[gameId] };  
         }  
         return { success: false, message: 'Partida no encontrada' };  
@@ -404,8 +417,6 @@ async function loadGameFromCloud(userId, gameId) {
         if (docSnap.exists()) {  
             const gameData = docSnap.data();  
             console.log(`✅ Partida ${gameId} cargada desde Firebase`);  
-            // NO ACTUALIZAR gameLogic.gameState AQUÍ. DEJAR QUE EL CALLER LO HAGA.  
-            // La función loadGameFromCloud solo debería devolver los datos.  
             return { success: true, data: gameData };  
         } else {  
             console.log('⚠️ Partida no encontrada en Firebase');  
@@ -474,8 +485,6 @@ window.saveGameToCloud = saveGameToCloud;
 window.loadUserSavedGames = loadUserSavedGames;  
 window.loadGameFromCloud = loadGameFromCloud;  
 window.deleteGameFromCloud = deleteGameFromCloud;  
-// window.authReadyPromise ya se expone al inicio  
-// window.firebaseConfig ya se expone en la inicialización  
   
 // Exportar como módulos ES6  
 export {  
