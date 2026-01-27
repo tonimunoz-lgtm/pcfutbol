@@ -21,7 +21,7 @@
     }
 
     // =============================
-    // ESPERAR USUARIO ACTIVO
+    // GUARDAR UID GLOBALMENTE Y PRECARGAR EQUIPOS
     // =============================
     window.firebaseAuth && window.firebaseAuth.onAuthStateChanged(async function(user) {
         if (user) {
@@ -86,8 +86,8 @@
 
         if (isFirebaseEnabled && window.firebaseDB) {
             try {
-                const user = window.firebaseAuth.currentUser;
-                if (!user) {
+                const userId = window.currentUserId;
+                if (!userId) {
                     console.warn('⚠️ Usuario no autenticado, guardando solo en localStorage');
                     return { success: false };
                 }
