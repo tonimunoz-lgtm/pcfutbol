@@ -1,59 +1,56 @@
 // injector-firebase-sync.js  
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
+import { TEAM_CUSTOM_DATA } from './teamData.js'; // Asegúrate de que teamData.js exporta TEAM_CUSTOM_DATA  
   
 (function() {  
     console.log('🔥 Firebase Sync Injector cargando...');  
   
-    const defaultTeamData = {  
-        logo: null,  
-        stadiumImage: null,  
-        stadiumCapacity: 10000,  
-        initialBudget: 5000000,  
-        stadiumName: 'Estadio Municipal'  
-    };  
+    // Función para obtener los datos por defecto específicos de un equipo  
+    function getDefaultTeamDataForTeam(teamName) {  
+        // Utiliza TEAM_CUSTOM_DATA del archivo teamData.js  
+        return TEAM_CUSTOM_DATA[teamName] || {  
+            logo: null,  
+            stadiumImage: null,  
+            stadiumCapacity: 10000,  
+            initialBudget: 5000000,  
+            stadiumName: 'Estadio Municipal'  
+        };  
+    }  
   
     // =============================  
     // FUNCIONES EQUIPOS MEJORADAS  
     // =============================  
-  
     async function getTeamDataFromFirebaseSafe(teamName) {  
-        const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;
-        
-        if (!isFirebaseEnabled || !window.firebaseDB) {
-            return { success: false, data: null };
-        }
-        
-        try {  
-            // Esperar a que la autenticación esté lista
-            if (window.authReadyPromise) {
-                await window.authReadyPromise;
-            }
-
-            const result = await window.getTeamDataFromFirebase(teamName);   
-            if (result.success && result.data) {
-                return result;
-            }
-  
-            // Si no hay datos en Firebase, inicializar con defaultTeamData
-            if (!result.data) {  
-                console.log(`📝 Inicializando datos por defecto para ${teamName}`);
-                await window.saveTeamDataToFirebase(teamName, defaultTeamData);  
-                return { success: true, data: defaultTeamData };  
-            }
-            
+        const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;  
+        if (!isFirebaseEnabled || !window.firebaseDB) {  
             return { success: false, data: null };  
-  
+        }  
+        try {  
+            if (window.authReadyPromise) {  
+                await window.authReadyPromise;  
+            }  
+            const result = await window.getTeamDataFromFirebase(teamName);  
+            if (result.success && result.data) {  
+                return result;  
+            }  
+            // Si no hay datos en Firebase, inicializar con los defaults específicos del equipo  
+            if (!result.data) {  
+                console.log(`📝 Inicializando datos por defecto para ${teamName}`);  
+                const teamSpecificDefault = getDefaultTeamDataForTeam(teamName);  
+                await window.saveTeamDataToFirebase(teamName, teamSpecificDefault);  
+                return { success: true, data: teamSpecificDefault };  
+            }  
+            return { success: false, data: null };  
         } catch (error) {  
             console.error('❌ Error accediendo a Firebase para equipo:', error);  
             return { success: false, data: null };  
         }  
     }  
   
-    // Función global para obtener datos del equipo
+    // Función global para obtener datos del equipo  
     window.getTeamData = async function(teamName) {  
         console.log(`📥 Cargando datos para ${teamName}...`);  
-        
-        // Primero intentar cargar desde Firebase
+        // Primero intentar cargar desde Firebase  
         const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);  
         if (firebaseResult.success && firebaseResult.data) {  
             console.log(`✅ Datos cargados desde Firebase para ${teamName}`);  
@@ -61,18 +58,35 @@ import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/f
             return firebaseResult.data;  
         }  
   
-        // Fallback a localStorage
+        // Fallback a localStorage  
         const localData = localStorage.getItem(`team_data_${teamName}`);  
         if (localData) {  
             console.log(`📦 Datos cargados desde localStorage para ${teamName}`);  
-            const parsedData = JSON.parse(localData);
-            
-            // Intentar subir a Firebase para sincronización (sin esperar)
-            if (window.firebaseConfig && window.firebaseConfig.enabled) {
-                window.saveTeamDataToFirebase(teamName, parsedData)
-                    .then(() => console.log(`✅ Datos de ${teamName} sincronizados con Firebase`))
-                    .catch(err => console.warn(`⚠️ No se pudieron sincronizar datos de ${teamName}:`, err));
-            }
+            const parsedData = JSON.parse(localData);  
+            // Intentar subir a Firebase para sincronización (sin esperar si no existían antes)  
+            if (window.firebaseConfig && window.firebaseConfig.enabled) {  
+                // Solo guardar si firebaseResult.data era null, indicando que Firebase no tenía estos datos  
+                if (!firebaseResult.data) {  
+                    window.saveTeamDataToFirebase(teamName, parsedData)  
+                        .then(() => console.log(`✅ Datos de ${teamName} sincronizados desde localStorage a Firebase`))  
+                        .catch(err => console.warn(`⚠️ No se pudieron sincronizar datos de ${teamName} a Firebase:`, err));  
+                }  
+            }  
+            return parsedData;  
+        }  
+  
+        // Si no hay datos en ningún sitio (Firebase ni localStorage), usar los defaults  
+        console.log(`⚠️ No hay datos para ${teamName}, usando valores por defecto.`);  
+        const teamSpecificDefault = getDefaultTeamDataForTeam(teamName); // Usar esta función  
+        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamSpecificDefault));  
+        // Intentar guardar en Firebase (sin esperar)  
+        if (window.firebaseConfig && window.firebaseConfig.enabled) {  
+            window.saveTeamDataToFirebase(teamName, teamSpecificDefault)  
+                .then(() => console.log(`✅ Datos por defecto de ${teamName} guardados en Firebase`))  
+                .catch(err => console.warn(`⚠️ No se pudieron guardar datos por defecto de ${teamName}:`, err));  
+        }  
+        return teamSpecificDefault;  
+    };  
             
             return parsedData;
         }  
