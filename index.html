@@ -410,7 +410,8 @@
         <div class="header-info">    
             <div class="info-box">Equipo: <span id="teamName">-</span></div>    
             <div class="info-box">Jornada: <span id="weekNo">1</span></div>    
-            <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div>    
+            <div class="info-box">Dinero: <span id="balanceDisplay">0€</span></div> 
+            <button class="btn btn-sm" onclick="window.saveCurrentGame()">💾 Guardar</button>
             <button class="btn btn-sm" onclick="window.openModal('gameMode')">Nuevo Juego</button>    
         </div>    
     </div>    
@@ -1813,6 +1814,37 @@
             }    
         });    
 
+// Función para guardar la partida actual con nombre
+window.saveCurrentGame = async function() {
+    if (!window.currentUser) {
+        alert('❌ Debes iniciar sesión para guardar partidas en la nube');
+        return;
+    }
+    
+    const state = window.gameLogic.getGameState();
+    if (!state.team) {
+        alert('❌ No hay una partida activa para guardar');
+        return;
+    }
+    
+    const gameName = prompt('Nombre de la partida:', `${state.team} - Jornada ${state.week}`);
+    if (!gameName) return;
+    
+    const gameId = `game_${Date.now()}`;
+    const result = await window.saveGameToCloud(
+        window.currentUser.uid,
+        gameId,
+        gameName,
+        state
+    );
+    
+    if (result.success) {
+        alert('✅ Partida guardada correctamente en la nube');
+    } else {
+        alert('❌ Error al guardar la partida: ' + (result.error || 'Error desconocido'));
+    }
+};
+        
 // En index.html, en la función que actualiza la UI
 function updateHeaderWithTeamLogo(state) {
     const teamNameElement = document.getElementById('teamName');
