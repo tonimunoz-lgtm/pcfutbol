@@ -1,86 +1,93 @@
 // ui.js - Renderizado y UI  
-  
 import * as gameLogic from './gameLogic.js';  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js';  
   
-// ui.js - Añadir al principio del archivo
-
-function getTeamLogo(teamName, size = '25px') {
-    const storedData = localStorage.getItem(`team_data_${teamName}`);
-    if (storedData) {
-        const teamData = JSON.parse(storedData);
-        if (teamData.logo) {
-            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
-        }
-    }
-    return ''; // Sin logo
-}
-
-function renderStandingsTable(standings, currentTeam) {
-    const tbody = document.getElementById('standingsTable');
-    if (!tbody) return;
-
-    const sorted = Object.entries(standings).sort((a, b) => {
-        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
-        const dgA = a[1].gf - a[1].gc;
-        const dgB = b[1].gf - b[1].gc;
-        if (dgB !== dgA) return dgB - dgA;
-        return b[1].gf - a[1].gf;
-    });
-
-    tbody.innerHTML = sorted.map(([team, stats], i) => `
-        <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
-            <td><strong>${i + 1}</strong></td>
-            <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>
-            <td>${stats.pj}</td>
-            <td>${stats.g}</td>
-            <td>${stats.e}</td>
-            <td>${stats.p}</td>
-            <td>${stats.gf}</td>
-            <td>${stats.gc}</td>
-            <td>${stats.gf - stats.gc}</td>
-            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
-        </tr>
-    `).join('');
-}
+// ui.js - Añadir al principio del archivo  
+async function getTeamLogo(teamName, size = '25px') {  
+    // Usar la función global getTeamData que ya maneja la sincronización con Firebase  
+    if (window.getTeamData) {  
+        const teamData = await window.getTeamData(teamName);  
+        if (teamData && teamData.logo) {  
+            return `<img src="${teamData.logo}" alt="${teamName} logo" style="height:${size}; width:${size}; vertical-align: middle; margin-right: 5px;">`;  
+        }  
+    }  
+    // Fallback a localStorage si window.getTeamData no está disponible (ej. durante el inicio)  
+    const storedData = localStorage.getItem(`team_data_${teamName}`);  
+    if (storedData) {  
+        const teamData = JSON.parse(storedData);  
+        if (teamData.logo) {  
+            return `<img src="${teamData.logo}" alt="${teamName} logo" style="height:${size}; width:${size}; vertical-align: middle; margin-right: 5px;">`;  
+        }  
+    }  
+    return ''; // Sin logo  
+}  
+  
+async function renderStandingsTable(standings, currentTeam) { // Hacer async  
+    const tbody = document.getElementById('standingsTable');  
+    if (!tbody) return;  
+  
+    const sorted = Object.entries(standings).sort((a, b) => {  
+        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;  
+        const dgA = a[1].gf - a[1].gc;  
+        const dgB = b[1].gf - b[1].gc;  
+        if (dgB !== dgA) return dgB - dgA;  
+        return b[1].gf - a[1].gf;  
+    });  
+  
+    const rowsPromises = sorted.map(async ([team, stats], i) => { // Usar map con async  
+        const logoHtml = await getTeamLogo(team, '25px'); // await para el logo  
+        return `  
+            <tr>  
+                <td><strong>${i + 1}</strong></td>  
+                <td>${logoHtml} <strong>${team}</strong></td>  
+                <td>${stats.pj}</td>  
+                <td>${stats.g}</td>  
+                <td>${stats.e}</td>  
+                <td>${stats.p}</td>  
+                <td>${stats.gf}</td>  
+                <td>${stats.gc}</td>  
+                <td>${stats.gf - stats.gc}</td>  
+                <td>${stats.pts}</td>  
+            </tr>  
+        `;  
+    });  
+    tbody.innerHTML = (await Promise.all(rowsPromises)).join(''); // Esperar a todas las promesas  
+}  
   
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
     if (!list) return;  
   
     if (!squad || squad.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';  
+        list.innerHTML = '<tr><td colspan="20"> ❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar! </td></tr>'; // Corregido: Eliminar caracteres extraños  
         return;  
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1200px;">  
-                <thead>  
-                    <tr>  
-                        <th>Nº</th>  
-                        <th>JUGADOR</th>  
-                        <th>OVR</th>  
-                        <th>POT</th>  
-                        <th>EDAD</th>  
-                        <th>POS</th>  
-                        <th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th>  
-                        <th>ESTADO</th>  
-                        <th>SALARIO</th>  
-                        <th>VALOR</th>  
-                        <th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
-                <tbody>  
+        <thead>  
+            <tr>  
+                <th>Nº</th>  
+                <th>JUGADOR</th>  
+                <th>OVR</th>  
+                <th>POT</th>  
+                <th>EDAD</th>  
+                <th>POS</th>  
+                <th>PIE</th>  
+                ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                <th>FORMA</th>  
+                <th>ESTADO</th>  
+                <th>SALARIO</th>  
+                <th>VALOR</th>  
+                <th>ACCIONES</th>  
+            </tr>  
+        </thead>  
     `;  
   
     const sorted = squad.sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {  
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
+        const statusText = p.isInjured ? `Les. (${p.weeksOut} sem)` : 'Apto'; // Corregido: Eliminar caracteres extraños  
         return `  
-            <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+            <tr>  
                 <td>${idx + 1}</td>  
                 <td>${p.name}</td>  
                 <td><strong>${p.overall}</strong></td>  
@@ -94,14 +101,14 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>  
-                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>  
-                    <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
+                    <button class="btn btn-sm" onclick="window.openTrainingModal(${squad.indexOf(p)})">Entrenar</button>  
+                    <button class="btn btn-sm btn-danger" onclick="window.sellPlayer('${p.name}')">Vender</button>  
                 </td>  
             </tr>  
         `;  
     }).join('');  
   
-    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
+    list.innerHTML = headerHtml + `<tbody>${playersHtml}</tbody>`;  
 }  
   
 function renderAcademyList(academy) {  
@@ -109,39 +116,36 @@ function renderAcademyList(academy) {
     if (!list) return;  
   
     if (!academy || academy.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
+        list.innerHTML = '<tr><td colspan="20"> ❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos! </td></tr>'; // Corregido: Eliminar caracteres extraños  
         return;  
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1200px;">  
-                <thead>  
-                    <tr>  
-                        <th>Nº</th>  
-                        <th>JUGADOR</th>  
-                        <th>OVR</th>  
-                        <th>POT</th>  
-                        <th>EDAD</th>  
-                        <th>POS</th>  
-                        <th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th>  
-                        <th>ESTADO</th>  
-                        <th>PART.</th>  
-                        <th>SALARIO</th>  
-                        <th>VALOR</th>  
-                        <th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
-                <tbody>  
+        <thead>  
+            <tr>  
+                <th>Nº</th>  
+                <th>JUGADOR</th>  
+                <th>OVR</th>  
+                <th>POT</th>  
+                <th>EDAD</th>  
+                <th>POS</th>  
+                <th>PIE</th>  
+                ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                <th>FORMA</th>  
+                <th>ESTADO</th>  
+                <th>PART.</th>  
+                <th>SALARIO</th>  
+                <th>VALOR</th>  
+                <th>ACCIONES</th>  
+            </tr>  
+        </thead>  
     `;  
   
     const sorted = academy.sort((a, b) => b.overall - a.overall);  
     let youngstersHtml = sorted.map((p, idx) => {  
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
+        const statusText = p.isInjured ? `Les. (${p.weeksOut} sem)` : 'Apto'; // Corregido: Eliminar caracteres extraños  
         return `  
-            <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+            <tr>  
                 <td>${idx + 1}</td>  
                 <td>${p.name}</td>  
                 <td><strong>${p.overall}</strong></td>  
@@ -156,45 +160,42 @@ function renderAcademyList(academy) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>  
-                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
+                    <button class="btn btn-sm" onclick="window.promoteYoungster('${p.name}')">Ascender</button>  
                 </td>  
             </tr>  
         `;  
     }).join('');  
   
-    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
+    list.innerHTML = headerHtml + `<tbody>${youngstersHtml}</tbody>`;  
 }  
-  
   
 function renderPlayerMarketList(players) {  
     const list = document.getElementById('availablePlayersSearchResult');  
     if (!list) return;  
+  
     if (!players || players.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">No se encontraron jugadores que coincidan con los criterios.</div>';  
+        list.innerHTML = '<tr><td colspan="20"> No se encontraron jugadores que coincidan con los criterios. </td></tr>';  
         return;  
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1300px;">  
-                <thead>  
-                    <tr>  
-                        <th>JUGADOR</th>  
-                        <th>OVR</th>  
-                        <th>POT</th>  
-                        <th>EDAD</th>  
-                        <th>POS</th>  
-                        <th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>CLUB</th>  
-                        <th>SALARIO</th>  
-                        <th>VALOR</th>  
-                        <th>PRECIO P.</th>  
-                        <th>ESTADO</th>  
-                        <th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
-                <tbody>  
+        <thead>  
+            <tr>  
+                <th>JUGADOR</th>  
+                <th>OVR</th>  
+                <th>POT</th>  
+                <th>EDAD</th>  
+                <th>POS</th>  
+                <th>PIE</th>  
+                ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                <th>CLUB</th>  
+                <th>SALARIO</th>  
+                <th>VALOR</th>  
+                <th>PRECIO P.</th>  
+                <th>ESTADO</th>  
+                <th>ACCIONES</th>  
+            </tr>  
+        </thead>  
     `;  
   
     let playersHtml = players.map((p, idx) => {  
@@ -215,44 +216,39 @@ function renderPlayerMarketList(players) {
                 <td>${askingPrice}</td>  
                 <td>${estado}</td>  
                 <td>  
-                    <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
-                        Negociar  
-                    </button>  
+                    <button class="btn btn-sm btn-primary" onclick="window.startPlayerNegotiation(${JSON.stringify(p).replace(/"/g, '&quot;')})">Negociar</button>  
                 </td>  
             </tr>  
         `;  
     }).join('');  
   
-    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
+    list.innerHTML = headerHtml + `<tbody>${playersHtml}</tbody>`;  
 }  
-  
   
 function renderAvailableYoungstersMarket(youngsters) {  
     const list = document.getElementById('availableYoungstersList');  
     if (!list) return;  
+  
     if (!youngsters || youngsters.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">No hay jóvenes talentos disponibles.</div>';  
+        list.innerHTML = '<tr><td colspan="20"> No hay jóvenes talentos disponibles. </td></tr>';  
         return;  
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1100px;">  
-                <thead>  
-                    <tr>  
-                        <th>JUGADOR</th>  
-                        <th>OVR</th>  
-                        <th>POT</th>  
-                        <th>EDAD</th>  
-                        <th>POS</th>  
-                        <th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>CLUB</th>  
-                        <th>COSTE</th>  
-                        <th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
-                <tbody>  
+        <thead>  
+            <tr>  
+                <th>JUGADOR</th>  
+                <th>OVR</th>  
+                <th>POT</th>  
+                <th>EDAD</th>  
+                <th>POS</th>  
+                <th>PIE</th>  
+                ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                <th>CLUB</th>  
+                <th>COSTE</th>  
+                <th>ACCIONES</th>  
+            </tr>  
+        </thead>  
     `;  
   
     let youngstersHtml = youngsters.map(y => `  
@@ -267,43 +263,36 @@ function renderAvailableYoungstersMarket(youngsters) {
             <td>${y.club}</td>  
             <td>${y.cost.toLocaleString('es-ES')}€</td>  
             <td>  
-                <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
+                <button class="btn btn-sm btn-primary" onclick="window.gameLogic.signYoungster(${JSON.stringify(y).replace(/"/g, '&quot;')})">Contratar</button>  
             </td>  
         </tr>  
     `).join('');  
   
-    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
+    list.innerHTML = headerHtml + `<tbody>${youngstersHtml}</tbody>`;  
 }  
-  
   
 function renderNextMatchCard(homeTeam, opponentName, week) {  
     const matchInfo = document.getElementById('matchInfo');  
     if (!matchInfo) return;  
-    const state = gameLogic.getGameState();  
   
+    const state = gameLogic.getGameState();  
     let matchDisplay = '';  
     if (state.seasonType === 'preseason') {  
         matchDisplay = `  
-            <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
-                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">PRETEMPORADA ${state.currentSeason}</div>  
-                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">Semana ${state.week} de ${PRESEASON_WEEKS}</div>  
-                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">¡A preparar la temporada!</div>  
-            </div>  
+            <h3>PRETEMPORADA ${state.currentSeason}</h3>  
+            <p>Semana ${state.week} de ${PRESEASON_WEEKS}</p>  
+            <p>¡A preparar la temporada!</p>  
         `;  
     } else {  
         matchDisplay = `  
-            <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
-                <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${state.team}</div>  
-                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
-                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponentName}</div>  
-                <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week} de ${state.maxSeasonWeeks}</div>  
-            </div>  
+            <h3>${state.team} ⚽ VS ⚽ ${opponentName}</h3>  
+            <p>Jornada ${state.week} de ${state.maxSeasonWeeks}</p>  
         `;  
     }  
     matchInfo.innerHTML = matchDisplay;  
 }  
   
-function updateDashboardStats(state) {  
+async function updateDashboardStats(state) { // Marcar como async  
     document.getElementById('teamName').textContent = state.team || '-';  
     document.getElementById('weekNo').textContent = `${state.week} (${state.currentSeason})`;  
     document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + '€';  
@@ -332,15 +321,10 @@ function updateDashboardStats(state) {
     document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
   
-  
     const warningAlert = document.getElementById('warningAlert');  
     if (warningAlert) {  
         if (weekly < 0) {  
-            warningAlert.innerHTML = `  
-                <div class="alert alert-warning" style="border-color: #ff3333; background: rgba(255, 51, 51, 0.1); color: #ff3333;">  
-                    ⚠️ ATENCIÓN: Tu club está en números rojos (${weekly.toLocaleString('es-ES')}€/semana). Si continúa así, ¡podrías ser destituido!  
-                </div>  
-            `;  
+            warningAlert.innerHTML = ` ⚠️ ATENCIÓN: Tu club está en números rojos (${weekly.toLocaleString('es-ES')}€/semana). Si continúa así, ¡podrías ser destituido! `;  
             warningAlert.style.display = 'block';  
         } else {  
             warningAlert.style.display = 'none';  
@@ -349,15 +333,12 @@ function updateDashboardStats(state) {
   
     const newsFeedElem = document.getElementById('newsFeed');  
     if (newsFeedElem) {  
-        newsFeedElem.innerHTML = state.newsFeed.map(news => `  
-            <div class="alert ${news.type === 'error' ? 'alert-error' : news.type === 'warning' ? 'alert-warning' : news.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">  
-                <strong>Semana ${news.week}:</strong> ${news.message}  
-            </div>  
-        `).join('');  
+        newsFeedElem.innerHTML = state.newsFeed.map(news => `<p><strong>Semana ${news.week}:</strong> ${news.message}</p>`).join('');  
     }  
+  
     const dashButton = document.querySelector('button[onclick="switchPage(\'dashboard\', this)"]');  
     if (dashButton && state.unreadNewsCount > 0) {  
-        dashButton.innerHTML = `Dashboard <span style="background: #ff3333; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7em;">${state.unreadNewsCount}</span>`;  
+        dashButton.innerHTML = `Dashboard <span class="badge">${state.unreadNewsCount}</span>`;  
     } else if (dashButton) {  
         dashButton.innerHTML = `Dashboard`;  
     }  
@@ -375,7 +356,7 @@ function renderCalendarPage(state) {
   
     const calendar = state.seasonCalendar; // Usar directamente el calendario del estado  
     if (!calendar || calendar.length === 0) {  
-        calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
+        calendarContent.innerHTML = '<h3>Aún no hay calendario generado para esta temporada.</h3>';  
         return;  
     }  
   
@@ -384,12 +365,11 @@ function renderCalendarPage(state) {
   
     for (let i = 1; i <= numJornadas; i++) {  
         const jornadaMatches = calendar.filter(match => match.week === i); // Filtra los partidos de la semana 'i'  
-  
         if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
   
+        calendarHtml += `<h3>Jornada ${i}</h3>`;  
         calendarHtml += `  
-            <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
-            <table>  
+            <table class="data-table">  
                 <thead>  
                     <tr>  
                         <th>Local</th>  
@@ -399,17 +379,15 @@ function renderCalendarPage(state) {
                 </thead>  
                 <tbody>  
         `;  
+  
         jornadaMatches.forEach(match => {  
             const isOurMatch = match.home === state.team || match.away === state.team;  
             const rowStyle = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
   
             // Buscar el resultado en el matchHistory  
-            const playedMatch = state.matchHistory.find(  
-                mh => mh.week === i &&  
-                      ((mh.home === match.home && mh.away === match.away) ||  
-                       (mh.home === match.away && mh.away === match.home))  
+            const playedMatch = state.matchHistory.find( mh => mh.week === i &&  
+                ((mh.home === match.home && mh.away === match.away) || (mh.home === match.away && mh.away === match.home))  
             );  
-  
             const score = playedMatch ? playedMatch.score : '-';  
   
             calendarHtml += `  
@@ -425,65 +403,67 @@ function renderCalendarPage(state) {
             </table>  
         `;  
     }  
-  
     calendarContent.innerHTML = calendarHtml;  
 }  
   
+async function refreshUI(state) { // Marcar como async  
+    await updateDashboardStats(state); // await  
+    await renderStandingsTable(state.standings, state.team); // await  
+    renderSquadList(state.squad, state.team);  
+    renderAcademyList(state.academy);  
   
-function refreshUI(state) {
-    updateDashboardStats(state);
-    renderStandingsTable(state.standings, state.team);
-    renderSquadList(state.squad, state.team);
-    renderAcademyList(state.academy);
-    
-    // Actualizar header con logo
-    const teamNameElement = document.getElementById('teamName');
-    if (teamNameElement && state.team) {
-        const storedData = localStorage.getItem(`team_data_${state.team}`);
-        if (storedData) {
-            const teamData = JSON.parse(storedData);
-            if (teamData.logo) {
-                teamNameElement.innerHTML = `
-                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
-                    ${state.team}
-                `;
-            } else {
-                teamNameElement.textContent = state.team;
-            }
-        } else {
-            teamNameElement.textContent = state.team;
-        }
-    }
-
-    if (document.getElementById('lineup').classList.contains('active')) {
-        window.renderLineupPageUI();
-    }
-
-    if (state.negotiationStep > 0) {
-        window.updateNegotiationModal();
-    } else {
-        window.closeModal('negotiation');
-    }
-
-    const opponentName = state.nextOpponent || 'Rival Indefinido';
-    renderNextMatchCard(state.team, opponentName, state.week);
-}
-
-// Función para renderizar logo del equipo
-function renderTeamLogo(teamName, size = '30px') {
-    const storedData = localStorage.getItem(`team_data_${teamName}`);
-    if (storedData) {
-        const teamData = JSON.parse(storedData);
-        if (teamData.logo) {
-            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px;">`;
-        }
-    }
-    return ''; // Sin logo
-}
-
+    // Actualizar header con logo  
+    const teamNameElement = document.getElementById('teamName');  
+    if (teamNameElement && state.team) {  
+        // Usar la versión asíncrona de getTeamLogo  
+        const logoHtml = await getTeamLogo(state.team, '25px');  
+        if (logoHtml) {  
+            teamNameElement.innerHTML = `${logoHtml} ${state.team}`;  
+        } else {  
+            teamNameElement.textContent = state.team;  
+        }  
+    }  
+  
+    // Actualizar imagen y nombre del estadio en facilities  
+    const stadiumImageElement = document.getElementById('stadiumImage');  
+    const stadiumNameElement = document.getElementById('stadiumName');  
+    const stadiumCapacityElement = document.getElementById('stadiumCapacity');  
+  
+    if (stadiumImageElement) {  
+        stadiumImageElement.src = state.stadiumImage || '';  
+        stadiumImageElement.alt = state.stadiumImage ? state.stadiumName : 'No hay imagen del estadio disponible';  
+        stadiumImageElement.style.display = state.stadiumImage ? 'block' : 'none';  
+    }  
+    if (stadiumNameElement) {  
+        stadiumNameElement.textContent = state.stadiumName || '-';  
+    }  
+    if (stadiumCapacityElement) {  
+        stadiumCapacityElement.textContent = state.stadiumCapacity.toLocaleString('es-ES');  
+    }  
+  
+    if (document.getElementById('lineup').classList.contains('active')) {  
+        window.renderLineupPageUI();  
+    }  
+    if (state.negotiationStep > 0) {  
+        window.updateNegotiationModal();  
+    } else {  
+        window.closeModal('negotiation');  
+    }  
+    const opponentName = state.nextOpponent || 'Rival Indefinido';  
+    renderNextMatchCard(state.team, opponentName, state.week);  
+}  
+  
+// Función para renderizar logo del equipo  
+// Esta función es redundante con getTeamLogo, pero si se usa desde fuera de este módulo, se deja  
+async function renderTeamLogo(teamName, size = '30px') { // Marcar como async  
+    return await getTeamLogo(teamName, size); // Reutilizar la función principal  
+}  
+  
+  
+// Exportaciones  
 export {  
-    renderStandingsTable,
-    renderTeamLogo,
+    renderStandingsTable,  
+    renderTeamLogo,  
     renderSquadList,  
     renderAcademyList,  
     renderPlayerMarketList,  
@@ -491,6 +471,5 @@ export {
     renderNextMatchCard,  
     updateDashboardStats,  
     refreshUI,  
-    // NEW EXPORT  
-    renderCalendarPage  
+    renderCalendarPage // NEW EXPORT  
 };  
