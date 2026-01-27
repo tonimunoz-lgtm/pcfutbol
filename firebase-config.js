@@ -333,17 +333,3 @@ export {
     loadGameFromCloud,
     deleteGameFromCloud
 };
-```
-
----
-
-## Ahora recarga la página y verifica:
-
-En la consola deberías ver:
-```
-✅ Firebase inicializado correctamente
-```
-
-**NO debe aparecer:**
-```
-⚠️ Firebase deshabilitado
