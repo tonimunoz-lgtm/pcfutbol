@@ -280,7 +280,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     setLineup(availablePlayers.slice(0, 11)); // Usa setLineup para asegurar 11 jugadores  
 }  
   
-function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
+async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.team = teamName;
     gameState.division = divisionType;
     gameState.gameMode = gameMode;
@@ -290,21 +290,16 @@ function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
-    // *** CARGAR DATOS PERSONALIZADOS DEL EQUIPO ***
-    const customDataKey = `team_data_${teamName}`;
-    const storedData = localStorage.getItem(customDataKey);
-    
-    if (storedData) {
-        console.log(`✓ Cargando datos personalizados para ${teamName}`);
-        const teamData = JSON.parse(storedData);
+    // *** CARGAR DATOS PERSONALIZADOS DEL EQUIPO DESDE FIREBASE ***
+    if (window.getTeamData) {
+        const teamData = await window.getTeamData(teamName);
         
-        // Aplicar datos personalizados
         gameState.teamLogo = teamData.logo || null;
         gameState.stadiumImage = teamData.stadiumImage || null;
         gameState.stadiumName = teamData.stadiumName || teamName + ' Stadium';
         gameState.stadiumCapacity = teamData.stadiumCapacity || 10000;
         
-        console.log('Datos cargados:', {
+        console.log('✅ Datos del equipo cargados:', {
             logo: !!teamData.logo,
             stadiumImage: !!teamData.stadiumImage,
             stadiumName: teamData.stadiumName,
