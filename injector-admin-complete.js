@@ -118,49 +118,44 @@
             document.getElementById('adminTeamDataContainer').style.display = 'none';
         },
 
-        loadTeamData: function() {
-            const teamName = document.getElementById('adminTeamSelect').value;
-            if (!teamName) {
-                document.getElementById('adminTeamDataContainer').style.display = 'none';
-                return;
-            }
+       // En injector-admin-complete.js, modificar loadTeamData:
+loadTeamData: async function() {
+    const teamName = document.getElementById('adminTeamSelect').value;
+    if (!teamName) {
+        document.getElementById('adminTeamDataContainer').style.display = 'none';
+        return;
+    }
 
-            this.currentTeam = teamName;
-            document.getElementById('adminCurrentTeamName').textContent = teamName;
-            document.getElementById('adminTeamDataContainer').style.display = 'block';
+    this.currentTeam = teamName;
+    document.getElementById('adminCurrentTeamName').textContent = teamName;
+    document.getElementById('adminTeamDataContainer').style.display = 'block';
 
-            // Cargar datos guardados del equipo
-            const storedData = localStorage.getItem(`team_data_${teamName}`);
-            const teamData = storedData ? JSON.parse(storedData) : {
-                logo: null,
-                stadiumImage: null,
-                stadiumCapacity: 10000,
-                initialBudget: 5000000,
-                stadiumName: 'Estadio Municipal'
-            };
+    // Cargar datos usando la nueva función que busca en Firebase
+    const teamData = await window.getTeamData(teamName);
 
-            // Rellenar formulario
-            document.getElementById('adminStadiumName').value = teamData.stadiumName || '';
-            document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
-            document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
+    // Rellenar formulario
+    document.getElementById('adminStadiumName').value = teamData.stadiumName || '';
+    document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
+    document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
 
-            // Mostrar previews si existen
-            if (teamData.logo) {
-                document.getElementById('adminLogoPreview').innerHTML = 
-                    `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
-            } else {
-                document.getElementById('adminLogoPreview').innerHTML = '<p style="color: #999;">No hay escudo cargado</p>';
-            }
+    // Mostrar previews si existen
+    if (teamData.logo) {
+        document.getElementById('adminLogoPreview').innerHTML = 
+            `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
+    } else {
+        document.getElementById('adminLogoPreview').innerHTML = '<p style="color: #999;">No hay escudo cargado</p>';
+    }
 
-            if (teamData.stadiumImage) {
-                document.getElementById('adminStadiumPreview').innerHTML = 
-                    `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border: 2px solid #e94560; border-radius: 5px;">`;
-            } else {
-                document.getElementById('adminStadiumPreview').innerHTML = '<p style="color: #999;">No hay foto del estadio</p>';
-            }
-        },
+    if (teamData.stadiumImage) {
+        document.getElementById('adminStadiumPreview').innerHTML = 
+            `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border: 2px solid #e94560; border-radius: 5px;">`;
+    } else {
+        document.getElementById('adminStadiumPreview').innerHTML = '<p style="color: #999;">No hay foto del estadio</p>';
+    }
+},
 
-       saveTeamData: function() {
+// Modificar saveTeamData:
+saveTeamData: async function() {
     if (!this.currentTeam) {
         alert('Selecciona un equipo primero');
         return;
@@ -177,13 +172,10 @@
         stadiumImage: null
     };
 
-    // Cargar datos existentes para no perder las imágenes si no se cambian
-    const existingData = localStorage.getItem(`team_data_${this.currentTeam}`);
-    if (existingData) {
-        const existing = JSON.parse(existingData);
-        teamData.logo = existing.logo;
-        teamData.stadiumImage = existing.stadiumImage;
-    }
+    // Cargar datos existentes
+    const existingData = await window.getTeamData(this.currentTeam);
+    teamData.logo = existingData.logo;
+    teamData.stadiumImage = existingData.stadiumImage;
 
     // Procesar archivos de imagen
     const promises = [];
@@ -214,11 +206,13 @@
         );
     }
 
-    Promise.all(promises).then(() => {
-        // Guardar en localStorage
-        localStorage.setItem(`team_data_${this.currentTeam}`, JSON.stringify(teamData));
-        
-        // *** NUEVO: Si es el equipo actual, actualizar el estado del juego ***
+    await Promise.all(promises);
+
+    // Guardar en Firebase y localStorage
+    const saveResult = await window.saveTeamData(this.currentTeam, teamData);
+    
+    if (saveResult.success) {
+        // Actualizar el juego si es el equipo actual
         if (window.gameLogic) {
             const state = window.gameLogic.getGameState();
             if (state.team === this.currentTeam) {
@@ -230,82 +224,72 @@
                 
                 window.gameLogic.updateGameState(state);
                 
-                // Forzar actualización de la UI
                 if (window.ui && window.ui.refreshUI) {
                     window.ui.refreshUI(state);
-                }
-                
-                // Actualizar página de instalaciones si está activa
-                if (window.updateFacilitiesDisplay) {
-                    window.updateFacilitiesDisplay(state);
                 }
             }
         }
         
-        alert(`✅ Datos guardados para ${this.currentTeam}:\n\n` +
+        alert(`✅ Datos guardados en Firebase para ${this.currentTeam}:\n\n` +
               `🏟️ Estadio: ${teamData.stadiumName}\n` +
               `👥 Capacidad: ${teamData.stadiumCapacity.toLocaleString()}\n` +
               `💰 Presupuesto: ${teamData.initialBudget.toLocaleString()}€\n` +
               `🛡️ Escudo: ${teamData.logo ? 'Sí' : 'No'}\n` +
               `📷 Foto estadio: ${teamData.stadiumImage ? 'Sí' : 'No'}`);
         
-        // Recargar los datos para mostrar las previews actualizadas
         this.loadTeamData();
-    });
+    } else {
+        alert(`❌ Error al guardar en Firebase: ${saveResult.error}\n\nLos datos se guardaron localmente, pero no se sincronizaron.`);
+    }
 },
 
-        exportAllData: function() {
-            const allData = {};
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('team_data_')) {
-                    const teamName = key.replace('team_data_', '');
-                    allData[teamName] = JSON.parse(localStorage.getItem(key));
-                }
-            });
+// Modificar exportAllData:
+exportAllData: async function() {
+    const allData = await window.getAllTeamsData();
 
-            const dataStr = JSON.stringify(allData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `pcfutbol_teams_data_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-            alert('✅ Datos exportados correctamente');
-        },
+    const dataStr = JSON.stringify(allData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pcfutbol_teams_data_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    alert(`✅ Datos exportados correctamente (${Object.keys(allData).length} equipos)`);
+},
 
-        importAllData: function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+// Modificar importAllData:
+importAllData: async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    // Guardar todos los datos
-                    Object.keys(data).forEach(teamName => {
-                        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(data[teamName]));
-                    });
-                    
-                    alert(`✅ Datos importados correctamente para ${Object.keys(data).length} equipos`);
-                    
-                    // Recargar si hay un equipo seleccionado
-                    if (this.currentTeam) {
-                        this.loadTeamData();
-                    }
-                } catch (error) {
-                    alert('❌ Error al importar los datos: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
             
-            // Reset input para permitir cargar el mismo archivo de nuevo
-            event.target.value = '';
+            // Guardar todos los datos en Firebase
+            const promises = Object.keys(data).map(teamName => 
+                window.saveTeamData(teamName, data[teamName])
+            );
+            
+            await Promise.all(promises);
+            
+            alert(`✅ Datos importados correctamente a Firebase para ${Object.keys(data).length} equipos`);
+            
+            if (this.currentTeam) {
+                await this.loadTeamData();
+            }
+        } catch (error) {
+            alert('❌ Error al importar los datos: ' + error.message);
         }
     };
+    reader.readAsText(file);
+    
+    event.target.value = '';
+}
 
     // Auto-activar panel de admin al cargar (para testing)
     window.addEventListener('DOMContentLoaded', () => {
