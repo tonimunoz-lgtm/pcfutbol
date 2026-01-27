@@ -16,20 +16,26 @@
     window.getTeamData = async function(teamName) {
         console.log(`📥 Cargando datos para ${teamName}...`);
 
+        // Validar Firebase y autenticación
         if (isFirebaseEnabled && typeof window.getTeamDataFromFirebase === 'function') {
             try {
-                const firebaseResult = await window.getTeamDataFromFirebase(teamName);
+                const user = window.firebaseAuth?.currentUser;
+                if (!user) {
+                    console.warn('⚠️ Usuario no autenticado, usando localStorage como fallback');
+                } else {
+                    const firebaseResult = await window.getTeamDataFromFirebase(teamName);
 
-                if (firebaseResult.success) {
-                    if (firebaseResult.data) {
-                        console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
-                        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(firebaseResult.data));
-                        return firebaseResult.data;
-                    } else {
-                        console.log(`⚠️ Documento no encontrado en Firebase, creando datos por defecto para ${teamName}`);
-                        await window.saveTeamDataToFirebase(teamName, defaultTeamData);
-                        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
-                        return defaultTeamData;
+                    if (firebaseResult.success) {
+                        if (firebaseResult.data) {
+                            console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
+                            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(firebaseResult.data));
+                            return firebaseResult.data;
+                        } else {
+                            console.log(`⚠️ Documento no encontrado en Firebase, creando datos por defecto para ${teamName}`);
+                            await window.saveTeamDataToFirebase(teamName, defaultTeamData);
+                            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
+                            return defaultTeamData;
+                        }
                     }
                 }
             } catch (error) {
@@ -37,15 +43,15 @@
             }
         }
 
-        // Fallback: cargar desde localStorage
+        // Fallback a localStorage
         const localData = localStorage.getItem(`team_data_${teamName}`);
         if (localData) {
             console.log(`📦 Datos cargados desde localStorage para ${teamName}`);
             return JSON.parse(localData);
         }
 
-        // Último recurso: devolver datos por defecto
-        console.log(`⚠️ No hay datos en Firebase ni en localStorage, usando valores por defecto`);
+        // Último recurso: datos por defecto
+        console.log(`⚠️ No hay datos en Firebase ni localStorage, usando valores por defecto`);
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(defaultTeamData));
         return defaultTeamData;
     };
@@ -60,6 +66,12 @@
 
         if (isFirebaseEnabled && typeof window.saveTeamDataToFirebase === 'function') {
             try {
+                const user = window.firebaseAuth?.currentUser;
+                if (!user) {
+                    console.warn('⚠️ Usuario no autenticado, datos guardados solo en localStorage');
+                    return { success: false, message: 'Usuario no autenticado, guardado en localStorage' };
+                }
+
                 const firebaseResult = await window.saveTeamDataToFirebase(teamName, teamData);
                 if (firebaseResult.success) {
                     console.log(`✅ Datos guardados en Firebase para ${teamName}`);
