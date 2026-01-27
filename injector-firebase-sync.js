@@ -3,6 +3,7 @@
     console.log('🔥 Firebase Sync Injector cargando...');
 
     const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;
+
     const defaultTeamData = {
         logo: null,
         stadiumImage: null,
@@ -18,30 +19,31 @@
         window.firebaseAuth.signInAnonymously()
             .then(() => console.log('✅ Usuario anónimo autenticado'))
             .catch(err => console.error('❌ Error autenticando anónimo:', err));
-    }
 
-    // =============================
-    // GUARDAR UID GLOBALMENTE Y PRECARGAR EQUIPOS
-    // =============================
-    window.firebaseAuth && window.firebaseAuth.onAuthStateChanged(async function(user) {
-        if (user) {
-            console.log('Usuario activo con UID:', user.uid);
-            window.currentUserId = user.uid;
+        window.firebaseAuth.onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log('Usuario activo con UID:', user.uid);
+                window.currentUserId = user.uid;
 
-            // Precargar todos los equipos desde Firebase
-            if (isFirebaseEnabled && window.firebaseDB) {
-                try {
-                    const snapshot = await window.firebaseDB.collection('teams_data').get();
-                    snapshot.forEach(docSnap => {
-                        localStorage.setItem(`team_data_${docSnap.id}`, JSON.stringify(docSnap.data()));
-                    });
-                    console.log(`✅ ${snapshot.size} equipos precargados desde Firebase`);
-                } catch (error) {
-                    console.warn('⚠️ Error precargando equipos desde Firebase, usando localStorage', error);
+                // Precargar todos los equipos desde Firebase
+                if (isFirebaseEnabled && window.firebaseDB) {
+                    try {
+                        const querySnapshot = await window.firebaseDB.collection('teams_data').get();
+                        querySnapshot.forEach(docSnap => {
+                            localStorage.setItem(`team_data_${docSnap.id}`, JSON.stringify(docSnap.data()));
+                        });
+                        console.log(`✅ ${querySnapshot.size} equipos precargados desde Firebase`);
+                    } catch (error) {
+                        console.warn('⚠️ Error precargando equipos desde Firebase, usando localStorage', error);
+                    }
                 }
+
+                // Habilitar botón Guardar
+                const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');
+                if (saveBtn) saveBtn.disabled = false;
             }
-        }
-    });
+        });
+    }
 
     // =============================
     // FUNCIONES EQUIPOS
@@ -197,6 +199,18 @@
             return { success: false, error: error.message };
         }
     };
+
+    // =============================
+    // BLOQUEO DEL BOTÓN GUARDAR HASTA UID
+    // =============================
+    window.addEventListener('DOMContentLoaded', () => {
+        const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');
+        if (saveBtn) saveBtn.disabled = true;
+
+        window.firebaseAuth && window.firebaseAuth.onAuthStateChanged(user => {
+            if (user && saveBtn) saveBtn.disabled = false;
+        });
+    });
 
     console.log('✓ Firebase Sync Injector cargado correctamente');
 })();
