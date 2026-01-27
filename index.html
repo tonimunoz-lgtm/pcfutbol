@@ -1824,43 +1824,34 @@
   
 // Función para guardar la partida actual con nombre en la nube  
 window.saveCurrentGame = async function() {  
-    if (!window.currentUserId) { // Usamos window.currentUserId  
-        alert('❌ Debes iniciar sesión para guardar partidas en la nube');  
+    if (!window.currentUserId) {  
+        alert('⚠️ Debes iniciar sesión para guardar partidas en la nube.');  
         return;  
     }  
-      
-    const state = window.gameLogic.getGameState();  
-    if (!state.team) {  
-        alert('❌ No hay una partida activa para guardar');  
-        return;  
-    }  
-      
-    const gameName = prompt('Nombre de la partida:', `${state.team} - Jornada ${state.week}`);  
-    if (!gameName) {  
-        console.log('Guardado de partida cancelado.');  
-        return;  
-    }  
-      
-    const gameId = `game_${Date.now()}`;  
-      
-    // Asegurarse de que window.saveGameToCloud esté definido por firebase-config.js  
-    if (typeof window.saveGameToCloud === 'function') {  
-        const result = await window.saveGameToCloud(  
-            window.currentUserId, // Usamos window.currentUserId  
-            gameId,  
-            gameName,  
-            state  
-        );  
-          
+
+    const gameName = prompt('Introduce un nombre para tu partida guardada:', `Partida ${new Date().toLocaleDateString()}`);  
+    if (!gameName) return;  
+
+    // Asegúrate de que gameId es un string válido y único  
+    const gameId = 'game_' + Date.now();  
+    const currentGameState = gameLogic.getGameState();  
+
+    try {  
+        // El userId se pasa explícitamente para mayor claridad  
+        const result = await window.saveGameToCloud(window.currentUserId, gameId, gameName, currentGameState);  
         if (result.success) {  
-            alert('✅ Partida guardada correctamente en la nube');  
+            alert('✅ Partida guardada en la nube correctamente.');  
+            // Opcional: Refrescar la lista de partidas guardadas si el modal está abierto  
+            if (document.getElementById('savedGamesModal')?.classList.contains('active')) {  
+                window.openSavedGamesModal();  
+            }  
         } else {  
-            alert('❌ Error al guardar la partida: ' + (result.error || 'Error desconocido'));  
-            console.error('Detalles del error al guardar en la nube:', result.error);  
+            alert('❌ Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));  
+            console.error('Error al guardar la partida en la nube:', result.error);  
         }  
-    } else {  
-        alert('❌ La función de guardar en la nube no está disponible. Asegúrate de que Firebase esté configurado correctamente.');  
-        console.error('window.saveGameToCloud no es una función.');  
+    } catch (error) {  
+        console.error('Error inesperado al guardar la partida:', error);  
+        alert('❌ Error inesperado al guardar la partida: ' + error.message);  
     }  
 };  
           
