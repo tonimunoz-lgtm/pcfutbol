@@ -2,11 +2,11 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
   
-// Configuración directa de Firebase (NO depende de window.firebaseConfigData)  
+// Configuración directa de Firebase  
 const firebaseConfig = {  
-    enabled: true, // ⚠️ DEBE SER true PARA QUE FUNCIONE  
+    enabled: true,  
     apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",  
     authDomain: "cuentacuentos-57631.firebaseapp.com",  
     projectId: "cuentacuentos-57631",  
@@ -18,6 +18,13 @@ const firebaseConfig = {
 let app = null;  
 let db = null;  
 let auth = null;  
+let currentUserId = null;  
+let authReady = false;  
+
+// Promise para esperar a que la autenticación esté lista
+const authReadyPromise = new Promise((resolve) => {
+    window.authReadyResolve = resolve;
+});
   
 // Inicializar Firebase  
 if (firebaseConfig.enabled) {  
@@ -33,10 +40,52 @@ if (firebaseConfig.enabled) {
         window.firebaseAuth = auth;  
         window.firebaseConfig = firebaseConfig;  
           
+        // Autenticación anónima INMEDIATA
+        signInAnonymously(auth)
+            .then(() => {
+                console.log('✅ Autenticación anónima iniciada');
+            })
+            .catch(error => {
+                console.error('❌ Error en autenticación anónima:', error);
+            });
+
+        // Listener de cambios de autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                window.currentUserId = user.uid;
+                authReady = true;
+                console.log('✅ Usuario autenticado con UID:', user.uid);
+                
+                // Resolver la promesa de autenticación lista
+                if (window.authReadyResolve) {
+                    window.authReadyResolve(user.uid);
+                }
+
+                // Habilitar botón de guardar
+                const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                }
+            } else {
+                currentUserId = null;
+                window.currentUserId = null;
+                authReady = false;
+                console.log('⚠️ Usuario no autenticado');
+                
+                // Deshabilitar botón de guardar
+                const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.style.opacity = '0.5';
+                }
+            }
+        });
+          
         console.log('✅ Firebase inicializado correctamente');  
     } catch (error) {  
         console.error('❌ Error inicializando Firebase:', error);  
-        console.error('Detalles del error:', error.code, error.message);  
         window.firebaseConfig = { enabled: false };  
     }  
 } else {  
@@ -54,9 +103,15 @@ async function saveTeamDataToFirebase(teamName, teamData) {
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));  
         return { success: false, error: 'Firebase no disponible' };  
     }  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
       
     try {  
-        console.log(`📤 Guardando en Firebase: ${teamName}...`);  
+        console.log(`📤 Guardando datos de equipo en Firebase: ${teamName}...`);  
         await setDoc(doc(db, 'teams_data', teamName), teamData);  
         console.log(`✅ Datos del equipo ${teamName} guardados en Firebase`);  
           
@@ -82,6 +137,12 @@ async function getTeamDataFromFirebase(teamName) {
         }  
         return { success: false, data: null };  
     }  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
       
     try {  
         console.log(`📥 Cargando desde Firebase: ${teamName}...`);  
@@ -100,7 +161,7 @@ async function getTeamDataFromFirebase(teamName) {
             const localData = localStorage.getItem(`team_data_${teamName}`);  
             if (localData) {  
                 const data = JSON.parse(localData);  
-                // Subir a Firebase para que esté disponible en otros dispositivos  
+                // Subir a Firebase para sincronización
                 console.log(`📤 Subiendo datos locales de ${teamName} a Firebase...`);  
                 await setDoc(doc(db, 'teams_data', teamName), data);  
                 return { success: true, data: data };  
@@ -136,6 +197,12 @@ async function getAllTeamsDataFromFirebase() {
         });  
         return { success: true, data: allData };  
     }  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
       
     try {  
         console.log('📥 Cargando todos los equipos desde Firebase...');  
@@ -176,33 +243,49 @@ async function saveGameToCloud(userId, gameId, gameName, gameState) {
         localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
         return { success: false, error: 'Firebase no disponible' };  
     }  
-      
-    // Validar userId y gameId antes de usar doc()  
-    if (!userId || typeof userId !== 'string' || !gameId || typeof gameId !== 'string') {  
-        console.error('❌ Error al guardar partida en Firebase: userId o gameId son inválidos.');  
-        console.error('userId:', userId, 'gameId:', gameId);  
-        return { success: false, error: 'userId o gameId son inválidos' };  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación antes de guardar partida...');
+        try {
+            await authReadyPromise;
+        } catch (error) {
+            console.error('❌ Error esperando autenticación:', error);
+            return { success: false, error: 'No se pudo autenticar' };
+        }
+    }
+
+    // Validar userId después de esperar autenticación
+    const finalUserId = userId || currentUserId;
+    if (!finalUserId || typeof finalUserId !== 'string') {  
+        console.error('❌ Error: userId es inválido:', finalUserId);  
+        return { success: false, error: 'Usuario no autenticado' };  
+    }  
+  
+    if (!gameId || typeof gameId !== 'string') {  
+        console.error('❌ Error: gameId es inválido:', gameId);  
+        return { success: false, error: 'ID de partida inválido' };  
     }  
   
     try {  
-        console.log(`📤 Guardando partida ${gameId} en Firebase para usuario ${userId}...`);  
+        console.log(`📤 Guardando partida ${gameId} en Firebase para usuario ${finalUserId}...`);  
         const gameData = {  
             id: gameId,  
             name: gameName,  
             team: gameState.team,  
             week: gameState.week,  
-            division: gameState.division, // Asegúrate de que gameState.division exista o sea manejado  
+            division: gameState.division,  
             lastSaved: Date.now(),  
             gameState: gameState  
         };  
           
-        await setDoc(doc(db, 'users', userId, 'saved_games', gameId), gameData);  
+        await setDoc(doc(db, 'users', finalUserId, 'saved_games', gameId), gameData);  
         console.log(`✅ Partida ${gameId} guardada en Firebase`);  
           
         // También guardar localmente como backup  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
+        const localGames = JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}');  
         localGames[gameId] = gameData;  
-        localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
+        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
           
         return { success: true };  
     } catch (error) {  
@@ -218,15 +301,22 @@ async function loadUserSavedGames(userId) {
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
         return Object.values(localGames);  
     }  
-  
-    if (!userId || typeof userId !== 'string') {  
-        console.error('❌ Error al cargar partidas desde Firebase: userId es inválido.');  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
+
+    const finalUserId = userId || currentUserId;
+    if (!finalUserId || typeof finalUserId !== 'string') {  
+        console.error('❌ Error: userId es inválido');  
         return [];  
     }  
       
     try {  
-        console.log(`📥 Cargando partidas guardadas desde Firebase para usuario ${userId}...`);  
-        const querySnapshot = await getDocs(collection(db, 'users', userId, 'saved_games'));  
+        console.log(`📥 Cargando partidas guardadas desde Firebase para usuario ${finalUserId}...`);  
+        const querySnapshot = await getDocs(collection(db, 'users', finalUserId, 'saved_games'));  
         const games = [];  
           
         querySnapshot.forEach((doc) => {  
@@ -240,7 +330,7 @@ async function loadUserSavedGames(userId) {
         games.forEach(game => {  
             localGames[game.id] = game;  
         });  
-        localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
+        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
           
         return games;  
     } catch (error) {  
@@ -248,7 +338,7 @@ async function loadUserSavedGames(userId) {
         console.error('Detalles:', error.code, error.message);  
           
         // Fallback a localStorage  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
+        const localGames = JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}');  
         return Object.values(localGames);  
     }  
 }  
@@ -265,15 +355,22 @@ async function loadGameFromCloud(userId, gameId) {
         }  
         return { success: false, message: 'Partida no encontrada' };  
     }  
-  
-    if (!userId || typeof userId !== 'string' || !gameId || typeof gameId !== 'string') {  
-        console.error('❌ Error al cargar partida desde Firebase: userId o gameId son inválidos.');  
-        return { success: false, message: 'userId o gameId son inválidos' };  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
+
+    const finalUserId = userId || currentUserId;
+    if (!finalUserId || typeof finalUserId !== 'string' || !gameId || typeof gameId !== 'string') {  
+        console.error('❌ Error: userId o gameId son inválidos');  
+        return { success: false, message: 'Parámetros inválidos' };  
     }  
       
     try {  
-        console.log(`📥 Cargando partida ${gameId} desde Firebase para usuario ${userId}...`);  
-        const docRef = doc(db, 'users', userId, 'saved_games', gameId);  
+        console.log(`📥 Cargando partida ${gameId} desde Firebase para usuario ${finalUserId}...`);  
+        const docRef = doc(db, 'users', finalUserId, 'saved_games', gameId);  
         const docSnap = await getDoc(docRef);  
           
         if (docSnap.exists()) {  
@@ -304,21 +401,28 @@ async function deleteGameFromCloud(userId, gameId) {
         localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
         return { success: true };  
     }  
-  
-    if (!userId || typeof userId !== 'string' || !gameId || typeof gameId !== 'string') {  
-        console.error('❌ Error al eliminar partida de Firebase: userId o gameId son inválidos.');  
-        return { success: false, error: 'userId o gameId son inválidos' };  
+
+    // Esperar a que la autenticación esté lista
+    if (!authReady) {
+        console.log('⏳ Esperando autenticación...');
+        await authReadyPromise;
+    }
+
+    const finalUserId = userId || currentUserId;
+    if (!finalUserId || typeof finalUserId !== 'string' || !gameId || typeof gameId !== 'string') {  
+        console.error('❌ Error: userId o gameId son inválidos');  
+        return { success: false, error: 'Parámetros inválidos' };  
     }  
       
     try {  
-        console.log(`🗑️ Eliminando partida ${gameId} de Firebase para usuario ${userId}...`);  
-        await deleteDoc(doc(db, 'users', userId, 'saved_games', gameId));  
+        console.log(`🗑️ Eliminando partida ${gameId} de Firebase para usuario ${finalUserId}...`);  
+        await deleteDoc(doc(db, 'users', finalUserId, 'saved_games', gameId));  
         console.log(`✅ Partida ${gameId} eliminada de Firebase`);  
           
         // También eliminar localmente  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
+        const localGames = JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}');  
         delete localGames[gameId];  
-        localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
+        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
           
         return { success: true };  
     } catch (error) {  
@@ -335,18 +439,17 @@ async function deleteGameFromCloud(userId, gameId) {
 window.saveTeamDataToFirebase = saveTeamDataToFirebase;  
 window.getTeamDataFromFirebase = getTeamDataFromFirebase;  
 window.getAllTeamsDataFromFirebase = getAllTeamsDataFromFirebase;  
-window.saveGameToCloud = saveGameToCloud; // Se expone la versión correcta  
+window.saveGameToCloud = saveGameToCloud;  
 window.loadUserSavedGames = loadUserSavedGames;  
 window.loadGameFromCloud = loadGameFromCloud;  
 window.deleteGameFromCloud = deleteGameFromCloud;  
+window.authReadyPromise = authReadyPromise;
   
-// Exportar como módulos ES6 (opcional si solo usas las globales)  
+// Exportar como módulos ES6  
 export {  
     auth,  
     db,  
-    signInWithEmailAndPassword,  
-    createUserWithEmailAndPassword,  
-    signOut,  
+    signInAnonymously,  
     onAuthStateChanged,  
     saveTeamDataToFirebase,  
     getTeamDataFromFirebase,  
@@ -354,5 +457,6 @@ export {
     saveGameToCloud,  
     loadUserSavedGames,  
     loadGameFromCloud,  
-    deleteGameFromCloud  
-};  
+    deleteGameFromCloud,
+    authReadyPromise  
+};
