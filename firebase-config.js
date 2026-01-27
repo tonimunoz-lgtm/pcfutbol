@@ -2,9 +2,9 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+// Obtener configuración desde window (NO importar)
 const firebaseConfig = window.firebaseConfigData || { enabled: false };
-// Importar configuración desde config.js
-import { firebaseConfig } from './config.js';
 
 let app = null;
 let db = null;
@@ -48,12 +48,10 @@ async function saveTeamDataToFirebase(teamName, teamData) {
     try {
         await setDoc(doc(db, 'teams_data', teamName), teamData);
         console.log(`✅ Datos del equipo ${teamName} guardados en Firebase`);
-        // También guardar en localStorage como caché
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
         return { success: true };
     } catch (error) {
         console.error('❌ Error guardando en Firebase:', error);
-        // Fallback a localStorage
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
         return { success: false, error: error.message };
     }
@@ -76,11 +74,10 @@ async function getTeamDataFromFirebase(teamName) {
         if (docSnap.exists()) {
             console.log(`✅ Datos del equipo ${teamName} cargados desde Firebase`);
             const data = docSnap.data();
-            // Guardar en localStorage como caché
             localStorage.setItem(`team_data_${teamName}`, JSON.stringify(data));
             return { success: true, data: data };
         } else {
-            console.log(`⚠️ No hay datos en Firebase para ${teamName}, intentando localStorage`);
+            console.log(`⚠️ No hay datos en Firebase para ${teamName}`);
             const localData = localStorage.getItem(`team_data_${teamName}`);
             if (localData) {
                 return { success: true, data: JSON.parse(localData) };
@@ -89,7 +86,6 @@ async function getTeamDataFromFirebase(teamName) {
         }
     } catch (error) {
         console.error('❌ Error cargando desde Firebase:', error);
-        // Fallback a localStorage
         const localData = localStorage.getItem(`team_data_${teamName}`);
         if (localData) {
             return { success: true, data: JSON.parse(localData) };
@@ -120,7 +116,6 @@ async function getAllTeamsDataFromFirebase() {
         const allData = {};
         querySnapshot.forEach((doc) => {
             allData[doc.id] = doc.data();
-            // Guardar en localStorage como caché
             localStorage.setItem(`team_data_${doc.id}`, JSON.stringify(doc.data()));
         });
         console.log(`✅ ${Object.keys(allData).length} equipos cargados desde Firebase`);
@@ -165,7 +160,6 @@ async function saveGameToCloud(userId, gameId, gameName, gameState) {
         await setDoc(doc(db, 'users', userId, 'saved_games', gameId), gameData);
         console.log(`✅ Partida ${gameId} guardada en Firebase para usuario ${userId}`);
         
-        // También guardar localmente como backup
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
         localGames[gameId] = gameData;
         localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
@@ -192,7 +186,6 @@ async function loadUserSavedGames(userId) {
         });
         console.log(`✅ ${games.length} partidas cargadas desde Firebase para usuario ${userId}`);
         
-        // Guardar en localStorage como caché
         const localGames = {};
         games.forEach(game => {
             localGames[game.id] = game;
@@ -202,7 +195,6 @@ async function loadUserSavedGames(userId) {
         return games;
     } catch (error) {
         console.error('❌ Error cargando partidas desde Firebase:', error);
-        // Fallback a localStorage
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
         return Object.values(localGames);
     }
@@ -213,7 +205,6 @@ async function loadGameFromCloud(userId, gameId) {
         console.log('⚠️ Firebase deshabilitado, cargando desde localStorage');
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
         if (localGames[gameId]) {
-            // Cargar el estado en gameLogic
             if (window.gameLogic) {
                 window.gameLogic.updateGameState(localGames[gameId].gameState);
             }
@@ -230,7 +221,6 @@ async function loadGameFromCloud(userId, gameId) {
             const gameData = docSnap.data();
             console.log(`✅ Partida ${gameId} cargada desde Firebase`);
             
-            // Cargar el estado en gameLogic
             if (window.gameLogic) {
                 window.gameLogic.updateGameState(gameData.gameState);
             }
@@ -258,7 +248,6 @@ async function deleteGameFromCloud(userId, gameId) {
         await deleteDoc(doc(db, 'users', userId, 'saved_games', gameId));
         console.log(`✅ Partida ${gameId} eliminada de Firebase`);
         
-        // También eliminar localmente
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');
         delete localGames[gameId];
         localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));
@@ -274,18 +263,15 @@ async function deleteGameFromCloud(userId, gameId) {
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ==========================================
 
-// Equipos (datos globales)
 window.saveTeamDataToFirebase = saveTeamDataToFirebase;
 window.getTeamDataFromFirebase = getTeamDataFromFirebase;
 window.getAllTeamsDataFromFirebase = getAllTeamsDataFromFirebase;
-
-// Partidas (datos por usuario)
 window.saveGameToCloud = saveGameToCloud;
 window.loadUserSavedGames = loadUserSavedGames;
 window.loadGameFromCloud = loadGameFromCloud;
 window.deleteGameFromCloud = deleteGameFromCloud;
 
-// Exportar como módulos ES6 también
+// Exportar como módulos ES6 (opcional, para imports)
 export {
     auth,
     db,
