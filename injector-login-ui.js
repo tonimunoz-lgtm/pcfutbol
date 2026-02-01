@@ -1,18 +1,14 @@
 // injector-login-ui.js
 (function() {
-    // Usuarios por defecto
+    console.log('🔐 Login UI Injector cargando...');
+
+    // Usuarios por defecto - SOLO ADMIN
     const DEFAULT_USERS = {
         'tonaco92@gmail.com': { 
             email: 'tonaco92@gmail.com', 
             password: '12345678', 
             role: 'admin',
-            name: 'Administrador'
-        },
-        'user@demo.com': {
-            email: 'user@demo.com',
-            password: 'demo123',
-            role: 'user',
-            name: 'Usuario Demo'
+            name: 'Antonio (Admin)'
         }
     };
 
@@ -20,6 +16,7 @@
     Object.values(DEFAULT_USERS).forEach(user => {
         if (!localStorage.getItem('user_' + user.email)) {
             localStorage.setItem('user_' + user.email, JSON.stringify(user));
+            console.log(`✅ Usuario por defecto creado: ${user.email}`);
         }
     });
 
@@ -41,7 +38,7 @@
         return { success: true, user };
     };
 
-    // Función de registro
+    // Función de registro (solo para usuarios normales)
     window.registerUser = function(email, password, name) {
         if (localStorage.getItem('user_' + email)) {
             return { success: false, message: 'El usuario ya existe' };
@@ -51,7 +48,7 @@
             email: email,
             password: password,
             name: name || 'Usuario',
-            role: 'user'
+            role: 'user' // Los usuarios registrados NO son admin
         };
         
         localStorage.setItem('user_' + email, JSON.stringify(newUser));
@@ -60,6 +57,10 @@
 
     // Función de logout
     window.logoutUser = function() {
+        if (!confirm('¿Seguro que quieres cerrar sesión?')) {
+            return;
+        }
+        
         window.currentUser = null;
         localStorage.removeItem('currentUser');
         location.reload();
@@ -77,11 +78,11 @@
                 
                 <!-- Pestañas -->
                 <div style="display: flex; margin-bottom: 20px; border-bottom: 2px solid #e94560;">
-                    <button id="loginTab" class="btn" onclick="switchLoginTab('login')" 
+                    <button id="loginTab" class="btn" onclick="window.switchLoginTab('login')" 
                             style="flex: 1; border-radius: 0; background: #e94560;">
                         Iniciar Sesión
                     </button>
-                    <button id="registerTab" class="btn" onclick="switchLoginTab('register')" 
+                    <button id="registerTab" class="btn" onclick="window.switchLoginTab('register')" 
                             style="flex: 1; border-radius: 0; background: rgba(233, 69, 96, 0.3);">
                         Registrarse
                     </button>
@@ -92,18 +93,18 @@
                     <div style="margin-bottom: 15px; text-align: left;">
                         <label style="display: block; margin-bottom: 5px; color: #e94560;">Email:</label>
                         <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" 
-                               style="width: 100%; padding: 12px;" value="tonaco92@gmail.com">
+                               style="width: 100%; padding: 12px;">
                     </div>
                     <div style="margin-bottom: 20px; text-align: left;">
                         <label style="display: block; margin-bottom: 5px; color: #e94560;">Contraseña:</label>
                         <input type="password" id="loginPassword" placeholder="••••••••" 
-                               style="width: 100%; padding: 12px;" value="12345678">
+                               style="width: 100%; padding: 12px;">
                     </div>
-                    <button class="btn" onclick="handleLogin()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    <button class="btn" onclick="window.handleLogin()" style="width: 100%; padding: 15px; font-size: 1.1em;">
                         🔓 Entrar
                     </button>
                     <p style="margin-top: 15px; color: #999; font-size: 0.9em;">
-                        Demo: tonaco92@gmail.com / 12345678
+                        Admin: tonaco92@gmail.com / 12345678
                     </p>
                 </div>
 
@@ -129,15 +130,19 @@
                         <input type="password" id="registerPasswordConfirm" placeholder="••••••••" 
                                style="width: 100%; padding: 12px;">
                     </div>
-                    <button class="btn" onclick="handleRegister()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    <button class="btn" onclick="window.handleRegister()" style="width: 100%; padding: 15px; font-size: 1.1em;">
                         ✍️ Crear Cuenta
                     </button>
+                    <p style="margin-top: 10px; color: #999; font-size: 0.85em;">
+                        Las cuentas registradas son de usuario normal (no admin)
+                    </p>
                 </div>
 
                 <div id="loginMessage" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
             </div>
         `;
         document.body.appendChild(modal);
+        console.log('✅ Modal de login creado');
     }
 
     // Cambiar entre pestañas
@@ -146,6 +151,9 @@
         const registerTab = document.getElementById('registerTab');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
+        const messageDiv = document.getElementById('loginMessage');
+
+        messageDiv.style.display = 'none'; // Limpiar mensajes al cambiar de pestaña
 
         if (tab === 'login') {
             loginTab.style.background = '#e94560';
@@ -182,43 +190,12 @@
             messageDiv.style.color = '#00ff00';
             messageDiv.textContent = '✅ Bienvenido, ' + result.user.name;
 
-            // Añadir botón de admin si es admin
-            if (result.user.role === 'admin') {
-                setTimeout(() => {
-                    const headerInfo = document.querySelector('.header-info');
-                    if (headerInfo && !document.getElementById('adminButton')) {
-                        const adminBtn = document.createElement('button');
-                        adminBtn.id = 'adminButton';
-                        adminBtn.className = 'btn btn-sm';
-                        adminBtn.innerHTML = '⚙️ Admin';
-                        adminBtn.onclick = () => window.openAdminPanel();
-                        adminBtn.style.background = '#ff9500';
-                        headerInfo.insertBefore(adminBtn, headerInfo.firstChild);
-                    }
-                }, 100);
-            }
-
-            // Añadir botón de logout
-            setTimeout(() => {
-                const headerInfo = document.querySelector('.header-info');
-                if (headerInfo && !document.getElementById('logoutButton')) {
-                    const logoutBtn = document.createElement('button');
-                    logoutBtn.id = 'logoutButton';
-                    logoutBtn.className = 'btn btn-sm';
-                    logoutBtn.innerHTML = '🚪 Salir';
-                    logoutBtn.onclick = () => {
-                        if (confirm('¿Seguro que quieres cerrar sesión?')) {
-                            window.logoutUser();
-                        }
-                    };
-                    logoutBtn.style.background = '#c73446';
-                    headerInfo.appendChild(logoutBtn);
-                }
-            }, 100);
+            console.log(`✅ Login exitoso: ${result.user.email} (${result.user.role})`);
 
             // Cerrar modal después de 1 segundo
             setTimeout(() => {
                 document.getElementById('loginModal').classList.remove('active');
+                addUserButtons(result.user);
             }, 1000);
         } else {
             messageDiv.style.display = 'block';
@@ -268,10 +245,13 @@
             messageDiv.style.color = '#00ff00';
             messageDiv.textContent = '✅ Cuenta creada. Puedes iniciar sesión ahora';
 
+            console.log(`✅ Usuario registrado: ${email}`);
+
             // Cambiar a pestaña de login después de 2 segundos
             setTimeout(() => {
                 window.switchLoginTab('login');
                 document.getElementById('loginEmail').value = email;
+                document.getElementById('loginPassword').value = '';
                 messageDiv.style.display = 'none';
             }, 2000);
         } else {
@@ -282,60 +262,95 @@
         }
     };
 
+    // Añadir botones de usuario al header
+    function addUserButtons(user) {
+        const headerInfo = document.querySelector('.header-info');
+        if (!headerInfo) {
+            console.warn('⚠️ No se encontró .header-info');
+            return;
+        }
+
+        // Añadir botón de admin si es admin
+        if (user.role === 'admin' && !document.getElementById('adminButton')) {
+            const adminBtn = document.createElement('button');
+            adminBtn.id = 'adminButton';
+            adminBtn.className = 'btn btn-sm';
+            adminBtn.innerHTML = '⚙️ Admin';
+            adminBtn.onclick = () => {
+                if (window.openAdminPanel) {
+                    window.openAdminPanel();
+                } else {
+                    alert('El panel de administración aún no está cargado');
+                }
+            };
+            adminBtn.style.background = '#ff9500';
+            headerInfo.insertBefore(adminBtn, headerInfo.firstChild);
+            console.log('✅ Botón de Admin añadido');
+        }
+
+        // Añadir botón de logout
+        if (!document.getElementById('logoutButton')) {
+            const logoutBtn = document.createElement('button');
+            logoutBtn.id = 'logoutButton';
+            logoutBtn.className = 'btn btn-sm';
+            logoutBtn.innerHTML = '🚪 Salir';
+            logoutBtn.onclick = window.logoutUser;
+            logoutBtn.style.background = '#c73446';
+            headerInfo.appendChild(logoutBtn);
+            console.log('✅ Botón de Logout añadido');
+        }
+
+        // Añadir indicador de usuario
+        if (!document.getElementById('userIndicator')) {
+            const userIndicator = document.createElement('div');
+            userIndicator.id = 'userIndicator';
+            userIndicator.className = 'info-box';
+            userIndicator.innerHTML = `👤 ${user.name}`;
+            headerInfo.insertBefore(userIndicator, headerInfo.firstChild);
+            console.log('✅ Indicador de usuario añadido');
+        }
+    }
+
     // Permitir login con Enter
     document.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            if (document.getElementById('loginForm').style.display !== 'none') {
-                handleLogin();
-            } else if (document.getElementById('registerForm').style.display !== 'none') {
-                handleRegister();
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (loginForm && loginForm.style.display !== 'none') {
+                window.handleLogin();
+            } else if (registerForm && registerForm.style.display !== 'none') {
+                window.handleRegister();
             }
         }
     });
 
     // Inicializar
     window.addEventListener('DOMContentLoaded', () => {
+        console.log('🔐 Inicializando sistema de login...');
+        
         // Verificar si hay sesión guardada
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
-            window.currentUser = JSON.parse(savedUser);
-            
-            // Añadir botón de admin si es admin
-            if (window.currentUser.role === 'admin') {
+            try {
+                window.currentUser = JSON.parse(savedUser);
+                console.log(`✅ Sesión restaurada: ${window.currentUser.email} (${window.currentUser.role})`);
+                
+                // Esperar a que el DOM esté completamente cargado
                 setTimeout(() => {
-                    const headerInfo = document.querySelector('.header-info');
-                    if (headerInfo && !document.getElementById('adminButton')) {
-                        const adminBtn = document.createElement('button');
-                        adminBtn.id = 'adminButton';
-                        adminBtn.className = 'btn btn-sm';
-                        adminBtn.innerHTML = '⚙️ Admin';
-                        adminBtn.onclick = () => window.openAdminPanel();
-                        adminBtn.style.background = '#ff9500';
-                        headerInfo.insertBefore(adminBtn, headerInfo.firstChild);
-                    }
+                    addUserButtons(window.currentUser);
                 }, 1000);
+            } catch (error) {
+                console.error('❌ Error restaurando sesión:', error);
+                localStorage.removeItem('currentUser');
+                createLoginModal();
             }
-
-            // Añadir botón de logout
-            setTimeout(() => {
-                const headerInfo = document.querySelector('.header-info');
-                if (headerInfo && !document.getElementById('logoutButton')) {
-                    const logoutBtn = document.createElement('button');
-                    logoutBtn.id = 'logoutButton';
-                    logoutBtn.className = 'btn btn-sm';
-                    logoutBtn.innerHTML = '🚪 Salir';
-                    logoutBtn.onclick = () => {
-                        if (confirm('¿Seguro que quieres cerrar sesión?')) {
-                            window.logoutUser();
-                        }
-                    };
-                    logoutBtn.style.background = '#c73446';
-                    headerInfo.appendChild(logoutBtn);
-                }
-            }, 1000);
         } else {
             // No hay sesión, mostrar modal de login
+            console.log('⚠️ No hay sesión activa, mostrando modal de login');
             createLoginModal();
         }
     });
+
+    console.log('✅ Login UI Injector cargado correctamente');
 })();
