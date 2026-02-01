@@ -1199,7 +1199,8 @@
         };      
       
         window.startNegotiationUI = function(encodedPlayerJson) {      
-            const player = JSON.parse(decodeURIComponent(encodedPlayerJson));      
+            //const player = JSON.parse(decodeURIComponent(encodedPlayerJson));      
+            const player = encodedPlayerJson;
             const result = gameLogic.startNegotiation(player);      
             if (result.success) {      
                 window.updateNegotiationModal();      
