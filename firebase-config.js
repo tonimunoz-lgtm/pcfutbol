@@ -1,11 +1,11 @@
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
-// IMPORTANTE: Asegúrate de que signInAnonymously NO esté en esta línea de importación  
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';   
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
   
+// Configuración directa de Firebase  
 const firebaseConfig = {  
-    enabled: true,   
+    enabled: true, // ⚠️ true = Firebase habilitado, false = solo localStorage  
     apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",  
     authDomain: "cuentacuentos-57631.firebaseapp.com",  
     projectId: "cuentacuentos-57631",  
@@ -20,123 +20,96 @@ let auth = null;
 let currentUserId = null;  
 let authReady = false;  
   
+// Promise para esperar a que la autenticación esté lista  
 let resolveAuthReady;  
-const authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });  
-window.authReadyPromise = authReadyPromise;   
+const authReadyPromise = new Promise((resolve) => {  
+    resolveAuthReady = resolve; // Captura la función de resolución  
+});  
+window.authReadyPromise = authReadyPromise; // Exponer globalmente  
   
+// Inicializar Firebase  
 if (firebaseConfig.enabled) {  
     try {  
-        console.log('🔥 Inicializando Firebase...'); // Corregido carácter  
+        console.log('🔥 Inicializando Firebase...');  
         app = initializeApp(firebaseConfig);  
         db = getFirestore(app);  
         auth = getAuth(app);  
   
+        // Exponer globalmente  
         window.firebaseApp = app;  
         window.firebaseDB = db;  
         window.firebaseAuth = auth;  
-        window.firebaseConfig = firebaseConfig;  
+        window.firebaseConfig = firebaseConfig; // Exponer la configuración completa  
   
-        // *** CAMBIO CLAVE AQUI: ELIMINAR CUALQUIER LLAMADA A signInAnonymously(auth) ***  
-        // Si encuentras alguna línea como esta (comentada o no), bórrala:  
-        // signInAnonymously(auth)  
-        //     .then(() => { console.log('✅ Autenticación anónima iniciada'); })  
-        //     .catch(error => { console.error('❌ Error en autenticación anónima:', error); });  
-        // Esto asegura que NO se intente iniciar sesión anónimamente.  
+        // Autenticación anónima INMEDIATA  
+        signInAnonymously(auth)  
+            .then(() => {  
+                console.log('✅ Autenticación anónima iniciada');  
+            })  
+            .catch(error => {  
+                console.error('❌ Error en autenticación anónima:', error); // Este es el error auth/admin-restricted-operation  
+                // Si la autenticación anónima falla al inicio, resolvemos la promesa para no bloquear  
+                if (resolveAuthReady) {  
+                    resolveAuthReady(null);  
+                    resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+                }  
+            });  
   
-        onAuthStateChanged(auth, async (user) => {   
+        // Listener de cambios de autenticación  
+        onAuthStateChanged(auth, (user) => {  
             if (user) {  
-                // Eliminar cualquier verificación 'if (user.isAnonymous)' aquí.  
-                // Si la autenticación anónima está deshabilitada en la consola, un 'user' en este punto  
-                // SIEMPRE será un usuario autenticado con email/password (o similar).  
-  
                 currentUserId = user.uid;  
                 window.currentUserId = user.uid;  
                 authReady = true;  
-                console.log('✅ Usuario autenticado con UID:', user.uid); // Corregido carácter  
-  
-                let userData = {   
-                    email: user.email || 'unknown@example.com',   
-                    uid: user.uid,   
-                    role: 'user',   
-                    name: user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario')   
-                };  
-                  
-                if (db) {   
-                    const userDocRef = doc(db, 'users_metadata', user.uid);  
-                    const userDocSnap = await getDoc(userDocRef);  
-                    if (userDocSnap.exists()) {  
-                        userData = { ...userDocSnap.data(), uid: user.uid, email: user.email };  
-                        if (user.displayName && userData.name !== user.displayName) {  
-                             userData.name = user.displayName;  
-                             await setDoc(userDocRef, { name: user.displayName }, { merge: true });  
-                        }  
-                    } else {  
-                        await setDoc(userDocRef, {   
-                            email: user.email,   
-                            name: user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario'),   
-                            role: 'user'   
-                        });  
-                    }  
+                console.log('✅ Usuario autenticado con UID:', user.uid);  
+                // Resolver la promesa de autenticación lista  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                   resolveAuthReady(user.uid);  
+                   resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
                 }  
-                window.currentUser = userData;   
-  
-                if (resolveAuthReady) {  
-                    resolveAuthReady(user.uid);  
-                    // Para evitar que se resuelva múltiples veces en el ciclo de vida de la app,  
-                    // y para que futuros `await authReadyPromise` esperen el estado correcto.  
-                    resolveAuthReady = null;   
-                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
-                }  
-  
+                // Habilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
-                if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; }  
-                if (window.updateFirebaseStatusIndicator) window.updateFirebaseStatusIndicator();  
-  
-                if (window.addUserButtons && window.currentUser) {  
-                    window.addUserButtons(window.currentUser);  
+                if (saveBtn) {  
+                    saveBtn.disabled = false;  
+                    saveBtn.style.opacity = '1';  
                 }  
-  
-            } else { // No hay usuario autenticado (email/password)  
+            } else {  
                 currentUserId = null;  
                 window.currentUserId = null;  
                 authReady = false;  
-                window.currentUser = null;  
-                console.log('⚪ Usuario no autenticado (email/password).'); // Corregido carácter  
-  
+                console.log('⚠️ Usuario no autenticado');  
+                // Deshabilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
-                if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; }  
-  
-                if (resolveAuthReady) {  
-                    resolveAuthReady(null);  
-                    resolveAuthReady = null;   
-                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
+                if (saveBtn) {  
+                    saveBtn.disabled = true;  
+                    saveBtn.style.opacity = '0.5';  
                 }  
-                if (window.updateFirebaseStatusIndicator) window.updateFirebaseStatusIndicator();  
-  
-                if (window.removeUserButtons) {  
-                    window.removeUserButtons();  
+                // Si no hay usuario y la promesa no se ha resuelto, resuélvela con null  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                    resolveAuthReady(null);  
+                    resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
                 }  
             }  
         });  
-        console.log('✅ Firebase inicializado correctamente'); // Corregido carácter  
+        console.log('✅ Firebase inicializado correctamente');  
     } catch (error) {  
-        console.error('❌ Error inicializando Firebase:', error); // Corregido carácter  
-        window.firebaseConfig = { enabled: false };  
-        if (resolveAuthReady) {   
-            resolveAuthReady(null);   
-            resolveAuthReady = null;   
-            window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
+        console.error('❌ Error inicializando Firebase:', error);  
+        window.firebaseConfig = { enabled: false }; // Deshabilitar si hay error  
+        // Si Firebase falla al inicializar, resuelve la promesa para no bloquear  
+        if (resolveAuthReady) {  
+            resolveAuthReady(null);  
+            resolveAuthReady = null;  
         }  
     }  
 } else {  
-    console.log('⚪ Firebase deshabilitado en la configuración'); // Corregido carácter  
-    window.firebaseConfig = { enabled: false };  
-    if (resolveAuthReady) {   
-        resolveAuthReady(null);   
-        resolveAuthReady = null;   
-        window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
+    console.log('⚠️ Firebase deshabilitado en la configuración');  
+    window.firebaseConfig = { enabled: false }; // Asegurarse de que esté deshabilitado globalmente  
+    // Si Firebase está deshabilitado, resuelve la promesa para no bloquear  
+    if (resolveAuthReady) {  
+        resolveAuthReady(null);  
+        resolveAuthReady = null;  
     }  
-} 
+}  
   
 // ==========================================  
 // FUNCIONES PARA DATOS DE EQUIPOS (GLOBALES)  
@@ -517,7 +490,8 @@ window.deleteGameFromCloud = deleteGameFromCloud;
 export {  
     app,  
     auth,  
-    db,    
+    db,  
+    signInAnonymously,  
     onAuthStateChanged,  
     saveTeamDataToFirebase,  
     getTeamDataFromFirebase,  
