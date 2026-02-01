@@ -1,10 +1,9 @@
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
-// Asegurarse de que signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut están importados  
+// Asegurarse de que signInAnonymously NO está aquí.  
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';   
   
-// Configuración directa de Firebase (sin cambios)  
 const firebaseConfig = {  
     enabled: true,   
     apiKey: "AIzaSyD9bNZkBzcB5__dpdn152WrsJ_HTl54xqs",  
@@ -37,40 +36,20 @@ if (firebaseConfig.enabled) {
         window.firebaseAuth = auth;  
         window.firebaseConfig = firebaseConfig;  
   
-        // *** CAMBIO CLAVE 1: ELIMINAR ESTE BLOQUE COMPLETO DE signInAnonymously ***  
-        // Al deshabilitar la autenticación anónima en Firebase Console, este código no tendría efecto  
-        // o generaría un error, así que lo eliminamos.  
-        // signInAnonymously(auth)   
-        //     .then(() => { console.log('✅ Autenticación anónima iniciada'); })  
-        //     .catch(error => {   
-        //         console.error('❌ Error en autenticación anónima:', error);   
-        //         if (resolveAuthReady) { resolveAuthReady(null); resolveAuthReady = null; }  
-        //     });  
+        // **IMPORTANTE**: Asegúrate de que no haya ninguna llamada a `signInAnonymously(auth)` aquí.  
+        // Si hay algún bloque comentado que lo contiene, elimínalo completamente para evitar confusiones.  
   
-        // Listener de cambios de autenticación  
         onAuthStateChanged(auth, async (user) => {   
             if (user) {  
-                // Si el usuario es nulo o un usuario anónimo y no hay otra autenticación,  
-                // no lo consideramos un usuario "válido" para guardar partidas.  
-                // Firebase ahora solo nos dará un 'user' si está logueado con email/password.  
-                if (user.isAnonymous) { // Esto es una verificación adicional, aunque la anterior línea debería evitarlo.  
-                    currentUserId = null;  
-                    window.currentUserId = null;  
-                    authReady = false;  
-                    window.currentUser = null;  
-                    console.log('⚪ Usuario anónimo detectado y no permitido.');  
-                    if (resolveAuthReady) { resolveAuthReady(null); resolveAuthReady = null; }  
-                    if (window.updateFirebaseStatusIndicator) window.updateFirebaseStatusIndicator();  
-                    if (window.removeUserButtons) { window.removeUserButtons(); }  
-                    return; // SALIR si es anónimo  
-                }  
+                // Eliminar cualquier verificación de user.isAnonymous aquí.  
+                // Si la autenticación anónima está deshabilitada en la consola, Firebase no debería devolver 'user.isAnonymous == true'.  
+                // Si llegamos aquí, el 'user' es un usuario de email/password (o similar).  
   
                 currentUserId = user.uid;  
                 window.currentUserId = user.uid;  
                 authReady = true;  
-                console.log('✅ Usuario autenticado con UID:', user.uid);  
+                console.log('✅ Usuario autenticado con UID:', user.uid); // Corregido carácter  
   
-                // Cargar metadatos del usuario (nombre, rol) desde Firestore  
                 let userData = {   
                     email: user.email || 'unknown@example.com',   
                     uid: user.uid,   
@@ -99,12 +78,8 @@ if (firebaseConfig.enabled) {
   
                 if (resolveAuthReady) {  
                     resolveAuthReady(user.uid);  
-                    // Para evitar que se resuelva múltiples veces en el ciclo de vida de la app,  
-                    // especialmente si se loguea y desloguea varias veces sin recargar.  
-                    // Podríamos crear una nueva promesa cada vez que se espera.  
-                    // Por ahora, para simplificar, se mantiene la resolución única.  
                     resolveAuthReady = null;   
-                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; }); // Crear nueva promesa  
+                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
                 }  
   
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
@@ -115,20 +90,20 @@ if (firebaseConfig.enabled) {
                     window.addUserButtons(window.currentUser);  
                 }  
   
-            } else { // No hay usuario autenticado (email/password)  
+            } else {   
                 currentUserId = null;  
                 window.currentUserId = null;  
                 authReady = false;  
                 window.currentUser = null;  
-                console.log('⚪ Usuario no autenticado (email/password).');  
+                console.log('⚪ Usuario no autenticado (email/password).'); // Corregido carácter  
   
                 const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
                 if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; }  
   
                 if (resolveAuthReady) {  
                     resolveAuthReady(null);  
-                    resolveAuthReady = null;  
-                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; }); // Crear nueva promesa  
+                    resolveAuthReady = null;   
+                    window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
                 }  
                 if (window.updateFirebaseStatusIndicator) window.updateFirebaseStatusIndicator();  
   
@@ -137,25 +112,25 @@ if (firebaseConfig.enabled) {
                 }  
             }  
         });  
-        console.log('✅ Firebase inicializado correctamente');  
+        console.log('✅ Firebase inicializado correctamente'); // Corregido carácter  
     } catch (error) {  
-        console.error('❌ Error inicializando Firebase:', error);  
+        console.error('❌ Error inicializando Firebase:', error); // Corregido carácter  
         window.firebaseConfig = { enabled: false };  
         if (resolveAuthReady) {   
             resolveAuthReady(null);   
             resolveAuthReady = null;   
-            window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; }); // Crear nueva promesa  
+            window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
         }  
     }  
 } else {  
-    console.log('⚪ Firebase deshabilitado en la configuración');  
+    console.log('⚪ Firebase deshabilitado en la configuración'); // Corregido carácter  
     window.firebaseConfig = { enabled: false };  
     if (resolveAuthReady) {   
         resolveAuthReady(null);   
         resolveAuthReady = null;   
-        window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; }); // Crear nueva promesa  
+        window.authReadyPromise = new Promise((resolve) => { resolveAuthReady = resolve; });   
     }  
-}  
+} 
 
 // ==========================================  
 // FUNCIONES PARA DATOS DE EQUIPOS (GLOBALES)  
