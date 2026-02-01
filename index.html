@@ -1208,7 +1208,9 @@
                 alert('Error: ' + result.message);      
             }      
         };      
-      
+
+        window.startPlayerNegotiation = window.startNegotiationUI;
+        
         window.updateNegotiationModal = function() {      
             const state = gameLogic.getGameState();      
             const player = state.negotiatingPlayer;      
