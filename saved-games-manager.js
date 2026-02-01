@@ -1,6 +1,6 @@
 // saved-games-manager.js  
 (function() {  
-    console.log('📦 Saved Games Manager cargando...');  
+    console.log('📦 Saved Games Manager cargando...'); // Corregido: Eliminar caracteres extraños  
   
     // Crear modal para mostrar partidas guardadas  
     function createSavedGamesModal() {  
@@ -9,14 +9,15 @@
         modal.className = 'modal';  
         modal.style.zIndex = '10001';  
         modal.innerHTML = `  
-            <div class="modal-content">  
-                <span class="close-button" onclick="window.closeSavedGamesModal()">&times;</span>  
-                <h2>💾 Partidas Guardadas</h2>  
-                <p id="savedGamesLoading" style="text-align: center;">Cargando partidas...</p>  
-                <div id="savedGamesList"></div>  
-                <p id="savedGamesEmpty" style="text-align: center; display: none;">No tienes partidas guardadas en la nube<br>Guarda tu primera partida usando el botón "💾 Guardar"</p>  
-                <button class="btn btn-secondary" onclick="window.closeSavedGamesModal()">Cerrar</button>  
+            <span class="close-button" onclick="window.closeSavedGamesModal()">×</span>  
+            <h2>💾 Partidas Guardadas</h2>  
+            <div id="savedGamesLoading" style="text-align: center; padding: 20px;">Cargando partidas...</div>  
+            <div id="savedGamesEmpty" style="text-align: center; padding: 20px; display: none;">  
+                No tienes partidas guardadas en la nube<br>  
+                Guarda tu primera partida usando el botón "💾 Guardar"  
             </div>  
+            <div id="savedGamesList" class="list-container"></div>  
+            <button class="btn" onclick="window.closeSavedGamesModal()">Cerrar</button>  
         `;  
         document.body.appendChild(modal);  
     }  
@@ -28,7 +29,8 @@
             createSavedGamesModal();  
             modal = document.getElementById('savedGamesModal');  
         }  
-        modal.classList.add('active'); // Mostrar modal  
+        modal.classList.add('active');  
+        // Mostrar loading  
         document.getElementById('savedGamesLoading').style.display = 'block';  
         document.getElementById('savedGamesList').innerHTML = '';  
         document.getElementById('savedGamesEmpty').style.display = 'none';  
@@ -37,7 +39,7 @@
         if (!window.currentUserId) {  
             document.getElementById('savedGamesLoading').style.display = 'none';  
             document.getElementById('savedGamesList').innerHTML = `  
-                <p style="color: red;">❌ Debes iniciar sesión para ver tus partidas guardadas en la nube</p>  
+                ❌ Debes iniciar sesión para ver tus partidas guardadas en la nube  
             `;  
             return;  
         }  
@@ -50,7 +52,6 @@
             // Cargar partidas  
             const games = await window.loadUserSavedGames(window.currentUserId);  
             document.getElementById('savedGamesLoading').style.display = 'none';  
-  
             if (!games || games.length === 0) {  
                 document.getElementById('savedGamesEmpty').style.display = 'block';  
                 return;  
@@ -62,23 +63,26 @@
             // Renderizar lista de partidas  
             const gamesList = document.getElementById('savedGamesList');  
             gamesList.innerHTML = games.map(game => `  
-                <div class="saved-game-item">  
+                <div class="list-item game-item">  
                     <h3>${game.name}</h3>  
                     <p>  
-                        <strong>Equipo:</strong> ${game.team} |   
-                        <strong>División:</strong> ${game.division || 'N/A'} |   
+                        <strong>Equipo:</strong> ${game.team} |  
+                        <strong>División:</strong> ${game.division || 'N/A'} |  
                         <strong>Jornada:</strong> ${game.week}  
                     </p>  
                     <p>📅 Guardada: ${new Date(game.lastSaved).toLocaleString('es-ES')}</p>  
-                    <button class="btn btn-primary" onclick="window.loadGameFromCloudUI('${game.id}')">▶️ Cargar</button>  
-                    <button class="btn btn-danger" onclick="window.deleteGameFromCloudUI('${game.id}', '${game.name}')">🗑️ Eliminar</button>  
+                    <div class="actions">  
+                        <button class="btn btn-success btn-sm" onclick="window.loadGameFromCloudUI('${game.id}')">▶️ Cargar</button>  
+                        <button class="btn btn-danger btn-sm" onclick="window.deleteGameFromCloudUI('${game.id}', '${game.name}')">🗑️ Eliminar</button>  
+                    </div>  
                 </div>  
             `).join('');  
+  
         } catch (error) {  
-            console.error('❌ Error cargando partidas:', error);  
+            console.error('❌ Error cargando partidas:', error); // Corregido: Eliminar caracteres extraños  
             document.getElementById('savedGamesLoading').style.display = 'none';  
             document.getElementById('savedGamesList').innerHTML = `  
-                <p style="color: red;">❌ Error al cargar las partidas: ${error.message}</p>  
+                ❌ Error al cargar las partidas: ${error.message}  
             `;  
         }  
     };  
@@ -94,7 +98,7 @@
     // Cargar partida desde la nube  
     window.loadGameFromCloudUI = async function(gameId) {  
         if (!window.currentUserId) {  
-            alert('⚠️ Debes iniciar sesión para cargar partidas');  
+            alert('⚠️ Debes iniciar sesión para cargar partidas'); // Corregido: Eliminar caracteres extraños  
             return;  
         }  
         if (!confirm('¿Seguro que quieres cargar esta partida? Se perderá el progreso actual no guardado.')) {  
@@ -107,7 +111,7 @@
             }  
             const result = await window.loadGameFromCloud(window.currentUserId, gameId);  
             if (result.success) {  
-                alert('✅ Partida cargada correctamente');  
+                alert('✅ Partida cargada correctamente'); // Corregido: Eliminar caracteres extraños  
                 // Refrescar UI  
                 if (window.ui && window.gameLogic) {  
                     // *** MODIFICACIÓN CLAVE AQUÍ: Actualizar el gameState global antes de refrescar la UI ***  
@@ -124,18 +128,18 @@
                     window.switchPage('dashboard', dashboardButton);  
                 }  
             } else {  
-                alert('❌ Error al cargar la partida: ' + (result.message || result.error));  
+                alert('❌ Error al cargar la partida: ' + (result.message || result.error)); // Corregido: Eliminar caracteres extraños  
             }  
         } catch (error) {  
-            console.error('❌ Error cargando partida:', error);  
-            alert('❌ Error al cargar la partida: ' + error.message);  
+            console.error('❌ Error cargando partida:', error); // Corregido: Eliminar caracteres extraños  
+            alert('❌ Error al cargar la partida: ' + error.message); // Corregido: Eliminar caracteres extraños  
         }  
     };  
   
     // Eliminar partida de la nube  
     window.deleteGameFromCloudUI = async function(gameId, gameName) {  
         if (!window.currentUserId) {  
-            alert('⚠️ Debes iniciar sesión para eliminar partidas');  
+            alert('⚠️ Debes iniciar sesión para eliminar partidas'); // Corregido: Eliminar caracteres extraños  
             return;  
         }  
         if (!confirm(`¿Seguro que quieres eliminar la partida "${gameName}"? Esta acción no se puede deshacer.`)) {  
@@ -148,15 +152,15 @@
             }  
             const result = await window.deleteGameFromCloud(window.currentUserId, gameId);  
             if (result.success) {  
-                alert('✅ Partida eliminada correctamente');  
+                alert('✅ Partida eliminada correctamente'); // Corregido: Eliminar caracteres extraños  
                 // Recargar lista de partidas  
                 window.openSavedGamesModal();  
             } else {  
-                alert('❌ Error al eliminar la partida: ' + (result.error || 'Error desconocido'));  
+                alert('❌ Error al eliminar la partida: ' + (result.error || 'Error desconocido')); // Corregido: Eliminar caracteres extraños  
             }  
         } catch (error) {  
-            console.error('❌ Error eliminando partida:', error);  
-            alert('❌ Error al eliminar la partida: ' + error.message);  
+            console.error('❌ Error eliminando partida:', error); // Corregido: Eliminar caracteres extraños  
+            alert('❌ Error al eliminar la partida: ' + error.message); // Corregido: Eliminar caracteres extraños  
         }  
     };  
   
@@ -168,7 +172,7 @@
                 const loadBtn = document.createElement('button');  
                 loadBtn.id = 'loadFromCloudBtn';  
                 loadBtn.className = 'btn btn-sm';  
-                loadBtn.innerHTML = '☁️ Cargar';  
+                loadBtn.innerHTML = '☁️ Cargar'; // Corregido: Eliminar caracteres extraños  
                 loadBtn.onclick = () => window.openSavedGamesModal();  
                 loadBtn.style.background = '#0099ff'; // Un color distintivo para cargar  
                 // Insertar después del botón "Guardar"  
@@ -181,6 +185,5 @@
             }  
         }, 1000);  
     });  
-  
-    console.log('✅ Saved Games Manager cargado correctamente');  
+    console.log('✅ Saved Games Manager cargado correctamente'); // Corregido: Eliminar caracteres extraños  
 })();  
