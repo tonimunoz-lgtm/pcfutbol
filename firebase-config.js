@@ -536,8 +536,7 @@ window.deleteGameFromCloud = deleteGameFromCloud;
 export {  
     app,  
     auth,  
-    db,  
-    signInAnonymously,  
+    db,    
     onAuthStateChanged,  
     saveTeamDataToFirebase,  
     getTeamDataFromFirebase,  
