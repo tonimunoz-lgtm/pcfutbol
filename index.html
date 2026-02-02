@@ -76,7 +76,7 @@
         <div class="main-center-circle">
             <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
             <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
-            <button class="center-option load-btn" onclick="window.switchPage('settings', this)">☁️ CARGAR PARTIDA</button>
+            <button class="center-option load-btn" onclick="window.openSettingsPage()">☁️ CARGAR PARTIDA</button>
             <button class="center-option exit-btn" onclick="handleExit()">🚪 SALIR</button>
         </div>
     </div>
@@ -85,14 +85,14 @@
          PÁGINAS DE CONTENIDO (Ocultas por defecto)
          ============================================ -->
 
-<!-- SECCIÓN DE SETTINGS -->
-<div id="settingsPage" style="display: none;">
+<!-- SECCIÓN DE SETTINGS OCULTA -->
+<div id="settingsPage" class="page" style="display: none;">
     <div id="settings" class="settings-container">
         <h1>⚙️ Opciones</h1>
         <p>Aquí se cargarán las opciones y el botón de la nube por el injector.</p>
         <!-- injector-cloud-load.js inyectará la sección de Cloud Load aquí -->
     </div>
-    <button onclick="window.switchPage('main', this)" style="margin-top: 20px;">Cerrar</button>
+    <button onclick="window.closeSettingsPage()" style="margin-top: 20px;">Cerrar</button>
 </div>
     
     
@@ -1478,23 +1478,27 @@
             }
         });
 
-        window.showSettingsPage = function() {
+     window.openSettingsPage = function() {
+    const mainPage = document.getElementById('mainPage');
     const settingsPage = document.getElementById('settingsPage');
-    if (settingsPage) {
-        settingsPage.style.display = 'block';
-        // Llamar al injector para que intente inyectar la UI
-        if (window.injectCloudLoadUI) {
-            window.injectCloudLoadUI();
-        }
+
+    if (mainPage) mainPage.style.display = 'none';
+    if (settingsPage) settingsPage.style.display = 'block';
+
+    // Llamar al injector para inyectar la sección de Cloud Load
+    if (window.injectCloudLoadUI) {
+        window.injectCloudLoadUI();
     }
 };
 
-window.hideSettingsPage = function() {
+window.closeSettingsPage = function() {
+    const mainPage = document.getElementById('mainPage');
     const settingsPage = document.getElementById('settingsPage');
-    if (settingsPage) {
-        settingsPage.style.display = 'none';
-    }
+
+    if (settingsPage) settingsPage.style.display = 'none';
+    if (mainPage) mainPage.style.display = 'block';
 };
+
 
 
 
