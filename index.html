@@ -1477,6 +1477,25 @@
             }
         });
 
+        window.showSettingsPage = function() {
+    const settingsPage = document.getElementById('settingsPage');
+    if (settingsPage) {
+        settingsPage.style.display = 'block';
+        // Llamar al injector para que intente inyectar la UI
+        if (window.injectCloudLoadUI) {
+            window.injectCloudLoadUI();
+        }
+    }
+};
+
+window.hideSettingsPage = function() {
+    const settingsPage = document.getElementById('settingsPage');
+    if (settingsPage) {
+        settingsPage.style.display = 'none';
+    }
+};
+
+
 
         // Exponer globalmente
         window.gameLogic = gameLogic;
