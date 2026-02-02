@@ -120,21 +120,20 @@ body {
     background: linear-gradient(135deg, rgba(30, 80, 150, 0.6) 0%, rgba(15, 30, 60, 0.6) 100%);
     border-bottom: none;
     border-right: none;
-    justify-content: flex-start; /* contenido arriba */
 }
 
 .quadrant.top-right {
     background: linear-gradient(-135deg, rgba(30, 80, 150, 0.6) 0%, rgba(15, 30, 60, 0.6) 100%);
     border-bottom: none;
     border-left: none;
-    justify-content: flex-start;
 }
 
 .quadrant.bottom-left {
     background: linear-gradient(-135deg, rgba(15, 30, 60, 0.6) 0%, rgba(30, 80, 150, 0.6) 100%);
     border-top: none;
     border-right: none;
-    justify-content: flex-end; /* contenido hacia abajo */
+    justify-content: flex-end;          /* Contenido abajo */
+    flex-direction: column-reverse;    /* Invertir orden: título abajo */
 }
 
 .quadrant.bottom-right {
@@ -142,15 +141,7 @@ body {
     border-top: none;
     border-left: none;
     justify-content: flex-end;
-}
-
-/* Contenedor interno para los cuadrantes inferiores */
-.quadrant.bottom-left .content-wrapper,
-.quadrant.bottom-right .content-wrapper {
-    display: flex;
-    flex-direction: column; /* botones arriba, título debajo */
-    align-items: center;
-    margin-bottom: 20px; /* separación desde el fondo */
+    flex-direction: column-reverse;
 }
 
 /* Títulos de sección */
@@ -166,7 +157,7 @@ body {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     width: 100%;
     text-align: center;
-    margin-top: 10px; /* espacio entre botones y título */
+    margin-bottom: 15px; /* Espacio entre título y botones */
 }
 
 /* Botones dentro de los cuadrantes */
@@ -174,7 +165,6 @@ body {
     width: 80%;
     margin-bottom: 10px;
 }
-
 
 
 /* ============================================
