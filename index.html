@@ -1477,7 +1477,7 @@
             }
         });
 
-        function showSettingsPage() {
+     window.showSettingsPage = function() {
     const settingsPage = document.getElementById('settingsPage');
     if (settingsPage) {
         settingsPage.style.display = 'block';
@@ -1486,14 +1486,14 @@
             window.injectCloudLoadUI();
         }
     }
-}
+};
 
-function hideSettingsPage() {
+window.hideSettingsPage = function() {
     const settingsPage = document.getElementById('settingsPage');
     if (settingsPage) {
         settingsPage.style.display = 'none';
     }
-}
+};
 
 
         // Exponer globalmente
