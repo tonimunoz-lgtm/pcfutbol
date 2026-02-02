@@ -76,7 +76,7 @@
         <div class="main-center-circle">
             <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
             <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
-            <button class="center-option load-btn" onclick="showSettingsPage()">☁️ CARGAR PARTIDA</button>
+            <button class="center-option load-btn" onclick="window.switchPage('settings', this)">☁️ CARGAR PARTIDA</button>
             <button class="center-option exit-btn" onclick="handleExit()">🚪 SALIR</button>
         </div>
     </div>
@@ -1476,24 +1476,6 @@
                 window.openModal('gameMode');
             }
         });
-
-     window.showSettingsPage = function() {
-    const settingsPage = document.getElementById('settingsPage');
-    if (settingsPage) {
-        settingsPage.style.display = 'block';
-        // Llamar al injector para que intente inyectar la UI
-        if (window.injectCloudLoadUI) {
-            window.injectCloudLoadUI();
-        }
-    }
-};
-
-window.hideSettingsPage = function() {
-    const settingsPage = document.getElementById('settingsPage');
-    if (settingsPage) {
-        settingsPage.style.display = 'none';
-    }
-};
 
 
         // Exponer globalmente
