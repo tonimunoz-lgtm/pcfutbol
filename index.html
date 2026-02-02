@@ -739,52 +739,71 @@
             window.openModal('selectTeam');      
         };      
       
+// -------------------------
+// Renderizado de selección de equipos (robusto)
+// -------------------------
 function renderTeamSelectors() {
+    // Comprobación de seguridad: TEAMS_DATA debe existir
     if (!window.TEAMS_DATA) {
-        console.error('TEAMS_DATA no está definido');
+        console.error('⚠️ TEAMS_DATA no está disponible. No se pueden mostrar equipos.');
         return;
     }
 
-    const createTeamButtons = (divisionKey, listId) => {
-        const listElement = document.getElementById(listId);
+    const divisions = ['primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2'];
+    const divisionListIds = {
+        'primera': 'primeraList',
+        'segunda': 'segundaList',
+        'rfef_grupo1': 'rfef_grupo1List',
+        'rfef_grupo2': 'rfef_grupo2List'
+    };
+
+    divisions.forEach(divisionKey => {
+        const listElement = document.getElementById(divisionListIds[divisionKey]);
         if (!listElement) return;
 
         const teamsToRender = window.TEAMS_DATA[divisionKey] || [];
+
         if (teamsToRender.length === 0) {
-            listElement.innerHTML = '<p>No hay equipos disponibles</p>';
+            listElement.innerHTML = `<p style="color: #ccc; font-style: italic;">No hay equipos disponibles</p>`;
             return;
         }
 
-        listElement.innerHTML = teamsToRender.map(team =>
-            `<button class="btn" style="width: 100%; margin: 5px 0;" onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">${team}</button>`
-        ).join('');
-    };
-
-    createTeamButtons('primera', 'primeraList');
-    createTeamButtons('segunda', 'segundaList');
-    createTeamButtons('rfef_grupo1', 'rfef_grupo1List');
-    createTeamButtons('rfef_grupo2', 'rfef_grupo2List');
+        // Crear botones para cada equipo
+        listElement.innerHTML = teamsToRender.map(team => {
+            const safeTeam = team.replace(/'/g, "\\'"); // Escapar comillas simples
+            return `
+                <button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;"
+                        onclick="window.selectTeamAndStart('${safeTeam}', '${divisionKey}')">
+                    ${team}
+                </button>
+            `;
+        }).join('');
+    });
 }
+
+// Hacer global para que los modales lo llamen
 window.renderTeamSelectors = renderTeamSelectors;
-    
-      
-        window.selectTeamAndStart = function(teamName, division) {      
-            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);      
-            ui.refreshUI(gameLogic.getGameState());      
-            window.closeModal('selectTeam');      
-            const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');      
-            if(dashboardButton) {      
-                window.switchPage('dashboard', dashboardButton);      
-            }      
-        };
 
+// -------------------------
+// Selección de equipo y arranque
+// -------------------------
+window.selectTeamAndStart = function(teamName, division) {
+    if (!teamName || !division) {
+        alert('⚠️ Equipo o división inválidos');
+        return;
+    }
 
-        window.selectTeamAndStart = function(teamName, division) {
-            console.log('✓ Equipo seleccionado:', teamName);
-            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
-            ui.refreshUI(gameLogic.getGameState());
-            window.closeModal('selectTeam');
-        };
+    console.log('Seleccionando equipo:', teamName, 'Division:', division);
+
+    gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
+    ui.refreshUI(gameLogic.getGameState());
+    window.closeModal('selectTeam');
+
+    // Abrir dashboard automáticamente
+    const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');
+    if (dashboardButton) window.switchPage('dashboard', dashboardButton);
+};
+
       
 
         
