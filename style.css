@@ -134,16 +134,18 @@ body {
     background: linear-gradient(-135deg, rgba(15, 30, 60, 0.6) 0%, rgba(30, 80, 150, 0.6) 100%);
     border-top: none;
     border-right: none;
-    justify-content: flex-end; /* empuja todo al fondo */
-    flex-direction: column;    /* mantener orden natural */
+    display: flex;
+    flex-direction: column-reverse; /* Crece de abajo hacia arriba */
+    justify-content: flex-start;    /* empieza desde el fondo */
 }
 
 .quadrant.bottom-right {
     background: linear-gradient(135deg, rgba(15, 30, 60, 0.6) 0%, rgba(30, 80, 150, 0.6) 100%);
     border-top: none;
     border-left: none;
-    justify-content: flex-end;
-    flex-direction: column;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-start;
 }
 
 /* Títulos de sección */
@@ -159,20 +161,13 @@ body {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     width: 100%;
     text-align: center;
-    margin-top: 10px;    /* espacio entre botones y título */
+    margin-top: 10px; /* espacio entre botones y título */
 }
 
 /* Botones dentro de los cuadrantes */
 .quadrant .menu-button {
     width: 80%;
     margin-bottom: 10px;
-}
-
-/* ===== Ajuste para que títulos inferiores queden al fondo ===== */
-.quadrant.bottom-left .menu-button,
-.quadrant.bottom-right .menu-button {
-    margin-top: auto; /* empuja los botones hacia arriba */
-    margin-bottom: 5px; /* separación con el título */
 }
 
 /* ============================================
