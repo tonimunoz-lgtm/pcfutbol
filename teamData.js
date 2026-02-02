@@ -57,4 +57,4 @@ function loadAllTeamData() {
     return allData;
 }
 
-export { TEAM_CUSTOM_DATA, getTeamData, saveTeamData, loadAllTeamData };
+export { TEAM_DATA, getTeamData, saveTeamData, loadAllTeamData };
