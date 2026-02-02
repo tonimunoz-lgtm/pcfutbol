@@ -11,6 +11,7 @@
     <script type="module" src="./firebase-config.js"></script>
     <script type="module" src="./injector-firebase-sync.js"></script>
 
+        
     <!-- HEADER -->
     <div class="header">
         <div class="header-info">
@@ -75,8 +76,8 @@
         <div class="main-center-circle">
             <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
             <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
+            <button class="center-option load-btn" onclick="showSettingsPage()">☁️ CARGAR PARTIDA</button>
             <button class="center-option exit-btn" onclick="handleExit()">🚪 SALIR</button>
-            <div class="main-ball-decoration"></div>
         </div>
     </div>
 
@@ -84,6 +85,16 @@
          PÁGINAS DE CONTENIDO (Ocultas por defecto)
          ============================================ -->
 
+       <!-- PÁGINA DE SETTINGS OCULTA -->
+<div id="settingsPage" style="display: none;">
+    <div id="settings" class="settings-container">
+        <h1>⚙️ Opciones</h1>
+        <!-- Aquí el injector inyectará la sección de Cloud Load -->
+    </div>
+    <button onclick="hideSettingsPage()" style="margin-top: 20px;">Cerrar</button>
+</div>
+    
+    
     <!-- DASHBOARD / RESULTADOS -->
     <div id="dashboard" class="page">
         <div class="page-header">
@@ -1465,6 +1476,25 @@
                 window.openModal('gameMode');
             }
         });
+
+        function showSettingsPage() {
+    const settingsPage = document.getElementById('settingsPage');
+    if (settingsPage) {
+        settingsPage.style.display = 'block';
+        // Llamar al injector para que intente inyectar la UI
+        if (window.injectCloudLoadUI) {
+            window.injectCloudLoadUI();
+        }
+    }
+}
+
+function hideSettingsPage() {
+    const settingsPage = document.getElementById('settingsPage');
+    if (settingsPage) {
+        settingsPage.style.display = 'none';
+    }
+}
+
 
         // Exponer globalmente
         window.gameLogic = gameLogic;
