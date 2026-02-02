@@ -1,0 +1,727 @@
+/* ============================================
+   PC FÚTBOL MANAGER 2025/26 - RETRO STYLE
+   Diseño de 4 cuadrantes inspirado en el clásico
+   ============================================ */
+
+/* -- Font Face (Retro) -- */
+@font-face {
+    font-family: 'PC-Futbol-Retro';
+    /* src: url('path/to/your/font.ttf') format('truetype'); */
+}
+
+/* -- General Reset & Base -- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'PC-Futbol-Retro', Arial, sans-serif;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+body {
+    background: linear-gradient(180deg, #1A3E6F 0%, #0F2040 100%);
+    color: #E0E0E0;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* ============================================
+   HEADER - Barra superior con info del equipo
+   ============================================ */
+.header {
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(90deg, #0F2040 0%, #1A3E6F 100%);
+    border-bottom: 2px solid #5588FF;
+    padding: 5px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 100;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    font-size: 0.9em;
+}
+
+.header-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #FFD700;
+    letter-spacing: 2px;
+    text-align: center;
+    text-transform: uppercase;
+    flex-grow: 1;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+}
+
+.info-box {
+    background-color: rgba(58, 102, 176, 0.5);
+    border: 1px solid #5588FF;
+    padding: 5px 10px;
+    border-radius: 3px;
+    text-align: center;
+    font-size: 0.75em;
+    color: #FFF;
+}
+
+.info-box span {
+    display: block;
+    line-height: 1.2;
+}
+
+.team-logo-header {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #5588FF;
+    border-radius: 50%;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+    background-color: #FFF;
+    padding: 2px;
+}
+
+/* ============================================
+   MAIN LAYOUT - Diseño de 4 cuadrantes
+   ============================================ */
+.main-layout {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    height: calc(100vh - 60px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+    overflow: hidden;
+    margin: auto;
+}
+
+.quadrant {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #224488;
+    position: relative;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+.quadrant.top-left {
+    background: linear-gradient(135deg, rgba(30, 80, 150, 0.6) 0%, rgba(15, 30, 60, 0.6) 100%);
+    border-bottom: none;
+    border-right: none;
+}
+
+.quadrant.top-right {
+    background: linear-gradient(-135deg, rgba(30, 80, 150, 0.6) 0%, rgba(15, 30, 60, 0.6) 100%);
+    border-bottom: none;
+    border-left: none;
+}
+
+.quadrant.bottom-left {
+    background: linear-gradient(-135deg, rgba(15, 30, 60, 0.6) 0%, rgba(30, 80, 150, 0.6) 100%);
+    border-top: none;
+    border-right: none;
+}
+
+.quadrant.bottom-right {
+    background: linear-gradient(135deg, rgba(15, 30, 60, 0.6) 0%, rgba(30, 80, 150, 0.6) 100%);
+    border-top: none;
+    border-left: none;
+}
+
+.section-title {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #FFD700;
+    text-transform: uppercase;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid #5588FF;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   CÍRCULO CENTRAL - Simulación y opciones
+   ============================================ */
+.main-center-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #3A66B0 0%, #1A3E6F 100%);
+    border: 3px solid #5588FF;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    z-index: 50;
+}
+
+.center-option {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #5588FF;
+    padding: 8px 15px;
+    border-radius: 5px;
+    color: #FFF;
+    width: 80%;
+    text-align: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.center-option:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: #FFD700;
+}
+
+.center-option.simulate-btn {
+    background-color: #8BC34A;
+    font-weight: bold;
+    color: #000;
+    border-color: #FFD700;
+}
+
+.center-option.save-btn {
+    background-color: #3A66B0;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+.center-option.exit-btn {
+    background-color: #920300;
+    font-weight: bold;
+    color: #FFF;
+}
+
+.main-ball-decoration {
+    width: 50px;
+    height: 50px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%238BC34A" d="M504 256c0 136.974-111.026 248-248 248S8 392.974 8 256 119.026 8 256 8s248 111.026 248 248zM192.83 361.35C167.92 386.25 128 357.7 128 322.61V222.84l71.43 14.29c-6.68 13.97-10.6 29.58-10.6 46.12 0 16.54 3.92 32.15 10.6 46.12zm128 0c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12L384 222.84v99.77c0 35.09-39.92 63.64-64.83 38.74zM256 368c-24.58 0-47.78-7.92-67.28-21.43L256 269.43l67.28 77.14C303.78 360.08 280.58 368 256 368zM64 256c0-23.75 6.94-46.06 19.3-65.26L160 216c-3.13 13.9-5 28.53-5 43.6s1.88 29.7 5 43.6l-76.7 25.26C70.94 302.06 64 279.75 64 256zm384 0c0 23.75-6.94 46.06-19.3 65.26L352 296c3.13-13.9 5-28.53 5-43.6s-1.88-29.7-5-43.6l76.7-25.26C441.06 209.94 448 232.25 448 256zM256 144c-16.54 0-32.15 3.92-46.12 10.6L144 192h23l89-102.86V144zM167.28 144c19.5-13.51 42.7-21.43 67.28-21.43s47.78 7.92 67.28 21.43L256 242.57 188.72 165.43zM344.83 154.65c24.91-24.9 64.83 3.65 64.83 38.74v99.77l-71.43-14.29c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12z" /></svg>') no-repeat center center;
+    background-size: contain;
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+    z-index: 10;
+}
+
+/* ============================================
+   BOTONES DE MENÚ - En los cuadrantes
+   ============================================ */
+.menu-button {
+    background-color: #3A66B0;
+    color: #FFF;
+    border: 1px solid #5588FF;
+    padding: 8px 15px;
+    margin: 5px 0;
+    width: 80%;
+    text-align: left;
+    font-size: 0.95em;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    transition: all 0.1s ease;
+    position: relative;
+    padding-left: 50px;
+    line-height: 24px;
+}
+
+.menu-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.7);
+    border-color: #FFD700;
+}
+
+.menu-button.green-button { background-color: #588F27; border-color: #8BC34A; }
+.menu-button.green-button:hover { background-color: #72B739; }
+.menu-button.blue-button { background-color: #3A66B0; border-color: #5588FF; }
+.menu-button.blue-button:hover { background-color: #4D81D1; }
+.menu-button.red-button { background-color: #920300; border-color: #C70000; }
+.menu-button.red-button:hover { background-color: #D30000; }
+.menu-button.orange-button { background-color: #E27200; border-color: #FF9800; }
+.menu-button.orange-button:hover { background-color: #FF8000; }
+
+/* Iconos para los botones */
+.menu-button::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+}
+
+.results-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.classification-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="%23FFFFFF" d="M0 64C0 46.3 14.3 32 32 32H416c17.7 0 32 14.3 32 32V96c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V64zM160 160c17.7 0 32 14.3 32 32V480c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V192c0-17.7 14.3-32 32-32H160zM416 160H256c-17.7 0-32 14.3-32 32V480c0 17.7 14.3 32 32 32H416c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zM336 240a24 24 0 1 0 0-48 24 24 0 1 0 0 48zm0 96a24 24 0 1 0 0-48 24 24 0 1 0 0 48zm0 96a24 24 0 1 0 0-48 24 24 0 1 0 0 48z"/></svg>'); }
+.calendar-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="%23FFFFFF" d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h32c17.7 0 32 14.3 32 32v48H0V96c0-17.7 14.3-32 32-32H64V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64H128zm320 160H0V480c0 17.7 14.3 32 32 32H416c17.7 0 32-14.3 32-32V160z"/></svg>'); }
+.lineup-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.tactics-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.transfer-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%23FFFFFF" d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h32c17.7 0 32 14.3 32 32v48H0V96c0-17.7 14.3-32 32-32H64V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64H128zm320 160H0V480c0 17.7 14.3 32 32 32H416c17.7 0 32-14.3 32-32V160z"/></svg>'); }
+.squad-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.staff-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.cash-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.decisions-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+.stadium-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }
+
+/* ============================================
+   PÁGINAS DE CONTENIDO - Pantallas secundarias
+   ============================================ */
+.page {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 60px);
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 80;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #5588FF;
+}
+
+.page-close-btn {
+    background: #920300;
+    color: #FFF;
+    border: 1px solid #C70000;
+    padding: 8px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.page-close-btn:hover {
+    background: #D30000;
+    border-color: #FFD700;
+}
+
+/* ============================================
+   ELEMENTOS COMUNES DE UI
+   ============================================ */
+h1 {
+    color: #FFD700;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+h2 {
+    color: #5588FF;
+    font-size: 1.3em;
+    margin: 20px 0 10px 0;
+}
+
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.data-box {
+    background: rgba(58, 102, 176, 0.2);
+    border: 1px solid #5588FF;
+    padding: 15px;
+    border-radius: 3px;
+    text-align: center;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.data-label {
+    color: #BBB;
+    font-size: 0.8em;
+    margin-bottom: 8px;
+}
+
+.data-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #8BC34A;
+}
+
+.data-value.negative {
+    color: #C70000;
+}
+
+/* Tablas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #5588FF;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+th {
+    padding: 12px;
+    text-align: left;
+    color: #FFD700;
+    background: rgba(58, 102, 176, 0.4);
+    font-weight: bold;
+    border: 1px solid rgba(85, 136, 255, 0.5);
+}
+
+td {
+    padding: 10px;
+    border: 1px solid rgba(85, 136, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+tr:nth-child(even) td {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+tr:hover {
+    background: rgba(85, 136, 255, 0.1);
+}
+
+/* Botones */
+.btn {
+    background: linear-gradient(180deg, #5588FF 0%, #3A66B0 100%);
+    color: white;
+    padding: 10px 20px;
+    border: 1px solid #8BC34A;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    margin: 5px 5px 5px 0;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+}
+
+.btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #8BC34A 0%, #588F27 100%);
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.7);
+    border-color: #FFD700;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    border-width: 1px;
+}
+
+/* Inputs */
+input, select {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid #5588FF;
+    color: #FFF;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #FFD700;
+    box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* Alertas */
+.alert {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 3px;
+    border: 1px solid;
+    background-color: rgba(0,0,0,0.3);
+}
+
+.alert-info { border-color: #5588FF; color: #5588FF; background-color: rgba(58, 102, 176, 0.2); }
+.alert-success { border-color: #8BC34A; color: #8BC34A; background-color: rgba(139, 195, 74, 0.2); }
+.alert-warning { border-color: #FF9800; color: #FF9800; background-color: rgba(255, 152, 0, 0.2); }
+.alert-error { border-color: #C70000; color: #C70000; background-color: rgba(199, 0, 0, 0.2); }
+
+/* Modales */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(180deg, #0F2040 0%, #1A3E6F 100%);
+    border: 2px solid #5588FF;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.9);
+    position: relative;
+}
+
+.modal-close {
+    float: right;
+    color: #FFD700;
+    font-size: 2em;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    line-height: 28px;
+    text-align: center;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.modal-close:hover {
+    color: #FF0000;
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* ============================================
+   ESTILOS ESPECÍFICOS DEL JUEGO
+   ============================================ */
+
+/* Campo de fútbol para alineación */
+.pitch-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 75%;
+    background: #2e7d32;
+    background-image:
+        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+    background-size: 20% 12.5%, 100% 12.5%;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #8BC34A;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
+}
+
+.pitch-position-placeholder {
+    position: absolute;
+    width: 18%;
+    height: 10%;
+    background: rgba(0,0,0,0.2);
+    border: 1px dashed rgba(255,255,255,0.5);
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 0.7em;
+    color: rgba(255,255,255,0.7);
+    transition: background 0.2s;
+}
+
+.pitch-position-placeholder.highlight {
+    background: rgba(85, 136, 255, 0.4);
+}
+
+.pitch-player {
+    background: #0F2040;
+    border: 2px solid #5588FF;
+    padding: 2px 5px;
+    border-radius: 5px;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 90%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    cursor: grab;
+    user-select: none;
+}
+
+.pitch-player.injured {
+    background: #C70000;
+    border-color: red;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.reserves-container {
+    margin-top: 20px;
+    border-top: 2px solid #5588FF;
+    padding-top: 20px;
+}
+
+.reserves-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 80px;
+    border: 1px dashed #BBB;
+    padding: 10px;
+    align-content: flex-start;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 5px;
+}
+
+.draggable-player {
+    background: #0F2040;
+    border: 1px solid #5588FF;
+    padding: 5px 10px;
+    border-radius: 3px;
+    margin: 5px;
+    cursor: grab;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.draggable-player.injured {
+    background: #C70000;
+    border-color: red;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Tarjetas de jugador */
+.player-card {
+    background: rgba(58, 102, 176, 0.15);
+    border: 1px solid #5588FF;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Instalaciones */
+.facility-section {
+    background: rgba(58, 102, 176, 0.2);
+    border: 1px solid #5588FF;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+/* News Feed */
+#newsFeed {
+    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid rgba(85, 136, 255, 0.3);
+    border-radius: 5px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+}
+
+/* Negociación */
+.negotiation-player-info {
+    background: rgba(58, 102, 176, 0.25);
+    border: 1px solid #5588FF;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.negotiation-step {
+    margin-top: 20px;
+    border-top: 1px dashed rgba(85, 136, 255, 0.3);
+    padding-top: 20px;
+}
+
+/* Team Selection */
+.team-selection-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid rgba(85, 136, 255, 0.3);
+    padding: 10px;
+    border-radius: 5px;
+    background-color: rgba(0,0,0,0.2);
+}
