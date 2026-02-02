@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC Fútbol Manager 2025/26</title>
+    <title>PC Fútbol Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,7 +22,7 @@
             </div>
         </div>
         
-        <div class="header-title">⚽ PC FÚTBOL MANAGER 25/26</div>
+        <div class="header-title">⚽ PC FÚTBOL MANAGER</div>
         
         <div class="header-info">
             <div class="info-box">
@@ -85,15 +85,15 @@
          PÁGINAS DE CONTENIDO (Ocultas por defecto)
          ============================================ -->
 
-<!-- SECCIÓN DE SETTINGS OCULTA -->
-<div id="settingsPage" class="page" style="display: none;">
-    <div id="settings" class="settings-container">
-        <h1>⚙️ Opciones</h1>
-        <p>Aquí se cargarán las opciones y el botón de la nube por el injector.</p>
-        <!-- injector-cloud-load.js inyectará la sección de Cloud Load aquí -->
+ <!-- SECCIÓN DE SETTINGS OCULTA -->
+    <div id="settingsPage" class="page" style="display: none;">
+        <div id="settings" class="settings-container">
+            <h1>⚙️ Opciones</h1>
+            <p>Aquí se cargarán las opciones y el botón de la nube por el injector.</p>
+            <!-- injector-cloud-load.js inyectará la sección de Cloud Load aquí -->
+        </div>
+        <button class="btn" onclick="window.closeSettingsPage()">Cerrar</button>
     </div>
-    <button onclick="window.closeSettingsPage()" style="margin-top: 20px;">Cerrar</button>
-</div>
     
     
     <!-- DASHBOARD / RESULTADOS -->
@@ -427,7 +427,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Selección de Equipo -->
+        <!-- MODAL: Selección de Equipo -->
     <div id="selectTeamModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="window.closeModal('selectTeam')">&times;</span>
@@ -611,10 +611,25 @@
             }
         };
 
-        // ============================================
-        // COPIAR TODAS LAS FUNCIONES DEL INDEX ORIGINAL
-        // (Aquí van todas las funciones que ya tenías)
-        // ============================================
+        window.openSettingsPage = function() {
+            const mainPage = document.getElementById('mainPage');
+            const settingsPage = document.getElementById('settingsPage');
+
+            if (mainPage) mainPage.style.display = 'none';
+            if (settingsPage) settingsPage.style.display = 'block';
+
+            if (window.injectCloudLoadUI) {
+                window.injectCloudLoadUI();
+            }
+        };
+
+        window.closeSettingsPage = function() {
+            const mainPage = document.getElementById('mainPage');
+            const settingsPage = document.getElementById('settingsPage');
+
+            if (settingsPage) settingsPage.style.display = 'none';
+            if (mainPage) mainPage.style.display = 'grid';
+        };
 
         window.negotiatePlayer = function(playerName) {
             alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía.`);
@@ -723,36 +738,34 @@
             window.openModal('selectTeam');      
         };      
       
-        function renderTeamSelectors() { // Definición local      
-            const createTeamButtons = (divisionKey, listId) => {      
-                const listElement = document.getElementById(listId);      
-                if (!listElement) return;      
+         function renderTeamSelectors() {
+            const createTeamButtons = (divisionKey, listId) => {
+                const listElement = document.getElementById(listId);
+                if (!listElement) return;
+
+                const teamsToRender = TEAMS_DATA[divisionKey];
+
+                listElement.innerHTML = teamsToRender.map(team =>
+                    `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">
+                        ${team}
+                    </button>`
+                ).join('');
+            };
+
+            createTeamButtons('primera', 'primeraList');
+            createTeamButtons('segunda', 'segundaList');
+            createTeamButtons('rfef_grupo1', 'rfef_grupo1List');
+            createTeamButtons('rfef_grupo2', 'rfef_grupo2List');
+        }
+        window.renderTeamSelectors = renderTeamSelectors;
+
+        window.selectTeamAndStart = function(teamName, division) {
+            console.log('✓ Equipo seleccionado:', teamName);
+            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
+            ui.refreshUI(gameLogic.getGameState());
+            window.closeModal('selectTeam');
+        };
       
-                const teamsToRender = TEAMS_DATA[divisionKey];      
-      
-                listElement.innerHTML = teamsToRender.map(team =>      
-                    `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">      
-                        ${team}      
-                    </button>`      
-                ).join('');      
-            };      
-      
-            createTeamButtons('primera', 'primeraList');      
-            createTeamButtons('segunda', 'segundaList');      
-            createTeamButtons('rfef_grupo1', 'rfef_grupo1List');      
-            createTeamButtons('rfef_grupo2', 'rfef_grupo2List');      
-        }      
-        window.renderTeamSelectors = renderTeamSelectors; // Hacerla global      
-      
-        window.selectTeamAndStart = function(teamName, division) {      
-            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);      
-            ui.refreshUI(gameLogic.getGameState());      
-            window.closeModal('selectTeam');      
-            const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');      
-            if(dashboardButton) {      
-                window.switchPage('dashboard', dashboardButton);      
-            }      
-        };      
 
         
         // Funciones de mercado
@@ -1487,35 +1500,11 @@
             window.openModal('selectTeam');
         };
 
-       /* function renderTeamSelectors() {
-            const createTeamButtons = (divisionKey, listId) => {
-                const listElement = document.getElementById(listId);
-                if (!listElement) return;
-
-                const teamsToRender = TEAMS_DATA[divisionKey];
-
-                listElement.innerHTML = teamsToRender.map(team =>
-                    `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">
-                        ${team}
-                    </button>`
-                ).join('');
-            };
-
-            createTeamButtons('primera', 'primeraList');
-            createTeamButtons('segunda', 'segundaList');
-            createTeamButtons('rfef_grupo1', 'rfef_grupo1List');
-            createTeamButtons('rfef_grupo2', 'rfef_grupo2List');
-        }
-        window.renderTeamSelectors = renderTeamSelectors;
-
-        window.selectTeamAndStart = function(teamName, division) {
-            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
-            ui.refreshUI(gameLogic.getGameState());
-            window.closeModal('selectTeam');
-        };*/
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎮 Inicializando PC Fútbol Manager...');
+            
             const marketPositionSelect = document.getElementById('marketPosition');
             POSITIONS.forEach(pos => {
                 const option = document.createElement('option');
@@ -1532,38 +1521,21 @@
                 formationSelect.appendChild(option);
             });
 
+            // Intentar cargar partida guardada
             const savedStateResult = gameLogic.loadFromLocalStorage();
             if (savedStateResult.success) {
+                console.log('✓ Partida cargada desde localStorage');
                 ui.refreshUI(gameLogic.getGameState());
             } else {
-                window.openModal('gameMode');
+                console.log('⚠️ No hay partida guardada, abriendo modal de selección');
+                // Pequeño delay para asegurar que el DOM está completamente cargado
+                setTimeout(() => {
+                    window.openModal('gameMode');
+                }, 100);
             }
         });
 
-     window.openSettingsPage = function() {
-    const mainPage = document.getElementById('mainPage');
-    const settingsPage = document.getElementById('settingsPage');
-
-    if (mainPage) mainPage.style.display = 'none';
-    if (settingsPage) settingsPage.style.display = 'block';
-
-    // Llamar al injector para inyectar la sección de Cloud Load
-    if (window.injectCloudLoadUI) {
-        window.injectCloudLoadUI();
-    }
-};
-
-window.closeSettingsPage = function() {
-    const mainPage = document.getElementById('mainPage');
-    const settingsPage = document.getElementById('settingsPage');
-
-    if (settingsPage) settingsPage.style.display = 'none';
-    if (mainPage) mainPage.style.display = 'block';
-};
-
-
-
-
+   
         // Exponer globalmente
         window.gameLogic = gameLogic;
         window.ui = ui;
