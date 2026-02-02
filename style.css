@@ -110,8 +110,6 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
     overflow-y: auto;
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
 }
@@ -141,9 +139,7 @@ body {
     border-left: none;
 }
 
-/* ============================================
-   Título de sección
-   ============================================ */
+/* Título de sección */
 .section-title {
     position: absolute;
     top: 10px;
@@ -160,17 +156,16 @@ body {
     z-index: 10;
 }
 
-/* ============================================
-   Contenido del cuadrante separado del título
-   ============================================ */
-.quadrant-content {
+/* Contenedor interno para contenido del cuadrante */
+.quadrant-inner {
     width: 100%;
-    margin-top: 50px; /* Empieza más abajo para no tapar el título */
+    padding-top: 40px; /* espacio suficiente para el título */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px; /* Espacio entre botones u otros elementos */
+    gap: 10px; /* espacio entre botones */
 }
+
 
 
 /* ============================================
