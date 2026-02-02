@@ -85,13 +85,14 @@
          PÁGINAS DE CONTENIDO (Ocultas por defecto)
          ============================================ -->
 
-       <!-- PÁGINA DE SETTINGS OCULTA -->
+<!-- SECCIÓN DE SETTINGS -->
 <div id="settingsPage" style="display: none;">
     <div id="settings" class="settings-container">
         <h1>⚙️ Opciones</h1>
-        <!-- Aquí el injector inyectará la sección de Cloud Load -->
+        <p>Aquí se cargarán las opciones y el botón de la nube por el injector.</p>
+        <!-- injector-cloud-load.js inyectará la sección de Cloud Load aquí -->
     </div>
-    <button onclick="hideSettingsPage()" style="margin-top: 20px;">Cerrar</button>
+    <button onclick="window.switchPage('main', this)" style="margin-top: 20px;">Cerrar</button>
 </div>
     
     
