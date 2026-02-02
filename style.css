@@ -1,32 +1,30 @@
-/* ============================================
-   PC FÚTBOL MANAGER 2025/26 - RETRO STYLE
-   Diseño de 4 cuadrantes inspirado en el clásico
-   ============================================ */
-
-/* -- Font Face (Retro) -- */
-@font-face {
-    font-family: 'PC-Futbol-Retro';
-    /* src: url('path/to/your/font.ttf') format('truetype'); */
-}
-
-/* -- General Reset & Base -- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'PC-Futbol-Retro', Arial, sans-serif;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-}
-
-body {
-    background: linear-gradient(180deg, #1A3E6F 0%, #0F2040 100%);
-    color: #E0E0E0;
-    min-height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
+/* -- General Styling -- */  
+@font-face {  
+    font-family: 'PC-Futbol-Retro'; /* Nombre de la fuente si tienes una específica */  
+    /* src: url('path/to/your/font.ttf') format('truetype'); */  
+    /* font-weight: normal; */  
+    /* font-style: normal; */  
+}  
+  
+* {   
+    margin: 0;   
+    padding: 0;   
+    box-sizing: border-box;   
+    font-family: 'PC-Futbol-Retro', Arial, sans-serif; /* Usar la fuente retro o Arial como fallback */  
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); /* Sombra de texto para mejor visibilidad */  
+}  
+  
+body {  
+    background: linear-gradient(180deg, #1A3E6F 0%, #0F2040 100%); /* Degradado de fondo más oscuro y azulado */  
+    color: #E0E0E0; /* Color de texto general más claro */  
+    min-height: 100vh;  
+    overflow: hidden; /* Evitar scroll principal para el diseño de 4 cuadrantes */  
+    display: flex;  
+    flex-direction: column;  
+    justify-content: space-between;  
+    align-items: center;  
+    position: relative; /* Para posicionar el header y el main-layout */  
+}  
 
 /* ============================================
    HEADER - Barra superior con info del equipo
