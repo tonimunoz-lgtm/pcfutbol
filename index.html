@@ -739,22 +739,36 @@
             window.openModal('selectTeam');      
         };      
       
-function renderTeamSelectors() {
-    Object.keys(TEAMS_DATA).forEach(divisionKey => {
-        const listElement = document.getElementById(divisionKey + 'List');
-        if (!listElement) return;
-
-        const teamsToRender = TEAMS_DATA[divisionKey];
-
-        listElement.innerHTML = teamsToRender.map(team =>
-            `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" 
-                onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">
-                ${team}
-            </button>`
-        ).join('');
-    });
-}
-window.renderTeamSelectors = renderTeamSelectors;
+ function renderTeamSelectors() { // Definición local      
+            const createTeamButtons = (divisionKey, listId) => {      
+                const listElement = document.getElementById(listId);      
+                if (!listElement) return;      
+      
+                const teamsToRender = TEAMS_DATA[divisionKey];      
+      
+                listElement.innerHTML = teamsToRender.map(team =>      
+                    `<button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;" onclick="window.selectTeamAndStart('${team}', '${divisionKey}')">      
+                        ${team}      
+                    </button>`      
+                ).join('');      
+            };      
+      
+            createTeamButtons('primera', 'primeraList');      
+            createTeamButtons('segunda', 'segundaList');      
+            createTeamButtons('rfef_grupo1', 'rfef_grupo1List');      
+            createTeamButtons('rfef_grupo2', 'rfef_grupo2List');      
+        }      
+        window.renderTeamSelectors = renderTeamSelectors; // Hacerla global      
+      
+        window.selectTeamAndStart = function(teamName, division) {      
+            gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);      
+            ui.refreshUI(gameLogic.getGameState());      
+            window.closeModal('selectTeam');      
+            const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');      
+            if(dashboardButton) {      
+                window.switchPage('dashboard', dashboardButton);      
+            }      
+        };
 
 
         window.selectTeamAndStart = function(teamName, division) {
