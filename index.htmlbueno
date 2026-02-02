@@ -884,7 +884,8 @@
         // CORRECCIÓN: Eliminar SEASON_WEEKS de la importación aquí    
         import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS } from './config.js';      
         import { getPlayerMarket, getYoungsterMarket } from './players.js';      
-      
+     
+        window.TEAMS_DATA = TEAMS_DATA;
       
         // --- Funciones globales expuestas para el HTML ---      
         // NOTA: Algunas funciones como populatePlayerExchangeSelect(), updateTacticsDisplay(), updateFacilitiesDisplay(),    
