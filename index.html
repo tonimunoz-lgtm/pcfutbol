@@ -734,7 +734,8 @@
       
         window.startGameMode = function(mode) {      
             window.gameMode = mode;      
-            window.closeModal('gameMode');      
+            window.closeModal('gameMode');
+            renderTeamSelectors(); // 👈 IMPORTANTE
             window.openModal('selectTeam');      
         };      
       
