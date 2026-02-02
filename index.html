@@ -1,0 +1,412 @@
+<!DOCTYPE html>  
+<html lang="es">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>PC Fútbol Manager 25/26</title>  
+    <link rel="stylesheet" href="style.css">  
+    <!-- Links a las fuentes de Google Fonts u otros recursos necesarios -->  
+    <!-- Por ejemplo: <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet"> -->  
+</head>  
+<body>  
+    <div id="game-container">  
+        <!-- Header (Información del equipo, semana, dinero, botones guardar/cargar) -->  
+        <header class="header-main">  
+            <div class="header-info">  
+                <span id="team-info">  
+                    <span id="teamName"></span>  
+                    <span id="weekNo">Jornada: 1 (2025/2026)</span>  
+                    <span id="balanceDisplay">Dinero: 0€</span>  
+                </span>  
+            </div>  
+            <div class="header-actions">  
+                <button class="btn btn-sm" onclick="window.saveCurrentGame()">💾 Guardar</button>  
+                <!-- Los botones de cargar y admin se inyectan dinámicamente por los injectors -->  
+            </div>  
+        </header>  
+  
+        <!-- Menú de navegación principal (izquierda) -->  
+        <nav class="menu-left">  
+            <div class="menu-section">  
+                <h3>📊 INFORMACIÓN</h3>  
+                <ul>  
+                    <li><button class="menu-item active" onclick="switchPage('dashboard', this)">Dashboard</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('standings', this)">Clasificación</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('calendar', this)">Calendario</button></li>  
+                </ul>  
+            </div>  
+            <div class="menu-section">  
+                <h3>👥 PLANTILLA</h3>  
+                <ul>  
+                    <li><button class="menu-item" onclick="switchPage('squad', this)">Plantilla</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('market', this)">Mercado</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('academy', this)">Cantera</button></li>  
+                </ul>  
+            </div>  
+            <div class="menu-section">  
+                <h3>🎯 PARTIDO</h3>  
+                <ul>  
+                    <li><button class="menu-item" onclick="switchPage('lineup', this)">Alineación</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('tactics', this)">Tácticas</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('next-match', this)">Próximo</button></li>  
+                </ul>  
+            </div>  
+            <div class="menu-section">  
+                <h3>💼 GESTIÓN</h3>  
+                <ul>  
+                    <li><button class="menu-item" onclick="switchPage('finances', this)">Finanzas</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('facilities', this)">Instalaciones</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('commercial', this)">Comercial</button></li>  
+                    <li><button class="menu-item" onclick="switchPage('staff', this)">Staff</button></li>  
+                </ul>  
+            </div>  
+            <div class="menu-section">  
+                <h3>⚙️ SISTEMA</h3>  
+                <ul>  
+                    <li><button class="menu-item" onclick="switchPage('settings', this)">Opciones</button></li>  
+                </ul>  
+            </div>  
+        </nav>  
+  
+        <!-- Contenido principal (derecha) -->  
+        <main class="content-main">  
+            <!-- Páginas (Dashboard, Clasificación, etc.) - Contenedores principales -->  
+            <section id="dashboard" class="game-page active">  
+                <h1 class="page-title">📊 Dashboard del Club</h1>  
+                <div class="dashboard-grid">  
+                    <div class="info-box">  
+                        <p>Posición <span id="dashPos"></span></p>  
+                        <p>Puntos <span id="dashPts"></span></p>  
+                        <p>PJ <span id="dashPJ"></span></p>  
+                        <p>Goles <span id="dashGoals"></span></p>  
+                    </div>  
+                    <div class="info-box">  
+                        <p>Jugadores <span id="dashSquad"></span></p>  
+                        <p>Juveniles <span id="dashAcademy"></span></p>  
+                    </div>  
+                    <div class="info-box financials">  
+                        <h2>Estado Financiero</h2>  
+                        <p>Dinero en Caja: <span id="dashBalance">0€</span></p>  
+                        <p>Ingresos Semanales: <span id="dashIncome">0€</span></p>  
+                        <p>Gastos Semanales: <span id="dashExpenses">0€</span></p>  
+                        <p>Balance Semanal: <span id="dashWeekly" class="data-value">+0€</span></p>  
+                        <p id="warningAlert" style="display:none; color: yellow;"></p>  
+                    </div>  
+                    <div class="info-box news-feed">  
+                        <h2>Últimas Noticias</h2>  
+                        <div id="newsFeed">No hay noticias recientes.</div>  
+                    </div>  
+                </div>  
+            </section>  
+  
+            <section id="standings" class="game-page">  
+                <h1 class="page-title">📈 Clasificación Liga</h1>  
+                <div class="table-container">  
+                    <table>  
+                        <thead>  
+                            <tr>  
+                                <th>Pos</th>  
+                                <th>Equipo</th>  
+                                <th>PJ</th>  
+                                <th>G</th>  
+                                <th>E</th>  
+                                <th>P</th>  
+                                <th>GF</th>  
+                                <th>GC</th>  
+                                <th>DG</th>  
+                                <th>Pts</th>  
+                            </tr>  
+                        </thead>  
+                        <tbody id="standingsTable">  
+                            <!-- Contenido de la clasificación se genera dinámicamente -->  
+                        </tbody>  
+                    </table>  
+                </div>  
+            </section>  
+  
+            <section id="calendar" class="game-page">  
+                <h1 class="page-title">📅 Calendario de Partidos</h1>  
+                <div id="calendarContent">  
+                    <!-- Contenido del calendario se genera dinámicamente -->  
+                    Aún no hay calendario generado para esta temporada.  
+                </div>  
+            </section>  
+  
+            <section id="squad" class="game-page">  
+                <h1 class="page-title">👥 Plantilla</h1>  
+                <div class="table-container">  
+                    <table>  
+                        <tbody id="squadList">  
+                            <!-- Contenido de la plantilla se genera dinámicamente -->  
+                        </tbody>  
+                    </table>  
+                </div>  
+            </section>  
+  
+            <section id="market" class="game-page">  
+                <h1 class="page-title">🔄 Mercado de Fichajes</h1>  
+                <p class="market-tip">💡 Busca talentos jóvenes para comprar barato y revender caro, o refuerza tu equipo.</p>  
+                  
+                <h2>Buscar Jugadores</h2>  
+                <div class="search-filters">  
+                    <label for="filterPosition">Posición:</label>  
+                    <select id="filterPosition">  
+                        <option value="ALL">Todas</option>  
+                        <!-- Opciones se llenarán dinámicamente -->  
+                    </select>  
+                    <label for="filterTransferListed">Transferibles:</label>  
+                    <input type="checkbox" id="filterTransferListed">  
+                    <label for="filterLoanListed">Cedibles:</label>  
+                    <input type="checkbox" id="filterLoanListed">  
+                    <input type="text" id="filterSearchName" placeholder="Buscar por nombre...">  
+                    <button onclick="window.gameLogic.searchPlayersMarket()">Buscar</button>  
+                    <button onclick="window.gameLogic.clearMarketFilters()">Limpiar</button>  
+                </div>  
+                <div class="table-container">  
+                    <table>  
+                        <tbody id="availablePlayersSearchResult">  
+                            No se encontraron jugadores que coincidan con los criterios.  
+                        </tbody>  
+                    </table>  
+                </div>  
+  
+                <h2>Contratar Jóvenes de Cantera</h2>  
+                <button onclick="window.gameLogic.openYoungsterMarketModal()">+ Contratar Joven de Mercado</button>  
+                <div class="table-container">  
+                    <table>  
+                        <tbody id="availableYoungstersList">  
+                            No hay jóvenes talentos disponibles.  
+                        </tbody>  
+                    </table>  
+                </div>  
+            </section>  
+  
+            <section id="academy" class="game-page">  
+                <h1 class="page-title">🎓 Academia y Cantera</h1>  
+                <button onclick="window.gameLogic.openYoungsterMarketModal()">+ Contratar Joven de Mercado</button>  
+                <div class="table-container">  
+                    <table>  
+                        <tbody id="academyList">  
+                            <!-- Contenido de la cantera se genera dinámicamente -->  
+                        </tbody>  
+                    </table>  
+                </div>  
+            </section>  
+  
+            <section id="lineup" class="game-page">  
+                <h1 class="page-title">⚽ Alineación</h1>  
+                <p>Arrastra y suelta jugadores para configurar tu alineación. Los jugadores lesionados no pueden ser alineados.</p>  
+                <div class="lineup-editor">  
+                    <div class="pitch-container">  
+                        <div class="pitch">  
+                            <!-- Los jugadores se renderizarán aquí -->  
+                        </div>  
+                    </div>  
+                    <div class="squad-list-for-lineup">  
+                        <ul id="squadForLineup">  
+                            <!-- Jugadores arrastrables de la plantilla -->  
+                        </ul>  
+                    </div>  
+                </div>  
+                <h2>Suplentes y No Convocados</h2>  
+                <ul id="benchAndReserves">  
+                    <!-- Suplentes y no convocados -->  
+                </ul>  
+                <button onclick="window.gameLogic.saveLineup()">Guardar Alineación</button>  
+            </section>  
+  
+            <section id="tactics" class="game-page">  
+                <h1 class="page-title">🎯 Tácticas</h1>  
+                <div class="tactics-options">  
+                    <label for="formationSelect">Formación:</label>  
+                    <select id="formationSelect" onchange="window.gameLogic.setFormation(this.value)">  
+                        <option value="433">4-3-3 Ofensiva</option>  
+                        <option value="442">4-4-2 Clásica</option>  
+                        <option value="352">3-5-2 Ultra Ofensiva</option>  
+                        <option value="541">5-4-1 Defensiva</option>  
+                        <option value="451">4-5-1 Contención</option>  
+                    </select>  
+  
+                    <label for="mentalitySelect">Mentalidad:</label>  
+                    <select id="mentalitySelect" onchange="window.gameLogic.setMentality(this.value)">  
+                        <option value="defensive">Defensiva</option>  
+                        <option value="balanced">Equilibrada</option>  
+                        <option value="offensive">Ofensiva</option>  
+                    </select>  
+                </div>  
+            </section>  
+  
+            <section id="next-match" class="game-page">  
+                <h1 class="page-title">⚽ Simular Jornada</h1>  
+                <div class="match-card">  
+                    <p id="matchInfo">Cargando...</p>  
+                    <button id="simulateWeekButton" onclick="window.simulateWeek()">Simular Jornada Completa</button>  
+                </div>  
+            </section>  
+  
+            <section id="finances" class="game-page">  
+                <h1 class="page-title">💼 Finanzas</h1>  
+                <div class="finance-summary">  
+                    <p>Ingresos/Semana <span id="financialIncome">0€</span></p>  
+                    <p>Gastos/Semana <span id="financialExpenses">0€</span></p>  
+                    <p>Balance Actual <span id="financialBalance">0€</span></p>  
+                </div>  
+                <h2>Detalle de Ingresos</h2>  
+                <table>  
+                    <tbody>  
+                        <tr><td>Capacidad Estadio:</td><td><span id="stadiumCapacityDetail">0</span></td></tr>  
+                        <tr><td>Asistencia Esperada:</td><td><span id="expectedAttendance">0</span></td></tr>  
+                        <tr><td>Precio Entrada:</td><td><span id="ticketPriceDetail">€</span></td></tr>  
+                        <tr><td>Popularidad del Club:</td><td><span id="clubPopularityDetail">0%</span></td></tr>  
+                        <tr><td>Fanbase:</td><td><span id="clubFanbaseDetail">0</span></td></tr>  
+                        <tr><td>Merchandising vendido:</td><td><span id="merchSoldDetail">0</span></td></tr>  
+                        <tr><td>Precio Merchandising:</td><td><span id="merchPriceDetail">€</span></td></tr>  
+                        <tr><td>Ingresos Merchandising:</td><td><span id="merchIncomeDetail">0€</span></td></tr>  
+                    </tbody>  
+                </table>  
+            </section>  
+              
+            <section id="facilities" class="game-page">  
+                <h1 class="page-title">🏟️ Instalaciones</h1>  
+                <div class="facility-section">  
+                    <h2>Estadio</h2>  
+                    <p><strong>Nombre:</strong> <span id="stadiumNameDisplay">-</span></p>  
+                    <p><strong>Capacidad actual:</strong> <span id="stadiumCapacityDisplay">0</span> espectadores</p>  
+                    <div id="stadiumImageContainer">No hay imagen del estadio disponible</div>  
+                    <button onclick="window.gameLogic.expandStadium()">Expandir Estadio (+10.000 asientos - 50.000€)</button>  
+                </div>  
+                <div class="facility-section">  
+                    <h2>Centro de Entrenamiento</h2>  
+                    <p><strong>Nivel actual:</strong> <span id="trainingCenterLevel">1</span></p>  
+                    <p>Un mejor centro de entrenamiento mejora la efectividad de los entrenamientos individuales</p>  
+                    <button onclick="window.gameLogic.upgradeTrainingCenter()">Mejorar Entrenamientos (30.000€)</button>  
+                </div>  
+            </section>  
+  
+            <section id="commercial" class="game-page">  
+                <h1 class="page-title">🛒 Gestión Comercial</h1>  
+                <p>Popularidad del Club <span id="commercialPopularity">0%</span></p>  
+                <p>Base de Fans <span id="commercialFanbase">0</span></p>  
+                <p>Merchandising Vendido (semana) <span id="commercialMerchSold">0</span></p>  
+                <p>Ingresos Merchandising (semana) <span id="commercialMerchIncome">0€</span></p>  
+                  
+                <h2>Ajustes Comerciales</h2>  
+                <p>Ajusta el precio de tus entradas y merchandising para maximizar beneficios. Ten en cuenta que precios muy altos pueden reducir la popularidad y la asistencia.</p>  
+                <div>  
+                    <label for="ticketPriceInput">Precio de la Entrada (actual: <span id="currentTicketPriceDisplay">0</span> €):</label>  
+                    <input type="range" id="ticketPriceInput" min="5" max="100" value="20" oninput="document.getElementById('ticketPriceValue').textContent = this.value + ' €'">  
+                    <span id="ticketPriceValue">20 €</span>  
+                    <button onclick="window.gameLogic.setTicketPrice(document.getElementById('ticketPriceInput').value)">Aplicar</button>  
+                </div>  
+                <div>  
+                    <label for="merchandisingPriceInput">Precio del Merchandising (actual: <span id="currentMerchPriceDisplay">0</span> €):</label>  
+                    <input type="range" id="merchandisingPriceInput" min="1" max="50" value="10" oninput="document.getElementById('merchandisingPriceValue').textContent = this.value + ' €'">  
+                    <span id="merchandisingPriceValue">10 €</span>  
+                    <button onclick="window.gameLogic.setMerchandisingPrice(document.getElementById('merchandisingPriceInput').value)">Aplicar</button>  
+                </div>  
+            </section>  
+              
+            <section id="staff" class="game-page">  
+                <h1 class="page-title">👔 Personal del Club</h1>  
+                <div class="table-container">  
+                    <table>  
+                        <thead>  
+                            <tr>  
+                                <th>Rol</th>  
+                                <th>Nombre</th>  
+                                <th>Nivel</th>  
+                                <th>Salario</th>  
+                                <th>Cláusula</th>  
+                                <th>Acciones</th>  
+                            </tr>  
+                        </thead>  
+                        <tbody id="staffList">  
+                            <!-- Contenido del staff se genera dinámicamente -->  
+                        </tbody>  
+                    </table>  
+                </div>  
+            </section>  
+  
+            <section id="settings" class="game-page">  
+                <h1 class="page-title">⚙️ Opciones</h1>  
+                <button onclick="window.gameLogic.saveGameToLocalStorage()">💾 Guardar Partida (Local)</button>  
+                <button onclick="window.gameLogic.loadGameFromLocalStorage()">📂 Cargar Partida (Local)</button>  
+                <button onclick="window.gameLogic.resetGame()">🔄 Reiniciar</button>  
+                <hr>  
+                <!-- Sección de la nube inyectada por injector-cloud-load.js -->  
+            </section>  
+  
+            <!-- Este es un espacio para la tarjeta del próximo partido, podría ser parte del dashboard o de una sección propia -->  
+            <!-- <div id="nextMatchCard"></div> -->  
+  
+        </main>  
+    </div>  
+  
+    <!-- Modals (se inyectarán dinámicamente o estarán ocultos inicialmente) -->  
+    <!-- Por ejemplo, el loginModal y savedGamesModal se crean en sus respectivos injectors -->  
+    <!-- Contenedores para modales -->  
+    <div id="loginModal" class="modal"></div>  
+    <div id="savedGamesModal" class="modal"></div>  
+    <div id="adminModal" class="modal"></div>  
+    <div id="signYoungster" class="modal"></div>  
+    <div id="negotiation" class="modal"></div>  
+    <div id="training" class="modal"></div>  
+    <div id="hireStaff" class="modal"></div>  
+  
+  
+    <!-- Scripts al final del body para no bloquear el renderizado -->  
+    <!-- Firebase -->  
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>  
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>  
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>  
+  
+    <script src="config.js" type="module"></script>  
+    <script src="teamData.js" type="module"></script>  
+    <script src="players.js" type="module"></script>  
+    <script src="gameLogic.js" type="module"></script>  
+    <script src="ui.js" type="module"></script>  
+      
+    <!-- Injectors -->  
+    <script src="injector-login-ui.js"></script>  
+    <script src="injector-firebase-sync.js" type="module"></script>  
+    <script src="injector-cloud-load.js"></script>  
+    <script src="injector-expose-functions.js"></script>  
+    <script src="injector-admin-complete.js"></script>  
+    <script src="injector-budget.js"></script>  
+    <script src="injector-player-arrows.js"></script>  
+  
+    <!-- Script principal de inicialización y manejo de la UI -->  
+    <script>  
+        document.addEventListener('DOMContentLoaded', () => {  
+            // Inicializar el juego y la UI después de que todos los módulos estén cargados  
+            if (window.gameLogic && window.ui) {  
+                window.gameLogic.initGame();  
+                window.ui.initUI();  
+                window.ui.refreshUI(window.gameLogic.getGameState());  
+            } else {  
+                console.error("gameLogic o ui no cargados. Revisa los scripts.");  
+            }  
+  
+            // Función para cambiar de página (ya debería existir o ser inyectada)  
+            window.switchPage = function(pageId, element) {  
+                document.querySelectorAll('.game-page').forEach(page => page.classList.remove('active'));  
+                document.getElementById(pageId).classList.add('active');  
+                document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));  
+                element.classList.add('active');  
+                // Si la página es la alineación, renderizarla  
+                if (pageId === 'lineup' && window.renderLineupPageUI) {  
+                    window.renderLineupPageUI();  
+                }  
+                // Si la página es el calendario, renderizarla  
+                if (pageId === 'calendar' && window.ui.renderCalendarPage) {  
+                    window.ui.renderCalendarPage(window.gameLogic.getGameState());  
+                }  
+                // Refrescar UI genérico  
+                if (window.ui && window.gameLogic) {  
+                    window.ui.refreshUI(window.gameLogic.getGameState());  
+                }  
+            };  
+        });  
+    </script>  
+</body>  
+</html>  
