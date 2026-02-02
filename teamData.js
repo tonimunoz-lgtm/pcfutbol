@@ -1,5 +1,5 @@
 // teamData.js - Base de datos de equipos con datos reales
-const TEAM_CUSTOM_DATA = {
+const TEAM_DATA = {
     // Primera División
     'Real Madrid': {
         logo: null, // Se cargará desde localStorage o se subirá
