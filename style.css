@@ -164,11 +164,12 @@ body {
    Contenido del cuadrante separado del título
    ============================================ */
 .quadrant-content {
-    margin-top: 50px; /* espacio debajo del título */
+    width: 100%;
+    margin-top: 50px; /* Empieza más abajo para no tapar el título */
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 10px; /* espacio entre botones u otros elementos */
+    align-items: center;
+    gap: 10px; /* Espacio entre botones u otros elementos */
 }
 
 
