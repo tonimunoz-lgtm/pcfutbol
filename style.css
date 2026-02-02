@@ -42,7 +42,7 @@ body {
     font-size: 0.9em;  
 }  
   
-.header-team-info {  
+.header-info {  
     display: flex;  
     align-items: center;  
     gap: 10px;  
