@@ -447,7 +447,36 @@ function renderCalendarPage(state) {
     calendarContent.innerHTML = calendarHtml;  
 }  
   
-  
+
+// 🆕 Renderizar alineación
+function renderLineup(lineup, containerEl) {
+    containerEl.innerHTML = '';
+    lineup.forEach(player => {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'pitch-player';
+        playerDiv.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <div class="player-status-indicator"></div>
+        `;
+        applyPlayerStatusClasses(playerDiv, player);
+        containerEl.appendChild(playerDiv);
+    });
+}
+
+// 🆕 Actualizar cada semana: descontar sanciones
+function updateWeeklySuspensions() {
+    gameState.squad.forEach(p => {
+        if (p.isSuspended && p.suspensionWeeks > 0) {
+            p.suspensionWeeks--;
+            if (p.suspensionWeeks === 0) {
+                p.isSuspended = false;
+                addNews(`✅ ${p.name} ya cumplió su sanción y puede volver a jugar.`, 'success');
+            }
+        }
+    });
+}
+
+
 function refreshUI(state) {
     updateDashboardStats(state);
     renderStandingsTable(state.standings, state.team);
