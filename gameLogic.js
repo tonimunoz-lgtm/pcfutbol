@@ -1539,3 +1539,13 @@ if (typeof window !== 'undefined') {
         // ... otras funciones que necesites exponer
     };
 }
+
+function getAgeModifier(age) {
+    if (age <= 20) return 1.5;        // Juvenil explota
+    if (age <= 24) return 1.2;        // Crecimiento
+    if (age <= 27) return 1.0;        // Normal
+    if (age <= 30) return 0.7;        // Se ralentiza
+    if (age <= 33) return 0.3;        // Casi estancado
+    return -0.5;                      // Declive
+}
+
