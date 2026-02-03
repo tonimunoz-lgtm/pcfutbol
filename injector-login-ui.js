@@ -21,22 +21,57 @@
     });
 
     // Función de login
-    window.loginUser = function(email, password) {
-        const userData = localStorage.getItem('user_' + email);
-        if (!userData) {
-            return { success: false, message: 'Usuario no encontrado' };
+ // Función de login CON FIREBASE
+window.loginUser = async function(email, password) {
+    // Login especial para admin (mantener en local)
+    if (email === 'tonaco92@gmail.com' && password === '12345678') {
+        const adminUser = {
+            email: email,
+            uid: 'admin-local-uid',
+            role: 'admin',
+            name: 'Antonio (Admin)'
+        };
+        
+        window.currentUser = adminUser;
+        window.currentUserId = adminUser.uid;
+        localStorage.setItem('currentUser', JSON.stringify(adminUser));
+        
+        return { success: true, user: adminUser };
+    }
+    
+    // Para otros usuarios, usar Firebase
+    if (window.firebaseAuth && window.firebaseConfig && window.firebaseConfig.enabled) {
+        try {
+            const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const userCredential = await signInWithEmailAndPassword(window.firebaseAuth, email, password);
+            const user = userCredential.user;
+            
+            const userData = {
+                email: user.email,
+                uid: user.uid,
+                role: 'user',
+                name: user.displayName || email.split('@')[0]
+            };
+            
+            window.currentUser = userData;
+            window.currentUserId = userData.uid;
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            
+            console.log('✅ Login exitoso en Firebase:', user.email);
+            return { success: true, user: userData };
+            
+        } catch (error) {
+            console.error('❌ Error de Firebase Auth:', error);
+            let message = 'Error de autenticación';
+            if (error.code === 'auth/user-not-found') message = 'Usuario no encontrado';
+            if (error.code === 'auth/wrong-password') message = 'Contraseña incorrecta';
+            if (error.code === 'auth/invalid-email') message = 'Email inválido';
+            return { success: false, message };
         }
-        
-        const user = JSON.parse(userData);
-        if (user.password !== password) {
-            return { success: false, message: 'Contraseña incorrecta' };
-        }
-        
-        window.currentUser = user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        
-        return { success: true, user };
-    };
+    }
+    
+    return { success: false, message: 'Firebase no está disponible' };
+};
 
     // Función de registro (solo para usuarios normales)
     window.registerUser = function(email, password, name) {
