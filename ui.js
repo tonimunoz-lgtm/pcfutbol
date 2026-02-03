@@ -16,48 +16,102 @@ function getTeamLogo(teamName, size = '25px') {
     return ''; // Sin logo
 }
 
-function renderStandingsTable(standings, currentTeam) {
-    const tbody = document.getElementById('standingsTable');
-    if (!tbody) return;
+function renderStandingsTable(state) {
+    const standingsDiv = document.getElementById('standingsTable');
+    if (!standingsDiv) return;
 
-    // Filtrar y normalizar datos
-    const normalizedStandings = Object.entries(standings)
-        .filter(([team, stats]) => stats != null)
-        .map(([team, stats]) => ({
-            team,
-            pts: stats.pts ?? 0,
-            pj: stats.pj ?? 0,
-            g: stats.g ?? 0,
-            e: stats.e ?? 0,
-            p: stats.p ?? 0,
-            gf: stats.gf ?? 0,
-            gc: stats.gc ?? 0
-        }));
+    // ✅ Validación: verificar que standings exista
+    if (!state.standings || Object.keys(state.standings).length === 0) {
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
+        return;
+    }
 
-    // Ordenar por puntos, diferencia de goles y goles a favor
-    const sorted = normalizedStandings.sort((a, b) => {
-        if (b.pts !== a.pts) return b.pts - a.pts;
-        const dgA = a.gf - a.gc;
-        const dgB = b.gf - b.gc;
-        if (dgB !== dgA) return dgB - dgA;
-        return b.gf - a.gf;
+    // ✅ Filtrar equipos con datos inválidos
+    const validStandings = Object.entries(state.standings)
+        .filter(([team, stats]) => {
+            if (!stats || stats.pts === undefined) {
+                console.warn(`⚠️ Equipo ${team} tiene datos inválidos en standings:`, stats);
+                return false;
+            }
+            return true;
+        });
+
+    if (validStandings.length === 0) {
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
+        return;
+    }
+
+    // Ordenar por puntos, diferencia de goles, goles a favor
+    const sorted = validStandings.sort((a, b) => {
+        const ptsA = a[1].pts || 0;
+        const ptsB = b[1].pts || 0;
+        if (ptsB !== ptsA) return ptsB - ptsA;
+
+        const gdA = (a[1].gf || 0) - (a[1].gc || 0);
+        const gdB = (b[1].gf || 0) - (b[1].gc || 0);
+        if (gdB !== gdA) return gdB - gdA;
+
+        return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
-    tbody.innerHTML = sorted.map((stats, i) => `
-        <tr style="${stats.team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
-            <td><strong>${i + 1}</strong></td>
-            <td>${getTeamLogo(stats.team, '25px')}<strong>${stats.team}</strong></td>
-            <td>${stats.pj}</td>
-            <td>${stats.g}</td>
-            <td>${stats.e}</td>
-            <td>${stats.p}</td>
-            <td>${stats.gf}</td>
-            <td>${stats.gc}</td>
-            <td>${stats.gf - stats.gc}</td>
-            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
-        </tr>
-    `).join('');
+    // Generar HTML de la tabla
+    let html = `
+        <table class="standings-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Equipo</th>
+                    <th>PJ</th>
+                    <th>G</th>
+                    <th>E</th>
+                    <th>P</th>
+                    <th>GF</th>
+                    <th>GC</th>
+                    <th>DG</th>
+                    <th>Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    sorted.forEach(([team, stats], index) => {
+        const isMyTeam = team === state.team;
+        const rowClass = isMyTeam ? 'my-team-row' : '';
+
+        // Obtener logo del equipo
+        let teamLogo = '';
+        const storedData = localStorage.getItem(`team_data_${team}`);
+        if (storedData) {
+            const teamData = JSON.parse(storedData);
+            if (teamData.logo) {
+                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
+            }
+        }
+
+        html += `
+            <tr class="${rowClass}">
+                <td>${index + 1}</td>
+                <td class="team-name">${teamLogo}${team}</td>
+                <td>${stats.pj || 0}</td>
+                <td>${stats.g || 0}</td>
+                <td>${stats.e || 0}</td>
+                <td>${stats.p || 0}</td>
+                <td>${stats.gf || 0}</td>
+                <td>${stats.gc || 0}</td>
+                <td>${(stats.gf || 0) - (stats.gc || 0)}</td>
+                <td><strong>${stats.pts || 0}</strong></td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    standingsDiv.innerHTML = html;
 }
+
 
   
 function renderSquadList(squad, currentTeam) {  
