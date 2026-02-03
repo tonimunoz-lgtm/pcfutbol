@@ -732,12 +732,13 @@
             document.getElementById(type + 'Modal').classList.remove('active');      
         };      
       
-        window.startGameMode = function(mode) {      
-            window.gameMode = mode;      
-            window.closeModal('gameMode');
-            renderTeamSelectors(); // 👈 IMPORTANTE
-            window.openModal('selectTeam');      
-        };      
+       window.startGameMode = function(mode) {        
+    window.gameMode = mode;        
+    window.closeModal('gameMode');  
+    // DESCOMENTA o ASEGÚRATE de que esta línea esté presente:  
+    window.renderTeamSelectors(); // 👈 IMPORTANTE  
+    window.openModal('selectTeam');        
+};    
       
 // -------------------------
 // Renderizado de selección de equipos (robusto)
