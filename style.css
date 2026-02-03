@@ -755,3 +755,328 @@ input:focus, select:focus {
     border-radius: 5px;
     background-color: rgba(0,0,0,0.2);
 }
+
+/* ============================================
+   🆕 SISTEMA DE TARJETAS Y SANCIONES
+   Añade estas clases al final de tu style.css
+   ============================================ */
+
+/* 🆕 INDICADORES DE ESTADO DE JUGADORES */
+.player-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+/* 🟨 Tarjeta Amarilla */
+.yellow-card-badge {
+    display: inline-block;
+    background: #FFD700;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #FFA500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 🟥 Tarjeta Roja */
+.red-card-badge {
+    display: inline-block;
+    background: #C70000;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #8B0000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ⛔ Sancionado */
+.suspended-badge {
+    display: inline-block;
+    background: #FF4500;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #8B0000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    animation: pulse-suspend 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-suspend {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ❌ Lesionado */
+.injured-badge {
+    display: inline-block;
+    background: #8B0000;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #550000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 🆕 JUGADORES SANCIONADOS EN ALINEACIÓN */
+.pitch-player.suspended {
+    background: linear-gradient(135deg, #FF4500 0%, #8B0000 100%);
+    border: 2px solid #FF0000;
+    cursor: not-allowed;
+    opacity: 0.7;
+    animation: pulse-suspend 1.5s ease-in-out infinite;
+    position: relative;
+}
+
+.draggable-player.suspended {
+    background: linear-gradient(135deg, #FF4500 0%, #8B0000 100%);
+    border: 2px solid #FF0000;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* 🆕 ICONOS EN ALINEACIÓN */
+.pitch-player.injured {
+    position: relative;
+}
+
+.pitch-player.injured::after {
+    content: '❌';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 1.2em;
+    color: #FFF;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.pitch-player.suspended::after {
+    content: '⛔';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 1.2em;
+    color: #FFF;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* 🆕 TARJETAS EN LISTAS DE PLANTILLA */
+.player-card.injured {
+    background: rgba(199, 0, 0, 0.2);
+    border-left: 4px solid #C70000;
+}
+
+.player-card.suspended {
+    background: rgba(255, 69, 0, 0.2);
+    border-left: 4px solid #FF4500;
+}
+
+/* 🆕 INDICADOR DE ADVERTENCIA (4 amarillas) */
+.warning-badge {
+    display: inline-block;
+    background: #FFA500;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #FF8C00;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* 🆕 TOOLTIP EXPLICATIVO (opcional) */
+.player-status-indicator[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #FFF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 0.75em;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+EOF
+cat /mnt/user-data/outputs/NUEVOS_ESTILOS_CSS.txt
+Salida
+
+/* ============================================
+   🆕 SISTEMA DE TARJETAS Y SANCIONES
+   Añade estas clases al final de tu style.css
+   ============================================ */
+
+/* 🆕 INDICADORES DE ESTADO DE JUGADORES */
+.player-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+/* 🟨 Tarjeta Amarilla */
+.yellow-card-badge {
+    display: inline-block;
+    background: #FFD700;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #FFA500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 🟥 Tarjeta Roja */
+.red-card-badge {
+    display: inline-block;
+    background: #C70000;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #8B0000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ⛔ Sancionado */
+.suspended-badge {
+    display: inline-block;
+    background: #FF4500;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #8B0000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    animation: pulse-suspend 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-suspend {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ❌ Lesionado */
+.injured-badge {
+    display: inline-block;
+    background: #8B0000;
+    color: #FFF;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #550000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 🆕 JUGADORES SANCIONADOS EN ALINEACIÓN */
+.pitch-player.suspended {
+    background: linear-gradient(135deg, #FF4500 0%, #8B0000 100%);
+    border: 2px solid #FF0000;
+    cursor: not-allowed;
+    opacity: 0.7;
+    animation: pulse-suspend 1.5s ease-in-out infinite;
+    position: relative;
+}
+
+.draggable-player.suspended {
+    background: linear-gradient(135deg, #FF4500 0%, #8B0000 100%);
+    border: 2px solid #FF0000;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* 🆕 ICONOS EN ALINEACIÓN */
+.pitch-player.injured {
+    position: relative;
+}
+
+.pitch-player.injured::after {
+    content: '❌';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 1.2em;
+    color: #FFF;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.pitch-player.suspended::after {
+    content: '⛔';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 1.2em;
+    color: #FFF;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* 🆕 TARJETAS EN LISTAS DE PLANTILLA */
+.player-card.injured {
+    background: rgba(199, 0, 0, 0.2);
+    border-left: 4px solid #C70000;
+}
+
+.player-card.suspended {
+    background: rgba(255, 69, 0, 0.2);
+    border-left: 4px solid #FF4500;
+}
+
+/* 🆕 INDICADOR DE ADVERTENCIA (4 amarillas) */
+.warning-badge {
+    display: inline-block;
+    background: #FFA500;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    border: 1px solid #FF8C00;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* 🆕 TOOLTIP EXPLICATIVO (opcional) */
+.player-status-indicator[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #FFF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 0.75em;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
