@@ -74,32 +74,57 @@ window.loginUser = async function(email, password) {
 };
 
     // Función de registro (solo para usuarios normales)
-    window.registerUser = function(email, password, name) {
-        if (localStorage.getItem('user_' + email)) {
-            return { success: false, message: 'El usuario ya existe' };
+   // Función de registro CON FIREBASE
+window.registerUser = async function(email, password, name) {
+    if (window.firebaseAuth && window.firebaseConfig && window.firebaseConfig.enabled) {
+        try {
+            const { createUserWithEmailAndPassword, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const userCredential = await createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+            const user = userCredential.user;
+            
+            // Actualizar perfil con el nombre
+            if (name) {
+                await updateProfile(user, { displayName: name });
+            }
+            
+            console.log('✅ Usuario registrado en Firebase:', email);
+            return { success: true, message: 'Usuario registrado correctamente' };
+            
+        } catch (error) {
+            console.error('❌ Error registrando en Firebase:', error);
+            let message = 'Error al registrar usuario';
+            if (error.code === 'auth/email-already-in-use') message = 'Este email ya está registrado';
+            if (error.code === 'auth/weak-password') message = 'La contraseña debe tener al menos 6 caracteres';
+            if (error.code === 'auth/invalid-email') message = 'Email inválido';
+            return { success: false, message };
         }
-        
-        const newUser = {
-            email: email,
-            password: password,
-            name: name || 'Usuario',
-            role: 'user' // Los usuarios registrados NO son admin
-        };
-        
-        localStorage.setItem('user_' + email, JSON.stringify(newUser));
-        return { success: true, message: 'Usuario registrado correctamente' };
-    };
-
+    }
+    
+    return { success: false, message: 'Firebase no está disponible' };
+};
     // Función de logout
-    window.logoutUser = function() {
-        if (!confirm('¿Seguro que quieres cerrar sesión?')) {
-            return;
+ // Función de logout CON FIREBASE
+window.logoutUser = async function() {
+    if (!confirm('¿Seguro que quieres cerrar sesión?')) {
+        return;
+    }
+    
+    // Cerrar sesión en Firebase
+    if (window.firebaseAuth && window.firebaseConfig && window.firebaseConfig.enabled) {
+        try {
+            const { signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            await signOut(window.firebaseAuth);
+            console.log('✅ Sesión cerrada en Firebase');
+        } catch (error) {
+            console.error('❌ Error cerrando sesión en Firebase:', error);
         }
-        
-        window.currentUser = null;
-        localStorage.removeItem('currentUser');
-        location.reload();
-    };
+    }
+    
+    window.currentUser = null;
+    window.currentUserId = null;
+    localStorage.removeItem('currentUser');
+    location.reload();
+};
 
     // Crear modal de login
     function createLoginModal() {
