@@ -7,9 +7,6 @@ import {
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
 import { getTeamData, saveTeamData } from './teamData.js';
-import { emit } from "./InjectorManager";
-
-emit("afterMatch", matchResult);
 
 
 // Estado global del juego  
