@@ -325,26 +325,73 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
 }
  
   
-async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    // 🔄 RESET COMPLETO DEL ESTADO
-    Object.assign(gameState, {
-        team: teamName,
-        division: divisionType,
-        gameMode: gameMode,
-        currentSeason: '2025/2026',
-        seasonType: 'preseason',
-        week: 1,
-        matchHistory: [],
-        standings: {},
-        newsFeed: [],
-        unreadNewsCount: 0,
-        squad: [],
-        academy: [],
-        lineup: [],
-        leagueTeams: [],
-        seasonCalendar: []
-    });
+// Copia del estado inicial completo
+const initialGameState = {
+    team: null,
+    teamLogo: null,
+    stadiumImage: null,
+    stadiumName: 'Estadio',
+    week: 1,
+    division: 'Primera',
+    squad: [],
+    academy: [],
+    standings: {},
+    stadiumCapacity: 5000,
+    ticketPrice: 20,
+    merchandisingRevenue: 500,
+    staff: {
+        medico: null,
+        entrenador: null,
+        entrenadorPorteros: null,
+        fisio: null,
+        analista: null,
+        scout: null,
+        secretario: null,
+        segundoEntrenador: null
+    },
+    balance: 50000,
+    weeklyIncomeBase: 5000,
+    weeklyIncome: 0,
+    weeklyExpenses: 0,
+    formation: '433',
+    lineup: [],
+    mentality: 'balanced',
+    trainingLevel: 1,
+    matchHistory: [],
+    popularity: 50,
+    fanbase: 10000,
+    merchandisingPrice: 10,
+    merchandisingItemsSold: 0,
+    negotiatingPlayer: null,
+    negotiationStep: 0,
+    playerOffer: null,
+    clubOffer: null,
+    trainingFocus: {
+        playerIndex: -1,
+        attribute: null
+    },
+    newsFeed: [],
+    unreadNewsCount: 0,
+    currentSeason: '2025/2026',
+    seasonType: 'preseason',
+    leagueTeams: [],
+    nextOpponent: null,
+    cupProgress: 0,
+    europeanProgress: 0,
+    seasonCalendar: [],
+    maxSeasonWeeks: 38
+};
 
+async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
+    // 🔄 RESET COMPLETO
+    Object.assign(gameState, JSON.parse(JSON.stringify(initialGameState)));
+
+    // Configurar equipo y división elegida
+    gameState.team = teamName;
+    gameState.division = divisionType;
+    gameState.gameMode = gameMode;
+
+    // Generar plantilla y cantera inicial
     gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
@@ -359,7 +406,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         gameState.balance = teamData.initialBudget || gameState.balance;
     }
 
-    // Cargar equipos y calendario
+    // Configurar equipos de la división y calendario
     let teamsInDivision = TEAMS_DATA[divisionType] || TEAMS_DATA.primera;
     if (!teamsInDivision.includes(teamName)) teamsInDivision.push(teamName);
 
@@ -370,6 +417,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
 }
+
 
   
 function signPlayer(player) {  
