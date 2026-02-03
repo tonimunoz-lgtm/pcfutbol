@@ -1346,7 +1346,7 @@ function setLineup(newLineup) {
                                 .sort((a,b) => b.overall - a.overall)  
                                 .slice(0, 11 - newLineup.length);  
               
-        gameState.lineup = [...newLineUp, ...playersToFill];  
+        gameState.lineup = [...newLineup, ...playersToFill];  
         // Asegurarse de que no hay más de 11 después de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
