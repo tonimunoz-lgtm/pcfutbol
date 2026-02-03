@@ -19,55 +19,27 @@ function getTeamLogo(teamName, size = '25px') {
 function renderStandingsTable(standings, currentTeam) {
     const tbody = document.getElementById('standingsTable');
     if (!tbody) return;
-    
-    // ✅ VALIDACIÓN: Verificar que standings exista y tenga datos
-    if (!standings || Object.keys(standings).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center">No hay clasificación disponible</td></tr>';
-        return;
-    }
-    
-    // ✅ FILTRAR equipos con datos inválidos (null, undefined)
-    const validStandings = Object.entries(standings).filter(([team, stats]) => {
-        if (!stats || stats.pts === undefined) {
-            console.warn(`⚠️ Equipo ${team} tiene datos inválidos en standings:`, stats);
-            return false;
-        }
-        return true;
-    });
-    
-    if (validStandings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center">Clasificación no disponible</td></tr>';
-        return;
-    }
-    
-    // Ordenar por puntos, diferencia de goles, goles a favor
-    const sorted = validStandings.sort((a, b) => {
-        const ptsA = a[1].pts || 0;
-        const ptsB = b[1].pts || 0;
-        
-        if (ptsB !== ptsA) return ptsB - ptsA;
-        
-        const dgA = (a[1].gf || 0) - (a[1].gc || 0);
-        const dgB = (b[1].gf || 0) - (b[1].gc || 0);
-        
+
+    const sorted = Object.entries(standings).sort((a, b) => {
+        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
+        const dgA = a[1].gf - a[1].gc;
+        const dgB = b[1].gf - b[1].gc;
         if (dgB !== dgA) return dgB - dgA;
-        
-        return (b[1].gf || 0) - (a[1].gf || 0);
+        return b[1].gf - a[1].gf;
     });
-    
-    // Generar HTML
+
     tbody.innerHTML = sorted.map(([team, stats], i) => `
         <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
             <td><strong>${i + 1}</strong></td>
             <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>
-            <td>${stats.pj || 0}</td>
-            <td>${stats.g || 0}</td>
-            <td>${stats.e || 0}</td>
-            <td>${stats.p || 0}</td>
-            <td>${stats.gf || 0}</td>
-            <td>${stats.gc || 0}</td>
-            <td>${(stats.gf || 0) - (stats.gc || 0)}</td>
-            <td style="color: #00ff00; font-weight: bold;">${stats.pts || 0}</td>
+            <td>${stats.pj}</td>
+            <td>${stats.g}</td>
+            <td>${stats.e}</td>
+            <td>${stats.p}</td>
+            <td>${stats.gf}</td>
+            <td>${stats.gc}</td>
+            <td>${stats.gf - stats.gc}</td>
+            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
         </tr>
     `).join('');
 }
