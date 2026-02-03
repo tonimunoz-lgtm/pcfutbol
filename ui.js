@@ -16,74 +16,33 @@ function getTeamLogo(teamName, size = '25px') {
     return ''; // Sin logo
 }
 
-function renderStandingsTable(state) {
-    const tbody = document.getElementById('standingsBody');
+function renderStandingsTable(standings, currentTeam) {
+    const tbody = document.getElementById('standingsTable');
     if (!tbody) return;
 
-    // Validación: standings válido
-    if (!state.standings || Object.keys(state.standings).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500">No hay clasificación disponible</td></tr>';
-        return;
-    }
-
-    // Filtrar equipos válidos
-    const validStandings = Object.entries(state.standings)
-        .filter(([team, stats]) => stats && stats.pts !== undefined);
-
-    if (validStandings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500">Clasificación no disponible</td></tr>';
-        return;
-    }
-
-    // Ordenar por puntos, diferencia de goles y goles a favor
-    const sorted = validStandings.sort((a, b) => {
-        const ptsA = a[1].pts || 0;
-        const ptsB = b[1].pts || 0;
-        if (ptsB !== ptsA) return ptsB - ptsA;
-
-        const gdA = (a[1].gf || 0) - (a[1].gc || 0);
-        const gdB = (b[1].gf || 0) - (b[1].gc || 0);
-        if (gdB !== gdA) return gdB - gdA;
-
-        return (b[1].gf || 0) - (a[1].gf || 0);
+    const sorted = Object.entries(standings).sort((a, b) => {
+        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
+        const dgA = a[1].gf - a[1].gc;
+        const dgB = b[1].gf - b[1].gc;
+        if (dgB !== dgA) return dgB - dgA;
+        return b[1].gf - a[1].gf;
     });
 
-    // Generar filas de la tabla
-    const rowsHtml = sorted.map(([team, stats], index) => {
-        const isMyTeam = team === state.team;
-
-        // Logo del equipo
-        let teamLogo = '';
-        const storedData = localStorage.getItem(`team_data_${team}`);
-        if (storedData) {
-            const teamData = JSON.parse(storedData);
-            if (teamData.logo) {
-                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px; vertical-align: middle;">`;
-            }
-        }
-
-        return `
-            <tr class="${isMyTeam ? 'my-team-row' : ''}">
-                <td>${index + 1}</td>
-                <td class="team-name">${teamLogo}${team}</td>
-                <td>${stats.pj || 0}</td>
-                <td>${stats.g || 0}</td>
-                <td>${stats.e || 0}</td>
-                <td>${stats.p || 0}</td>
-                <td>${stats.gf || 0}</td>
-                <td>${stats.gc || 0}</td>
-                <td>${(stats.gf || 0) - (stats.gc || 0)}</td>
-                <td><strong>${stats.pts || 0}</strong></td>
-            </tr>
-        `;
-    }).join('');
-
-    // Poner solo las filas dentro del tbody (no duplicamos cabecera)
-    tbody.innerHTML = rowsHtml;
+    tbody.innerHTML = sorted.map(([team, stats], i) => `
+        <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
+            <td><strong>${i + 1}</strong></td>
+            <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>
+            <td>${stats.pj}</td>
+            <td>${stats.g}</td>
+            <td>${stats.e}</td>
+            <td>${stats.p}</td>
+            <td>${stats.gf}</td>
+            <td>${stats.gc}</td>
+            <td>${stats.gf - stats.gc}</td>
+            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
+        </tr>
+    `).join('');
 }
-
-
-
   
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
