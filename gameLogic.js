@@ -646,7 +646,10 @@ function applyWeeklyTraining() {
         return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.`, type: 'system' };  
     }  
   
-    let improvementChance = 0.3;  
+    let improvementChance = 0.3;
+    const ageModifier = getAgeModifier(player.age);
+
+    improvementChance *= Math.max(0, ageModifier); 
     let improvementAmount = 1;  
   
     improvementChance += (gameState.trainingLevel * 0.02);  
