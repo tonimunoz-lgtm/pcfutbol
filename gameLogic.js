@@ -777,47 +777,36 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
 
   
 function playMatch(homeTeamName, awayTeamName) {
-    // Determinar cuál es tu equipo y su alineación
-    let myTeamSquadForMatch = [];
-    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
-        myTeamSquadForMatch = gameState.lineup;
-    }
-
     // Overalls iniciales
     let homeTeamOverall = 70 + Math.floor(Math.random() * 20);
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20);
-    let teamMentality = 'balanced';
 
-    // Si mi equipo participa, usar su squad y mentalidad
+    let homeForm = 75;
+    let awayForm = 75;
+    let homeMentality = 'balanced';
+    let awayMentality = 'balanced';
+
+    // Si mi equipo está jugando, usar su squad y mentalidad
     if (homeTeamName === gameState.team) {
-        homeTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);
-        teamMentality = gameState.mentality;
-    } else if (awayTeamName === gameState.team) {
-        awayTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);
-        teamMentality = gameState.mentality;
+        homeTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
+        homeMentality = gameState.mentality;
+    }
+    if (awayTeamName === gameState.team) {
+        awayTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
+        awayMentality = gameState.mentality;
     }
 
-    // Calcular resultado
-    const { teamGoals, opponentGoals } = calculateMatchOutcome({
+    // Calcular goles
+    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome({
         teamOverall: homeTeamOverall,
         opponentOverall: awayTeamOverall,
-        mentality: teamMentality,
-        isHome: true, // desde la perspectiva del homeTeam
-        teamForm: 75,
-        opponentForm: 75
+        mentality: homeMentality,
+        isHome: true,
+        teamForm: homeForm,
+        opponentForm: awayForm
     });
 
-    // Asignar goles según quién es local/visitante
-    let homeGoalsFinal = teamGoals;
-    let awayGoalsFinal = opponentGoals;
-
-    // Si mi equipo es visitante, intercambiar nombres de equipo para la estadística
-    if (homeTeamName !== gameState.team && awayTeamName === gameState.team) {
-        homeGoalsFinal = opponentGoals;
-        awayGoalsFinal = teamGoals;
-    }
-
-    // Actualizar clasificación
+    // Actualizar standings
     const updateStats = (team, gf, gc) => {
         const s = gameState.standings[team];
         if (s) {
@@ -829,23 +818,17 @@ function playMatch(homeTeamName, awayTeamName) {
             else s.p++;
         }
     };
+    updateStats(homeTeamName, homeGoals, awayGoals);
+    updateStats(awayTeamName, awayGoals, homeGoals);
 
-    updateStats(homeTeamName, homeGoalsFinal, awayGoalsFinal);
-    updateStats(awayTeamName, awayGoalsFinal, homeGoalsFinal);
-
-    // Notificar si mi equipo jugó
-    const playersInvolved = (homeTeamName === gameState.team || awayTeamName === gameState.team) ? myTeamSquadForMatch : [];
-    if (playersInvolved.length > 0) {
-        addNews(`Partido: ${homeTeamName} ${homeGoalsFinal} - ${awayGoalsFinal} ${awayTeamName}`, 'info');
+    // Añadir noticia si mi equipo jugó
+    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
+        addNews(`Partido: ${homeTeamName} ${homeGoals} - ${awayGoals} ${awayTeamName}`, 'info');
     }
 
-    return {
-        homeTeam: homeTeamName,
-        awayTeam: awayTeamName,
-        homeGoals: homeGoalsFinal,
-        awayGoals: awayGoalsFinal
-    };
+    return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };
 }
+
 
   
 function secondCoachAdvice() {  
