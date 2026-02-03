@@ -1,47 +1,59 @@
-// ui.js - Renderizado y UI  
+// ui.js - Renderizado y UI    
   
-import * as gameLogic from './gameLogic.js';  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
+import * as gameLogic from './gameLogic.js';    
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js';    
   
-// ui.js - Añadir al principio del archivo
-
-function getTeamLogo(teamName, size = '25px') {
-    const storedData = localStorage.getItem(`team_data_${teamName}`);
-    if (storedData) {
-        const teamData = JSON.parse(storedData);
-        if (teamData.logo) {
-            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
-        }
-    }
-    return ''; // Sin logo
-}
-
-function renderStandingsTable(standings, currentTeam) {
-    const tbody = document.getElementById('standingsTable');
-    if (!tbody) return;
-
-    const sorted = Object.entries(standings).sort((a, b) => {
-        if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
-        const dgA = a[1].gf - a[1].gc;
-        const dgB = b[1].gf - b[1].gc;
-        if (dgB !== dgA) return dgB - dgA;
-        return b[1].gf - a[1].gf;
-    });
-
-    tbody.innerHTML = sorted.map(([team, stats], i) => `
-        <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">
-            <td><strong>${i + 1}</strong></td>
-            <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>
-            <td>${stats.pj}</td>
-            <td>${stats.g}</td>
-            <td>${stats.e}</td>
-            <td>${stats.p}</td>
-            <td>${stats.gf}</td>
-            <td>${stats.gc}</td>
-            <td>${stats.gf - stats.gc}</td>
-            <td style="color: #00ff00; font-weight: bold;">${stats.pts}</td>
-        </tr>
-    `).join('');
+function getTeamLogo(teamName, size = '25px') {  
+    const storedData = localStorage.getItem(`team_data_${teamName}`);  
+    if (storedData) {  
+        const teamData = JSON.parse(storedData);  
+        if (teamData.logo) {  
+            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;  
+        }  
+    }  
+    return ''; // Sin logo  
+}  
+  
+function renderStandingsTable(standings, currentTeam) {  
+    const tbody = document.getElementById('standingsTable');  
+    if (!tbody) return;  
+  
+    const sorted = Object.entries(standings).sort((a, b) => {  
+        // AÑADE LAS COMPROBACIONES DE SEGURIDAD AQUÍ  
+        const ptsA = a[1]?.pts ?? -Infinity;  
+        const ptsB = b[1]?.pts ?? -Infinity;  
+  
+        if (ptsB !== ptsA) return ptsB - ptsA;  
+  
+        const dgA = (a[1]?.gf ?? 0) - (a[1]?.gc ?? 0);  
+        const dgB = (b[1]?.gf ?? 0) - (b[1]?.gc ?? 0);  
+        if (dgB !== dgA) return dgB - dgA;  
+  
+        const gfA = a[1]?.gf ?? 0;  
+        const gfB = b[1]?.gf ?? 0;  
+        return gfB - gfA;  
+    });  
+  
+    tbody.innerHTML = sorted.map(([team, stats], i) => {  
+        // También aquí, asegúrate de que stats no sea null/undefined para los cálculos.  
+        // Aunque la ordenación ya los debería haber puesto al final con -Infinity,  
+        // es bueno ser defensivo.  
+        const actualStats = stats || { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 };  
+        return `  
+            <tr style="${team === currentTeam ? 'background: rgba(233, 69, 96, 0.2);' : ''}">  
+                <td><strong>${i + 1}</strong></td>  
+                <td>${getTeamLogo(team, '25px')}<strong>${team}</strong></td>  
+                <td>${actualStats.pj}</td>  
+                <td>${actualStats.g}</td>  
+                <td>${actualStats.e}</td>  
+                <td>${actualStats.p}</td>  
+                <td>${actualStats.gf}</td>  
+                <td>${actualStats.gc}</td>  
+                <td>${actualStats.gf - actualStats.gc}</td>  
+                <td style="color: #00ff00; font-weight: bold;">${actualStats.pts}</td>  
+            </tr>  
+        `;  
+    }).join('');  
 }
   
 function renderSquadList(squad, currentTeam) {  
