@@ -1566,16 +1566,68 @@ function generateFullSeasonFixtures(teams) {
     return [...fixtures, ...secondHalf];
 }
 
-// Devuelve el calendario completo con la semana asignada
+/**
+ * Genera un calendario de temporada para todos los equipos.
+ * Garantiza alternancia local/visitante.
+ */
 function generateSeasonCalendar(teams) {
-    const fullFixtures = generateFullSeasonFixtures(teams);
+    if (!teams || teams.length < 2) return [];
 
-    const seasonCalendar = [];
-    fullFixtures.forEach((round, idx) => {
-        round.forEach(match => {
-            seasonCalendar.push({ ...match, week: idx + 1 });
-        });
-    });
+    const numTeams = teams.length;
+    const calendar = [];
+    const totalWeeks = (numTeams - 1) * 2; // ida y vuelta
+
+    // Copias para rotar
+    let homeTeams = [...teams];
+    let awayTeams = [...teams];
+
+    for (let week = 1; week <= totalWeeks; week++) {
+        const weekMatches = [];
+        const half = Math.floor(numTeams / 2);
+
+        for (let i = 0; i < half; i++) {
+            let home, away;
+
+            // Alternancia sencilla: semana impar => homeTeams[i] local, semana par => visitante
+            if (week % 2 === 1) {
+                home = homeTeams[i];
+                away = awayTeams[numTeams - 1 - i];
+            } else {
+                home = awayTeams[numTeams - 1 - i];
+                away = homeTeams[i];
+            }
+
+            // Evitar enfrentarse a sí mismo
+            if (home !== away) {
+                weekMatches.push({ week, home, away });
+            }
+        }
+
+        calendar.push(...weekMatches);
+
+        // Rotación tipo "Round-Robin" para la siguiente jornada
+        if (numTeams > 2) {
+            const temp = homeTeams.splice(1, 1)[0];
+            homeTeams.push(temp);
+            awayTeams.unshift(awayTeams.pop());
+        }
+    }
+
+    return calendar;
+}
+
+function initSeasonCalendar() {
+    if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) return;
+
+    // Generar calendario limpio
+    gameState.seasonCalendar = generateSeasonCalendar(gameState.leagueTeams);
+
+    // Reiniciar semana y historial de partidos
+    gameState.week = 1;
+    gameState.matchHistory = [];
+
+    console.log('📅 Calendario regenerado:', gameState.seasonCalendar);
+}
 
     return seasonCalendar;
 }
