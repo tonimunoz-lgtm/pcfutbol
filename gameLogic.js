@@ -998,10 +998,15 @@ function simulateFullWeek() {
         gameState.week++;
         updateWeeklyFinancials();
         if (gameState.week > PRESEASON_WEEKS) {
-            gameState.seasonType = 'regular';
-            gameState.week = 1;
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
-        }
+    gameState.seasonType = 'regular';
+    gameState.week = 1;
+    addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+
+    // ✅ Generar calendario con alternancia local/visitante
+    gameState.seasonCalendar = generateSeasonCalendar(gameState.leagueTeams);
+    console.log('📅 Calendario generado con alternancia:', gameState.seasonCalendar);
+}
+
         return { myMatch: null, forcedLoss: false };
     }
 
@@ -1533,5 +1538,50 @@ function getAgeModifier(age) {
     if (age <= 30) return 0.7;        // Se ralentiza
     if (age <= 33) return 0.3;        // Casi estancado
     return -0.5;                      // Declive
+}
+
+// Genera todos los partidos de la temporada, alternando local/visitante
+function generateFullSeasonFixtures(teams) {
+    const totalTeams = teams.length;
+    const rounds = totalTeams - 1; // Número de jornadas ida
+    const half = totalTeams / 2;
+    let fixtures = [];
+
+    let rotatedTeams = teams.slice();
+    for (let round = 0; round < rounds; round++) {
+        let roundMatches = [];
+        for (let i = 0; i < half; i++) {
+            const home = (i === 0 && round % 2 === 0) ? rotatedTeams[0] : rotatedTeams[i];
+            const away = rotatedTeams[totalTeams - 1 - i];
+            roundMatches.push({ home, away });
+        }
+        fixtures.push(roundMatches);
+
+        // Rotación de equipos (excepto el primero)
+        rotatedTeams = [
+            rotatedTeams[0],
+            rotatedTeams[totalTeams - 1],
+            ...rotatedTeams.slice(1, totalTeams - 1)
+        ];
+    }
+
+    // Segunda vuelta invirtiendo local/visitante
+    const secondHalf = fixtures.map(round => round.map(m => ({ home: m.away, away: m.home })));
+
+    return [...fixtures, ...secondHalf];
+}
+
+// Devuelve el calendario completo con la semana asignada
+function generateSeasonCalendar(teams) {
+    const fullFixtures = generateFullSeasonFixtures(teams);
+
+    const seasonCalendar = [];
+    fullFixtures.forEach((round, idx) => {
+        round.forEach(match => {
+            seasonCalendar.push({ ...match, week: idx + 1 });
+        });
+    });
+
+    return seasonCalendar;
 }
 
