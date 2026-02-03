@@ -41,7 +41,7 @@ if (firebaseConfig.enabled) {
         window.firebaseAuth = auth;  
         window.firebaseConfig = firebaseConfig; // Exponer la configuración completa  
   
-        // Autenticación anónima INMEDIATA  
+       /* // Autenticación anónima INMEDIATA  
         signInAnonymously(auth)  
             .then(() => {  
                 console.log('✅ Autenticación anónima iniciada');  
@@ -53,7 +53,7 @@ if (firebaseConfig.enabled) {
                     resolveAuthReady(null);  
                     resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
                 }  
-            });  
+            });  */
   
         // Listener de cambios de autenticación  
         onAuthStateChanged(auth, (user) => {  
