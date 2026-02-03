@@ -42,7 +42,7 @@ if (firebaseConfig.enabled) {
         window.firebaseConfig = firebaseConfig; // Exponer la configuración completa  
   
         // Autenticación anónima INMEDIATA  
-       /* signInAnonymously(auth)  
+        signInAnonymously(auth)  
             .then(() => {  
                 console.log('✅ Autenticación anónima iniciada');  
             })  
@@ -53,59 +53,63 @@ if (firebaseConfig.enabled) {
                     resolveAuthReady(null);  
                     resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
                 }  
-            });  */
+            });  
   
         // Listener de cambios de autenticación  
-onAuthStateChanged(auth, user => {  
-    if (user) {  
-        // Solo establecer currentUserId y authReady a true si el usuario NO es anónimo  
-        // o si es la forma principal de autenticación que quieres persistir.  
-        // Para tu caso, si quieres sólo mail/pass, asegúrate de que 'user.isAnonymous' sea false.  
-        // Firebase asigna un UID diferente al anónimo y al logueado.  
-        if (!user.isAnonymous) { // <--- Añade esta condición  
-            currentUserId = user.uid;  
-            window.currentUserId = user.uid;  
-            authReady = true;  
-            console.log(`✅ Usuario autenticado con UID: ${user.uid}`);  
-            if (resolveAuthReady) {  
-                resolveAuthReady();  
-                resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+        onAuthStateChanged(auth, (user) => {  
+            if (user) {  
+                currentUserId = user.uid;  
+                window.currentUserId = user.uid;  
+                authReady = true;  
+                console.log('✅ Usuario autenticado con UID:', user.uid);  
+                // Resolver la promesa de autenticación lista  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                   resolveAuthReady(user.uid);  
+                   resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+                }  
+                // Habilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
+                const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
+                if (saveBtn) {  
+                    saveBtn.disabled = false;  
+                    saveBtn.style.opacity = '1';  
+                }  
+            } else {  
+                currentUserId = null;  
+                window.currentUserId = null;  
+                authReady = false;  
+                console.log('⚠️ Usuario no autenticado');  
+                // Deshabilitar botón de guardar si existe (se manejará en injector-firebase-sync.js también)  
+                const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
+                if (saveBtn) {  
+                    saveBtn.disabled = true;  
+                    saveBtn.style.opacity = '0.5';  
+                }  
+                // Si no hay usuario y la promesa no se ha resuelto, resuélvela con null  
+                if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
+                    resolveAuthReady(null);  
+                    resolveAuthReady = null; // Para asegurar que no se resuelve de nuevo  
+                }  
             }  
-            const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
-            if (saveBtn) {  
-                saveBtn.disabled = false;  
-                saveBtn.style.opacity = '1';  
-            }  
-        } else {  
-            // Si el usuario es anónimo y NO queremos permitirlo como principal  
-            // No establecemos currentUserId persistente ni authReady a true para guardado.  
-            console.log('⚪ Usuario anónimo detectado, esperando autenticación explícita.');  
-            currentUserId = null; // o el UID anónimo si quieres permitir guardado anónimo temporal  
-            window.currentUserId = null; // o el UID anónimo  
-            authReady = false; // authReady solo será true con usuario logueado  
-            const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
-            if (saveBtn) {  
-                saveBtn.disabled = true; // Deshabilita guardar si solo hay usuario anónimo  
-                saveBtn.style.opacity = '0.5';  
-            }  
-        }  
-    } else {  
-        // No hay usuario autenticado (ni anónimo ni con credenciales)  
-        currentUserId = null;  
-        window.currentUserId = null;  
-        authReady = false;  
-        console.log('⚪ Usuario no autenticado');  
-        const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');  
-        if (saveBtn) {  
-            saveBtn.disabled = true;  
-            saveBtn.style.opacity = '0.5';  
-        }  
-        if (resolveAuthReady) { // Asegura que authReadyPromise siempre se resuelva  
-            resolveAuthReady();  
+        });  
+        console.log('✅ Firebase inicializado correctamente');  
+    } catch (error) {  
+        console.error('❌ Error inicializando Firebase:', error);  
+        window.firebaseConfig = { enabled: false }; // Deshabilitar si hay error  
+        // Si Firebase falla al inicializar, resuelve la promesa para no bloquear  
+        if (resolveAuthReady) {  
+            resolveAuthReady(null);  
             resolveAuthReady = null;  
         }  
     }  
-});  
+} else {  
+    console.log('⚠️ Firebase deshabilitado en la configuración');  
+    window.firebaseConfig = { enabled: false }; // Asegurarse de que esté deshabilitado globalmente  
+    // Si Firebase está deshabilitado, resuelve la promesa para no bloquear  
+    if (resolveAuthReady) {  
+        resolveAuthReady(null);  
+        resolveAuthReady = null;  
+    }  
+}  
   
 // ==========================================  
 // FUNCIONES PARA DATOS DE EQUIPOS (GLOBALES)  
