@@ -650,6 +650,14 @@
                 alert("Los jugadores lesionados no pueden ser alineados.");
                 return;
             }
+        // 🆕 AÑADIR ESTAS 5 LÍNEAS
+    if (player.isSuspended) {
+        ev.preventDefault();
+        alert(`${player.name} está sancionado y no puede jugar.`);
+        return;
+    }
+
+            
             draggedPlayer = player;
             ev.dataTransfer.setData("text/plain", playerJson);
             ev.dataTransfer.effectAllowed = "move";
