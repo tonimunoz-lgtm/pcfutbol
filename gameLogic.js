@@ -993,20 +993,28 @@ function simulateFullWeek() {
     let myMatchResult = null; 
     let forcedLoss = false;
 
+    // Pretemporada
     if (gameState.seasonType === 'preseason') {
         handlePreseasonWeek();
         gameState.week++;
         updateWeeklyFinancials();
+
+        // Comenzar temporada regular
         if (gameState.week > PRESEASON_WEEKS) {
-    gameState.seasonType = 'regular';
-    gameState.week = 1;
-    addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+            gameState.seasonType = 'regular';
+            gameState.week = 1;
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
 
-    // ✅ Generar calendario con alternancia local/visitante
-    gameState.seasonCalendar = generateSeasonCalendar(gameState.leagueTeams);
-    console.log('📅 Calendario generado con alternancia:', gameState.seasonCalendar);
-}
-
+            // -----------------------------
+            // FORZAR GENERACIÓN DE CALENDARIO
+            // -----------------------------
+            if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) {
+                console.error('⚠️ No hay equipos en la liga para generar calendario.');
+            } else {
+                gameState.seasonCalendar = generateSeasonCalendar(gameState.leagueTeams);
+                console.log('📅 Calendario generado con alternancia local/visitante:', gameState.seasonCalendar);
+            }
+        }
         return { myMatch: null, forcedLoss: false };
     }
 
@@ -1051,8 +1059,8 @@ function simulateFullWeek() {
 
     if (myTeamMatch) {
         if (!preSimLineupValidation.success) {
+            // Penalización 0-3
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');
-
             let homeGoals = 0, awayGoals = 0;
             if (myTeamMatch.home === gameState.team) awayGoals = 3;
             else homeGoals = 3;
@@ -1065,7 +1073,6 @@ function simulateFullWeek() {
             if (opponentStats) { opponentStats.pj++; opponentStats.g++; opponentStats.gf += (myTeamMatch.home === gameState.team ? 3 : 0); opponentStats.gc += (myTeamMatch.home === gameState.team ? 0 : 3); opponentStats.pts += 3; }
 
             gameState.matchHistory.push({ week: gameState.week, home: myTeamMatch.home, away: myTeamMatch.away, score: `${homeGoals}-${awayGoals}` });
-
             myMatchResult = { home: myTeamMatch.home, away: myTeamMatch.away, homeGoals, awayGoals, score: `${homeGoals}-${awayGoals}` };
             forcedLoss = true;
 
@@ -1073,36 +1080,23 @@ function simulateFullWeek() {
             gameState.fanbase = Math.max(0, gameState.fanbase - 500);
 
         } else {
-            // Calcular form promedio
+            // Simular partido normalmente
             const myTeamSquadForMatch = gameState.lineup.filter(p => !p.isInjured);
-            const opponentSquad = []; // Si quieres simular opponentForm, puedes generarlo según stats del rival
-
-            const avgForm = myTeamSquadForMatch.length
-                ? myTeamSquadForMatch.reduce((sum, p) => sum + p.form, 0) / myTeamSquadForMatch.length
-                : 75;
-
-            const oppAvgForm = opponentSquad.length
-                ? opponentSquad.reduce((sum, p) => sum + p.form, 0) / opponentSquad.length
-                : 75;
-
             const isHomeMatch = myTeamMatch.home === gameState.team;
 
             const result = calculateMatchOutcome({
                 teamOverall: calculateTeamEffectiveOverall(myTeamSquadForMatch),
-                opponentOverall: 70 + Math.floor(Math.random() * 20), // Si no tienes stats del rival
+                opponentOverall: 70 + Math.floor(Math.random() * 20),
                 mentality: gameState.mentality,
                 isHome: isHomeMatch,
-                teamForm: avgForm,
-                opponentForm: oppAvgForm
+                teamForm: myTeamSquadForMatch.length ? myTeamSquadForMatch.reduce((sum,p)=>sum+p.form,0)/myTeamSquadForMatch.length : 75,
+                opponentForm: 75
             });
 
-            // Actualizar standings
             const updateStats = (team, gf, gc) => {
                 const s = gameState.standings[team];
                 if (s) {
-                    s.pj++;
-                    s.gf += gf;
-                    s.gc += gc;
+                    s.pj++; s.gf += gf; s.gc += gc;
                     if (gf > gc) { s.g++; s.pts += 3; }
                     else if (gf === gc) { s.e++; s.pts += 1; }
                     else s.p++;
@@ -1148,6 +1142,7 @@ function simulateFullWeek() {
 
     return { myMatch: myMatchResult, forcedLoss };
 }
+
 
   
 function handlePreseasonWeek() {  
