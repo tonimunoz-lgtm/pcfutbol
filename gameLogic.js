@@ -326,90 +326,43 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
  
   
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    gameState.team = teamName;
-    gameState.division = divisionType;
-    gameState.gameMode = gameMode;
-    gameState.currentSeason = '2025/2026';
-    gameState.seasonType = 'preseason';
+    // 🔄 RESET COMPLETO DEL ESTADO
+    Object.assign(gameState, {
+        team: teamName,
+        division: divisionType,
+        gameMode: gameMode,
+        currentSeason: '2025/2026',
+        seasonType: 'preseason',
+        week: 1,
+        matchHistory: [],
+        standings: {},
+        newsFeed: [],
+        unreadNewsCount: 0,
+        squad: [],
+        academy: [],
+        lineup: [],
+        leagueTeams: [],
+        seasonCalendar: []
+    });
 
     gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
-    // *** CARGAR DATOS PERSONALIZADOS DEL EQUIPO DESDE FIREBASE ***
+    // Cargar datos personalizados si existen
     if (window.getTeamData) {
         const teamData = await window.getTeamData(teamName);
-        
+
         gameState.teamLogo = teamData.logo || null;
         gameState.stadiumImage = teamData.stadiumImage || null;
-        gameState.stadiumName = teamData.stadiumName || teamName + ' Stadium';
+        gameState.stadiumName = teamData.stadiumName || (teamName + ' Stadium');
         gameState.stadiumCapacity = teamData.stadiumCapacity || 10000;
-        
-        console.log('✅ Datos del equipo cargados:', {
-            logo: !!teamData.logo,
-            stadiumImage: !!teamData.stadiumImage,
-            stadiumName: teamData.stadiumName,
-            capacity: teamData.stadiumCapacity
-        });
-
-        // *** ESTABLECER PRESUPUESTO INICIAL ***
-        // CORREGIR: Usar teamData.initialBudget directamente
-        if (teamData.initialBudget) {
-            gameState.balance = teamData.initialBudget;
-        } else {
-            // Valores por defecto según división
-            if (divisionType === 'primera') {
-                gameState.balance = 50000000;
-                gameState.popularity = 65;
-                gameState.fanbase = 25000;
-                gameState.ticketPrice = 30;
-            } else if (divisionType === 'segunda') {
-                gameState.balance = 20000000;
-                gameState.popularity = 50;
-                gameState.fanbase = 10000;
-                gameState.ticketPrice = 20;
-            } else {
-                gameState.balance = 5000000;
-                gameState.popularity = 35;
-                gameState.fanbase = 5000;
-                gameState.ticketPrice = 15;
-            }
-        }
-    } else {
-        console.log(`⚠️ No hay datos personalizados para ${teamName}, usando valores por defecto`);
-        gameState.teamLogo = null;
-        gameState.stadiumImage = null;
-        gameState.stadiumName = teamName + ' Stadium';
-        gameState.stadiumCapacity = 10000;
-        
-        // Valores por defecto según división
-        if (divisionType === 'primera') {
-            gameState.balance = 50000000;
-            gameState.popularity = 65;
-            gameState.fanbase = 25000;
-            gameState.ticketPrice = 30;
-        } else if (divisionType === 'segunda') {
-            gameState.balance = 20000000;
-            gameState.popularity = 50;
-            gameState.fanbase = 10000;
-            gameState.ticketPrice = 20;
-        } else {
-            gameState.balance = 5000000;
-            gameState.popularity = 35;
-            gameState.fanbase = 5000;
-            gameState.ticketPrice = 15;
-        }
+        gameState.balance = teamData.initialBudget || gameState.balance;
     }
 
-    let teamsInDivision = TEAMS_DATA[divisionType];
-    if (!teamsInDivision) {
-        console.error(`División no encontrada en TEAMS_DATA: ${divisionType}. Usando Primera por defecto.`);
-        teamsInDivision = TEAMS_DATA.primera;
-        gameState.division = 'primera';
-    }
+    // Cargar equipos y calendario
+    let teamsInDivision = TEAMS_DATA[divisionType] || TEAMS_DATA.primera;
+    if (!teamsInDivision.includes(teamName)) teamsInDivision.push(teamName);
 
-    if (!teamsInDivision.includes(gameState.team)) {
-        teamsInDivision.push(gameState.team);
-    }
     gameState.leagueTeams = teamsInDivision;
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
@@ -417,6 +370,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
 }
+
   
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
