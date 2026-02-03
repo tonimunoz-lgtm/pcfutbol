@@ -104,8 +104,6 @@ function generateLeagueCalendar(teams) {
     if (numTeams < 2) return [];
 
     let tempTeams = [...teams];
-    
-    // Si número impar, añadir BYE
     if (numTeams % 2 !== 0) {
         tempTeams.push("BYE");
     }
@@ -113,49 +111,102 @@ function generateLeagueCalendar(teams) {
     const numActualTeams = tempTeams.length;
     const numRounds = numActualTeams - 1;
     
-    // ===== PRIMERA VUELTA (IDA) =====
-    const firstHalfMatches = [];
+    // Generar todos los emparejamientos de la primera vuelta
+    const firstHalfPairings = [];
     
     for (let round = 0; round < numRounds; round++) {
-        const roundMatches = [];
+        const roundPairings = [];
         
         for (let i = 0; i < numActualTeams / 2; i++) {
             const team1 = tempTeams[i];
             const team2 = tempTeams[numActualTeams - 1 - i];
 
             if (team1 !== "BYE" && team2 !== "BYE") {
-                roundMatches.push({
-                    home: team1,
-                    away: team2,
-                    week: round + 1,
-                    homeGoals: null,
-                    awayGoals: null
-                });
+                roundPairings.push([team1, team2]);
             }
         }
         
-        firstHalfMatches.push(...roundMatches);
+        firstHalfPairings.push(roundPairings);
 
-        // Rotar equipos (mantener primero fijo)
+        // Rotar equipos (mantener el primero fijo)
         const lastTeam = tempTeams.pop();
         tempTeams.splice(1, 0, lastTeam);
     }
 
-    // ===== SEGUNDA VUELTA (VUELTA) =====
-    const secondHalfMatches = firstHalfMatches.map((match, index) => ({
-        home: match.away,
-        away: match.home,
-        week: numRounds + index + 1,
-        homeGoals: null,
-        awayGoals: null
-    }));
+    // Crear el calendario final con alternancia local/visitante
+    const schedule = [];
+    let weekNumber = 1;
 
-    // ===== COMBINAR IDA + VUELTA =====
-    const fullSchedule = [...firstHalfMatches, ...secondHalfMatches];
+    // Para cada equipo, rastrear si jugó de local o visitante en la última jornada
+    const lastVenue = {}; // true = local, false = visitante
+    teams.forEach(team => lastVenue[team] = null);
 
-    console.log(`📅 Calendario generado: ${fullSchedule.length} partidos para ${numTeams} equipos`);
+    // Procesar cada jornada de la primera vuelta
+    for (let round = 0; round < firstHalfPairings.length; round++) {
+        const pairings = firstHalfPairings[round];
+        
+        pairings.forEach(([team1, team2]) => {
+            let home, away;
+            
+            // Decidir quién juega de local basándose en el último partido
+            if (lastVenue[team1] === null && lastVenue[team2] === null) {
+                // Primer partido de ambos equipos - asignar aleatoriamente
+                if (round % 2 === 0) {
+                    home = team1;
+                    away = team2;
+                } else {
+                    home = team2;
+                    away = team1;
+                }
+            } else if (lastVenue[team1] === true) {
+                // team1 jugó de local la última vez, ahora visitante
+                home = team2;
+                away = team1;
+            } else if (lastVenue[team2] === true) {
+                // team2 jugó de local la última vez, ahora visitante
+                home = team1;
+                away = team2;
+            } else if (lastVenue[team1] === false) {
+                // team1 jugó de visitante la última vez, ahora local
+                home = team1;
+                away = team2;
+            } else {
+                // team2 jugó de visitante la última vez, ahora local
+                home = team2;
+                away = team1;
+            }
+            
+            schedule.push({
+                home,
+                away,
+                week: weekNumber,
+                homeGoals: null,
+                awayGoals: null
+            });
+            
+            // Actualizar el registro de dónde jugó cada equipo
+            lastVenue[home] = true;
+            lastVenue[away] = false;
+        });
+        
+        weekNumber++;
+    }
+
+    // Segunda vuelta: invertir todos los partidos de la primera vuelta
+    const secondHalfStart = weekNumber;
     
-    return fullSchedule;
+    for (let i = 0; i < schedule.length; i++) {
+        const originalMatch = schedule[i];
+        schedule.push({
+            home: originalMatch.away,
+            away: originalMatch.home,
+            week: secondHalfStart + i,
+            homeGoals: null,
+            awayGoals: null
+        });
+    }
+
+    return schedule;
 }
   
   
@@ -1373,7 +1424,7 @@ function setLineup(newLineup) {
                                 .sort((a,b) => b.overall - a.overall)  
                                 .slice(0, 11 - newLineup.length);  
               
-        gameState.lineup = [...newLineup, ...playersToFill];  
+        gameState.lineup = [...newLineUp, ...playersToFill];  
         // Asegurarse de que no hay más de 11 después de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
