@@ -822,101 +822,77 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
 
 
   
-function playMatch(homeTeamName, awayTeamName) {  
-    let homeTeamOverall = 70 + Math.floor(Math.random() * 20);  
-    let awayTeamOverall = 70 + Math.floor(Math.random() * 20);  
-    let teamMentality = 'balanced';  
-  
-    let myTeamSquadForMatch = [];  
-    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-        myTeamSquadForMatch = gameState.lineup;  
-    }  
-  
-    if (homeTeamName === gameState.team) {  
-        homeTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);  
-        teamMentality = gameState.mentality;  
-    } else if (awayTeamName === gameState.team) {  
-        awayTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);  
-        teamMentality = gameState.mentality;  
-    }  
-  
-    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome(homeTeamOverall, awayTeamOverall, teamMentality);  
-  
-    const updateStats = (team, gf, gc) => {  
-        const s = gameState.standings[team];  
-        if (s) { // Asegurarse de que el equipo exista en la clasificación  
-            s.pj++;  
-            s.gf += gf;  
-            s.gc += gc;  
-            if (gf > gc) { s.g++; s.pts += 3; }  
-            else if (gf === gc) { s.e++; s.pts += 1; }  
-            else s.p++;  
-        }  
-    };  
-  
-    updateStats(homeTeamName, homeGoals, awayGoals);  
-    updateStats(awayTeamName, awayGoals, homeGoals);  
-  
-    const playersInvolved = (homeTeamName === gameState.team || awayTeamName === gameState.team) ? myTeamSquadForMatch : [];  
-  
-    playersInvolved.forEach(pInvolved => {  
-        const p = gameState.squad.find(s => s.name === pInvolved.name);  
-        if (!p) return;  
-  
-        if (!p.isInjured) {  
-            p.matches++;  
-            generateInjury(p);  
-  
-            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.5 ? 1 : -1)));  
-            const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
-            const draw = (homeGoals === awayGoals);  
-            if (myResult) p.form = Math.min(100, p.form + 2);  
-            else if (draw) p.form = Math.min(100, p.form + 1);  
-            else p.form = Math.max(0, p.form - 2);  
-  
-            if (p.overall < p.potential) {  
-                if (p.matches % 5 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                if (p.matches % 10 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-                if (p.matches % 20 === 0) p.overall = Math.min(p.potential, p.overall + 1);  
-            }  
-        }  
-    });  
-  
-    gameState.squad.forEach(p => {  
-        if (!playersInvolved.some(pi => pi.name === p.name) && !p.isInjured) {  
-            p.form = Math.min(100, Math.max(50, p.form + (Math.random() > 0.7 ? 1 : -1)));  
-        }  
-    });  
-    gameState.academy.forEach(y => {  
-        if (!y.isInjured) {  
-             y.form = Math.min(100, Math.max(50, y.form + (Math.random() > 0.8 ? 1 : -1)));  
-        }  
-    });  
-  
-    gameState.matchHistory.push({  
-        week: gameState.week,  
-        home: homeTeamName,  
-        away: awayTeamName,  
-        score: `${homeGoals}-${awayGoals}`  
-    });  
-  
-    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {  
-        const myResult = (homeGoals > awayGoals && homeTeamName === gameState.team) || (awayGoals > homeGoals && awayTeamName === gameState.team);  
-        const draw = (homeGoals === awayGoals);  
-        if (myResult) {  
-            gameState.popularity = Math.min(100, gameState.popularity + 3 + Math.floor(Math.random() * 2));  
-            gameState.fanbase = Math.min(1000000, gameState.fanbase + 500 + Math.floor(Math.random() * 500));  
-        } else if (draw) {  
-            gameState.popularity = Math.max(0, gameState.popularity + 1);  
-            gameState.fanbase = Math.min(1000000, gameState.fanbase + 100 + Math.floor(Math.random() * 100));  
-        } else {  
-            gameState.popularity = Math.max(0, gameState.popularity - 2 - Math.floor(Math.random() * 2));  
-            gameState.fanbase = Math.max(0, gameState.fanbase - 200 - Math.floor(Math.random() * 200));  
-        }  
-    }  
-  
-    return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };  
-}  
+function playMatch(homeTeamName, awayTeamName) {
+    // Determinar cuál es tu equipo y su alineación
+    let myTeamSquadForMatch = [];
+    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
+        myTeamSquadForMatch = gameState.lineup;
+    }
+
+    // Overalls iniciales
+    let homeTeamOverall = 70 + Math.floor(Math.random() * 20);
+    let awayTeamOverall = 70 + Math.floor(Math.random() * 20);
+    let teamMentality = 'balanced';
+
+    // Si mi equipo participa, usar su squad y mentalidad
+    if (homeTeamName === gameState.team) {
+        homeTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);
+        teamMentality = gameState.mentality;
+    } else if (awayTeamName === gameState.team) {
+        awayTeamOverall = calculateTeamEffectiveOverall(myTeamSquadForMatch);
+        teamMentality = gameState.mentality;
+    }
+
+    // Calcular resultado
+    const { teamGoals, opponentGoals } = calculateMatchOutcome({
+        teamOverall: homeTeamOverall,
+        opponentOverall: awayTeamOverall,
+        mentality: teamMentality,
+        isHome: true, // desde la perspectiva del homeTeam
+        teamForm: 75,
+        opponentForm: 75
+    });
+
+    // Asignar goles según quién es local/visitante
+    let homeGoalsFinal = teamGoals;
+    let awayGoalsFinal = opponentGoals;
+
+    // Si mi equipo es visitante, intercambiar nombres de equipo para la estadística
+    if (homeTeamName !== gameState.team && awayTeamName === gameState.team) {
+        homeGoalsFinal = opponentGoals;
+        awayGoalsFinal = teamGoals;
+    }
+
+    // Actualizar clasificación
+    const updateStats = (team, gf, gc) => {
+        const s = gameState.standings[team];
+        if (s) {
+            s.pj++;
+            s.gf += gf;
+            s.gc += gc;
+            if (gf > gc) { s.g++; s.pts += 3; }
+            else if (gf === gc) { s.e++; s.pts += 1; }
+            else s.p++;
+        }
+    };
+
+    updateStats(homeTeamName, homeGoalsFinal, awayGoalsFinal);
+    updateStats(awayTeamName, awayGoalsFinal, homeGoalsFinal);
+
+    // Notificar si mi equipo jugó
+    const playersInvolved = (homeTeamName === gameState.team || awayTeamName === gameState.team) ? myTeamSquadForMatch : [];
+    if (playersInvolved.length > 0) {
+        addNews(`Partido: ${homeTeamName} ${homeGoalsFinal} - ${awayGoalsFinal} ${awayTeamName}`, 'info');
+    }
+
+    return {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        homeGoals: homeGoalsFinal,
+        awayGoals: awayGoalsFinal
+    };
+}
+
   
 function secondCoachAdvice() {  
     if (!gameState.staff.segundoEntrenador) return;  
