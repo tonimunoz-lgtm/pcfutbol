@@ -35,7 +35,7 @@ function renderStandingsTable(state) {
         return;
     }
 
-    // Ordenar por puntos, DG y GF
+    // Ordenar por puntos, diferencia de goles y goles a favor
     const sorted = validStandings.sort((a, b) => {
         const ptsA = a[1].pts || 0;
         const ptsB = b[1].pts || 0;
@@ -48,7 +48,7 @@ function renderStandingsTable(state) {
         return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
-    // Generar filas
+    // Generar filas de la tabla
     const rowsHtml = sorted.map(([team, stats], index) => {
         const isMyTeam = team === state.team;
 
@@ -58,7 +58,7 @@ function renderStandingsTable(state) {
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
-                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
+                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px; vertical-align: middle;">`;
             }
         }
 
@@ -78,8 +78,10 @@ function renderStandingsTable(state) {
         `;
     }).join('');
 
+    // Poner solo las filas dentro del tbody (no duplicamos cabecera)
     tbody.innerHTML = rowsHtml;
 }
+
 
 
   
