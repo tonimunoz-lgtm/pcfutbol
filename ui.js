@@ -13,48 +13,49 @@ import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from 
  * @returns {string} HTML con los badges de estado
  */
 function renderPlayerStatusBadges(player) {
-    let badges = '';
-    
-    // ❌ LESIONADO (prioridad máxima)
-    if (player.isInjured) {
-        badges += `<span class="injured-badge" title="Lesionado ${player.weeksOut} semanas">❌ Lesión (${player.weeksOut}sem)</span>`;
-    }
-    
-    // ⛔ SANCIONADO (prioridad alta)
+    const badges = [];
+
     if (player.isSuspended) {
-        badges += `<span class="suspended-badge" title="Sancionado ${player.suspensionWeeks} partidos">⛔ SANCIÓN (${player.suspensionWeeks})</span>`;
+        badges.push(`<span class="suspended-badge" title="Sancionado por ${player.suspensionWeeks} semana(s)">⛔ Sancionado</span>`);
+    } else if (player.redCards > 0) {
+        badges.push(`<span class="red-card-badge" title="Tarjetas rojas acumuladas: ${player.redCards}">🟥</span>`);
     }
-    
-    // 🟥 TARJETA ROJA
-    if (player.redCards > 0) {
-        badges += `<span class="red-card-badge" title="Tarjetas rojas esta temporada">🟥 x${player.redCards}</span>`;
-    }
-    
-    // 🟨 TARJETAS AMARILLAS
+
     if (player.yellowCards > 0) {
-        const isWarning = player.yellowCards >= 4;
-        const badgeClass = isWarning ? 'warning-badge' : 'yellow-card-badge';
-        const warningText = isWarning ? ' ⚠️' : '';
-        badges += `<span class="${badgeClass}" title="Tarjetas amarillas (5 = sanción)">🟨 x${player.yellowCards}${warningText}</span>`;
+        badges.push(`<span class="yellow-card-badge" title="Tarjetas amarillas acumuladas: ${player.yellowCards}">🟨</span>`);
+        if (player.yellowCards === 4) {
+            badges.push(`<span class="warning-badge" title="Una amarilla más y será sancionado ⚠️">⚠️</span>`);
+        }
     }
-    
-    return badges ? `<span class="player-status-indicator">${badges}</span>` : '';
-}
 
-/**
- * Añade clases CSS al contenedor del jugador según su estado
- * @param {HTMLElement} element - Elemento DOM del jugador
- * @param {Object} player - Objeto jugador
- */
-function applyPlayerStatusClasses(element, player) {
     if (player.isInjured) {
-        element.classList.add('injured');
+        badges.push(`<span class="injured-badge" title="Lesionado">❌</span>`);
     }
-    if (player.isSuspended) {
-        element.classList.add('suspended');
-    }
+
+    return badges.join(' ');
 }
 
+// 🆕 Aplicar clases CSS en alineación
+function applyPlayerStatusClasses(playerEl, player) {
+    playerEl.classList.remove('suspended', 'injured');
+
+    if (player.isSuspended) {
+        playerEl.classList.add('suspended');
+        playerEl.setAttribute('draggable', false);
+    } else {
+        playerEl.setAttribute('draggable', true);
+    }
+
+    if (player.isInjured) {
+        playerEl.classList.add('injured');
+    }
+
+    // Añadir badges al contenedor
+    const statusContainer = playerEl.querySelector('.player-status-indicator');
+    if (statusContainer) {
+        statusContainer.innerHTML = renderPlayerStatusBadges(player);
+    }
+}
 // ============================================
 // FUNCIONES EXISTENTES (MODIFICADAS)
 // ============================================
@@ -162,75 +163,21 @@ function renderStandingsTable(state) {
 }
 
   
-function renderSquadList(squad, currentTeam) {
-    const list = document.getElementById('squadList');
-    if (!list) return;
-
-    if (!squad || squad.length === 0) {
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';
-        return;
-    }
-
-    const headerHtml = `
-        <div style="overflow-x: auto;">
-            <table style="font-size: 0.8em; min-width: 1200px;">
-                <thead>
-                    <tr>
-                        <th>Nº</th>
-                        <th>JUGADOR</th>
-                        <th>OVR</th>
-                        <th>POT</th>
-                        <th>EDAD</th>
-                        <th>POS</th>
-                        <th>PIE</th>
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
-                        <th>FORMA</th>
-                        <th>ESTADO</th>
-                        <th>TARJETAS</th>
-                        <th>SALARIO</th>
-                        <th>VALOR</th>
-                        <th>ACCIONES</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    const sorted = squad.sort((a, b) => b.overall - a.overall);
-
-    const playersHtml = sorted.map((p, idx) => {
-        const statusBadges = renderPlayerStatusBadges(p);
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Lesionado</span>` :
-                          p.isSuspended ? `<span style="color: #FF4500;">Sancionado</span>` :
-                          'Apto';
-
-        // ✅ Clase combinada para CSS
-        const rowClass = `player-card ${p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : ''}`;
-        
-        return `
-            <tr class="${rowClass}" style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">
-                <td>${idx + 1}</td>
-                <td>${p.name}</td>
-                <td><strong>${p.overall}</strong></td>
-                <td>${p.potential}</td>
-                <td>${p.age}</td>
-                <td>${p.position || 'N/A'}</td>
-                <td>${p.foot || 'N/A'}</td>
-                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
-                <td>${p.form || 0}</td>
-                <td>${statusText}</td>
-                <td>${statusBadges}</td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>
-                <td>${p.value.toLocaleString('es-ES')}€</td>
-                <td>
-                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''} onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>
-                    <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>
-                </td>
-            </tr>
+function renderSquadList(squad, containerEl) {
+    containerEl.innerHTML = '';
+    squad.forEach(player => {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player-card';
+        playerDiv.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <div class="player-position">${player.position}</div>
+            <div class="player-status-indicator"></div>
         `;
-    }).join('');
-
-    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;
+        applyPlayerStatusClasses(playerDiv, player);
+        containerEl.appendChild(playerDiv);
+    });
 }
+
 
   
   
