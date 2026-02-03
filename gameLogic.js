@@ -221,19 +221,29 @@ function generateInitialAcademy() {
     }  
     return academy;  
 }  
-  
+
+function getAgeStage(age) {
+    if (age <= 20) return 'youth';
+    if (age <= 24) return 'growth';
+    if (age <= 27) return 'prime';
+    if (age <= 30) return 'plateau';
+    if (age <= 33) return 'decline_soft';
+    return 'decline_hard';
+}
+
+
 function setupNewSeason(prevSeasonDivision, nextDivisionKey) {  
     const nextSeasonYear = parseInt(gameState.currentSeason.split('/')[0]) + 1;  
     const newSeasonName = `${nextSeasonYear}/${nextSeasonYear + 1}`;  
   
     gameState.week = 1;  
-    gameState.matchHistory = []; // Limpiar historial de partidos  
-    gameState.standings = {}; // Reiniciar clasificación  
-    gameState.newsFeed = []; // Limpiar noticias  
+    gameState.matchHistory = [];  
+    gameState.standings = {};  
+    gameState.newsFeed = [];  
     gameState.unreadNewsCount = 0;  
     gameState.seasonType = 'preseason';  
     gameState.currentSeason = newSeasonName;  
-    gameState.division = nextDivisionKey; // Usar la clave exacta de la división  
+    gameState.division = nextDivisionKey;  
   
     let teamsInNewDivision = TEAMS_DATA[nextDivisionKey];  
     if (!teamsInNewDivision) {  
@@ -248,37 +258,72 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     gameState.leagueTeams = teamsInNewDivision;  
     gameState.standings = initStandings(teamsInNewDivision);  
   
-    // NEW: Generar el calendario para la nueva temporada  
     gameState.seasonCalendar = generateLeagueCalendar(teamsInNewDivision);  
-    gameState.maxSeasonWeeks = teamsInNewDivision.length * 2 - 2; // Actualizar el máximo de semanas  
+    gameState.maxSeasonWeeks = teamsInNewDivision.length * 2 - 2;  
   
     addNews(`¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
+  
     initPlayerDatabase();  
     initYoungsterDatabase();  
-          
-    gameState.squad.forEach(p => {       
-        p.age++;       
-        p.matches = 0;       
-        p.form = 70 + Math.floor(Math.random()*20);       
-        p.isInjured = false;       
-        p.weeksOut = 0;      
-        if (p.age > 35 && Math.random() < 0.2) {      
-            addNews(`${p.name} se ha retirado del fútbol.`, 'info');      
-            gameState.squad = gameState.squad.filter(player => player.name !== p.name);      
-        }      
-    });      
-    gameState.academy.forEach(p => {       
-        p.age++;       
-        p.matches = 0;       
-        p.form = 60 + Math.floor(Math.random()*20);       
-        p.isInjured = false;       
-        p.weeksOut = 0;       
-    });      
   
-    // Reestablecer alineación por defecto con los mejores jugadores aptos  
-    const availablePlayers = gameState.squad.filter(p => !p.isInjured).sort((a,b) => b.overall - a.overall);  
-    setLineup(availablePlayers.slice(0, 11)); // Usa setLineup para asegurar 11 jugadores  
-}  
+    // ===== PRIMERA PLANTILLA =====
+    gameState.squad = gameState.squad.filter(p => {
+        p.age++;  
+        p.matches = 0;  
+        p.form = 70 + Math.floor(Math.random() * 20);  
+        p.isInjured = false;  
+        p.weeksOut = 0;  
+
+        const stage = getAgeStage(p.age);
+
+        // 🔻 Declive físico por edad
+        if (stage === 'decline_soft' || stage === 'decline_hard') {
+            const physicalAttrs = ['VE', 'AG', 'RE'];
+            physicalAttrs.forEach(attr => {
+                if (p[attr] > 40 && Math.random() < (stage === 'decline_hard' ? 0.8 : 0.5)) {
+                    p[attr]--;
+                }
+            });
+        }
+
+        // 🔻 Declive mental MUY suave (solo mayores)
+        if (stage === 'decline_hard') {
+            ['VI', 'PA', 'CO'].forEach(attr => {
+                if (p[attr] > 50 && Math.random() < 0.2) {
+                    p[attr]--;
+                }
+            });
+        }
+
+        // 🔄 Recalcular overall tras cambios
+        p.overall = calculatePlayerOverall(p);
+
+        // 🛑 Retiro
+        if (p.age >= 36 && Math.random() < 0.25) {
+            addNews(`${p.name} se ha retirado del fútbol a los ${p.age} años.`, 'info');
+            return false;
+        }
+
+        return true;
+    });
+  
+    // ===== CANTERA =====
+    gameState.academy.forEach(p => {  
+        p.age++;  
+        p.matches = 0;  
+        p.form = 60 + Math.floor(Math.random() * 20);  
+        p.isInjured = false;  
+        p.weeksOut = 0;  
+    });  
+  
+    // Reestablecer alineación
+    const availablePlayers = gameState.squad
+        .filter(p => !p.isInjured)
+        .sort((a, b) => b.overall - a.overall);  
+
+    setLineup(availablePlayers.slice(0, 11));  
+}
+ 
   
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.team = teamName;
