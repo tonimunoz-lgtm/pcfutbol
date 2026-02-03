@@ -1046,10 +1046,15 @@ function simulateFullWeek() {
         gameState.week++;
         updateWeeklyFinancials();
         if (gameState.week > PRESEASON_WEEKS) {
-            gameState.seasonType = 'regular';
-            gameState.week = 1;
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
-        }
+    gameState.seasonType = 'regular';
+    gameState.week = 1;
+    addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+
+    // ✅ Generar calendario con alternancia local/visitante
+    gameState.seasonCalendar = generateSeasonCalendar(gameState.leagueTeams);
+    console.log('📅 Calendario generado con alternancia:', gameState.seasonCalendar);
+}
+
         return { myMatch: null, forcedLoss: false };
     }
 
@@ -1592,43 +1597,49 @@ function getAgeModifier(age) {
  * @param {Array<string>} teams - Array con los nombres de los equipos
  * @returns {Array<Array<{home: string, away: string}>>} - Array de jornadas con los partidos
  */
+// Genera todos los partidos de la temporada, alternando local/visitante
 function generateFullSeasonFixtures(teams) {
-    let teamList = teams.slice();
-    const isOdd = teamList.length % 2 !== 0;
-    if (isOdd) teamList.push('BYE'); // placeholder si número impar
+    const totalTeams = teams.length;
+    const rounds = totalTeams - 1; // Número de jornadas ida
+    const half = totalTeams / 2;
+    let fixtures = [];
 
-    const n = teamList.length;
-    const rounds = n - 1;
-    const half = n / 2;
-
-    const schedule = [];
-    const fixed = teamList[0];
-    let rotating = teamList.slice(1);
-
+    let rotatedTeams = teams.slice();
     for (let round = 0; round < rounds; round++) {
-        const pairings = [];
-        pairings.push({ home: fixed, away: rotating[0] });
-
-        for (let i = 1; i < half; i++) {
-            pairings.push({ home: rotating[i], away: rotating[n - 1 - i] });
+        let roundMatches = [];
+        for (let i = 0; i < half; i++) {
+            const home = (i === 0 && round % 2 === 0) ? rotatedTeams[0] : rotatedTeams[i];
+            const away = rotatedTeams[totalTeams - 1 - i];
+            roundMatches.push({ home, away });
         }
+        fixtures.push(roundMatches);
 
-        // Alternar local/visitante en rondas impares
-        if (round % 2 === 1) {
-            pairings.forEach(p => [p.home, p.away] = [p.away, p.home]);
-        }
-
-        // Filtrar BYE si existe
-        schedule.push(pairings.filter(p => p.home !== 'BYE' && p.away !== 'BYE'));
-
-        // Rotar equipos (excepto el primero)
-        rotating.unshift(rotating.pop());
+        // Rotación de equipos (excepto el primero)
+        rotatedTeams = [
+            rotatedTeams[0],
+            rotatedTeams[totalTeams - 1],
+            ...rotatedTeams.slice(1, totalTeams - 1)
+        ];
     }
 
-    // Segunda vuelta: invertir local/visitante
-    const secondHalf = schedule.map(round => round.map(p => ({ home: p.away, away: p.home })));
-    const fullSeason = [...schedule, ...secondHalf];
+    // Segunda vuelta invirtiendo local/visitante
+    const secondHalf = fixtures.map(round => round.map(m => ({ home: m.away, away: m.home })));
 
-    return fullSeason;
+    return [...fixtures, ...secondHalf];
 }
+
+// Devuelve el calendario completo con la semana asignada
+function generateSeasonCalendar(teams) {
+    const fullFixtures = generateFullSeasonFixtures(teams);
+
+    const seasonCalendar = [];
+    fullFixtures.forEach((round, idx) => {
+        round.forEach(match => {
+            seasonCalendar.push({ ...match, week: idx + 1 });
+        });
+    });
+
+    return seasonCalendar;
+}
+
 
