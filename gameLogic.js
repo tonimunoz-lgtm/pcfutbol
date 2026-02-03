@@ -775,74 +775,51 @@ function generateInjury(player) {
     return false;  
 }  
   
-function calculateMatchOutcome({
-    teamOverall,
-    opponentOverall,
-    mentality = 'balanced',
-    isHome = false,
-    teamForm = 70,
-    opponentForm = 70
-}) {
-    // 1️⃣ Fuerza base (PCF puro)
-    let teamPower = teamOverall * 0.6 + teamForm * 0.4;
-    let oppPower  = opponentOverall * 0.6 + opponentForm * 0.4;
+function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'balanced', isHome = true, teamForm = 75, opponentForm = 75 }) {
+    // Base de goles según nivel global y forma
+    let teamFactor = teamOverall / 100 * (teamForm / 100);
+    let opponentFactor = opponentOverall / 100 * (opponentForm / 100);
 
-    // 2️⃣ Localía
-    if (isHome) {
-        teamPower *= 1.08; // ventaja clásica PCF
+    // Ventaja de local
+    if (isHome) teamFactor *= 1.1;
+    else opponentFactor *= 1.1;
+
+    // Ajuste por mentalidad
+    switch (mentality) {
+        case 'offensive':
+            teamFactor *= 1.15;
+            opponentFactor *= 0.9;
+            break;
+        case 'defensive':
+            teamFactor *= 0.9;
+            opponentFactor *= 1.1;
+            break;
+        case 'balanced':
+        default:
+            // no hace nada
+            break;
     }
 
-    // 3️⃣ Mentalidad (simple y clara)
-    if (mentality === 'offensive') {
-        teamPower *= 1.12;
-        oppPower  *= 0.95;
-    } 
-    else if (mentality === 'defensive') {
-        teamPower *= 0.92;
-        oppPower  *= 1.05;
-    }
+    // Aleatoriedad estilo PC Fútbol
+    const randomModTeam = (Math.random() - 0.5) * 0.2; // ±10%
+    const randomModOpp = (Math.random() - 0.5) * 0.2;
 
-    // 4️⃣ Azar (sorpresas estilo PCF)
-    teamPower += (Math.random() - 0.5) * 12;
-    oppPower  += (Math.random() - 0.5) * 12;
+    teamFactor += randomModTeam;
+    opponentFactor += randomModOpp;
 
-    // 5️⃣ Diferencia final
-    const diff = teamPower - oppPower;
+    teamFactor = Math.max(0.1, teamFactor);
+    opponentFactor = Math.max(0.1, opponentFactor);
 
-    // 6️⃣ Base de goles
-    let teamGoals = 0;
-    let oppGoals  = 0;
-
-    if (diff > 15) {
-        teamGoals = 2 + Math.floor(Math.random() * 3); // 2-4
-        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
-    } 
-    else if (diff > 5) {
-        teamGoals = 1 + Math.floor(Math.random() * 2); // 1-2
-        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
-    }
-    else if (diff > -5) {
-        teamGoals = Math.floor(Math.random() * 2);     // 0-1
-        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
-    }
-    else if (diff > -15) {
-        teamGoals = Math.floor(Math.random() * 2);     // 0-1
-        oppGoals  = 1 + Math.floor(Math.random() * 2); // 1-2
-    }
-    else {
-        teamGoals = Math.floor(Math.random() * 2);     // 0-1
-        oppGoals  = 2 + Math.floor(Math.random() * 3); // 2-4
-    }
-
-    // 7️⃣ Seguridad: no negativos
-    teamGoals = Math.max(0, teamGoals);
-    oppGoals  = Math.max(0, oppGoals);
+    // Cálculo de goles aproximado
+    const teamGoals = Math.round(teamFactor * (Math.random() * 4 + 1)); // 1 a 5 goles base multiplicado
+    const opponentGoals = Math.round(opponentFactor * (Math.random() * 4 + 1));
 
     return {
-        teamGoals,
-        opponentGoals: oppGoals
+        teamGoals: Math.max(0, teamGoals),
+        opponentGoals: Math.max(0, opponentGoals)
     };
 }
+
 
   
 function playMatch(homeTeamName, awayTeamName) {  
