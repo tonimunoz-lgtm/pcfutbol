@@ -1583,3 +1583,52 @@ function getAgeModifier(age) {
     return -0.5;                      // Declive
 }
 
+// -------------------------------
+// GENERADOR DE CALENDARIO (Round-Robin)
+// -------------------------------
+
+/**
+ * Genera un calendario completo (ida y vuelta) para una liga con alternancia local/visitante.
+ * @param {Array<string>} teams - Array con los nombres de los equipos
+ * @returns {Array<Array<{home: string, away: string}>>} - Array de jornadas con los partidos
+ */
+function generateFullSeasonFixtures(teams) {
+    let teamList = teams.slice();
+    const isOdd = teamList.length % 2 !== 0;
+    if (isOdd) teamList.push('BYE'); // placeholder si número impar
+
+    const n = teamList.length;
+    const rounds = n - 1;
+    const half = n / 2;
+
+    const schedule = [];
+    const fixed = teamList[0];
+    let rotating = teamList.slice(1);
+
+    for (let round = 0; round < rounds; round++) {
+        const pairings = [];
+        pairings.push({ home: fixed, away: rotating[0] });
+
+        for (let i = 1; i < half; i++) {
+            pairings.push({ home: rotating[i], away: rotating[n - 1 - i] });
+        }
+
+        // Alternar local/visitante en rondas impares
+        if (round % 2 === 1) {
+            pairings.forEach(p => [p.home, p.away] = [p.away, p.home]);
+        }
+
+        // Filtrar BYE si existe
+        schedule.push(pairings.filter(p => p.home !== 'BYE' && p.away !== 'BYE'));
+
+        // Rotar equipos (excepto el primero)
+        rotating.unshift(rotating.pop());
+    }
+
+    // Segunda vuelta: invertir local/visitante
+    const secondHalf = schedule.map(round => round.map(p => ({ home: p.away, away: p.home })));
+    const fullSeason = [...schedule, ...secondHalf];
+
+    return fullSeason;
+}
+
