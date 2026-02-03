@@ -99,115 +99,52 @@ function initStandings(teamsArray) {
 }  
   
 // NEW: Función para generar el calendario de la liga (Round-robin)  
-function generateLeagueCalendar(teams) {
-    const numTeams = teams.length;
-    if (numTeams < 2) return [];
-
-    let tempTeams = [...teams];
-    if (numTeams % 2 !== 0) {
-        tempTeams.push("BYE");
-    }
-
-    const numActualTeams = tempTeams.length;
-    const numRounds = numActualTeams - 1;
-    
-    // Generar todos los emparejamientos de la primera vuelta
-    const firstHalfPairings = [];
-    
-    for (let round = 0; round < numRounds; round++) {
-        const roundPairings = [];
-        
-        for (let i = 0; i < numActualTeams / 2; i++) {
-            const team1 = tempTeams[i];
-            const team2 = tempTeams[numActualTeams - 1 - i];
-
-            if (team1 !== "BYE" && team2 !== "BYE") {
-                roundPairings.push([team1, team2]);
-            }
-        }
-        
-        firstHalfPairings.push(roundPairings);
-
-        // Rotar equipos (mantener el primero fijo)
-        const lastTeam = tempTeams.pop();
-        tempTeams.splice(1, 0, lastTeam);
-    }
-
-    // Crear el calendario final con alternancia local/visitante
-    const schedule = [];
-    let weekNumber = 1;
-
-    // Para cada equipo, rastrear si jugó de local o visitante en la última jornada
-    const lastVenue = {}; // true = local, false = visitante
-    teams.forEach(team => lastVenue[team] = null);
-
-    // Procesar cada jornada de la primera vuelta
-    for (let round = 0; round < firstHalfPairings.length; round++) {
-        const pairings = firstHalfPairings[round];
-        
-        pairings.forEach(([team1, team2]) => {
-            let home, away;
-            
-            // Decidir quién juega de local basándose en el último partido
-            if (lastVenue[team1] === null && lastVenue[team2] === null) {
-                // Primer partido de ambos equipos - asignar aleatoriamente
-                if (round % 2 === 0) {
-                    home = team1;
-                    away = team2;
-                } else {
-                    home = team2;
-                    away = team1;
-                }
-            } else if (lastVenue[team1] === true) {
-                // team1 jugó de local la última vez, ahora visitante
-                home = team2;
-                away = team1;
-            } else if (lastVenue[team2] === true) {
-                // team2 jugó de local la última vez, ahora visitante
-                home = team1;
-                away = team2;
-            } else if (lastVenue[team1] === false) {
-                // team1 jugó de visitante la última vez, ahora local
-                home = team1;
-                away = team2;
-            } else {
-                // team2 jugó de visitante la última vez, ahora local
-                home = team2;
-                away = team1;
-            }
-            
-            schedule.push({
-                home,
-                away,
-                week: weekNumber,
-                homeGoals: null,
-                awayGoals: null
-            });
-            
-            // Actualizar el registro de dónde jugó cada equipo
-            lastVenue[home] = true;
-            lastVenue[away] = false;
-        });
-        
-        weekNumber++;
-    }
-
-    // Segunda vuelta: invertir todos los partidos de la primera vuelta
-    const secondHalfStart = weekNumber;
-    
-    for (let i = 0; i < schedule.length; i++) {
-        const originalMatch = schedule[i];
-        schedule.push({
-            home: originalMatch.away,
-            away: originalMatch.home,
-            week: secondHalfStart + i,
-            homeGoals: null,
-            awayGoals: null
-        });
-    }
-
-    return schedule;
-}
+function generateLeagueCalendar(teams) {  
+    const numTeams = teams.length;  
+    if (numTeams < 2) return [];  
+  
+    let schedule = [];  
+    let tempTeams = [...teams];  
+  
+    // Si el número de equipos es impar, añade un "BYE" para la rotación  
+    if (numTeams % 2 !== 0) {  
+        tempTeams.push("BYE");  
+    }  
+    const numActualTeams = tempTeams.length;  
+    const numRounds = numActualTeams - 1; // Cada equipo juega una vez contra todos  
+  
+    // Primera vuelta (ida)  
+    for (let round = 0; round < numRounds; round++) {  
+        for (let i = 0; i < numActualTeams / 2; i++) {  
+            const homeTeam = tempTeams[i];  
+            const awayTeam = tempTeams[numActualTeams - 1 - i];  
+  
+            if (homeTeam !== "BYE" && awayTeam !== "BYE") {  
+                schedule.push({ home: homeTeam, away: awayTeam, week: round + 1, homeGoals: null, awayGoals: null });  
+            }  
+        }  
+  
+        // Rotar los equipos (mantener el primer equipo fijo)  
+        const lastTeam = tempTeams.pop();  
+        tempTeams.splice(1, 0, lastTeam);  
+    }  
+  
+    // Segunda vuelta (vuelta)  
+    // Crear una nueva lista de partidos para la segunda vuelta, invirtiendo local/visitante  
+    const secondHalfSchedule = schedule.map(match => ({  
+        home: match.away,  
+        away: match.home,  
+        week: match.week + numRounds, // Sumar numRounds para que las semanas sean consecutivas  
+        homeGoals: null,  
+        awayGoals: null  
+    }));  
+  
+    // Combinar y ordenar por semana  
+    const fullSchedule = [...schedule, ...secondHalfSchedule];  
+    fullSchedule.sort((a, b) => a.week - b.week); // Ordenar por semana  
+  
+    return fullSchedule;  
+}  
   
   
 function generateInitialSquad() {  
@@ -1424,7 +1361,7 @@ function setLineup(newLineup) {
                                 .sort((a,b) => b.overall - a.overall)  
                                 .slice(0, 11 - newLineup.length);  
               
-        gameState.lineup = [...newLineUp, ...playersToFill];  
+        gameState.lineup = [...newLineup, ...playersToFill];  
         // Asegurarse de que no hay más de 11 después de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
