@@ -60,13 +60,14 @@
     // 3️⃣ Actualizar badges en DOM
     // ============================
     function refreshBadges() {
-        // Todos los elementos con atributo data-player (alineación, suplentes, plantilla, mercado)
+        // Se asume que cada jugador tiene dataset.player con su JSON
         document.querySelectorAll('[data-player]').forEach(el => {
             try {
                 const p = JSON.parse(el.dataset.player);
 
                 window.applyPlayerStatusClasses(el, p);
 
+                // Evitar duplicar badges
                 if (!el.querySelector('.player-status-indicator')) {
                     el.innerHTML += window.renderPlayerStatusBadges(p);
                 }
@@ -82,7 +83,7 @@
     }
 
     // ============================
-    // 4️⃣ Auto‑detectar cambios
+    // 4️⃣ Auto‑detectar cambios y re-render
     // ============================
     function boot() {
         patchDrag();
@@ -92,7 +93,6 @@
     const observer = new MutationObserver(boot);
     observer.observe(document.documentElement, { childList: true, subtree: true });
 
-    // primer arranque
     window.addEventListener('DOMContentLoaded', boot);
 
 })();
