@@ -29,12 +29,22 @@ window.loginUser = async function(email, password) {
             email: email,
             uid: 'admin-local-uid',
             role: 'admin',
-            name: 'Antonio (Admin)'
+            name: 'Tonaco92 (Admin)'
         };
         
         window.currentUser = adminUser;
         window.currentUserId = adminUser.uid;
         localStorage.setItem('currentUser', JSON.stringify(adminUser));
+
+         // 🔥 HABILITAR BOTÓN DE GUARDAR MANUALMENTE
+    setTimeout(() => {
+        const saveBtn = document.querySelector('button[onclick="window.saveCurrentGame()"]');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            console.log('✅ Botón de guardar habilitado para admin');
+        }
+    }, 500);
         
         return { success: true, user: adminUser };
     }
