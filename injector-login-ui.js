@@ -280,38 +280,45 @@ window.handleLogin = async function() {
 };
 
     // Manejar registro
-    window.handleRegister = function() {
-        const name = document.getElementById('registerName').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const password = document.getElementById('registerPassword').value;
-        const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-        const messageDiv = document.getElementById('loginMessage');
+    window.handleRegister = async function() {
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    const messageDiv = document.getElementById('loginMessage');
 
-        if (!name || !email || !password || !passwordConfirm) {
-            messageDiv.style.display = 'block';
-            messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = '❌ Por favor, completa todos los campos';
-            return;
-        }
+    if (!name || !email || !password || !passwordConfirm) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = '❌ Por favor, completa todos los campos';
+        return;
+    }
 
-        if (password !== passwordConfirm) {
-            messageDiv.style.display = 'block';
-            messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = '❌ Las contraseñas no coinciden';
-            return;
-        }
+    if (password !== passwordConfirm) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = '❌ Las contraseñas no coinciden';
+        return;
+    }
 
-        if (password.length < 6) {
-            messageDiv.style.display = 'block';
-            messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = '❌ La contraseña debe tener al menos 6 caracteres';
-            return;
-        }
+    if (password.length < 6) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = '❌ La contraseña debe tener al menos 6 caracteres';
+        return;
+    }
 
-        const result = window.registerUser(email, password, name);
+    // Mostrar mensaje de "Registrando..."
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = 'rgba(255, 255, 0, 0.2)';
+    messageDiv.style.color = 'yellow';
+    messageDiv.textContent = '⏳ Registrando usuario...';
+
+    try {
+        const result = await window.registerUser(email, password, name); // ← AWAIT aquí
         
         if (result.success) {
             messageDiv.style.display = 'block';
@@ -334,7 +341,14 @@ window.handleLogin = async function() {
             messageDiv.style.color = 'red';
             messageDiv.textContent = '❌ ' + result.message;
         }
-    };
+    } catch (error) {
+        console.error('❌ Error en handleRegister:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = '❌ Error: ' + error.message;
+    }
+};
 
     // Añadir botones de usuario al header
     function addUserButtons(user) {
