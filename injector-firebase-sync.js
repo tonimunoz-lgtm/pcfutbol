@@ -24,10 +24,12 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
     async function getTeamDataFromFirebaseSafe(teamName) {  
         const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;  
         if (!isFirebaseEnabled || !window.firebaseDB) {  
+            console.log(`⚠️ Firebase no disponible para cargar datos de ${teamName}.`);  
             return { success: false, data: null };  
         }  
         try {  
-            // Esperar a que la autenticación esté lista  
+            // Esperar a que la autenticación esté lista. Esto es importante para que Firebase Auth  
+            // esté completamente inicializado y no bloquee otras operaciones.  
             if (window.authReadyPromise) {  
                 await window.authReadyPromise;  
             }  
@@ -36,13 +38,13 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
                 return result;  
             }  
             // Si no hay datos en Firebase, inicializar con defaultTeamData para ese equipo  
-            if (!result.data) {  
+            if (!result.data) { // Si result.data es null o undefined  
                 console.log(`📝 Inicializando datos por defecto para ${teamName}`);  
                 const teamSpecificDefault = getDefaultTeamDataForTeam(teamName); // Usar esta función  
                 await window.saveTeamDataToFirebase(teamName, teamSpecificDefault);  
                 return { success: true, data: teamSpecificDefault };  
             }  
-            return { success: false, data: null };  
+            return { success: false, data: null }; // Esto puede ser redundante si result.data es null y se inicializa  
         } catch (error) {  
             console.error('❌ Error accediendo a Firebase para equipo:', error);  
             return { success: false, data: null };  
@@ -77,7 +79,6 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
         }  
   
         // Si no hay datos en ningún sitio (Firebase ni localStorage), usar defaults  
-        // Aquí estaba el SyntaxError, estas líneas estaban sueltas.  
         console.log(`⚠️ No hay datos para ${teamName}, usando valores por defecto.`);  
         const teamSpecificDefault = getDefaultTeamDataForTeam(teamName); // Usar esta función  
         localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamSpecificDefault));  
@@ -118,13 +119,13 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
         }  
         return { success: true, message: 'Guardado en localStorage (Firebase deshabilitado)' };  
     };  
-      
+        
     // Global function to get all team data (used by admin panel export)  
     window.getAllTeamsData = async function() {  
         const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;  
         if (isFirebaseEnabled && window.firebaseDB) {  
             try {  
-                await window.authReadyPromise;  
+                await window.authReadyPromise; // Esperar autenticación  
                 const result = await window.getAllTeamsDataFromFirebase();  
                 if (result.success) {  
                     return result.data;  
@@ -179,23 +180,14 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
     }  
   
     // =============================  
-    // AUTENTICACIÓN Y LISTENERS  
-    // =============================  
-    const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;  
-    if (isFirebaseEnabled && window.firebaseAuth) {  
-        // Este onAuthStateChanged ya está en firebase-config.js.  
-        // Es mejor dejar que firebase-config.js maneje el estado de currentUserId y authReady  
-        // y este injector solo reaccione a ello si es necesario,  
-        // o que firebase-config.js llame a preloadTeamsFromFirebase.  
-        // He eliminado el listener duplicado aquí para evitar efectos secundarios.  
-        // preloadTeamsFromFirebase ahora se llamará desde firebase-config.js  
-    } else if (isFirebaseEnabled) {  
-        console.warn('⚠️ window.firebaseAuth no disponible en injector-firebase-sync');  
-    }  
-  
-    // =============================  
     // INICIALIZACIÓN  
     // =============================  
+    // Llamar a preloadTeamsFromFirebase al inicio (fuera del DOMContentLoaded para que no espere al DOM)  
+    // o puedes llamarlo cuando necesites que los equipos estén listos.  
+    // Dependiendo de tu flujo de inicio, esto podría estar en gameLogic o en la carga inicial de Firebase.  
+    // Dejo la llamada comentada para que decidas dónde encaja mejor en tu flujo general.  
+    // preloadTeamsFromFirebase();  
+  
     window.addEventListener('DOMContentLoaded', () => {  
         // El estado del botón de guardar es gestionado por firebase-config.js  
         // cuando onAuthStateChanged se dispara.  
