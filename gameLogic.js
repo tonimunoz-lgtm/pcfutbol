@@ -1317,7 +1317,7 @@ function setLineup(newLineup) {
     if (newLineup.length > 11) {  
         // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
         console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
-        newLineUp = newLineup.slice(0, 11);  
+        newLineup = newLineup.slice(0, 11);  
     }  
           
     // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
