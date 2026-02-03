@@ -1,7 +1,7 @@
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
   
 // Configuración directa de Firebase  
 const firebaseConfig = {  
@@ -61,7 +61,7 @@ if (firebaseConfig.enabled) {
                 currentUserId = user.uid;  
                 window.currentUserId = user.uid;  
                 authReady = true;  
-                console.log('✅ Usuario autenticado con UID:', user.uid);  
+                console.log('✅ Usuario autenticado con UID:', user.uid, 'Email:', user.email || 'sin email'); 
                 // Resolver la promesa de autenticación lista  
                 if (resolveAuthReady) { // Asegurarse de que resolveAuthReady ha sido asignado  
                    resolveAuthReady(user.uid);  
