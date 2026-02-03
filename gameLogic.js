@@ -1006,7 +1006,7 @@ function endSeason() {
 }  
   
 function simulateFullWeek() {  
-    let myMatchResult = null; // Para almacenar el resultado de nuestro partido  
+    let myMatchResult = null;
     let forcedLoss = false;  
   
     if (gameState.seasonType === 'preseason') {  
@@ -1018,14 +1018,15 @@ function simulateFullWeek() {
             gameState.week = 1;  
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
         }  
-        return { myMatch: null, forcedLoss: false }; // En pretemporada no hay resultados de liga  
+        return { myMatch: null, forcedLoss: false };
     }  
   
-    // Guardar el estado de la alineación ANTES de la simulación de partidos  
+    // Validar alineación ANTES de simular
     const preSimLineupValidation = validateLineup(gameState.lineup);  
   
     applyWeeklyTraining();  
   
+    // Reducir lesiones
     gameState.squad.forEach(p => {  
         if (p.isInjured) {  
             p.weeksOut--;  
@@ -1035,7 +1036,8 @@ function simulateFullWeek() {
                 addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
             }  
         }  
-    });  
+    });
+    
     gameState.academy.forEach(y => {  
         if (y.isInjured) {  
             y.weeksOut--;  
@@ -1047,56 +1049,58 @@ function simulateFullWeek() {
         }  
     });  
   
-    secondCoachAdvice(); // Las advertencias del segundo entrenador se añaden al newsFeed, pero no bloquean la simulación aquí  
+    secondCoachAdvice();
   
     if (gameState.week % 4 === 0) {  
         boardMessages();  
     }  
         
-    // Obtener los partidos de la jornada actual de nuestro calendario  
-    // Corrección: Filtrar directamente del seasonCalendar (que ya es un array plano de partidos)  
+    // Obtener partidos de la jornada actual
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
+    
+    console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
   
-    // Simular el partido de nuestro equipo primero  
-    let myTeamMatch = currentWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);  
+    // Encontrar partido de nuestro equipo
+    let myTeamMatch = currentWeekMatches.find(match => 
+        match.home === gameState.team || match.away === gameState.team
+    );  
   
+    // ===== SIMULAR PARTIDO DE NUESTRO EQUIPO =====
     if (myTeamMatch) {  
-        if (!preSimLineupValidation.success) { // Si la alineación era inválida, forzar derrota 0-3  
+        if (!preSimLineupValidation.success) {
+            // Alineación inválida = derrota 0-3
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
                 
             let homeGoals = 0;  
             let awayGoals = 0;  
   
             if (myTeamMatch.home === gameState.team) {  
-                awayGoals = 3; // Nosotros somos locales, el rival gana 0-3  
+                awayGoals = 3;
             } else {  
-                homeGoals = 3; // Nosotros somos visitantes, el rival gana 3-0  
+                homeGoals = 3;
             }  
   
-            // Actualizar manualmente las estadísticas de la liga para nuestro equipo y el oponente  
-            const ourStats = gameState.standings[gameState.team];  
-            const opponentName = (myTeamMatch.home === gameState.team) ? myTeamMatch.away : myTeamMatch.home;  
-            const opponentStats = gameState.standings[opponentName];  
-  
-            if(ourStats) {  
-                ourStats.pj++;  
-                ourStats.p++;  
-                ourStats.gf += (myTeamMatch.home === gameState.team ? 0 : 3); // Si somos locales, metemos 0; si visitantes, metemos 0 y el rival 3  
-                ourStats.gc += (myTeamMatch.home === gameState.team ? 3 : 0); // Si somos locales, encajamos 3; si visitantes, encajamos 3 y el rival 0  
-            }  
-            if(opponentStats) {  
-                opponentStats.pj++;  
-                opponentStats.g++;  
-                opponentStats.gf += (myTeamMatch.home === gameState.team ? 3 : 0); // Si somos locales, rival mete 3; si visitantes, rival mete 3  
-                opponentStats.gc += (myTeamMatch.home === gameState.team ? 0 : 3); // Si somos locales, rival encaja 0; si visitantes, rival encaja 0  
-                opponentStats.pts += 3;  
-            }  
+            // Actualizar standings manualmente
+            const updateStats = (team, gf, gc) => {
+                const s = gameState.standings[team];
+                if (s) {
+                    s.pj++;
+                    s.gf += gf;
+                    s.gc += gc;
+                    if (gf > gc) { s.g++; s.pts += 3; }
+                    else if (gf === gc) { s.e++; s.pts += 1; }
+                    else s.p++;
+                }
+            };
+            
+            updateStats(myTeamMatch.home, homeGoals, awayGoals);
+            updateStats(myTeamMatch.away, awayGoals, homeGoals);
                 
             gameState.matchHistory.push({  
                 week: gameState.week,  
                 home: myTeamMatch.home,  
                 away: myTeamMatch.away,  
-                score: `${homeGoals}-${awayGoals}` // Usar los goles forzados para el historial  
+                score: `${homeGoals}-${awayGoals}`
             });  
                 
             myMatchResult = {  
@@ -1108,41 +1112,69 @@ function simulateFullWeek() {
             };  
             forcedLoss = true;  
   
-            gameState.popularity = Math.max(0, gameState.popularity - 5); // Penalización por alineación indebida  
+            gameState.popularity = Math.max(0, gameState.popularity - 5);
             gameState.fanbase = Math.max(0, gameState.fanbase - 500);  
   
-        } else { // Si la alineación es válida, jugar el partido normalmente  
-            const result = playMatch(myTeamMatch.home, myTeamMatch.away);  
+        } else {
+            // Alineación válida - simular normalmente
+            const result = playMatch(myTeamMatch.home, myTeamMatch.away);
             myMatchResult = {  
                 home: result.homeTeam,  
                 away: result.awayTeam,  
                 homeGoals: result.homeGoals,  
                 awayGoals: result.awayGoals,  
                 score: `${result.homeGoals}-${result.awayGoals}`,  
-            };  
+            };
+            
+            // Añadir al historial (playMatch ya actualiza standings)
+            gameState.matchHistory.push({  
+                week: gameState.week,  
+                home: result.homeTeam,  
+                away: result.awayTeam,  
+                score: `${result.homeGoals}-${result.awayGoals}`
+            });
         }  
     }  
   
-  
-    // Simular el resto de partidos de la jornada  
-    currentWeekMatches.filter(match => match !== myTeamMatch).forEach(match => {  
-        // Solo jugar partidos que no hayan sido ya jugados por nuestro equipo  
-        const alreadyPlayed = gameState.matchHistory.some(mh =>  
-            mh.week === gameState.week &&  
-            ((mh.home === match.home && mh.away === match.away) || (mh.home === match.away && mh.away === match.home))  
-        );  
-        if (!alreadyPlayed) {  
-            playMatch(match.home, match.away);  
-        }  
-    });  
+    // ===== SIMULAR RESTO DE PARTIDOS DE LA JORNADA =====
+    currentWeekMatches
+        .filter(match => match !== myTeamMatch)
+        .forEach(match => {  
+            // Verificar si ya se jugó
+            const alreadyPlayed = gameState.matchHistory.some(mh =>  
+                mh.week === gameState.week &&  
+                mh.home === match.home && 
+                mh.away === match.away
+            );
+            
+            if (!alreadyPlayed) {  
+                const result = playMatch(match.home, match.away);
+                
+                // ⚠️ IMPORTANTE: Añadir al historial
+                gameState.matchHistory.push({  
+                    week: gameState.week,  
+                    home: result.homeTeam,  
+                    away: result.awayTeam,  
+                    score: `${result.homeGoals}-${result.awayGoals}`
+                });
+                
+                console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
+            }  
+        });
+    
+    console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
   
     gameState.week++;  
     updateWeeklyFinancials();  
   
-    if (gameState.staff.segundoEntrenador && (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && gameState.balance < 0) {  
+    // Mensajes de crisis económica
+    if (gameState.staff.segundoEntrenador && 
+        (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
+        gameState.balance < 0) {  
         addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
     }  
   
+    // Game Over por quiebra
     if (gameState.balance < -100000 && gameState.week > 10) {  
         addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
         alert("¡GAME OVER! Has sido despedido por la directiva.");  
@@ -1150,14 +1182,13 @@ function simulateFullWeek() {
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
     }  
   
-    // Usar gameState.maxSeasonWeeks en lugar de SEASON_WEEKS  
+    // Fin de temporada
     if (gameState.week > gameState.maxSeasonWeeks) {  
         endSeason();  
     }  
         
-    // NEW: Devolver el resultado de nuestro partido  
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
-}  
+}
   
 function handlePreseasonWeek() {  
     addNews(`Semana ${gameState.week} de pretemporada.`, 'system');  
