@@ -708,25 +708,25 @@
             ev.currentTarget.classList.remove('highlight');
         };
 
-         window.openModal = function(type) {      
-            if (type === 'gameMode') {      
-                document.getElementById('gameModeModal').classList.add('active');      
-            } else if (type === 'selectTeam') {      
-                document.getElementById('selectTeamModal').classList.add('active');      
-                window.renderTeamSelectors();      
-            } else if (type === 'signYoungster') {      
-                document.getElementById('signYoungsterModal').classList.add('active');      
-                window.renderAvailableYoungsters();      
-            } else if (type === 'negotiation') {      
-                document.getElementById('negotiationModal').classList.add('active');      
-            } else if (type === 'training') {      
-                document.getElementById('trainingModal').classList.add('active');      
-            } else if (type === 'hireStaff') {      
-                document.getElementById('hireStaffModal').classList.add('active');      
-            } else if (type === 'matchResult') {      
-                document.getElementById('matchResultModal').classList.add('active');      
-            }      
-        };      
+        window.openModal = function(type) {        
+    if (type === 'gameMode') {        
+        document.getElementById('gameModeModal').classList.add('active');        
+    } else if (type === 'selectTeam') {        
+        document.getElementById('selectTeamModal').classList.add('active');        
+        window.renderTeamSelectors(); // <-- ¡Asegúrate de que esta línea esté aquí!  
+    } else if (type === 'signYoungster') {        
+        document.getElementById('signYoungsterModal').classList.add('active');        
+        window.renderAvailableYoungsters();        
+    } else if (type === 'negotiation') {        
+        document.getElementById('negotiationModal').classList.add('active');        
+    } else if (type === 'training') {        
+        document.getElementById('trainingModal').classList.add('active');        
+    } else if (type === 'hireStaff') {        
+        document.getElementById('hireStaffModal').classList.add('active');        
+    } else if (type === 'matchResult') {        
+        document.getElementById('matchResultModal').classList.add('active');        
+    }        
+};
       
         window.closeModal = function(type) {      
             document.getElementById(type + 'Modal').classList.remove('active');      
@@ -1530,16 +1530,7 @@ window.selectTeamAndStart = function(teamName, division) {
             document.getElementById(type + 'Modal').classList.add('active');
         };
 
-        window.closeModal = function(type) {
-            document.getElementById(type + 'Modal').classList.remove('active');
-        };
-
-        window.startGameMode = function(mode) {
-            window.gameMode = mode;
-            window.closeModal('gameMode');
-            window.openModal('selectTeam');
-        };
-
+       
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', () => {
