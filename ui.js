@@ -17,31 +17,25 @@ function getTeamLogo(teamName, size = '25px') {
 }
 
 function renderStandingsTable(state) {
-    const standingsDiv = document.getElementById('standingsTable');
-    if (!standingsDiv) return;
+    const tbody = document.getElementById('standingsBody');
+    if (!tbody) return;
 
-    // ✅ Validación: verificar que standings exista
+    // Validación: standings válido
     if (!state.standings || Object.keys(state.standings).length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500">No hay clasificación disponible</td></tr>';
         return;
     }
 
-    // ✅ Filtrar equipos con datos inválidos
+    // Filtrar equipos válidos
     const validStandings = Object.entries(state.standings)
-        .filter(([team, stats]) => {
-            if (!stats || stats.pts === undefined) {
-                console.warn(`⚠️ Equipo ${team} tiene datos inválidos en standings:`, stats);
-                return false;
-            }
-            return true;
-        });
+        .filter(([team, stats]) => stats && stats.pts !== undefined);
 
     if (validStandings.length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500">Clasificación no disponible</td></tr>';
         return;
     }
 
-    // Ordenar por puntos, diferencia de goles, goles a favor
+    // Ordenar por puntos, DG y GF
     const sorted = validStandings.sort((a, b) => {
         const ptsA = a[1].pts || 0;
         const ptsB = b[1].pts || 0;
@@ -54,31 +48,11 @@ function renderStandingsTable(state) {
         return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
-    // Generar HTML de la tabla
-    let html = `
-        <table class="standings-table">
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Equipo</th>
-                    <th>PJ</th>
-                    <th>G</th>
-                    <th>E</th>
-                    <th>P</th>
-                    <th>GF</th>
-                    <th>GC</th>
-                    <th>DG</th>
-                    <th>Pts</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    sorted.forEach(([team, stats], index) => {
+    // Generar filas
+    const rowsHtml = sorted.map(([team, stats], index) => {
         const isMyTeam = team === state.team;
-        const rowClass = isMyTeam ? 'my-team-row' : '';
 
-        // Obtener logo del equipo
+        // Logo del equipo
         let teamLogo = '';
         const storedData = localStorage.getItem(`team_data_${team}`);
         if (storedData) {
@@ -88,8 +62,8 @@ function renderStandingsTable(state) {
             }
         }
 
-        html += `
-            <tr class="${rowClass}">
+        return `
+            <tr class="${isMyTeam ? 'my-team-row' : ''}">
                 <td>${index + 1}</td>
                 <td class="team-name">${teamLogo}${team}</td>
                 <td>${stats.pj || 0}</td>
@@ -102,14 +76,9 @@ function renderStandingsTable(state) {
                 <td><strong>${stats.pts || 0}</strong></td>
             </tr>
         `;
-    });
+    }).join('');
 
-    html += `
-            </tbody>
-        </table>
-    `;
-
-    standingsDiv.innerHTML = html;
+    tbody.innerHTML = rowsHtml;
 }
 
 
