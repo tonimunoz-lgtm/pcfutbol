@@ -775,29 +775,75 @@ function generateInjury(player) {
     return false;  
 }  
   
-function calculateMatchOutcome(teamOverall, opponentOverall, mentality) {  
-    let teamFactor = teamOverall / 100;  
-    let opponentFactor = opponentOverall / 100;  
-  
-    if (mentality === 'offensive') {  
-        teamFactor *= 1.1;  
-        opponentFactor *= 0.9;  
-    } else if (mentality === 'defensive') {  
-        teamFactor *= 0.9;  
-        opponentFactor *= 1.1;  
-    }  
-  
-    teamFactor += (Math.random() - 0.5) * 0.2;  
-    opponentFactor += (Math.random() - 0.5) * 0.2;  
-  
-    teamFactor = Math.max(0.1, teamFactor);  
-    opponentFactor = Math.max(0.1, opponentFactor);  
-  
-    const teamGoals = Math.round(teamFactor * (Math.random() * 3 + 1));  
-    const opponentGoals = Math.round(opponentFactor * (Math.random() * 3 + 1));  
-  
-    return { teamGoals: Math.max(0, teamGoals), opponentGoals: Math.max(0, opponentGoals) };  
-}  
+function calculateMatchOutcome({
+    teamOverall,
+    opponentOverall,
+    mentality = 'balanced',
+    isHome = false,
+    teamForm = 70,
+    opponentForm = 70
+}) {
+    // 1️⃣ Fuerza base (PCF puro)
+    let teamPower = teamOverall * 0.6 + teamForm * 0.4;
+    let oppPower  = opponentOverall * 0.6 + opponentForm * 0.4;
+
+    // 2️⃣ Localía
+    if (isHome) {
+        teamPower *= 1.08; // ventaja clásica PCF
+    }
+
+    // 3️⃣ Mentalidad (simple y clara)
+    if (mentality === 'offensive') {
+        teamPower *= 1.12;
+        oppPower  *= 0.95;
+    } 
+    else if (mentality === 'defensive') {
+        teamPower *= 0.92;
+        oppPower  *= 1.05;
+    }
+
+    // 4️⃣ Azar (sorpresas estilo PCF)
+    teamPower += (Math.random() - 0.5) * 12;
+    oppPower  += (Math.random() - 0.5) * 12;
+
+    // 5️⃣ Diferencia final
+    const diff = teamPower - oppPower;
+
+    // 6️⃣ Base de goles
+    let teamGoals = 0;
+    let oppGoals  = 0;
+
+    if (diff > 15) {
+        teamGoals = 2 + Math.floor(Math.random() * 3); // 2-4
+        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
+    } 
+    else if (diff > 5) {
+        teamGoals = 1 + Math.floor(Math.random() * 2); // 1-2
+        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
+    }
+    else if (diff > -5) {
+        teamGoals = Math.floor(Math.random() * 2);     // 0-1
+        oppGoals  = Math.floor(Math.random() * 2);     // 0-1
+    }
+    else if (diff > -15) {
+        teamGoals = Math.floor(Math.random() * 2);     // 0-1
+        oppGoals  = 1 + Math.floor(Math.random() * 2); // 1-2
+    }
+    else {
+        teamGoals = Math.floor(Math.random() * 2);     // 0-1
+        oppGoals  = 2 + Math.floor(Math.random() * 3); // 2-4
+    }
+
+    // 7️⃣ Seguridad: no negativos
+    teamGoals = Math.max(0, teamGoals);
+    oppGoals  = Math.max(0, oppGoals);
+
+    return {
+        teamGoals,
+        opponentGoals: oppGoals
+    };
+}
+
   
 function playMatch(homeTeamName, awayTeamName) {  
     let homeTeamOverall = 70 + Math.floor(Math.random() * 20);  
