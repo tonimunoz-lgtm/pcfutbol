@@ -109,82 +109,104 @@ function generateLeagueCalendar(teams) {
     }
 
     const numActualTeams = tempTeams.length;
-    const numRoundsPerHalf = numActualTeams - 1;
-    const allMatches = [];
-
-    // Generar primera vuelta completa
-    for (let round = 0; round < numRoundsPerHalf; round++) {
-        const roundMatches = [];
+    const numRounds = numActualTeams - 1;
+    
+    // Generar todos los emparejamientos de la primera vuelta
+    const firstHalfPairings = [];
+    
+    for (let round = 0; round < numRounds; round++) {
+        const roundPairings = [];
         
         for (let i = 0; i < numActualTeams / 2; i++) {
-            const homeTeam = tempTeams[i];
-            const awayTeam = tempTeams[numActualTeams - 1 - i];
+            const team1 = tempTeams[i];
+            const team2 = tempTeams[numActualTeams - 1 - i];
 
-            if (homeTeam !== "BYE" && awayTeam !== "BYE") {
-                roundMatches.push({ home: homeTeam, away: awayTeam });
+            if (team1 !== "BYE" && team2 !== "BYE") {
+                roundPairings.push([team1, team2]);
             }
         }
+        
+        firstHalfPairings.push(roundPairings);
 
-        allMatches.push(roundMatches);
-
-        // Rotar equipos
+        // Rotar equipos (mantener el primero fijo)
         const lastTeam = tempTeams.pop();
         tempTeams.splice(1, 0, lastTeam);
     }
 
-    // Crear calendario final alternando local/visitante
-    const finalSchedule = [];
-    let weekCounter = 1;
+    // Crear el calendario final con alternancia local/visitante
+    const schedule = [];
+    let weekNumber = 1;
 
-    for (let i = 0; i < allMatches.length; i++) {
-        const roundMatches = allMatches[i];
+    // Para cada equipo, rastrear si jugó de local o visitante en la última jornada
+    const lastVenue = {}; // true = local, false = visitante
+    teams.forEach(team => lastVenue[team] = null);
+
+    // Procesar cada jornada de la primera vuelta
+    for (let round = 0; round < firstHalfPairings.length; round++) {
+        const pairings = firstHalfPairings[round];
         
-        // Añadir partidos de ida
-        roundMatches.forEach(match => {
-            finalSchedule.push({
-                ...match,
-                week: weekCounter,
+        pairings.forEach(([team1, team2]) => {
+            let home, away;
+            
+            // Decidir quién juega de local basándose en el último partido
+            if (lastVenue[team1] === null && lastVenue[team2] === null) {
+                // Primer partido de ambos equipos - asignar aleatoriamente
+                if (round % 2 === 0) {
+                    home = team1;
+                    away = team2;
+                } else {
+                    home = team2;
+                    away = team1;
+                }
+            } else if (lastVenue[team1] === true) {
+                // team1 jugó de local la última vez, ahora visitante
+                home = team2;
+                away = team1;
+            } else if (lastVenue[team2] === true) {
+                // team2 jugó de local la última vez, ahora visitante
+                home = team1;
+                away = team2;
+            } else if (lastVenue[team1] === false) {
+                // team1 jugó de visitante la última vez, ahora local
+                home = team1;
+                away = team2;
+            } else {
+                // team2 jugó de visitante la última vez, ahora local
+                home = team2;
+                away = team1;
+            }
+            
+            schedule.push({
+                home,
+                away,
+                week: weekNumber,
                 homeGoals: null,
                 awayGoals: null
             });
+            
+            // Actualizar el registro de dónde jugó cada equipo
+            lastVenue[home] = true;
+            lastVenue[away] = false;
         });
-        weekCounter++;
-
-        // Cada 2 jornadas, insertar partidos de vuelta
-        if ((i + 1) % 2 === 0 && allMatches[i - 1]) {
-            const prevRoundMatches = allMatches[i - 1];
-            prevRoundMatches.forEach(match => {
-                finalSchedule.push({
-                    home: match.away,
-                    away: match.home,
-                    week: weekCounter,
-                    homeGoals: null,
-                    awayGoals: null
-                });
-            });
-            weekCounter++;
-        }
+        
+        weekNumber++;
     }
 
-    // Añadir partidos de vuelta restantes
-    allMatches.forEach(roundMatches => {
-        roundMatches.forEach(match => {
-            if (!finalSchedule.some(m => 
-                m.home === match.away && m.away === match.home
-            )) {
-                finalSchedule.push({
-                    home: match.away,
-                    away: match.home,
-                    week: weekCounter,
-                    homeGoals: null,
-                    awayGoals: null
-                });
-            }
+    // Segunda vuelta: invertir todos los partidos de la primera vuelta
+    const secondHalfStart = weekNumber;
+    
+    for (let i = 0; i < schedule.length; i++) {
+        const originalMatch = schedule[i];
+        schedule.push({
+            home: originalMatch.away,
+            away: originalMatch.home,
+            week: secondHalfStart + i,
+            homeGoals: null,
+            awayGoals: null
         });
-        weekCounter++;
-    });
+    }
 
-    return finalSchedule.sort((a, b) => a.week - b.week);
+    return schedule;
 }
   
   
