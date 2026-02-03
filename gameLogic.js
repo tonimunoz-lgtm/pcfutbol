@@ -989,109 +989,82 @@ function endSeason() {
     setupNewSeason(currentDivision, nextDivisionKey);  
 }  
   
-function simulateFullWeek() {
-    let myMatchResult = null; 
-    let forcedLoss = false;
-
-    if (gameState.seasonType === 'preseason') {
-        handlePreseasonWeek();
-        gameState.week++;
-        updateWeeklyFinancials();
-        if (gameState.week > PRESEASON_WEEKS) {
-            gameState.seasonType = 'regular';
-            gameState.week = 1;
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
-        }
+function simulateFullWeek() {  
+    let myMatchResult = null;
+    let forcedLoss = false;  
+  
+    if (gameState.seasonType === 'preseason') {  
+        handlePreseasonWeek();  
+        gameState.week++;  
+        updateWeeklyFinancials();  
+        if (gameState.week > PRESEASON_WEEKS) {  
+            gameState.seasonType = 'regular';  
+            gameState.week = 1;  
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
+        }  
         return { myMatch: null, forcedLoss: false };
-    }
-
-    // Validar alineación antes de simular
-    const preSimLineupValidation = validateLineup(gameState.lineup);
-
-    applyWeeklyTraining();
-
-    // Reducir semanas de lesión
-    gameState.squad.forEach(p => {
-        if (p.isInjured) {
-            p.weeksOut--;
-            if (p.weeksOut <= 0) {
-                p.isInjured = false;
-                p.weeksOut = 0;
-                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');
-            }
-        }
+    }  
+  
+    // Validar alineación ANTES de simular
+    const preSimLineupValidation = validateLineup(gameState.lineup);  
+  
+    applyWeeklyTraining();  
+  
+    // Reducir lesiones
+    gameState.squad.forEach(p => {  
+        if (p.isInjured) {  
+            p.weeksOut--;  
+            if (p.weeksOut <= 0) {  
+                p.isInjured = false;  
+                p.weeksOut = 0;  
+                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
+            }  
+        }  
     });
-
-    gameState.academy.forEach(y => {
-        if (y.isInjured) {
-            y.weeksOut--;
-            if (y.weeksOut <= 0) {
-                y.isInjured = false;
-                y.weeksOut = 0;
-                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');
-            }
-        }
-    });
-
+    
+    gameState.academy.forEach(y => {  
+        if (y.isInjured) {  
+            y.weeksOut--;  
+            if (y.weeksOut <= 0) {  
+                y.isInjured = false;  
+                y.weeksOut = 0;  
+                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
+            }  
+        }  
+    });  
+  
     secondCoachAdvice();
-
-    if (gameState.week % 4 === 0) {
-        boardMessages();
-    }
-
-    const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);
-
-    // Partidos de nuestro equipo
-    let myTeamMatch = currentWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
-
-    if (myTeamMatch) {
+  
+    if (gameState.week % 4 === 0) {  
+        boardMessages();  
+    }  
+        
+    // Obtener partidos de la jornada actual
+    const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
+    
+    console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
+  
+    // Encontrar partido de nuestro equipo
+    let myTeamMatch = currentWeekMatches.find(match => 
+        match.home === gameState.team || match.away === gameState.team
+    );  
+  
+    // ===== SIMULAR PARTIDO DE NUESTRO EQUIPO =====
+    if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');
-
-            let homeGoals = 0, awayGoals = 0;
-            if (myTeamMatch.home === gameState.team) awayGoals = 3;
-            else homeGoals = 3;
-
-            const ourStats = gameState.standings[gameState.team];
-            const opponentName = (myTeamMatch.home === gameState.team) ? myTeamMatch.away : myTeamMatch.home;
-            const opponentStats = gameState.standings[opponentName];
-
-            if (ourStats) { ourStats.pj++; ourStats.p++; ourStats.gf += (myTeamMatch.home === gameState.team ? 0 : 3); ourStats.gc += (myTeamMatch.home === gameState.team ? 3 : 0); }
-            if (opponentStats) { opponentStats.pj++; opponentStats.g++; opponentStats.gf += (myTeamMatch.home === gameState.team ? 3 : 0); opponentStats.gc += (myTeamMatch.home === gameState.team ? 0 : 3); opponentStats.pts += 3; }
-
-            gameState.matchHistory.push({ week: gameState.week, home: myTeamMatch.home, away: myTeamMatch.away, score: `${homeGoals}-${awayGoals}` });
-
-            myMatchResult = { home: myTeamMatch.home, away: myTeamMatch.away, homeGoals, awayGoals, score: `${homeGoals}-${awayGoals}` };
-            forcedLoss = true;
-
-            gameState.popularity = Math.max(0, gameState.popularity - 5);
-            gameState.fanbase = Math.max(0, gameState.fanbase - 500);
-
-        } else {
-            // Calcular form promedio
-            const myTeamSquadForMatch = gameState.lineup.filter(p => !p.isInjured);
-            const opponentSquad = []; // Si quieres simular opponentForm, puedes generarlo según stats del rival
-
-            const avgForm = myTeamSquadForMatch.length
-                ? myTeamSquadForMatch.reduce((sum, p) => sum + p.form, 0) / myTeamSquadForMatch.length
-                : 75;
-
-            const oppAvgForm = opponentSquad.length
-                ? opponentSquad.reduce((sum, p) => sum + p.form, 0) / opponentSquad.length
-                : 75;
-
-            const isHomeMatch = myTeamMatch.home === gameState.team;
-
-            const result = calculateMatchOutcome({
-                teamOverall: calculateTeamEffectiveOverall(myTeamSquadForMatch),
-                opponentOverall: 70 + Math.floor(Math.random() * 20), // Si no tienes stats del rival
-                mentality: gameState.mentality,
-                isHome: isHomeMatch,
-                teamForm: avgForm,
-                opponentForm: oppAvgForm
-            });
-
-            // Actualizar standings
+            // Alineación inválida = derrota 0-3
+            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
+                
+            let homeGoals = 0;  
+            let awayGoals = 0;  
+  
+            if (myTeamMatch.home === gameState.team) {  
+                awayGoals = 3;
+            } else {  
+                homeGoals = 3;
+            }  
+  
+            // Actualizar standings manualmente
             const updateStats = (team, gf, gc) => {
                 const s = gameState.standings[team];
                 if (s) {
@@ -1103,45 +1076,102 @@ function simulateFullWeek() {
                     else s.p++;
                 }
             };
-
-            updateStats(myTeamMatch.home, result.teamGoals, result.opponentGoals);
-            updateStats(myTeamMatch.away, result.opponentGoals, result.teamGoals);
-
-            myMatchResult = {
-                home: myTeamMatch.home,
-                away: myTeamMatch.away,
-                homeGoals: result.teamGoals,
-                awayGoals: result.opponentGoals,
-                score: `${result.teamGoals}-${result.opponentGoals}`
+            
+            updateStats(myTeamMatch.home, homeGoals, awayGoals);
+            updateStats(myTeamMatch.away, awayGoals, homeGoals);
+                
+            gameState.matchHistory.push({  
+                week: gameState.week,  
+                home: myTeamMatch.home,  
+                away: myTeamMatch.away,  
+                score: `${homeGoals}-${awayGoals}`
+            });  
+                
+            myMatchResult = {  
+                home: myTeamMatch.home,  
+                away: myTeamMatch.away,  
+                homeGoals: homeGoals,  
+                awayGoals: awayGoals,  
+                score: `${homeGoals}-${awayGoals}`,  
+            };  
+            forcedLoss = true;  
+  
+            gameState.popularity = Math.max(0, gameState.popularity - 5);
+            gameState.fanbase = Math.max(0, gameState.fanbase - 500);  
+  
+        } else {
+            // Alineación válida - simular normalmente
+            const result = playMatch(myTeamMatch.home, myTeamMatch.away);
+            myMatchResult = {  
+                home: result.homeTeam,  
+                away: result.awayTeam,  
+                homeGoals: result.homeGoals,  
+                awayGoals: result.awayGoals,  
+                score: `${result.homeGoals}-${result.awayGoals}`,  
             };
-        }
-    }
-
-    // Simular resto de partidos
-    currentWeekMatches.filter(match => match !== myTeamMatch).forEach(match => {
-        const alreadyPlayed = gameState.matchHistory.some(mh =>
-            mh.week === gameState.week &&
-            ((mh.home === match.home && mh.away === match.away) || (mh.home === match.away && mh.away === match.home))
-        );
-        if (!alreadyPlayed) {
-            const teamOverall = 70 + Math.floor(Math.random() * 20);
-            const opponentOverall = 70 + Math.floor(Math.random() * 20);
-            const result = calculateMatchOutcome({
-                teamOverall,
-                opponentOverall,
-                mentality: 'balanced',
-                isHome: true,
-                teamForm: 75,
-                opponentForm: 75
+            
+            // Añadir al historial (playMatch ya actualiza standings)
+            gameState.matchHistory.push({  
+                week: gameState.week,  
+                home: result.homeTeam,  
+                away: result.awayTeam,  
+                score: `${result.homeGoals}-${result.awayGoals}`
             });
-            gameState.matchHistory.push({ week: gameState.week, home: match.home, away: match.away, score: `${result.teamGoals}-${result.opponentGoals}` });
-        }
-    });
-
-    gameState.week++;
-    updateWeeklyFinancials();
-
-    return { myMatch: myMatchResult, forcedLoss };
+        }  
+    }  
+  
+    // ===== SIMULAR RESTO DE PARTIDOS DE LA JORNADA =====
+    currentWeekMatches
+        .filter(match => match !== myTeamMatch)
+        .forEach(match => {  
+            // Verificar si ya se jugó
+            const alreadyPlayed = gameState.matchHistory.some(mh =>  
+                mh.week === gameState.week &&  
+                mh.home === match.home && 
+                mh.away === match.away
+            );
+            
+            if (!alreadyPlayed) {  
+                const result = playMatch(match.home, match.away);
+                
+                // ⚠️ IMPORTANTE: Añadir al historial
+                gameState.matchHistory.push({  
+                    week: gameState.week,  
+                    home: result.homeTeam,  
+                    away: result.awayTeam,  
+                    score: `${result.homeGoals}-${result.awayGoals}`
+                });
+                
+                console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
+            }  
+        });
+    
+    console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
+  
+    gameState.week++;  
+    updateWeeklyFinancials();  
+  
+    // Mensajes de crisis económica
+    if (gameState.staff.segundoEntrenador && 
+        (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
+        gameState.balance < 0) {  
+        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
+    }  
+  
+    // Game Over por quiebra
+    if (gameState.balance < -100000 && gameState.week > 10) {  
+        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
+        alert("¡GAME OVER! Has sido despedido por la directiva.");  
+        resetGame();  
+        return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
+    }  
+  
+    // Fin de temporada
+    if (gameState.week > gameState.maxSeasonWeeks) {  
+        endSeason();  
+    }  
+        
+    return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
 }
 
   
