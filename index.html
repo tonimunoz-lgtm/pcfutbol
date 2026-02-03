@@ -650,14 +650,6 @@
                 alert("Los jugadores lesionados no pueden ser alineados.");
                 return;
             }
-        // 🆕 AÑADIR ESTAS 5 LÍNEAS
-    if (player.isSuspended) {
-        ev.preventDefault();
-        alert(`${player.name} está sancionado y no puede jugar.`);
-        return;
-    }
-
-            
             draggedPlayer = player;
             ev.dataTransfer.setData("text/plain", playerJson);
             ev.dataTransfer.effectAllowed = "move";
@@ -1436,7 +1428,6 @@ window.selectTeamAndStart = function(teamName, division) {
                     const playerDiv = document.createElement('div');
                     playerDiv.classList.add('pitch-player');
                     if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-                    if (playerInSlot.isSuspended) playerDiv.classList.add('suspended'); // 🆕
                     playerDiv.draggable = true;
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
                     playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
@@ -1446,29 +1437,16 @@ window.selectTeamAndStart = function(teamName, division) {
                 pitchContainer.appendChild(slot);
             });
 
-           reserves.forEach(player => {
-    const playerDiv = document.createElement('div');
-    playerDiv.classList.add('draggable-player');
-    if (player.isInjured) playerDiv.classList.add('injured');
-    if (player.isSuspended) playerDiv.classList.add('suspended'); // 🆕
-    
-    // 🆕 No permitir arrastrar sancionados
-    playerDiv.draggable = !player.isInjured && !player.isSuspended;
-    
-    playerDiv.ondragstart = (ev) => {
-        if (player.isInjured || player.isSuspended) { // 🆕
-            ev.preventDefault();
-            return;
-        }
-        window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-    };
-    
-    // 🆕 Añadir badges
-    const statusBadges = window.renderPlayerStatusBadges(player);
-    playerDiv.innerHTML = `${player.name} (${player.overall}) - ${player.position} ${statusBadges}`;
-    
-    reservesList.appendChild(playerDiv);
-});
+            reserves.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.classList.add('draggable-player');
+                if (player.isInjured) playerDiv.classList.add('injured');
+                playerDiv.draggable = true;
+                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
+                playerDiv.dataset.playername = player.name;
+                reservesList.appendChild(playerDiv);
+            });
 
             reservesList.ondragover = window.allowDrop;
             reservesList.ondragleave = window.dragleave;
