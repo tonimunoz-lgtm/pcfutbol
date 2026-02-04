@@ -56,7 +56,7 @@
     }
 
     // =======================================
-    // Crear y mostrar vista Renovar
+    // Crear página Renovar estilo Plantilla
     // =======================================
     function openRenovarView() {
         let renovarPage = document.getElementById('renovar');
@@ -65,104 +65,109 @@
             renovarPage.id = 'renovar';
             renovarPage.className = 'page';
             renovarPage.style.display = 'block';
+
             renovarPage.innerHTML = `
                 <div class="page-header">
                     <h1>🔄 Renovación de Contratos</h1>
                     <button class="page-close-btn" onclick="closePage('renovar')">✖ CERRAR</button>
                 </div>
-                <div id="renovarList" style="margin-top: 20px;"></div>
+                <div id="renovarContainer" style="max-height: 500px; overflow-y: auto; margin-top: 20px;">
+                    <table class="table table-striped" id="renovarTable">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Posición</th>
+                                <th>Contrato</th>
+                                <th>Años</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             `;
             document.body.appendChild(renovarPage);
         }
 
-        // Mostrar solo esta página
+        // Ocultar otras páginas
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         renovarPage.style.display = 'block';
-        renderRenovarList();
+        renderRenovarTable();
     }
 
     // =======================================
-    // Renderizar lista de jugadores
+    // Renderiza tabla estilo Plantilla
     // =======================================
-    function renderRenovarList() {
-        const renovarList = document.getElementById('renovarList');
-        renovarList.innerHTML = '';
+    function renderRenovarTable() {
+        const tbody = document.querySelector('#renovarTable tbody');
+        tbody.innerHTML = '';
 
         const squad = window.gameLogic.getMySquad();
         squad.forEach(player => {
-            const tr = document.createElement('div');
-            tr.style.display = 'flex';
-            tr.style.justifyContent = 'space-between';
-            tr.style.alignItems = 'center';
-            tr.style.borderBottom = '1px solid #ccc';
-            tr.style.padding = '5px 0';
+            const tr = document.createElement('tr');
 
             tr.innerHTML = `
-                <div style="flex:1"><strong>${player.name}</strong> (${player.position})</div>
-                <div style="width:100px; text-align:center;">${player.contractType === 'loan' ? 'Cedido' : 'Propiedad'}</div>
-                <div style="width:50px; text-align:center;">${player.contractType === 'loan' ? 1 : player.contractYears}</div>
-                <div style="width:150px; text-align:center;">
-                    <button class="btn btn-sm" onclick="startRenewal(${player.id})">Negociar</button>
-                </div>
+                <td>${player.name}</td>
+                <td>${player.position}</td>
+                <td>${player.contractType === 'loan' ? 'Cedido' : 'Propiedad'}</td>
+                <td>${player.contractType === 'loan' ? 1 : player.contractYears}</td>
+                <td>
+                    <button class="btn btn-sm btn-success">Negociar</button>
+                </td>
             `;
 
-            renovarList.appendChild(tr);
+            tr.querySelector('button').onclick = () => startRenewal(player.id);
+            tbody.appendChild(tr);
         });
     }
 
     // =======================================
-    // Función de negociación extendida
+    // Negociación estilo fichajes
     // =======================================
     window.startRenewal = function(playerId) {
         const player = window.gameLogic.getPlayerById(playerId);
         if (!player) return;
 
-        // 1️⃣ Elegir años de contrato
         let years = prompt(`Negociar renovación con ${player.name}\nAños de contrato (1-5):`, player.contractYears);
         if (!years) return;
         years = Number(years);
 
-        // 2️⃣ Elegir tipo de contrato
         let type = prompt(`Tipo de contrato:\n- Propiedad\n- Cedido`, player.contractType === 'loan' ? 'Cedido' : 'Propiedad');
         if (!type) return;
         type = type.toLowerCase() === 'cedido' ? 'loan' : 'owned';
 
-        // 3️⃣ Oferta de salario
         let salary = prompt(`Salario semanal para ${player.name}?`, player.salary || 100000);
         if (!salary) return;
         salary = Number(salary);
 
-        // 4️⃣ Probabilidad de aceptación
         const accepted = Math.random() < renewalChance(player, salary, years);
 
         if (accepted) {
             player.contractType = type;
             player.contractYears = type === 'loan' ? 1 : years;
             player.salary = salary;
-            window.addNews(`✅ ${player.name} ha renovado su contrato (${type === 'loan' ? 'Cedido' : 'Propiedad'}) por ${player.contractYears} años.`, 'success');
+            window.addNews(`✅ ${player.name} ha renovado (${type === 'loan' ? 'Cedido' : 'Propiedad'}) por ${player.contractYears} años.`, 'success');
         } else {
             window.addNews(`❌ ${player.name} ha rechazado la oferta de renovación.`, 'error');
         }
 
-        renderRenovarList();
+        renderRenovarTable();
     }
 
     // =======================================
-    // Cálculo de chance de aceptación
+    // Probabilidad de aceptación
     // =======================================
     function renewalChance(player, salary, years) {
         let chance = 0.5;
-
         if (salary >= (player.salary || 100000) * 1.1) chance += 0.2;
         if (years >= (player.contractYears || 1)) chance += 0.1;
         if (player.age > 30) chance += 0.1;
         if (window.gameLogic.getPopularity?.() > 70) chance += 0.1;
-
         return Math.min(chance, 0.9);
     }
 
     // =======================================
-    // Avisar al DT sobre contratos pendientes
+    // Avisos DT contratos pendientes
     // =======================================
     function checkPendingRenewals() {
         const squad = window.gameLogic.getMySquad();
