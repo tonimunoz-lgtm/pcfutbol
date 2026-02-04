@@ -31,11 +31,10 @@
     // =======================================
     // Inyecta botón "Renovar" sobre Cantera
     // =======================================
-    function injectRenovarButton() {
+   function injectRenovarButton() {
     const quadrant = document.querySelector('.bottom-left');
     if (!quadrant) return;
 
-    // Observador para detectar cuando los botones se rendericen
     const observer = new MutationObserver(() => {
         const canteraBtn = Array.from(quadrant.querySelectorAll('button'))
             .find(b => b.textContent.toLowerCase().includes('cantera'));
@@ -46,16 +45,29 @@
             renovarBtn.className = canteraBtn.className;
             renovarBtn.textContent = '🔄 Renovar';
             renovarBtn.style.marginBottom = '5px';
-            renovarBtn.onclick = openRenovarView;
+            renovarBtn.onclick = () => {
+                console.log('Botón Renovar pulsado');
+                openRenovarView();
+            };
 
             canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
-            console.log('✅ Botón Renovar inyectado');
-            observer.disconnect(); // dejamos de observar
+            console.log('✅ Botón Renovar inyectado correctamente');
+            observer.disconnect(); // deja de observar
         }
     });
 
     observer.observe(quadrant, { childList: true, subtree: true });
 }
+
+// Llamar después de que gameState y squad estén cargados
+(function waitForGameState() {
+    const interval = setInterval(() => {
+        if (window.gameState && window.gameState.squad && gameState.squad.length > 0) {
+            clearInterval(interval);
+            injectRenovarButton();
+        }
+    }, 200);
+})();
 
 
     // =======================================
