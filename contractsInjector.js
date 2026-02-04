@@ -10,6 +10,7 @@
             console.log('🧩 Contracts Injector cargado');
             initContractsSystem();
             hookEndOfSeason();
+            hookFichajesView();
         }
         if (++tries > MAX_TRIES) clearInterval(waitForGame);
     }, WAIT_INTERVAL);
@@ -150,7 +151,7 @@
         const freedPlayers = [];
         gameState.squad.forEach(player => {
             if (player.contractType === 'loan') {
-                // Cedidos siempre vuelven al club propietario
+                // Cedidos vuelven al club propietario
                 player.contractType = 'owned';
                 player.contractYears = 1;
             } else {
@@ -161,9 +162,10 @@
             }
         });
 
-        // Mover jugadores libres al mercado (por ejemplo, eliminarlos del club)
         if (freedPlayers.length > 0) {
             freedPlayers.forEach(p => {
+                // Marcarlos como libres para el mercado de fichajes
+                p.isFreeAgent = true;
                 gameState.squad = gameState.squad.filter(pl => pl !== p);
             });
             addNews(
@@ -174,5 +176,55 @@
 
         // Avisar al DT sobre contratos próximos a vencer
         notifyPendingRenewals();
+    }
+
+    // Hook para inyectar los jugadores libres en la sección de Fichajes
+    function hookFichajesView() {
+        const originalRenderFichajes = window.renderFichajes;
+        if (!originalRenderFichajes) return;
+
+        window.renderFichajes = function () {
+            originalRenderFichajes.apply(this, arguments);
+
+            // Añadir jugadores libres al final de la tabla de fichajes
+            const table = document.querySelector('#fichajes-table tbody');
+            if (!table) return;
+
+            const freeAgents = gameState.squad.concat(gameState.freeAgents || [])
+                .filter(p => p.isFreeAgent);
+
+            freeAgents.forEach(player => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${player.name}</td>
+                    <td>${player.position}</td>
+                    <td>${player.age}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary">Negociar</button>
+                    </td>
+                `;
+                tr.querySelector('button').onclick = () => openSignContract(player);
+                table.appendChild(tr);
+            });
+        };
+    }
+
+    // Negociación de fichaje de jugador libre
+    function openSignContract(player) {
+        const years = prompt(`Negociar contrato con ${player.name}\nAños de contrato (1-5):`, 1);
+        if (!years) return;
+
+        const salary = prompt(`Salario anual para ${player.name}?`, 100000);
+        if (!salary) return;
+
+        // Añadir jugador al equipo si acepta
+        player.contractType = 'owned';
+        player.contractYears = Number(years);
+        player.salary = Number(salary);
+        player.isFreeAgent = false;
+        gameState.squad.push(player);
+
+        addNews(`✅ Has fichado a ${player.name} por ${years} años.`, 'success');
+        renderFichajes(); // refresca la tabla
     }
 })();
