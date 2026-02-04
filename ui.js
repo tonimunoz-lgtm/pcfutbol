@@ -128,79 +128,87 @@ function renderStandingsTable(state) {
 
   
 function renderSquadList(squad, currentTeam) {
-    const container = document.getElementById('squadList');
-    if (!container) return;
-
-    container.innerHTML = ''; // Limpiar contenido previo
+    const list = document.getElementById('squadList');  
+    if (!list) return;
 
     if (!squad || squad.length === 0) {
-        container.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';
+        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';
         return;
     }
 
-    // Ordenamos por overall descendente
+    // Cabecera de la tabla
+    let headerHtml = `  
+        <div style="overflow-x: auto;">  
+            <table style="font-size: 0.8em; min-width: 1200px;">  
+                <thead>  
+                    <tr>  
+                        <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
+                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+    `;  
+
+    // Ordenar por overall descendente
     const sorted = [...squad].sort((a, b) => b.overall - a.overall);
+    const squadIndexMap = new Map();
+    squad.forEach((p, i) => squadIndexMap.set(p.name, i));
 
-    sorted.forEach((p, idx) => {
-        // Estado del jugador
-        let statusText = 'Apto';
-        let statusClass = 'player-available';
+    // Filas de jugadores
+    let playersHtml = sorted.map((p, idx) => {
+        const realIndex = squadIndexMap.get(p.name);
 
+        // Estado dinámico
+        let statusText = '<span style="color: #00ff00;">Apto</span>';
         if (p.isInjured) {
-            statusText = `❌ Lesionado (${p.weeksOut} sem)`;
-            statusClass = 'player-injured';
+            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
         } else if (p.isSuspended) {
-            statusText = `⛔ Sancionado (${p.suspensionWeeks} partidos)`;
-            statusClass = 'player-suspended';
+            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks} partidos)</span>`;
         }
 
         // Tarjetas
         let cardsText = '';
         if (p.yellowCards > 0) {
             const warning = p.yellowCards >= 4 ? ' ⚠️' : '';
-            cardsText += `<span class="badge yellow">🟨 x${p.yellowCards}${warning}</span>`;
+            cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}${warning}</span>`;
         }
         if (p.redCards > 0) {
-            cardsText += `<span class="badge red">🟥 x${p.redCards}</span>`;
+            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
         }
-        if (!cardsText) cardsText = '<span class="badge neutral">-</span>';
+        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
 
-        // Crear div del jugador
-        const playerDiv = document.createElement('div');
-        playerDiv.className = `squad-player ${statusClass}`;
-        if (!p.isInjured && !p.isSuspended) {
-            playerDiv.setAttribute('draggable', true);
-            playerDiv.ondragstart = ev => {
-                const json = encodeURIComponent(JSON.stringify(p));
-                window.drag(ev, json);
-            };
-        }
+        // Clase para fila según estado
+        const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
 
-        playerDiv.innerHTML = `
-            <div class="player-header">
-                <strong>${p.name}</strong> (${p.position}) - OVR: ${p.overall}
-            </div>
-            <div class="player-body">
-                <span>Pot: ${p.potential} | Edad: ${p.age} | Pie: ${p.foot || 'N/A'}</span>
-                <div class="player-status">${statusText} | ${cardsText}</div>
-                <div class="player-attributes">
-                    Forma: ${p.form || 0} | ${ATTRIBUTES.map(attr => `${attr}: ${p[attr] || 0}`).join(' | ')}
-                </div>
-                <div class="player-finance">
-                    Salario: ${p.salary.toLocaleString('es-ES')}€ | Valor: ${p.value.toLocaleString('es-ES')}€
-                </div>
-                <div class="player-actions">
+        return `
+            <tr class="${rowClass}">
+                <td>${idx + 1}</td>
+                <td>${p.name}</td>
+                <td><strong>${p.overall}</strong></td>
+                <td>${p.potential}</td>
+                <td>${p.age}</td>
+                <td>${p.position || 'N/A'}</td>
+                <td>${p.foot || 'N/A'}</td>
+                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
+                <td>${p.form || 0}</td>
+                <td>${statusText}</td>
+                <td>${cardsText}</td>
+                <td>${p.salary.toLocaleString('es-ES')}€</td>
+                <td>${p.value.toLocaleString('es-ES')}€</td>
+                <td>
                     <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''}
-                        onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>
+                        onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">Entrenar</button>
                     <button class="btn btn-sm" style="background:#c73446;" 
                         onclick="window.sellPlayerConfirm('${p.name}')">Vender</button>
-                </div>
-            </div>
+                </td>
+            </tr>
         `;
+    }).join('');
 
-        container.appendChild(playerDiv);
-    });
+    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;
 }
+
 
   
 function renderAcademyList(academy) {  
