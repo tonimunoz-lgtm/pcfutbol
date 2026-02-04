@@ -1407,11 +1407,29 @@ window.selectTeamAndStart = function(teamName, division) {
         window.updateCommercialDisplay = updateCommercialDisplay;
 
         // Alineación
-        window.renderLineupPageUI = function() {
-            const state = gameLogic.getGameState();
-            const currentFormation = FORMATIONS[state.formation];
-            let lineup = gameLogic.getLineup();
-            let reserves = gameLogic.getReservePlayers();
+       window.renderLineupPageUI = function() {
+    const state = gameLogic.getGameState();
+    const currentFormation = FORMATIONS[state.formation];
+    let lineup = gameLogic.getLineup();
+    let reserves = gameLogic.getReservePlayers();
+
+    // 🆕 VALIDAR ALINEACIÓN Y MOSTRAR ADVERTENCIA
+    const lineupValidation = gameLogic.validateLineup(lineup);
+    const lineupMessageElem = document.getElementById('lineupMessage');
+    
+    if (lineupMessageElem) {
+        if (!lineupValidation.success) {
+            lineupMessageElem.className = 'alert alert-error';
+            lineupMessageElem.innerHTML = `⚠️ <strong>ALINEACIÓN INVÁLIDA:</strong> ${lineupValidation.message}`;
+            lineupMessageElem.style.fontSize = '1.1em';
+            lineupMessageElem.style.fontWeight = 'bold';
+        } else {
+            lineupMessageElem.className = 'alert alert-info';
+            lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
+        }
+    }
+
+    // ... resto del código de renderizado
 
             const pitchContainer = document.getElementById('pitchContainer');
             const reservesList = document.getElementById('reservesList');
