@@ -127,6 +127,7 @@ function renderStandingsTable(state) {
 }
 
   
+// ui.js - Función renderSquadList
 function renderSquadList(squad, currentTeam) {
     const list = document.getElementById('squadList');
     if (!list) return;
@@ -151,10 +152,11 @@ function renderSquadList(squad, currentTeam) {
 
     const sorted = squad.sort((a, b) => b.overall - a.overall);
     let playersHtml = sorted.map((p, idx) => {
-        let statusText = '<span style="color: #00ff00;">Apto</span>';
+        let statusText = '<span style="color: #00ff00;">Apto</span>'; // Por defecto apto
         if (p.isInjured) {
             statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
         } else if (p.isSuspended) {
+            // Este es el cambio clave para mostrar "Sancionado"
             statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks} partidos)</span>`;
         }
 
@@ -162,10 +164,10 @@ function renderSquadList(squad, currentTeam) {
         if (p.yellowCards > 0) {
             cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}</span>`;
         }
-        if (p.redCards > 0) {
-            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
+        if (p.redCards > 0) { // Si tiene tarjeta roja, debería aparecer aquí.
+            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
         }
-        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
+        if (!cardsText) cardsText = '<span style="color: #888;">-</span>'; // Si no tiene tarjetas
 
         const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
 
@@ -187,37 +189,38 @@ function renderSquadList(squad, currentTeam) {
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;
 }
   
-function renderAcademyList(academy) {  
-    const list = document.getElementById('academyList');  
-    if (!list) return;  
-  
-    if (!academy || academy.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
-        return;  
-    }  
-  
-    let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1200px;">  
-                <thead>  
-                    <tr>  
-                        <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>PART.</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
-                <tbody>  
-    `;  
-  
-    const sorted = academy.sort((a, b) => b.overall - a.overall);  
+// ui.js - Función renderAcademyList
+function renderAcademyList(academy) {
+    const list = document.getElementById('academyList');
+    if (!list) return;
+
+    if (!academy || academy.length === 0) {
+        list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';
+        return;
+    }
+
+    let headerHtml = `
+        <div style="overflow-x: auto;">
+            <table style="font-size: 0.8em; min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
+                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>PART.</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    const sorted = academy.sort((a, b) => b.overall - a.overall);
     let youngstersHtml = sorted.map((p, idx) => {
         let statusText = '<span style="color: #00ff00;">Apto</span>';
         if (p.isInjured) {
             statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
         } else if (p.isSuspended) {
-            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks})</span>`;
+            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks} partidos)</span>`;
         }
-        
+
         let cardsText = '';
         if (p.yellowCards > 0) {
             cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}</span>`;
@@ -226,25 +229,25 @@ function renderAcademyList(academy) {
             cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
         }
         if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
-        
+
         const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
-        
-        return `  
-            <tr class="${rowClass}" style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
-                <td>${idx + 1}</td><td>${p.name}</td><td><strong>${p.overall}</strong></td><td>${p.potential}</td>  
-                <td>${p.age}</td><td>${p.position || 'N/A'}</td><td>${p.foot || 'N/A'}</td>  
-                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.form || 0}</td><td>${statusText}</td><td>${cardsText}</td><td>${p.matches || 0}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td><td>${p.value.toLocaleString('es-ES')}€</td>  
-                <td>  
-                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
-                </td>  
-            </tr>  
-        `;  
-    }).join('');  
-  
-    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
-}  
+
+        return `
+            <tr class="${rowClass}" style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">
+                <td>${idx + 1}</td><td>${p.name}</td><td><strong>${p.overall}</strong></td><td>${p.potential}</td>
+                <td>${p.age}</td><td>${p.position || 'N/A'}</td><td>${p.foot || 'N/A'}</td>
+                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
+                <td>${p.form || 0}</td><td>${statusText}</td><td>${cardsText}</td><td>${p.matches || 0}</td>
+                <td>${p.salary.toLocaleString('es-ES')}€</td><td>${p.value.toLocaleString('es-ES')}€</td>
+                <td>
+                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;
+}
   
   
 function renderPlayerMarketList(players) {  
