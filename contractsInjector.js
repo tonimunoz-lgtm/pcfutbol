@@ -31,43 +31,52 @@
     // =======================================
     // Inyecta botón "Renovar" sobre Cantera
     // =======================================
-   function injectRenovarButton() {
-    const quadrant = document.querySelector('.bottom-left');
-    if (!quadrant) return;
+  (function contractsInjector() {
+    function injectRenovarButton() {
+        const quadrant = document.querySelector('.bottom-left');
+        if (!quadrant) return;
 
-    const observer = new MutationObserver(() => {
-        const canteraBtn = Array.from(quadrant.querySelectorAll('button'))
-            .find(b => b.textContent.toLowerCase().includes('cantera'));
+        const observer = new MutationObserver(() => {
+            const canteraBtn = Array.from(quadrant.querySelectorAll('button'))
+                .find(b => b.textContent.toLowerCase().includes('cantera'));
 
-        if (canteraBtn && !document.getElementById('btn-renovar')) {
-            const renovarBtn = document.createElement('button');
-            renovarBtn.id = 'btn-renovar';
-            renovarBtn.className = canteraBtn.className;
-            renovarBtn.textContent = '🔄 Renovar';
-            renovarBtn.style.marginBottom = '5px';
-            renovarBtn.onclick = () => {
-                console.log('Botón Renovar pulsado');
-                openRenovarView();
-            };
+            if (canteraBtn && !document.getElementById('btn-renovar')) {
+                const renovarBtn = document.createElement('button');
+                renovarBtn.id = 'btn-renovar';
+                renovarBtn.className = canteraBtn.className;
+                renovarBtn.textContent = '🔄 Renovar';
+                renovarBtn.style.marginBottom = '5px';
+                renovarBtn.onclick = () => {
+                    console.log('Botón Renovar pulsado');
+                    openRenovarView();
+                };
 
-            canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
-            console.log('✅ Botón Renovar inyectado correctamente');
-            observer.disconnect(); // deja de observar
-        }
-    });
+                canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
+                console.log('✅ Botón Renovar inyectado correctamente');
+                observer.disconnect();
+            }
+        });
 
-    observer.observe(quadrant, { childList: true, subtree: true });
-}
+        observer.observe(quadrant, { childList: true, subtree: true });
+    }
 
-// Llamar después de que gameState y squad estén cargados
-(function waitForGameState() {
-    const interval = setInterval(() => {
-        if (window.gameState && window.gameState.squad && gameState.squad.length > 0) {
-            clearInterval(interval);
-            injectRenovarButton();
-        }
-    }, 200);
+    function waitForSquad() {
+        const interval = setInterval(() => {
+            if (window.gameState && gameState.squad && gameState.squad.length > 0) {
+                clearInterval(interval);
+                injectRenovarButton();
+            }
+        }, 200);
+    }
+
+    waitForSquad();
+
+    // Función de ejemplo: abre la vista de renovación
+    function openRenovarView() {
+        alert('¡Aquí irá la tabla de renovar contratos!');
+    }
 })();
+
 
 
     // =======================================
