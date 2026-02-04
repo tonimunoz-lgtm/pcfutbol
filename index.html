@@ -1430,9 +1430,7 @@ window.selectTeamAndStart = function(teamName, division) {
         }
     }
 
-    // ... resto del código de renderizado
-
-            const pitchContainer = document.getElementById('pitchContainer');
+const pitchContainer = document.getElementById('pitchContainer');
             const reservesList = document.getElementById('reservesList');
 
             pitchContainer.innerHTML = '';
@@ -1454,80 +1452,83 @@ window.selectTeamAndStart = function(teamName, division) {
                 slot.style.width = `${slotWidth}%`;
                 slot.style.height = `${slotHeight}%`;
 
-                slot.textContent = posData.pos;
+                slot.textContent = posData.pos; // Muestra la posición táctica
+
                 slot.ondragover = window.allowDrop;
                 slot.ondragleave = window.dragleave;
                 slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
                 const playerInSlot = lineup[index];
-if (playerInSlot) {
-    const playerDiv = document.createElement('div');
-    playerDiv.classList.add('pitch-player');
-    
-    // 🆕 APLICAR CLASES SEGÚN ESTADO
-    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-    if (playerInSlot.isSuspended) playerDiv.classList.add('suspended');
-    
-    // 🆕 NO PERMITIR ARRASTRAR SI LESIONADO O SANCIONADO
-    playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
-    
-    playerDiv.ondragstart = (ev) => {
-        // 🆕 VALIDAR ANTES DE ARRASTRAR
-        if (playerInSlot.isInjured) {
-            ev.preventDefault();
-            alert(`❌ ${playerInSlot.name} está LESIONADO y no puede jugar.`);
-            return;
-        }
-        if (playerInSlot.isSuspended) {
-            ev.preventDefault();
-            alert(`⛔ ${playerInSlot.name} está SANCIONADO y no puede jugar.`);
-            return;
-        }
-        window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-    };
-    
-    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
-    playerDiv.dataset.playername = playerInSlot.name;
-    slot.appendChild(playerDiv);
-}
+                if (playerInSlot) {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.classList.add('pitch-player');
+
+                    // 🆕 Aplicar clases CSS de estado
+                    window.applyPlayerStatusClasses(playerDiv, playerInSlot);
+
+                    // 🆕 NO PERMITIR ARRASTRAR SI LESIONADO O SANCIONADO
+                    playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
+
+                    playerDiv.ondragstart = (ev) => {
+                        // 🆕 VALIDAR ANTES DE ARRASTRAR (Ya lo tienes, solo asegúrate de que esté aquí)
+                        if (playerInSlot.isInjured) {
+                            ev.preventDefault();
+                            alert(`❌ ${playerInSlot.name} está LESIONADO y no puede jugar.`);
+                            return;
+                        }
+                        if (playerInSlot.isSuspended) {
+                            ev.preventDefault();
+                            alert(`⛔ ${playerInSlot.name} está SANCIONADO y no puede jugar.`);
+                            return;
+                        }
+                        window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+                    };
+
+                    // 🆕 Contenido del jugador con nombre, overall y badges
+                    playerDiv.innerHTML = `
+                        <span>${playerInSlot.name}</span>
+                        <span>(${playerInSlot.position}, ${playerInSlot.overall})</span>
+                        ${window.renderPlayerStatusBadges(playerInSlot)}
+                    `;
+                    playerDiv.dataset.playername = playerInSlot.name;
+                    slot.appendChild(playerDiv);
+                }
                 pitchContainer.appendChild(slot);
             });
 
-           reserves.forEach(player => {
-    const playerDiv = document.createElement('div');
-    playerDiv.classList.add('draggable-player');
-    
-    // 🆕 APLICAR CLASES
-    if (player.isInjured) playerDiv.classList.add('injured');
-    if (player.isSuspended) playerDiv.classList.add('suspended');
-    
-    // 🆕 NO PERMITIR ARRASTRAR
-    playerDiv.draggable = !player.isInjured && !player.isSuspended;
-    
-    playerDiv.ondragstart = (ev) => {
-        // 🆕 VALIDAR ESTADO
-        if (player.isInjured) {
-            ev.preventDefault();
-            alert(`❌ ${player.name} está LESIONADO (${player.weeksOut} semanas) y no puede jugar.`);
-            return;
-        }
-        if (player.isSuspended) {
-            ev.preventDefault();
-            alert(`⛔ ${player.name} está SANCIONADO (${player.suspensionWeeks} partidos) y no puede jugar.`);
-            return;
-        }
-        window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-    };
-    
-    // 🆕 MOSTRAR ESTADO EN EL TEXTO
-    let statusIcon = '';
-    if (player.isInjured) statusIcon = ' ❌';
-    if (player.isSuspended) statusIcon = ' ⛔';
-    
-    playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}${statusIcon}`;
-    playerDiv.dataset.playername = player.name;
-    reservesList.appendChild(playerDiv);
-});
+            reserves.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.classList.add('draggable-player');
+
+                // 🆕 Aplicar clases CSS de estado
+                window.applyPlayerStatusClasses(playerDiv, player);
+
+                // 🆕 NO PERMITIR ARRASTRAR
+                playerDiv.draggable = !player.isInjured && !player.isSuspended;
+
+                playerDiv.ondragstart = (ev) => {
+                    // 🆕 VALIDAR ESTADO (Ya lo tienes, solo asegúrate de que esté aquí)
+                    if (player.isInjured) {
+                        ev.preventDefault();
+                        alert(`❌ ${player.name} está LESIONADO (${player.weeksOut} semanas) y no puede jugar.`);
+                        return;
+                    }
+                    if (player.isSuspended) {
+                        ev.preventDefault();
+                        alert(`⛔ ${player.name} está SANCIONADO (${player.suspensionWeeks} partidos) y no puede jugar.`);
+                        return;
+                    }
+                    window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+                };
+
+                // 🆕 Contenido del jugador con nombre, overall, posición y badges
+                playerDiv.innerHTML = `
+                    ${player.name} (${player.overall}) - ${player.position}
+                    ${window.renderPlayerStatusBadges(player)}
+                `;
+                playerDiv.dataset.playername = player.name;
+                reservesList.appendChild(playerDiv);
+            });
 
             reservesList.ondragover = window.allowDrop;
             reservesList.ondragleave = window.dragleave;
