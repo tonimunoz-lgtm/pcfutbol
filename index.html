@@ -1459,21 +1459,36 @@ window.selectTeamAndStart = function(teamName, division) {
                 slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
                 const playerInSlot = lineup[index];
-                if (playerInSlot) {
-                   const playerDiv = document.createElement('div');
-playerDiv.classList.add('pitch-player');
-
-// 🆕 Añadir clases según estado
-if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-if (playerInSlot.isSuspended) playerDiv.classList.add('suspended');
-
-// 🆕 No permitir arrastrar si sancionado
-playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
-                    playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
-                    playerDiv.dataset.playername = playerInSlot.name;
-                    slot.appendChild(playerDiv);
-                }
+if (playerInSlot) {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('pitch-player');
+    
+    // 🆕 APLICAR CLASES SEGÚN ESTADO
+    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
+    if (playerInSlot.isSuspended) playerDiv.classList.add('suspended');
+    
+    // 🆕 NO PERMITIR ARRASTRAR SI LESIONADO O SANCIONADO
+    playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
+    
+    playerDiv.ondragstart = (ev) => {
+        // 🆕 VALIDAR ANTES DE ARRASTRAR
+        if (playerInSlot.isInjured) {
+            ev.preventDefault();
+            alert(`❌ ${playerInSlot.name} está LESIONADO y no puede jugar.`);
+            return;
+        }
+        if (playerInSlot.isSuspended) {
+            ev.preventDefault();
+            alert(`⛔ ${playerInSlot.name} está SANCIONADO y no puede jugar.`);
+            return;
+        }
+        window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+    };
+    
+    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
+    playerDiv.dataset.playername = playerInSlot.name;
+    slot.appendChild(playerDiv);
+}
                 pitchContainer.appendChild(slot);
             });
 
@@ -1481,28 +1496,34 @@ playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
     const playerDiv = document.createElement('div');
     playerDiv.classList.add('draggable-player');
     
-    // 🆕 Añadir clases según estado
+    // 🆕 APLICAR CLASES
     if (player.isInjured) playerDiv.classList.add('injured');
     if (player.isSuspended) playerDiv.classList.add('suspended');
     
-    // 🆕 No permitir arrastrar si está lesionado o sancionado
+    // 🆕 NO PERMITIR ARRASTRAR
     playerDiv.draggable = !player.isInjured && !player.isSuspended;
     
     playerDiv.ondragstart = (ev) => {
-        if (player.isInjured || player.isSuspended) {
+        // 🆕 VALIDAR ESTADO
+        if (player.isInjured) {
             ev.preventDefault();
+            alert(`❌ ${player.name} está LESIONADO (${player.weeksOut} semanas) y no puede jugar.`);
+            return;
+        }
+        if (player.isSuspended) {
+            ev.preventDefault();
+            alert(`⛔ ${player.name} está SANCIONADO (${player.suspensionWeeks} partidos) y no puede jugar.`);
             return;
         }
         window.drag(ev, encodeURIComponent(JSON.stringify(player)));
     };
     
-    // 🆕 GENERAR BADGES
-    const statusBadges = window.renderPlayerStatusBadges 
-        ? window.renderPlayerStatusBadges(player) 
-        : '';
+    // 🆕 MOSTRAR ESTADO EN EL TEXTO
+    let statusIcon = '';
+    if (player.isInjured) statusIcon = ' ❌';
+    if (player.isSuspended) statusIcon = ' ⛔';
     
-    // 🆕 Mostrar nombre + badges
-    playerDiv.innerHTML = `${player.name} (${player.overall}) - ${player.position} ${statusBadges}`;
+    playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}${statusIcon}`;
     playerDiv.dataset.playername = player.name;
     reservesList.appendChild(playerDiv);
 });
@@ -1525,41 +1546,43 @@ playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
         };
 
         window.saveLineup = function() {
-            const state = gameLogic.getGameState();
-            const currentFormation = FORMATIONS[state.formation];
-            const newLayout = Array(11).fill(null);
+    const state = gameLogic.getGameState();
+    const currentFormation = FORMATIONS[state.formation];
+    const newLayout = Array(11).fill(null);
 
-            currentFormation.layout.forEach((posData, index) => {
-                const slot = document.getElementById(`pitch-slot-${index}`);
-                const playerDiv = slot?.querySelector('.pitch-player');
-                if (playerDiv) {
-                    const playerName = playerDiv.dataset.playername;
-                    const fullPlayer = state.squad.find(p => p.name === playerName);
-                    if (fullPlayer) {
-                        newLayout[index] = fullPlayer;
-                    }
-                }
-            });
-
-            const validationResult = gameLogic.validateLineup(newLayout);
-            if (!validationResult.success) {
-                alert(`Error al guardar la alineación: ${validationResult.message}`);
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar: ${validationResult.message}`, 'error');
-                window.renderLineupPageUI();
-                return;
+    currentFormation.layout.forEach((posData, index) => {
+        const slot = document.getElementById(`pitch-slot-${index}`);
+        const playerDiv = slot?.querySelector('.pitch-player');
+        if (playerDiv) {
+            const playerName = playerDiv.dataset.playername;
+            const fullPlayer = state.squad.find(p => p.name === playerName);
+            if (fullPlayer) {
+                newLayout[index] = fullPlayer;
             }
+        }
+    });
 
-            const result = gameLogic.setLineup(newLayout);
-            if (result.success) {
-                gameLogic.addNews('¡Alineación guardada con éxito!', 'success');
-                alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
-                window.renderLineupPageUI();
-            } else {
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar la alineación: ${result.message}`, 'error');
-                alert(`Error al guardar la alineación: ${result.message}`);
-            }
-        };
+    // 🆕 VALIDAR ANTES DE GUARDAR
+    const validationResult = gameLogic.validateLineup(newLayout);
+    
+    if (!validationResult.success) {
+        alert(`❌ NO SE PUEDE GUARDAR LA ALINEACIÓN:\n\n${validationResult.message}\n\nPor favor, corrige los errores antes de guardar.`);
+        gameLogic.addNews(`[Alineación] Intento de guardar alineación inválida: ${validationResult.message}`, 'error');
+        window.renderLineupPageUI(); // Re-renderizar para mostrar errores
+        return;
+    }
+
+    const result = gameLogic.setLineup(newLayout);
+    if (result.success) {
+        gameLogic.addNews('✅ Alineación guardada correctamente', 'success');
+        alert('✅ ' + result.message);
+        ui.refreshUI(gameLogic.getGameState());
+        window.renderLineupPageUI();
+    } else {
+        gameLogic.addNews(`[Alineación] Error: ${result.message}`, 'error');
+        alert(`❌ Error al guardar la alineación: ${result.message}`);
+    }
+};
 
         // Guardar/Cargar
         window.saveCurrentGame = async function() {
