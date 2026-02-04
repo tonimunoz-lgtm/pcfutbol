@@ -197,11 +197,28 @@ function renderSquadList(squad, currentTeam) {
   
     const sorted = squad.sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {
-        // 🆕 Usar la nueva función para badges
+        // 🆕 Generar badges completos
         const statusBadges = renderPlayerStatusBadges(p);
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Lesionado</span>` : 
-                          p.isSuspended ? `<span style="color: #FF4500;">Sancionado</span>` : 
-                          'Apto';
+        
+        // 🔧 ARREGLADO: Mostrar estado detallado
+        let statusText = 'Apto';
+        if (p.isInjured) {
+            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
+        } else if (p.isSuspended) {
+            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks})</span>`;
+        }
+        
+        // 🔧 ARREGLADO: Generar texto de tarjetas con contadores
+        let cardsText = '';
+        if (p.yellowCards > 0) {
+            cardsText += `<span class="yellow-card-badge">🟨 x${p.yellowCards}</span> `;
+        }
+        if (p.redCards > 0) {
+            cardsText += `<span class="red-card-badge">🟥 x${p.redCards}</span> `;
+        }
+        if (!cardsText) {
+            cardsText = '<span style="color: #888;">-</span>';
+        }
         
         // 🆕 Añadir clase según estado
         const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
@@ -218,7 +235,7 @@ function renderSquadList(squad, currentTeam) {
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
                 <td>${p.form || 0}</td>  
                 <td>${statusText}</td>
-                <td>${statusBadges}</td>
+                <td>${cardsText}</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>  
@@ -268,11 +285,26 @@ function renderAcademyList(academy) {
   
     const sorted = academy.sort((a, b) => b.overall - a.overall);  
     let youngstersHtml = sorted.map((p, idx) => {
-        // 🆕 Badges para cantera también
-        const statusBadges = renderPlayerStatusBadges(p);
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Lesionado</span>` : 
-                          p.isSuspended ? `<span style="color: #FF4500;">Sancionado</span>` : 
-                          'Apto';
+        // 🔧 ARREGLADO: Estado detallado
+        let statusText = 'Apto';
+        if (p.isInjured) {
+            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
+        } else if (p.isSuspended) {
+            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks})</span>`;
+        }
+        
+        // 🔧 ARREGLADO: Contadores de tarjetas
+        let cardsText = '';
+        if (p.yellowCards > 0) {
+            cardsText += `<span class="yellow-card-badge">🟨 x${p.yellowCards}</span> `;
+        }
+        if (p.redCards > 0) {
+            cardsText += `<span class="red-card-badge">🟥 x${p.redCards}</span> `;
+        }
+        if (!cardsText) {
+            cardsText = '<span style="color: #888;">-</span>';
+        }
+        
         const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
         
         return `  
@@ -287,7 +319,7 @@ function renderAcademyList(academy) {
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
                 <td>${p.form || 0}</td>  
                 <td>${statusText}</td>
-                <td>${statusBadges}</td>
+                <td>${cardsText}</td>
                 <td>${p.matches || 0}</td>  
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
@@ -335,8 +367,21 @@ function renderPlayerMarketList(players) {
     `;  
   
     let playersHtml = players.map((p, idx) => {
-        // 🆕 Badges en mercado también
-        const statusBadges = renderPlayerStatusBadges(p);
+        // 🔧 ARREGLADO: Contadores de tarjetas en mercado
+        let cardsText = '';
+        if (p.yellowCards > 0) {
+            cardsText += `<span class="yellow-card-badge">🟨 x${p.yellowCards}</span> `;
+        }
+        if (p.redCards > 0) {
+            cardsText += `<span class="red-card-badge">🟥 x${p.redCards}</span> `;
+        }
+        if (p.isSuspended) {
+            cardsText += `<span class="suspended-badge">⛔ SANCIONADO</span> `;
+        }
+        if (!cardsText) {
+            cardsText = '<span style="color: #888;">-</span>';
+        }
+        
         const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
         const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
         
@@ -350,7 +395,7 @@ function renderPlayerMarketList(players) {
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
                 <td>${p.club}</td>
-                <td>${statusBadges}</td>
+                <td>${cardsText}</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>${askingPrice}</td>  
