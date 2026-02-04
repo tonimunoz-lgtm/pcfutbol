@@ -169,21 +169,27 @@ squad.forEach((p, i) => squadIndexMap.set(p.name, i));
 let playersHtml = sorted.map((p, idx) => {
     const realIndex = squadIndexMap.get(p.name);
 
-    let statusText = '<span style="color: #00ff00;">Apto</span>';
-    if (p.isInjured) {
-        statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
-    } else if (p.isSuspended) {
-        statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks})</span>`;
-    }
+let statusText = '';
+if (p.isInjured) {
+    statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
+} else if (p.isSuspended || p.redCards > 0) {
+    const suspensionWeeks = p.isSuspended ? p.suspensionWeeks : p.redCards;
+    statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${suspensionWeeks} sem)</span>`;
+} else {
+    statusText = '<span style="color: #00ff00;">Apto</span>';
+}
 
-    let cardsText = '';
-    if (p.yellowCards > 0) {
-        cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}</span>`;
-    }
-    if (p.redCards > 0) {
-        cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
-    }
-    if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
+// Tarjetas
+let cardsText = '';
+if (p.yellowCards > 0) {
+    const warning = p.yellowCards >= 4 ? ' ⚠️' : '';
+    cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}${warning}</span>`;
+}
+if (p.redCards > 0) {
+    cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
+}
+if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
+
 
     const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
 
