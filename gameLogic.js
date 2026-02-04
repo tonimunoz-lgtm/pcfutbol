@@ -1067,39 +1067,46 @@ function endSeason() {
     setupNewSeason(currentDivision, nextDivisionKey);  
 }  
   
-function simulateFullWeek() {  
+function simulateFullWeek() {
     let myMatchResult = null;
-    let forcedLoss = false;  
-  
-    if (gameState.seasonType === 'preseason') {  
-        handlePreseasonWeek();  
-        gameState.week++;  
-        updateWeeklyFinancials();  
-        if (gameState.week > PRESEASON_WEEKS) {  
-            gameState.seasonType = 'regular';  
-            gameState.week = 1;  
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
-        }  
-        return { myMatch: null, forcedLoss: false };
-    }  
-  
-    const preSimLineupValidation = validateLineup(gameState.lineup);  
-  
-    applyWeeklyTraining();  
-  
-    // 🆕 REDUCIR SANCIONES Y LESIONES
-    gameState.squad.forEach(p => {
-        // Lesiones
-        if (p.isInjured) {  
-            p.weeksOut--;  
-            if (p.weeksOut <= 0) {  
-                p.isInjured = false;  
-                p.weeksOut = 0;  
-                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
-            }  
+    let forcedLoss = false;
+
+    if (gameState.seasonType === 'preseason') {
+        handlePreseasonWeek();
+        gameState.week++;
+        updateWeeklyFinancials();
+        if (gameState.week > PRESEASON_WEEKS) {
+            gameState.seasonType = 'regular';
+            gameState.week = 1;
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
         }
+        return { myMatch: null, forcedLoss: false };
+    }
+
+    // 🔹 VALIDACIÓN DE ALINEACIÓN ANTES DE SIMULAR
+    const preSimLineupValidation = validateLineup(gameState.lineup);
+
+    if (!preSimLineupValidation.success) {
+        // Mostrar errores de alineación en el feed de noticias
+        addNews(`[ALINEACIÓN INVÁLIDA] ${preSimLineupValidation.message}`, 'error');
         
-        // 🆕 SANCIONES
+        // Detener la simulación y no avanzar la semana
+        return { myMatch: null, forcedLoss: false, error: true, message: 'Corrige la alineación antes de jugar la jornada.' };
+    }
+
+    // 🔹 A partir de aquí, la alineación es válida y se puede simular la jornada
+    applyWeeklyTraining();
+
+    // Reducir sanciones y lesiones
+    gameState.squad.forEach(p => {
+        if (p.isInjured) {
+            p.weeksOut--;
+            if (p.weeksOut <= 0) {
+                p.isInjured = false;
+                p.weeksOut = 0;
+                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');
+            }
+        }
         if (p.isSuspended) {
             p.suspensionWeeks--;
             if (p.suspensionWeeks <= 0) {
