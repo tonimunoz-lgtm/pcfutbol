@@ -1,4 +1,3 @@
-
 // gameLogic.js - Lógica central del juego  
 import {  
     TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
