@@ -1071,12 +1071,11 @@ function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;
 
-    // 🔹 Pretemporada
+    // 🔹 SEMANA DE PRETEMPORADA
     if (gameState.seasonType === 'preseason') {
         handlePreseasonWeek();
         gameState.week++;
         updateWeeklyFinancials();
-
         if (gameState.week > PRESEASON_WEEKS) {
             gameState.seasonType = 'regular';
             gameState.week = 1;
@@ -1087,7 +1086,6 @@ function simulateFullWeek() {
 
     // 🔹 VALIDACIÓN DE ALINEACIÓN ANTES DE SIMULAR
     const preSimLineupValidation = validateLineup(gameState.lineup);
-
     if (!preSimLineupValidation.success) {
         addNews(`[ALINEACIÓN INVÁLIDA] ${preSimLineupValidation.message}`, 'error');
 
@@ -1095,10 +1093,10 @@ function simulateFullWeek() {
         return { myMatch: null, forcedLoss: false, error: true, message: 'Corrige la alineación antes de jugar la jornada.' };
     }
 
-    // 🔹 A partir de aquí, la alineación es válida y se puede simular la jornada
+    // 🔹 A partir de aquí, la alineación es válida, se puede simular la jornada
     applyWeeklyTraining();
 
-    // 🔹 Reducir sanciones y lesiones
+    // 🔹 Reducir sanciones y lesiones del primer equipo
     gameState.squad.forEach(p => {
         if (p.isInjured) {
             p.weeksOut--;
@@ -1118,6 +1116,7 @@ function simulateFullWeek() {
         }
     });
 
+    // 🔹 Reducir sanciones y lesiones de la cantera
     gameState.academy.forEach(y => {
         if (y.isInjured) {
             y.weeksOut--;
@@ -1136,24 +1135,25 @@ function simulateFullWeek() {
         }
     });
 
+    // 🔹 Consejo del segundo entrenador
     secondCoachAdvice();
 
+    // 🔹 Mensajes de la directiva cada 4 semanas
     if (gameState.week % 4 === 0) {
         boardMessages();
     }
 
-    // 🔹 Obtener los partidos de esta jornada
+    // 🔹 Simulación de partidos de la semana
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);
     console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
 
-    // 🔹 Partidos de mi equipo
     let myTeamMatch = currentWeekMatches.find(match =>
         match.home === gameState.team || match.away === gameState.team
     );
 
     if (myTeamMatch) {
+        // ✅ Simular solo si la alineación es válida (ya lo es)
         const result = playMatch(myTeamMatch.home, myTeamMatch.away);
-
         myMatchResult = {
             home: result.homeTeam,
             away: result.awayTeam,
@@ -1170,7 +1170,7 @@ function simulateFullWeek() {
         });
     }
 
-    // 🔹 Partidos de otros equipos
+    // 🔹 Simular partidos de otros equipos
     currentWeekMatches
         .filter(match => match !== myTeamMatch)
         .forEach(match => {
@@ -1188,7 +1188,6 @@ function simulateFullWeek() {
                     away: result.awayTeam,
                     score: `${result.homeGoals}-${result.awayGoals}`
                 });
-
                 console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
             }
         });
@@ -1199,13 +1198,14 @@ function simulateFullWeek() {
     gameState.week++;
     updateWeeklyFinancials();
 
-    // 🔹 Mensajes y alertas por crisis financiera
+    // 🔹 Alertas del segundo entrenador por mala economía
     if (gameState.staff.segundoEntrenador &&
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) &&
         gameState.balance < 0) {
         addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');
     }
 
+    // 🔹 Despido por balance negativo
     if (gameState.balance < -100000 && gameState.week > 10) {
         addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');
         alert("¡GAME OVER! Has sido despedido por la directiva.");
@@ -1213,13 +1213,14 @@ function simulateFullWeek() {
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };
     }
 
-    // 🔹 Final de temporada
+    // 🔹 Fin de temporada
     if (gameState.week > gameState.maxSeasonWeeks) {
         endSeason();
     }
 
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };
 }
+
 
 
   
