@@ -650,23 +650,23 @@
             ev.currentTarget.classList.add('highlight');
         };
 
-       window.drag = function(ev, playerJson) {
+      window.drag = function(ev, playerJson) {
     const player = JSON.parse(decodeURIComponent(playerJson));
-    
+
     // Validar lesiones
     if (player.isInjured) {
         ev.preventDefault();
         alert("Los jugadores lesionados no pueden ser alineados.");
         return;
     }
-    
+
     // 🆕 VALIDAR SANCIONES
     if (player.isSuspended) {
         ev.preventDefault();
         alert(`${player.name} está sancionado y no puede jugar.`);
         return;
     }
-    
+
     draggedPlayer = player;
     ev.dataTransfer.setData("text/plain", playerJson);
     ev.dataTransfer.effectAllowed = "move";
