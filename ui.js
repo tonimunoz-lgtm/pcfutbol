@@ -151,6 +151,18 @@ function renderSquadList(squad, currentTeam) {
   
 const sorted = [...squad].sort((a, b) => b.overall - a.overall);
 
+console.log(
+  'PLANTILLA ESTADOS:',
+  squad.map(p => ({
+    name: p.name,
+    injured: p.isInjured,
+    suspended: p.isSuspended,
+    weeksOut: p.weeksOut,
+    reds: p.redCards
+  }))
+);
+
+  
 const squadIndexMap = new Map();
 squad.forEach((p, i) => squadIndexMap.set(p.name, i));
 
