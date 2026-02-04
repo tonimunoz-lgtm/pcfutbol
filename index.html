@@ -1442,10 +1442,15 @@ window.selectTeamAndStart = function(teamName, division) {
 
                 const playerInSlot = lineup[index];
                 if (playerInSlot) {
-                    const playerDiv = document.createElement('div');
-                    playerDiv.classList.add('pitch-player');
-                    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-                    playerDiv.draggable = true;
+                   const playerDiv = document.createElement('div');
+playerDiv.classList.add('pitch-player');
+
+// 🆕 Añadir clases según estado
+if (playerInSlot.isInjured) playerDiv.classList.add('injured');
+if (playerInSlot.isSuspended) playerDiv.classList.add('suspended');
+
+// 🆕 No permitir arrastrar si sancionado
+playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
                     playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
