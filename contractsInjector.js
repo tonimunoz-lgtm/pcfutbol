@@ -27,23 +27,34 @@
     }
 
     // Inyecta botón "Renovar" en Fichajes (arriba de Cantera)
-    function injectRenovarButton() {
-        const interval = setInterval(() => {
-            const canteraBtn = Array.from(document.querySelectorAll('button'))
-                .find(b => b.textContent.toLowerCase().includes('cantera'));
+    // Inyecta botón "Renovar" en Fichajes (arriba de Cantera)
+function injectRenovarButton() {
+    let tries = 0;
+    const maxTries = 20;
 
-            if (!canteraBtn || document.getElementById('btn-renovar')) return;
+    const interval = setInterval(() => {
+        // Buscamos el botón "Cantera" dentro del cuadrante de Fichajes
+        const canteraBtn = Array.from(document.querySelectorAll('.bottom-left button'))
+            .find(b => b.textContent.toLowerCase().includes('cantera'));
 
+        if (canteraBtn && !document.getElementById('btn-renovar')) {
             const renovarBtn = document.createElement('button');
             renovarBtn.id = 'btn-renovar';
             renovarBtn.className = canteraBtn.className;
             renovarBtn.textContent = '🔄 Renovar';
+            renovarBtn.style.marginBottom = '5px';
             renovarBtn.onclick = openRenovarView;
 
             canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
+            console.log('✅ Botón Renovar inyectado en Fichajes');
             clearInterval(interval);
-        }, 500);
-    }
+        }
+
+        tries++;
+        if (tries >= maxTries) clearInterval(interval);
+    }, 500);
+}
+
 
     // Renderiza la vista de Renovar (tabla propia)
     function openRenovarView() {
