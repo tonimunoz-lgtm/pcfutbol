@@ -149,71 +149,64 @@ function renderSquadList(squad, currentTeam) {
                 <tbody>  
     `;  
   
-const sorted = [...squad].sort((a, b) => b.overall - a.overall);
+    const sorted = [...squad].sort((a, b) => b.overall - a.overall);
+    const squadIndexMap = new Map();
+    squad.forEach((p, i) => squadIndexMap.set(p.name, i));
 
+    let playersHtml = sorted.map((p, idx) => {
+        const realIndex = squadIndexMap.get(p.name);
 
-  
-const squadIndexMap = new Map();
-squad.forEach((p, i) => squadIndexMap.set(p.name, i));
+        // 🔧 ESTADO CORREGIDO
+        let statusText = '<span style="color: #00ff00;">Apto</span>';
+        if (p.isInjured) {
+            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
+        } else if (p.isSuspended) {
+            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks} partidos)</span>`;
+        }
 
-let playersHtml = sorted.map((p, idx) => {
-    const realIndex = squadIndexMap.get(p.name);
+        // 🔧 TARJETAS CORREGIDO
+        let cardsText = '';
+        if (p.yellowCards > 0) {
+            const warning = p.yellowCards >= 4 ? ' ⚠️' : '';
+            cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}${warning}</span>`;
+        }
+        if (p.redCards > 0) {
+            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
+        }
+        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
 
-let statusText = '';
-if (p.isInjured) {
-    statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
-} else if (p.isSuspended || p.redCards > 0) {
-    const suspensionWeeks = p.isSuspended ? p.suspensionWeeks : p.redCards;
-    statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${suspensionWeeks} sem)</span>`;
-} else {
-    statusText = '<span style="color: #00ff00;">Apto</span>';
-}
+        const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
 
-// Tarjetas
-let cardsText = '';
-if (p.yellowCards > 0) {
-    const warning = p.yellowCards >= 4 ? ' ⚠️' : '';
-    cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}${warning}</span>`;
-}
-if (p.redCards > 0) {
-    cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
-}
-if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
-
-
-    const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
-
-    return `
-        <tr class="${rowClass}">
-            <td>${idx + 1}</td>
-            <td>${p.name}</td>
-            <td><strong>${p.overall}</strong></td>
-            <td>${p.potential}</td>
-            <td>${p.age}</td>
-            <td>${p.position || 'N/A'}</td>
-            <td>${p.foot || 'N/A'}</td>
-            ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
-            <td>${p.form || 0}</td>
-            <td>${statusText}</td>
-            <td>${cardsText}</td>
-            <td>${p.salary.toLocaleString('es-ES')}€</td>
-            <td>${p.value.toLocaleString('es-ES')}€</td>
-            <td>
-                <button class="btn btn-sm"
-                    ${p.isInjured || p.isSuspended ? 'disabled' : ''}
-                    onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">
-                    Entrenar
-                </button>
-                <button class="btn btn-sm"
-                    onclick="window.sellPlayerConfirm('${p.name}')"
-                    style="background:#c73446;">
-                    Vender
-                </button>
-            </td>
-        </tr>
-    `;
-}).join('');
-  
+        return `
+            <tr class="${rowClass}">
+                <td>${idx + 1}</td>
+                <td>${p.name}</td>
+                <td><strong>${p.overall}</strong></td>
+                <td>${p.potential}</td>
+                <td>${p.age}</td>
+                <td>${p.position || 'N/A'}</td>
+                <td>${p.foot || 'N/A'}</td>
+                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
+                <td>${p.form || 0}</td>
+                <td>${statusText}</td>
+                <td>${cardsText}</td>
+                <td>${p.salary.toLocaleString('es-ES')}€</td>
+                <td>${p.value.toLocaleString('es-ES')}€</td>
+                <td>
+                    <button class="btn btn-sm"
+                        ${p.isInjured || p.isSuspended ? 'disabled' : ''}
+                        onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">
+                        Entrenar
+                    </button>
+                    <button class="btn btn-sm"
+                        onclick="window.sellPlayerConfirm('${p.name}')"
+                        style="background:#c73446;">
+                        Vender
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
   
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
 }  
