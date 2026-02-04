@@ -508,7 +508,8 @@ function renderCalendarPage(state) {
   
   
 function refreshUI(state) {
-    updateDashboardStats(state);
+  window.gameLogic.updateSuspensionsAndInjuries?.();  
+  updateDashboardStats(state);
     renderStandingsTable(state);
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
