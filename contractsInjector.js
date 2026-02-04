@@ -28,32 +28,57 @@
     }
 
     // Inyecta botón "Renovar" en Fichajes (arriba de Cantera)
-    function injectRenovarButton() {
-        let tries = 0;
-        const maxTries = 20;
+    // ---------------------------
+// Inyecta botón "Renovar" en Fichajes
+// ---------------------------
+function injectRenovarButton() {
+    let tries = 0;
+    const maxTries = 40; // más intentos para esperar a que cargue la página
 
-        const interval = setInterval(() => {
-            const canteraBtn = Array.from(document.querySelectorAll('.bottom-left button'))
-                .find(b => b.textContent.toLowerCase().includes('cantera'));
+    const interval = setInterval(() => {
+        // Buscamos el botón "Cantera" dentro de varias posibles secciones
+        const canteraBtn = Array.from(document.querySelectorAll('button'))
+            .find(b => /cantera/i.test(b.textContent));
 
-            if (canteraBtn && !document.getElementById('btn-renovar')) {
-                const renovarBtn = document.createElement('button');
-                renovarBtn.id = 'btn-renovar';
-                renovarBtn.className = canteraBtn.className;
-                renovarBtn.textContent = '🔄 Renovar';
-                renovarBtn.style.marginBottom = '5px';
-                // Abrir página renovaciones
-                renovarBtn.onclick = () => window.openPage('renewContracts');
+        // Solo inyectamos si encontramos el botón y aún no existe nuestro botón
+        if (canteraBtn && !document.getElementById('btn-renovar')) {
+            const renovarBtn = document.createElement('button');
+            renovarBtn.id = 'btn-renovar';
+            renovarBtn.className = canteraBtn.className; // copia estilo del botón existente
+            renovarBtn.textContent = '🔄 Renovar';
+            renovarBtn.style.marginBottom = '5px';
+            renovarBtn.onclick = () => {
+                // Abrimos la página de renovación y cargamos los datos
+                window.openPage('renewContracts');
+                openRenovarView();
+            };
 
-                canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
-                console.log('✅ Botón Renovar inyectado en Fichajes');
-                clearInterval(interval);
-            }
+            canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
+            console.log('✅ Botón Renovar inyectado en Fichajes');
+            clearInterval(interval);
+            return;
+        }
 
-            tries++;
-            if (tries >= maxTries) clearInterval(interval);
-        }, 500);
-    }
+        tries++;
+        if (tries >= maxTries) {
+            clearInterval(interval);
+            console.warn('⚠️ No se pudo encontrar el botón "Cantera" para inyectar "Renovar"');
+        }
+    }, 300); // revisamos cada 300ms
+}
+
+// ---------------------------
+// Llamar a injectRenovarButton cuando se abra la página de Fichajes
+// ---------------------------
+if (window.openPage) {
+    const originalOpenPage = window.openPage;
+    window.openPage = function(pageId) {
+        originalOpenPage(pageId);
+        if (pageId === 'transfers') {
+            setTimeout(injectRenovarButton, 300); // espera a que cargue la sección de Fichajes
+        }
+    };
+}
 
     // ---------------------------
     // Abrir vista de Renovar
