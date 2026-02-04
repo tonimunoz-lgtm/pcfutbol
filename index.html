@@ -1532,7 +1532,6 @@ if (playerInSlot) {
             reservesList.ondragleave = window.dragleave;
             reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
 
-            const lineupMessageElem = document.getElementById('lineupMessage');
             if (lineupMessageElem) {
                 const validation = gameLogic.validateLineup(lineup);
                 if (!validation.success) {
