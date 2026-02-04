@@ -51,44 +51,47 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
   
     // Función global para obtener datos del equipo  
     // Esta es la función principal que el juego (gameLogic, admin) debe llamar  
-    window.getTeamData = async function(teamName) {  
-        console.log(`📥 Cargando datos para ${teamName}...`);  
-        // Primero intentar cargar desde Firebase  
-        const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);  
-        if (firebaseResult.success && firebaseResult.data) {  
-            console.log(`✅ Datos cargados desde Firebase para ${teamName}`);  
-            localStorage.setItem(`team_data_${teamName}`, JSON.stringify(firebaseResult.data));  
-            return firebaseResult.data;  
-        }  
-  
-        // Fallback a localStorage  
-        const localData = localStorage.getItem(`team_data_${teamName}`);  
-        if (localData) {  
-            console.log(`📦 Datos cargados desde localStorage para ${teamName}`);  
-            const parsedData = JSON.parse(localData);  
-            // Intentar subir a Firebase para sincronización (sin esperar) si Firebase está habilitado  
-            // y si los datos no vinieron de Firebase (es decir, firebaseResult.data era null)  
-            if (window.firebaseConfig && window.firebaseConfig.enabled && !firebaseResult.data) { // <-- Condición para no sobrescribir si Firebase ya tenía datos  
-                window.saveTeamDataToFirebase(teamName, parsedData)  
-                    .then(() => console.log(`✅ Datos de ${teamName} sincronizados con Firebase desde localStorage`))  
-                    .catch(err => console.warn(`⚠️ No se pudieron sincronizar datos de ${teamName} a Firebase:`, err));  
-            }  
-            return parsedData;  
-        }  
-  
-        // Si no hay datos en ningún sitio (Firebase ni localStorage), usar defaults  
-        // Aquí estaba el SyntaxError, estas líneas estaban sueltas.  
-        console.log(`⚠️ No hay datos para ${teamName}, usando valores por defecto.`);  
-        const teamSpecificDefault = getDefaultTeamDataForTeam(teamName); // Usar esta función  
-        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamSpecificDefault));  
-        // Intentar guardar en Firebase (sin esperar)  
-        if (window.firebaseConfig && window.firebaseConfig.enabled) {  
-            window.saveTeamDataToFirebase(teamName, teamSpecificDefault)  
-                .then(() => console.log(`✅ Datos por defecto de ${teamName} guardados en Firebase`))  
-                .catch(err => console.warn(`⚠️ No se pudieron guardar datos por defecto de ${teamName}:`, err));  
-        }  
-        return teamSpecificDefault;  
-    };  
+window.getTeamData = async function(teamName) {
+    console.log(`📥 Cargando datos para ${teamName}...`);
+    // Primero intentar cargar desde Firebase
+    const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);
+    let teamData;
+    if (firebaseResult.success && firebaseResult.data) {
+        console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
+        teamData = firebaseResult.data;
+    } else {
+        // Fallback a localStorage
+        const localData = localStorage.getItem(`team_data_${teamName}`);
+        if (localData) {
+            console.log(`📦 Datos cargados desde localStorage para ${teamName}`);
+            teamData = JSON.parse(localData);
+        } else {
+            console.log(`⚠️ No hay datos para ${teamName}, usando valores por defecto.`);
+            teamData = getDefaultTeamDataForTeam(teamName);
+        }
+    }
+
+    // 🔥 Inicializar campos de lesiones, sanciones y tarjetas
+    if (teamData.squad && Array.isArray(teamData.squad)) {
+        teamData.squad.forEach(p => {
+            p.isInjured = p.isInjured ?? false;
+            p.weeksOut = p.weeksOut ?? 0;
+
+            p.isSuspended = p.isSuspended ?? false;
+            p.suspensionWeeks = p.suspensionWeeks ?? 0;
+
+            p.yellowCards = p.yellowCards ?? 0;
+            p.redCards = p.redCards ?? 0;
+        });
+    }
+
+    // Guardar en localStorage y opcionalmente Firebase
+    localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
+
+    return teamData;
+};
+
+ 
   
     // Función global para guardar datos del equipo (llamada desde admin panel)  
     window.saveTeamData = async function(teamName, teamData) {  
