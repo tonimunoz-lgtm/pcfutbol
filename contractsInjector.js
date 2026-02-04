@@ -9,6 +9,7 @@
             clearInterval(waitForGame);
             console.log('🧩 Contracts Injector cargado');
             initContractsSystem();
+            hookEndOfSeason();
         }
         if (++tries > MAX_TRIES) clearInterval(waitForGame);
     }, WAIT_INTERVAL);
@@ -135,4 +136,43 @@
         return Math.min(chance, 0.9);
     }
 
+    // Hook al final de temporada
+    function hookEndOfSeason() {
+        const originalEndSeason = window.endSeason;
+        window.endSeason = function () {
+            decrementContracts();
+            if (originalEndSeason) originalEndSeason.apply(this, arguments);
+        };
+    }
+
+    // Al final de temporada, decrementa años de contrato y libera jugadores
+    function decrementContracts() {
+        const freedPlayers = [];
+        gameState.squad.forEach(player => {
+            if (player.contractType === 'loan') {
+                // Cedidos siempre vuelven al club propietario
+                player.contractType = 'owned';
+                player.contractYears = 1;
+            } else {
+                player.contractYears--;
+                if (player.contractYears <= 0) {
+                    freedPlayers.push(player);
+                }
+            }
+        });
+
+        // Mover jugadores libres al mercado (por ejemplo, eliminarlos del club)
+        if (freedPlayers.length > 0) {
+            freedPlayers.forEach(p => {
+                gameState.squad = gameState.squad.filter(pl => pl !== p);
+            });
+            addNews(
+                `[Mercado] ${freedPlayers.length} jugadores han quedado libres al terminar su contrato.`,
+                'info'
+            );
+        }
+
+        // Avisar al DT sobre contratos próximos a vencer
+        notifyPendingRenewals();
+    }
 })();
