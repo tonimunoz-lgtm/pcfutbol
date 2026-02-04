@@ -1454,16 +1454,35 @@ window.selectTeamAndStart = function(teamName, division) {
                 pitchContainer.appendChild(slot);
             });
 
-            reserves.forEach(player => {
-                const playerDiv = document.createElement('div');
-                playerDiv.classList.add('draggable-player');
-                if (player.isInjured) playerDiv.classList.add('injured');
-                playerDiv.draggable = true;
-                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
-                playerDiv.dataset.playername = player.name;
-                reservesList.appendChild(playerDiv);
-            });
+           reserves.forEach(player => {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('draggable-player');
+    
+    // 🆕 Añadir clases según estado
+    if (player.isInjured) playerDiv.classList.add('injured');
+    if (player.isSuspended) playerDiv.classList.add('suspended');
+    
+    // 🆕 No permitir arrastrar si está lesionado o sancionado
+    playerDiv.draggable = !player.isInjured && !player.isSuspended;
+    
+    playerDiv.ondragstart = (ev) => {
+        if (player.isInjured || player.isSuspended) {
+            ev.preventDefault();
+            return;
+        }
+        window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+    };
+    
+    // 🆕 GENERAR BADGES
+    const statusBadges = window.renderPlayerStatusBadges 
+        ? window.renderPlayerStatusBadges(player) 
+        : '';
+    
+    // 🆕 Mostrar nombre + badges
+    playerDiv.innerHTML = `${player.name} (${player.overall}) - ${player.position} ${statusBadges}`;
+    playerDiv.dataset.playername = player.name;
+    reservesList.appendChild(playerDiv);
+});
 
             reservesList.ondragover = window.allowDrop;
             reservesList.ondragleave = window.dragleave;
