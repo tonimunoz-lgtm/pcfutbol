@@ -1649,3 +1649,32 @@ function getAgeModifier(age) {
     if (age <= 33) return 0.3;
     return -0.5;
 }
+
+// Añade esta nueva función a gameLogic.js
+function setPlayerStatus(player, statusType, value) {
+    // Busca el objeto del jugador real en gameState.squad para actualizarlo directamente
+    const playerInSquad = gameState.squad.find(p => p.name === player.name && p.position === player.position && p.id === player.id); // Asumiendo que hay un 'id' para la unicidad si los nombres no son únicos
+    if (!playerInSquad) return; // Jugador no encontrado en la plantilla, no debería ocurrir si la lógica es correcta
+
+    switch(statusType) {
+        case 'injury':
+            playerInSquad.isInjured = value.isInjured;
+            playerInSquad.weeksOut = value.weeksOut;
+            break;
+        case 'suspension':
+            playerInSquad.isSuspended = value.isSuspended;
+            playerInSquad.suspensionWeeks = value.suspensionWeeks;
+            break;
+        case 'yellowCards':
+            playerInSquad.yellowCards = value;
+            break;
+        case 'redCards':
+            playerInSquad.redCards = value;
+            break;
+        // Podrías necesitar otros casos si introduces más estados
+        default:
+            console.warn('Tipo de estado desconocido:', statusType, 'para el jugador:', player.name);
+    }
+    // Asegúrate de que el objeto del jugador original pasado a esta función también refleje los cambios si es una copia
+    Object.assign(player, playerInSquad);
+}
