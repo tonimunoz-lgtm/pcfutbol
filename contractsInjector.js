@@ -23,7 +23,7 @@
     function initContractsSystem() {
         const squad = window.gameLogic.getMySquad();
         squad.forEach(p => {
-            if (!p.contractType) p.contractType = 'owned';
+            if (!p.contractType) p.contractType = 'owned'; // 'owned' o 'loan'
             if (!p.contractYears) p.contractYears = Math.floor(Math.random() * 4) + 1;
         });
     }
@@ -101,7 +101,7 @@
                 <div style="flex:1"><strong>${player.name}</strong> (${player.position})</div>
                 <div style="width:100px; text-align:center;">${player.contractType === 'loan' ? 'Cedido' : 'Propiedad'}</div>
                 <div style="width:50px; text-align:center;">${player.contractType === 'loan' ? 1 : player.contractYears}</div>
-                <div style="width:100px; text-align:center;">
+                <div style="width:150px; text-align:center;">
                     <button class="btn btn-sm" onclick="startRenewal(${player.id})">Negociar</button>
                 </div>
             `;
@@ -111,24 +111,54 @@
     }
 
     // =======================================
-    // Función simulada de negociación
+    // Función de negociación extendida
     // =======================================
     window.startRenewal = function(playerId) {
         const player = window.gameLogic.getPlayerById(playerId);
         if (!player) return;
 
-        const years = prompt(`Negociar renovación con ${player.name}\nAños de contrato:`, player.contractYears);
+        // 1️⃣ Elegir años de contrato
+        let years = prompt(`Negociar renovación con ${player.name}\nAños de contrato (1-5):`, player.contractYears);
         if (!years) return;
+        years = Number(years);
 
-        const accepted = Math.random() < 0.7; // Simulación simple
+        // 2️⃣ Elegir tipo de contrato
+        let type = prompt(`Tipo de contrato:\n- Propiedad\n- Cedido`, player.contractType === 'loan' ? 'Cedido' : 'Propiedad');
+        if (!type) return;
+        type = type.toLowerCase() === 'cedido' ? 'loan' : 'owned';
+
+        // 3️⃣ Oferta de salario
+        let salary = prompt(`Salario semanal para ${player.name}?`, player.salary || 100000);
+        if (!salary) return;
+        salary = Number(salary);
+
+        // 4️⃣ Probabilidad de aceptación
+        const accepted = Math.random() < renewalChance(player, salary, years);
+
         if (accepted) {
-            player.contractYears = Number(years);
-            window.addNews(`✅ ${player.name} ha renovado por ${years} años.`, 'success');
+            player.contractType = type;
+            player.contractYears = type === 'loan' ? 1 : years;
+            player.salary = salary;
+            window.addNews(`✅ ${player.name} ha renovado su contrato (${type === 'loan' ? 'Cedido' : 'Propiedad'}) por ${player.contractYears} años.`, 'success');
         } else {
-            window.addNews(`❌ ${player.name} ha rechazado la renovación.`, 'error');
+            window.addNews(`❌ ${player.name} ha rechazado la oferta de renovación.`, 'error');
         }
 
         renderRenovarList();
+    }
+
+    // =======================================
+    // Cálculo de chance de aceptación
+    // =======================================
+    function renewalChance(player, salary, years) {
+        let chance = 0.5;
+
+        if (salary >= (player.salary || 100000) * 1.1) chance += 0.2;
+        if (years >= (player.contractYears || 1)) chance += 0.1;
+        if (player.age > 30) chance += 0.1;
+        if (window.gameLogic.getPopularity?.() > 70) chance += 0.1;
+
+        return Math.min(chance, 0.9);
     }
 
     // =======================================
