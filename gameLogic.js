@@ -1630,7 +1630,10 @@ export {
     setLineup,  
     validateLineup,
     generateLeagueCalendar,  
-    getSeasonCalendar  
+    getSeasonCalendar,
+    // 🆕 EXPORTAR LAS FUNCIONES CRÍTICAS
+    generateCards,
+    generateInjury
 };  
 
 if (typeof window !== 'undefined') {
@@ -1638,9 +1641,19 @@ if (typeof window !== 'undefined') {
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
+        simulateFullWeek,
+        playMatch,
+        validateLineup,
+        setLineup,
+        getLineup,
+        getReservePlayers,
+        addNews,
+        markNewsAsRead,
+        // 🆕 EXPONER TAMBIÉN EN WINDOW
+        generateCards,
+        generateInjury
     };
 }
-
 function getAgeModifier(age) {
     if (age <= 20) return 1.5;
     if (age <= 24) return 1.2;
