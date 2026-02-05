@@ -19,28 +19,29 @@ console.log(firebaseConfigData.enabled ? '✅ Firebase HABILITADO' : '⚠️ Fir
   
 const TEAMS_DATA = {  
     primera: [ // Primera División (20 equipos) - Basado en 23/24  
-        'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Sevilla FC', 'Real Betis',
-        'Real Sociedad', 'Villarreal CF', 'Athletic Club', 'Valencia CF', 'CA Osasuna',
-        'RC Celta de Vigo', 'Rayo Vallecano', 'Deportivo Alavés', 'RCD Espanyol', 'Elche CF',
-        'Getafe CF', 'RCD Mallorca', 'Levante UD', 'Real Oviedo', 'Girona FC'  
+        'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Girona FC', 'Athletic Club',  
+        'Real Sociedad', 'Real Betis', 'Valencia CF', 'Villarreal CF', 'Getafe CF',  
+        'CA Osasuna', 'Rayo Vallecano', 'Sevilla FC', 'RCD Mallorca', 'UD Las Palmas',  
+        'Celta de Vigo', 'Deportivo Alavés', 'Cádiz CF', 'Granada CF', 'UD Almería'  
     ],  
     segunda: [ // Segunda División (22 equipos) - Basado en 23/24  
-        'Albacete Balompié', 'UD Almería', 'FC Andorra', 'Burgos CF', 'Cádiz CF',
-        'CD Castellón', 'Córdoba CF', 'Cultural y Deportiva Leonesa', 'Deportivo de La Coruña',
-        'SD Eibar', 'Granada CF', 'SD Huesca', 'CD Leganés', 'UD Las Palmas', 'Málaga CF', 'CD Mirandés',
-        'Racing de Santander', 'Real Sociedad B', 'Real Valladolid', 'Real Zaragoza', 'Sporting de Gijón', 'AD Ceuta FC'  
+        'SD Eibar', 'RCD Espanyol', 'Real Oviedo', 'Sporting Gijón', 'Levante UD',  
+        'Burgos CF', 'Racing Santander', 'CD Leganés', 'Real Valladolid', 'Real Zaragoza',  
+        'CD Tenerife', 'FC Cartagena', 'Albacete Balompié', 'SD Huesca', 'CD Mirandés',  
+        'Villarreal B', 'AD Alcorcón', 'SD Amorebieta', 'FC Andorra', 'CD Eldense',  
+        'Racing de Ferrol', 'Elche CF'  
     ],  
     rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 23/24  
-        'AD Ceuta FC', 'Albacete Balompié', 'Burgos CF', 'Cádiz CF', 'CD Castellón',
-        'CD Leganés', 'CD Mirandés', 'Córdoba CF', 'Cultural y Deportiva Leonesa', 'FC Andorra',
-        'Granada CF', 'Málaga CF', 'Racing de Santander', 'Real Sociedad B', 'RC Deportivo', 'Real Sporting',
-        'Real Valladolid CF', 'Real Zaragoza', 'SD Eibar', 'SD Huesca', 'UD Almería', 'UD Las Palmas'  
+        'RC Deportivo', 'FC Barcelona Atlètic', 'Real Madrid Castilla', 'Cultural Leonesa', 'Unionistas Salamanca CF',  
+        'Celta Fortuna', 'Rayo Majadahonda', 'SD Logroñés', 'Osasuna Promesas', 'Real Sociedad B',  
+        'Gimnàstic Tarragona', 'CE Sabadell FC', 'CD Lugo', 'UE Cornellà', 'Teruel',  
+        'Fuenlabrada', 'Sestao River', 'Tarazona', 'Arenteiro', 'Logroñés'  
     ],  
     rfef_grupo2: [ // Primera RFEF Grupo 2 (20 equipos) - Basado en 23/24  
-        'CE Sabadell FC', 'Atlético Madrileño (Atlético de Madrid B)', 'CD Eldense', 'CE Europa',
-        'Algeciras CF', 'Antequera CF', 'Real Murcia CF', 'Hércules CF', 'Villarreal CF B', 
-        'CD Teruel', 'UD Ibiza', 'SD Tarazona', 'Gimnàstic de Tarragona', 'AD Alcorcón', 'FC Cartagena',
-        'Betis Deportivo Balompié', 'Atlético Sanluqueño CF', 'Marbella FC', 'Juventud Torremolinos CF', 'Sevilla Atlético'  
+        'Málaga CF', 'Recreativo Huelva', 'Córdoba CF', 'AD Ceuta FC', 'CD Castellón',  
+        'Antequera CF', 'Atlético Baleares', 'Linares Deportivo', 'UD Ibiza', 'CF Intercity',  
+        'Real Murcia CF', 'Atlético Sanluqueño', 'Melilla', 'Algeciras CF', 'San Fernando CD',  
+        'Recreativo Granada', 'UD Melilla', 'CP Cacereño', 'Yeclano Deportivo', 'Granada B'  
     ]  
 };  
   
@@ -114,33 +115,12 @@ const FORMATIONS = {
     }  
 };  
   
-// ======================
-// NUEVO: Rangos de media por división
-// ======================
-const DIVISION_BASE_OVERALL = {
-    primera: { min: 75, max: 92 },     // Jugadores top de Primera
-    segunda: { min: 65, max: 78 },     // Segunda, media competitiva
-    rfef_grupo1: { min: 55, max: 70 }, // Primera RFEF Grupo 1
-    rfef_grupo2: { min: 55, max: 70 }  // Primera RFEF Grupo 2
-};
-
-// ======================
-// NUEVO: Rango de potencial para juveniles
-// ======================
-const JUVENILE_POTENTIAL = {
-    primera: { min: 78, max: 95 },
-    segunda: { min: 70, max: 85 },
-    rfef_grupo1: { min: 60, max: 75 },
-    rfef_grupo2: { min: 60, max: 75 }
-};
-
-// Multiplicadores secundarios opcionales
 const DIVISION_MULTIPLIERS = {  
     primera: 1.5,  
     segunda: 1.0,  
-    rfef_grupo1: 0.8,  
-    rfef_grupo2: 0.8  
-};
+    rfef_grupo1: 0.7, // Se usa para la generación de staff si el equipo está en esta división  
+    rfef_grupo2: 0.7  // Se usa para la generación de staff si el equipo está en esta división  
+};  
   
 const STAFF_ROLES = {  
     medico: { displayName: 'Médico', minSalary: 800, maxSalary: 2500, baseClausula: 5000, levelCostMultiplier: 1.5 },  
