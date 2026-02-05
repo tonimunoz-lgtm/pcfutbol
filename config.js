@@ -114,12 +114,33 @@ const FORMATIONS = {
     }  
 };  
   
+// ======================
+// NUEVO: Rangos de media por división
+// ======================
+const DIVISION_BASE_OVERALL = {
+    primera: { min: 75, max: 92 },     // Jugadores top de Primera
+    segunda: { min: 65, max: 78 },     // Segunda, media competitiva
+    rfef_grupo1: { min: 55, max: 70 }, // Primera RFEF Grupo 1
+    rfef_grupo2: { min: 55, max: 70 }  // Primera RFEF Grupo 2
+};
+
+// ======================
+// NUEVO: Rango de potencial para juveniles
+// ======================
+const JUVENILE_POTENTIAL = {
+    primera: { min: 78, max: 95 },
+    segunda: { min: 70, max: 85 },
+    rfef_grupo1: { min: 60, max: 75 },
+    rfef_grupo2: { min: 60, max: 75 }
+};
+
+// Multiplicadores secundarios opcionales
 const DIVISION_MULTIPLIERS = {  
     primera: 1.5,  
     segunda: 1.0,  
-    rfef_grupo1: 0.7, // Se usa para la generación de staff si el equipo está en esta división  
-    rfef_grupo2: 0.7  // Se usa para la generación de staff si el equipo está en esta división  
-};  
+    rfef_grupo1: 0.8,  
+    rfef_grupo2: 0.8  
+};
   
 const STAFF_ROLES = {  
     medico: { displayName: 'Médico', minSalary: 800, maxSalary: 2500, baseClausula: 5000, levelCostMultiplier: 1.5 },  
