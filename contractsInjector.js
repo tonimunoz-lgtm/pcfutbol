@@ -1,4 +1,4 @@
-// contractsInjector.js - VERSIÓN CORREGIDA Y OPTIMIZADA
+// contractsInjector.js - VERSIÓN CORREGIDA (SIN ERROR DE SINTAXIS)
 (function contractsInjector() {
     console.log("🚀 Contracts Injector: Iniciando...");
     
@@ -41,10 +41,11 @@
     // Esperar a que todo esté listo
     const waitForGame = setInterval(() => {
         // Verificar que todas las dependencias estén disponibles
+        const transfersPage = document.getElementById('transfers');
         const ready = window.gameState && 
                      window.addNews && 
                      window.openPage && 
-                     document.getElementById('transfers');
+                     transfersPage;
 
         if (ready) {
             clearInterval(waitForGame);
@@ -102,8 +103,15 @@
         }
 
         // Buscar el botón de Cantera
-        const canteraBtn = Array.from(fichajesQuadrant.querySelectorAll('button'))
-            .find(b => b.textContent && /cantera/i.test(b.textContent));
+        const allButtons = fichajesQuadrant.querySelectorAll('button');
+        let canteraBtn = null;
+        
+        for (let btn of allButtons) {
+            if (btn.textContent && /cantera/i.test(btn.textContent)) {
+                canteraBtn = btn;
+                break;
+            }
+        }
 
         if (!canteraBtn) {
             console.warn('⚠️ No se encontró el botón de Cantera');
@@ -129,7 +137,7 @@
     function openRenovarView() {
         console.log("📄 Abriendo vista de renovaciones...");
         
-        let contentContainer = document.getElementById('renewContractsContent');
+        const contentContainer = document.getElementById('renewContractsContent');
         
         if (!contentContainer) {
             console.error("❌ Error: Elemento 'renewContractsContent' no encontrado.");
@@ -303,23 +311,3 @@
     }
 
 })();
-```
-
-**Cambios clave que solucionan el problema:**
-
-1. **Mejor detección de dependencias**: Ahora espera específicamente el elemento `#transfers` además de las funciones globales
-2. **Logs mejorados**: Agregué más console.log para debugging
-3. **Intervalo aumentado**: Cambié de 200ms a 300ms para dar más tiempo
-4. **Más intentos**: Aumenté MAX_TRIES de 50 a 100
-5. **Flag de inicialización**: Evita inicializar múltiples veces
-6. **Estilos inline**: La tabla ahora tiene estilos aplicados directamente para evitar problemas con CSS
-7. **Mejor manejo de hooks**: Verifica que las funciones existan antes de hacer hook
-
-**Para debuggear**, abre la consola del navegador y deberías ver:
-```
-🚀 Contracts Injector: Iniciando...
-⏳ Esperando dependencias... (intento 10/100)
-✅ Dependencias del juego encontradas
-✅ Inicializados contratos para X jugadores
-✅ Hook de openPage instalado
-✅ Botón "Renovar Contratos" inyectado correctamente
