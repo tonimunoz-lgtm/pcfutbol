@@ -1,94 +1,126 @@
-// contractsInjector.js
+// contractsInjector.js - MODIFICADO para inyectar botón en Fichajes (junto a Cantera)
 (function contractsInjector() {
-    const WAIT_INTERVAL = 500;
-    const MAX_TRIES = 20;
+    const WAIT_INTERVAL = 200; 
+    const MAX_TRIES = 50;      
     let tries = 0;
 
-    // Esperar a que el juego y funciones estén listas
-    const waitForGame = setInterval(() => {
-        if (window.gameState && window.addNews && window.renderSquadList) {
-            clearInterval(waitForGame);
-            console.log('🧩 Contracts Injector cargado');
-            initContractsSystem();
-            hookEndOfSeason();
-            hookFichajesView();
-        }
-        if (++tries > MAX_TRIES) clearInterval(waitForGame);
-    }, WAIT_INTERVAL);
-
-    // Inicializa datos de contratos y cedidos si no existen
     function initContractsSystem() {
-        gameState.squad.forEach(p => {
-            if (p.contractType === undefined) p.contractType = 'owned'; // 'owned' | 'loan'
-            if (p.contractYears === undefined) p.contractYears = Math.floor(Math.random() * 4) + 1;
-        });
+        console.log("🚀 Contracts Injector: Inicializando sistema de contratos...");
 
+        if (window.gameState && window.gameState.squad) {
+            gameState.squad.forEach(p => {
+                if (p.contractType === undefined) p.contractType = 'owned'; 
+                if (p.contractYears === undefined) p.contractYears = Math.floor(Math.random() * 4) + 1;
+            });
+        }
+
+        // Inyectar el botón de Renovar inmediatamente (intentando asegurar la ubicación)
         injectRenovarButton();
-        notifyPendingRenewals();
+
+        if (window.addNews) {
+            notifyPendingRenewals();
+        }
+
+        hookEndOfSeason();
+        hookFichajesView();
+
+        console.log("✅ Contracts Injector: Sistema de contratos inicializado.");
     }
 
-    // Inyecta botón "Renovar" en Fichajes (arriba de Cantera)
-    // ---------------------------
-// Inyecta botón "Renovar" en Fichajes
-// ---------------------------
-function injectRenovarButton() {
-    let tries = 0;
-    const maxTries = 40; // más intentos para esperar a que cargue la página
+    const waitForGame = setInterval(() => {
+        if (window.gameState && window.addNews && window.renderSquadList && window.openPage) {
+            clearInterval(waitForGame);
+            initContractsSystem();
 
-    const interval = setInterval(() => {
-        // Buscamos el botón "Cantera" dentro de varias posibles secciones
-        const canteraBtn = Array.from(document.querySelectorAll('button'))
-            .find(b => /cantera/i.test(b.textContent));
-
-        // Solo inyectamos si encontramos el botón y aún no existe nuestro botón
-        if (canteraBtn && !document.getElementById('btn-renovar')) {
-            const renovarBtn = document.createElement('button');
-            renovarBtn.id = 'btn-renovar';
-            renovarBtn.className = canteraBtn.className; // copia estilo del botón existente
-            renovarBtn.textContent = '🔄 Renovar';
-            renovarBtn.style.marginBottom = '5px';
-            renovarBtn.onclick = () => {
-                // Abrimos la página de renovación y cargamos los datos
-                window.openPage('renewContracts');
-                openRenovarView();
+            const originalOpenPage = window.openPage;
+            window.openPage = function(pageId) {
+                originalOpenPage(pageId);
+                if (pageId === 'renewContracts') {
+                    setTimeout(openRenovarView, 50);
+                }
+                if (pageId === 'transfers') {
+                    // Re-inyectar el botón cuando se abre la página de fichajes
+                    setTimeout(injectRenovarButton, 50); 
+                }
+                if (pageId === 'transfers' || pageId === 'squad' || pageId === 'tactics') {
+                    setTimeout(initContractsSystem, 50);
+                }
             };
-
-            canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
-            console.log('✅ Botón Renovar inyectado en Fichajes');
-            clearInterval(interval);
-            return;
         }
 
-        tries++;
-        if (tries >= maxTries) {
-            clearInterval(interval);
-            console.warn('⚠️ No se pudo encontrar el botón "Cantera" para inyectar "Renovar"');
+        if (++tries > MAX_TRIES) {
+            clearInterval(waitForGame);
+            console.error("❌ Contracts Injector: No se pudo inicializar el sistema después de múltiples intentos.");
         }
-    }, 300); // revisamos cada 300ms
-}
+    }, WAIT_INTERVAL);
 
-// ---------------------------
-// Llamar a injectRenovarButton cuando se abra la página de Fichajes
-// ---------------------------
-if (window.openPage) {
-    const originalOpenPage = window.openPage;
-    window.openPage = function(pageId) {
-        originalOpenPage(pageId);
-        if (pageId === 'transfers') {
-            setTimeout(injectRenovarButton, 300); // espera a que cargue la sección de Fichajes
-        }
-    };
-}
+    // Inyecta botón "Renovar" en Fichajes (justo antes de Cantera)
+    function injectRenovarButton() {
+        let btnTries = 0;
+        const btnMaxTries = 60; 
 
-    // ---------------------------
+        const interval = setInterval(() => {
+            // Buscamos el botón "Cantera" específicamente dentro de la página de fichajes
+            const transfersPage = document.getElementById('transfersPage');
+            if (transfersPage) {
+                const canteraBtn = Array.from(transfersPage.querySelectorAll('button'))
+                    .find(b => b.textContent && /cantera/i.test(b.textContent));
+
+                if (canteraBtn && !document.getElementById('btn-renovar')) {
+                    const renovarBtn = document.createElement('button');
+                    renovarBtn.id = 'btn-renovar';
+                    renovarBtn.className = canteraBtn.className; 
+                    renovarBtn.textContent = '💰 Renovar';
+                    renovarBtn.style.marginBottom = '5px';
+                    renovarBtn.onclick = () => {
+                        window.openPage('renewContracts');
+                    };
+
+                    canteraBtn.parentNode.insertBefore(renovarBtn, canteraBtn);
+                    console.log('✅ Botón Renovar inyectado en Fichajes (antes de Cantera)');
+                    clearInterval(interval);
+                    return;
+                }
+            }
+
+            btnTries++;
+            if (btnTries >= btnMaxTries) {
+                clearInterval(interval);
+                console.warn('⚠️ Contracts Injector: No se pudo encontrar el botón "Cantera" en transfersPage para inyectar "Renovar".');
+            }
+        }, 200); 
+    }
+
     // Abrir vista de Renovar
-    // ---------------------------
     function openRenovarView() {
-        const contentContainer = document.getElementById('renewContractsContent');
+        let contentContainer = document.getElementById('renewContractsContent');
+        
+        // Asumiendo que existe un div con id="renewContractsPage" para la página de renovaciones
+        // Si no existe, puedes ajustar esto para crearlo o usar otro contenedor principal
+        const renewContractsPage = document.getElementById('renewContractsPage'); 
+
         if (!contentContainer) {
-            console.error("Error: Elemento 'renewContractsContent' no encontrado.");
-            return;
+            if (renewContractsPage) {
+                contentContainer = document.createElement('div');
+                contentContainer.id = 'renewContractsContent';
+                renewContractsPage.appendChild(contentContainer);
+                console.log('🔧 Creado dinámicamente #renewContractsContent dentro de #renewContractsPage');
+            } else {
+                console.error("❌ Error: Elemento \'renewContractsPage\' no encontrado para crear \'renewContractsContent\'.");
+                // Intenta buscar en mainContent como fallback
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    contentContainer = document.createElement('div');
+                    contentContainer.id = 'renewContractsContent';
+                    mainContent.appendChild(contentContainer);
+                    console.log('🔧 Creado dinámicamente #renewContractsContent dentro de #mainContent (fallback)');
+                } else {
+                    console.error("❌ Error: Elemento \'mainContent\' tampoco encontrado para crear \'renewContractsContent\'.");
+                    return;
+                }
+            }
         }
+
         contentContainer.innerHTML = '';
 
         const table = document.createElement('table');
@@ -107,6 +139,12 @@ if (window.openPage) {
             <tbody></tbody>
         `;
         const tbody = table.querySelector('tbody');
+
+        if (!window.gameState || !window.gameState.squad) {
+            console.warn("⚠️ Contracts Injector: gameState o gameState.squad no disponibles para openRenovarView.");
+            contentContainer.innerHTML = '<p>No hay jugadores para renovar en este momento.</p>';
+            return;
+        }
 
         gameState.squad.forEach(player => {
             const tr = document.createElement('tr');
@@ -131,60 +169,62 @@ if (window.openPage) {
         contentContainer.appendChild(table);
     }
 
-    // Avisos sobre jugadores pendientes de renovar
     function notifyPendingRenewals() {
+        if (!window.gameState || !window.gameState.squad || !window.addNews) return;
+
         const pending = gameState.squad.filter(
             p => p.contractType === 'owned' && p.contractYears === 1
         );
 
         if (pending.length > 0) {
             addNews(
-                `[Director Técnico] Hay ${pending.length} jugadores con contrato a punto de expirar.`,
+                `[Director Técnico] Hay ${pending.length} jugadores con contrato a punto de expirar.`, 
                 'warning'
             );
         }
     }
 
-    // Negociación de renovación
     function openRenewNegotiation(player) {
         const salary = Math.round(player.salary * 1.1);
 
         const years = prompt(
-            `Negociar renovación con ${player.name}\nAños de contrato (1-5):`,
+            `Negociar renovación con ${player.name}\n\nAños de contrato (1-5):`,
             player.contractYears
         );
-        if (!years) return;
+        if (!years || isNaN(years) || years < 1 || years > 5) return; 
 
         const accepted = Math.random() < getRenewalChance(player, salary, years);
 
         if (accepted) {
             player.contractYears = Number(years);
             player.salary = salary;
-            addNews(
-                `✅ ${player.name} ha renovado su contrato por ${years} años.`,
-                'success'
-            );
+            if (window.addNews) {
+                addNews(
+                    `✅ ${player.name} ha renovado su contrato por ${years} años.`, 
+                    'success'
+                );
+            }
         } else {
-            addNews(
-                `❌ ${player.name} ha rechazado la oferta de renovación.`,
-                'error'
-            );
+            if (window.addNews) {
+                addNews(
+                    `❌ ${player.name} ha rechazado la oferta de renovación.`, 
+                    'error'
+                );
+            }
         }
 
-        openRenovarView(); // refrescar tabla después de negociación
+        openRenovarView(); 
     }
 
-    // Probabilidad de aceptación de renovación
     function getRenewalChance(player, salary, years) {
         let chance = 0.5;
         if (salary >= player.salary * 1.1) chance += 0.2;
         if (years >= player.contractYears) chance += 0.1;
-        if (player.age > 30) chance += 0.1;
+        if (player.age > 30) chance -= 0.1; 
         if (gameState.popularity > 70) chance += 0.1;
-        return Math.min(chance, 0.9);
+        return Math.min(Math.max(chance, 0.1), 0.9); 
     }
 
-    // Hook al final de temporada
     function hookEndOfSeason() {
         const originalEndSeason = window.endSeason;
         window.endSeason = function () {
@@ -194,84 +234,91 @@ if (window.openPage) {
     }
 
     function decrementContracts() {
+        if (!window.gameState || !window.gameState.squad || !window.addNews) return;
+
         const freedPlayers = [];
         gameState.squad.forEach(player => {
             if (player.contractType === 'loan') {
                 player.contractType = 'owned';
-                player.contractYears = 1;
+                player.contractYears = 1; 
             } else {
                 player.contractYears--;
-                if (player.contractYears <= 0) freedPlayers.push(player);
-            }
+                if (player.contractYears <= 0) freedPlayers.push(player);\
+            }\
         });
 
         if (freedPlayers.length > 0) {
             freedPlayers.forEach(p => {
-                p.isFreeAgent = true;
-                gameState.squad = gameState.squad.filter(pl => pl !== p);
-            });
+                p.isFreeAgent = true;\
+                gameState.squad = gameState.squad.filter(pl => pl !== p);\
+            });\
             addNews(
-                `[Mercado] ${freedPlayers.length} jugadores han quedado libres al terminar su contrato.`,
-                'info'
-            );
-        }
+                `[Mercado] ${freedPlayers.length} jugadores han quedado libres al terminar su contrato.`, 
+                'info'\
+            );\
+        }\
 
-        notifyPendingRenewals();
-    }
+        notifyPendingRenewals();\
+    }\
 
-    // Hook para añadir jugadores libres al final de Fichajes
-    function hookFichajesView() {
-        const originalRenderFichajes = window.renderFichajes;
-        if (!originalRenderFichajes) return;
+    function hookFichajesView() {\
+        const originalRenderFichajes = window.renderFichajes;\
+        if (!originalRenderFichajes) return;\
 
-        window.renderFichajes = function () {
-            originalRenderFichajes.apply(this, arguments);
+        window.renderFichajes = function () {\
+            originalRenderFichajes.apply(this, arguments);\
 
-            const table = document.querySelector('#fichajes-table tbody');
-            if (!table) return;
+            const table = document.querySelector('#fichajes-table tbody');\
+            if (!table) return;\
 
-            const freeAgents = gameState.squad.concat(gameState.freeAgents || [])
-                .filter(p => p.isFreeAgent);
+            if (!gameState.freeAgents) {\
+                gameState.freeAgents = [];\
+            }\
 
-            freeAgents.forEach(player => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${player.name}</td>
-                    <td>${player.position}</td>
-                    <td>${player.age}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary">Negociar</button>
-                    </td>
-                `;
-                tr.querySelector('button').onclick = () => openSignContract(player);
-                table.appendChild(tr);
-            });
-        };
-    }
+            const freeAgents = gameState.squad.concat(gameState.freeAgents || [])\
+                .filter(p => p.isFreeAgent);\
 
-    function openSignContract(player) {
-        const years = prompt(`Negociar contrato con ${player.name}\nAños de contrato (1-5):`, 1);
-        if (!years) return;
-        const salary = prompt(`Salario anual para ${player.name}?`, 100000);
-        if (!salary) return;
+            freeAgents.forEach(player => {\
+                const tr = document.createElement('tr');\
+                tr.innerHTML = `\
+                    <td>${player.name}</td>\
+                    <td>${player.position}</td>\
+                    <td>${player.age}</td>\
+                    <td>\
+                        <button class=\"btn btn-sm btn-primary\">Negociar</button>\
+                    </td>\
+                `;\
+                tr.querySelector('button').onclick = () => openSignContract(player);\
+                table.appendChild(tr);\
+            });\
+        };\
+    }\
 
-        player.contractType = 'owned';
-        player.contractYears = Number(years);
-        player.salary = Number(salary);
-        player.isFreeAgent = false;
-        gameState.squad.push(player);
+    function openSignContract(player) {\
+        const years = prompt(`Negociar contrato con ${player.name}\n\nAños de contrato (1-5):`, 1);\
+        if (!years || isNaN(years) || years < 1 || years > 5) return;\
+        const salary = prompt(`Salario anual para ${player.name}?`, 100000);\
+        if (!salary || isNaN(salary) || salary <= 0) return;\
 
-        addNews(`✅ Has fichado a ${player.name} por ${years} años.`, 'success');
-        renderFichajes();
-    }
+        player.contractType = 'owned';\
+        player.contractYears = Number(years);\
+        player.salary = Number(salary);\
+        player.isFreeAgent = false;\
 
-    // ---------------------------
-    // Integración con openPage
-    // ---------------------------
-    const originalOpenPage = window.openPage;
-    window.openPage = function(pageId) {
-        if (originalOpenPage) originalOpenPage(pageId);
-        if (pageId === 'renewContracts') openRenovarView();
-    };
+        if (!gameState.squad.some(p => p.name === player.name)) {\
+            gameState.squad.push(player);\
+        }\
+        \
+        if (gameState.freeAgents) {\
+            gameState.freeAgents = gameState.freeAgents.filter(p => p.name !== player.name);\
+        }\
+        \
+        if (window.addNews) {\
+            addNews(`✅ Has fichado a ${player.name} por ${years} años.`, 'success');\
+        }\
+        if (window.renderFichajes) {\
+            renderFichajes();\
+        }\
+    }\
 
 })();
