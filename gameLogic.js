@@ -1505,10 +1505,34 @@ function validateLineup(lineupToCheck) {
     return { success: true, message: 'Alineación válida.' };  
 }  
   
-function saveToLocalStorage() {  
-    localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
-    return { success: true, message: 'Partida guardada en el dispositivo.' };  
-}  
+// ANTES (localStorage):
+function saveToLocalStorage() {
+    localStorage.setItem('gameState', JSON.stringify(gameState));
+}
+
+// DESPUÉS (Firebase):
+async function saveToFirebase() {
+    if (!window.currentUserId) {
+        console.warn('Usuario no autenticado, no se puede guardar');
+        return;
+    }
+    
+    const gameId = gameState.currentGameId || `game_${Date.now()}`;
+    gameState.currentGameId = gameId;
+    
+    await window.saveGameToCloud(window.currentUserId, gameId, {
+        id: gameId,
+        name: gameState.gameName || `Partida ${gameState.team}`,
+        team: gameState.team,
+        division: gameState.division,
+        week: gameState.week,
+        season: gameState.season,
+        gameState: gameState,
+        lastSaved: Date.now()
+    });
+}
+
+// Reemplazar todas las llamadas a saveToLocalStorage() por saveToFirebase()
   
 function loadFromLocalStorage() {  
     const saved = localStorage.getItem('pcfutbol-save');  
