@@ -784,11 +784,30 @@
     };
     
     // Instalar hooks
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', hookWeeklyAdvance);
-    } else {
-        hookWeeklyAdvance();
-    }
+    function waitForGameLogicAndHook() {
+    const maxAttempts = 50;
+    let attempts = 0;
+
+    const interval = setInterval(() => {
+        if (window.gameLogic && typeof window.gameLogic.advanceWeek === 'function') {
+            hookWeeklyAdvance();
+            clearInterval(interval);
+        }
+
+        attempts++;
+        if (attempts >= maxAttempts) {
+            console.warn('❌ No se pudo instalar hook de Copa (gameLogic no disponible)');
+            clearInterval(interval);
+        }
+    }, 100);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForGameLogicAndHook);
+} else {
+    waitForGameLogicAndHook();
+}
+
     
     console.log('✅ Sistema de Copa del Rey: Cargado correctamente');
     
