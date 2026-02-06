@@ -499,6 +499,7 @@ tr:hover {
 /* Inputs */
 input, select {
     width: 100%;
+    max-width: 10em;
     padding: 10px;
     background: rgba(0,0,0,0.5);
     border: 1px solid #5588FF;
