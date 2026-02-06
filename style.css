@@ -1080,3 +1080,22 @@ Salida
     z-index: 1000;
     margin-bottom: 5px;
 }
+
+/* Widget de Posición */
+#positionWidget {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px;
+}
+
+.position-widget {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.dashboard-section h2 {
+    font-size: 1.3em;
+    font-weight: bold;
+}
