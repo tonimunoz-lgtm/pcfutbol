@@ -643,32 +643,59 @@
     }
 
     // ===========================================
-    // EXPORTAR FUNCIONES GLOBALES
-    // ===========================================
+// EXPORTAR FUNCIONES GLOBALES
+// ===========================================
+
+window.ContractsSystem = {
+    initialize: initializePlayerContracts,
+    processWeekly: processWeeklyContracts,
+    openRenewal: openRenewalNegotiation,
+    openRenewalUI: openContractsView,  // ← AÑADIDO PARA COMPATIBILIDAD
+    openView: openContractsView,
+    calculateSalary: calculatePlayerSalary,
+    calculateClause: calculateReleaseClause
+};
+
+// Alias para compatibilidad con diferentes partes del código
+window.openRenewalNegotiation = function(playerIdOrName) {
+    const gameState = window.gameLogic ? window.gameLogic.getGameState() : window.gameState;
+    if (!gameState) return;
     
-    window.ContractsSystem = {
-        initialize: initializePlayerContracts,
-        processWeekly: processWeeklyContracts,
-        openRenewal: openRenewalNegotiation,
-        openView: openContractsView,
-        calculateSalary: calculatePlayerSalary,
-        calculateClause: calculateReleaseClause
-    };
+    const player = gameState.squad.find(p => 
+        (p.id && p.id === playerIdOrName) || p.name === playerIdOrName
+    );
     
-    // Alias para compatibilidad
-    window.openRenewalNegotiation = function(playerIdOrName) {
-        const gameState = window.gameLogic ? window.gameLogic.getGameState() : window.gameState;
-        if (!gameState) return;
-        
-        const player = gameState.squad.find(p => 
-            (p.id && p.id === playerIdOrName) || p.name === playerIdOrName
-        );
-        
-        if (player) {
-            openRenewalNegotiation(player, gameState);
-        }
-    };
+    if (player) {
+        openRenewalNegotiation(player, gameState);
+    }
+};
+
+// 🆕 ALIAS GLOBAL PARA ABRIR LA UI DE RENOVACIONES (DESDE EL BOTÓN)
+window.openRenewalUI = function(gameState) {
+    console.log('🔍 openRenewalUI llamado con gameState:', !!gameState);
     
-    console.log('✅ Sistema de Contratos: Cargado correctamente');
+    // Si no se pasa gameState, obtenerlo
+    if (!gameState) {
+        gameState = window.gameLogic ? window.gameLogic.getGameState() : window.gameState;
+    }
     
+    if (!gameState) {
+        console.error('❌ No se pudo obtener gameState');
+        alert('Error: No se pudo cargar el estado del juego');
+        return;
+    }
+    
+    // Llamar a la función que muestra la vista de contratos
+    if (typeof openContractsView === 'function') {
+        console.log('✅ Llamando a openContractsView');
+        openContractsView(gameState);
+    } else {
+        console.error('❌ openContractsView no está definido');
+        alert('Error: La función de renovaciones no está disponible');
+    }
+};
+
+console.log('✅ Sistema de Contratos: Cargado correctamente');
+console.log('✅ Función openRenewalUI expuesta globalmente');
+
 })();
