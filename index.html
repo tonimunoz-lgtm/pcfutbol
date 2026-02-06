@@ -632,63 +632,98 @@
         // FUNCIONES PARA NAVEGACIÓN DE PÁGINAS
         // ============================================
         
-        window.openPage = function(pageId) {
+       // Variable global para evitar bucle infinito
+window.contractsPageInitialized = false;
+
+window.openPage = function(pageId) {
     const page = document.getElementById(pageId);
-    if (page) {
-        // Mostrar la página y ocultar las demás
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        page.classList.add('active');
+    if (!page) return;
 
-        const state = gameLogic.getGameState();
-        if (!state) return;
+    // Ocultar todas las páginas y mostrar la actual
+    const alreadyActive = page.classList.contains('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    page.classList.add('active');
 
-        // Renderizado de cada página
-        if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
-        if (pageId === 'academy') ui.renderAcademyList(state.academy);
-        if (pageId === 'transfers') {
+    const state = gameLogic.getGameState();
+    if (!state) return;
+
+    // Renderizado de otras páginas
+    switch(pageId) {
+        case 'squad':
+            ui.renderSquadList(state.squad, state.team);
+            break;
+        case 'academy':
+            ui.renderAcademyList(state.academy);
+            break;
+        case 'transfers':
             window.searchPlayersMarket();
             window.renderAvailableYoungsters();
-        }
-        if (pageId === 'finance') window.updateFinanceDisplay(state);
-        if (pageId === 'facilities') window.updateFacilitiesDisplay(state);
-        if (pageId === 'commercial') window.updateCommercialDisplay(state);
-        if (pageId === 'staff') window.updateStaffDisplay(state);
-        if (pageId === 'tactics') window.updateTacticsDisplay(state);
-        if (pageId === 'lineup') window.renderLineupPageUI();
-        if (pageId === 'dashboard') gameLogic.markNewsAsRead();
-        if (pageId === 'calendar') ui.renderCalendarPage(state);
-        if (pageId === 'standings') ui.renderStandingsTable(state);
-        
-        // 🆕 AÑADIR RENOVACIONES
-        if (pageId === 'contractsPage') {
-            renderContractsTable(state);
-            console.log('🔍 Abriendo página de renovaciones...');
-            console.log('ContractsSystem disponible:', !!window.ContractsSystem);
-            console.log('openRenewalUI disponible:', !!window.openRenewalUI);
-            
-            if (window.openRenewalUI) {
-                try {
-                    window.openRenewalUI(state);
-                    console.log('✅ openRenewalUI llamado correctamente');
-                } catch (error) {
-                    console.error('❌ Error al llamar openRenewalUI:', error);
-                    alert('Error al abrir renovaciones: ' + error.message);
+            break;
+        case 'finance':
+            window.updateFinanceDisplay(state);
+            break;
+        case 'facilities':
+            window.updateFacilitiesDisplay(state);
+            break;
+        case 'commercial':
+            window.updateCommercialDisplay(state);
+            break;
+        case 'staff':
+            window.updateStaffDisplay(state);
+            break;
+        case 'tactics':
+            window.updateTacticsDisplay(state);
+            break;
+        case 'lineup':
+            window.renderLineupPageUI();
+            break;
+        case 'dashboard':
+            gameLogic.markNewsAsRead();
+            break;
+        case 'calendar':
+            ui.renderCalendarPage(state);
+            break;
+        case 'standings':
+            ui.renderStandingsTable(state);
+            break;
+
+        // 🆕 Página de Contratos
+        case 'contractsPage':
+            if (!window.contractsPageInitialized) {
+                renderContractsTable(state);
+                console.log('🔍 Abriendo página de renovaciones...');
+                console.log('ContractsSystem disponible:', !!window.ContractsSystem);
+                console.log('openRenewalUI disponible:', !!window.openRenewalUI);
+
+                if (window.openRenewalUI) {
+                    try {
+                        window.openRenewalUI(state);
+                        console.log('✅ openRenewalUI llamado correctamente');
+                    } catch (error) {
+                        console.error('❌ Error al llamar openRenewalUI:', error);
+                        alert('Error al abrir renovaciones: ' + error.message);
+                    }
+                } else if (window.ContractsSystem && window.ContractsSystem.openRenewalUI) {
+                    try {
+                        window.ContractsSystem.openRenewalUI(state);
+                        console.log('✅ ContractsSystem.openRenewalUI llamado correctamente');
+                    } catch (error) {
+                        console.error('❌ Error al llamar ContractsSystem.openRenewalUI:', error);
+                        alert('Error al abrir renovaciones: ' + error.message);
+                    }
+                } else {
+                    console.error('❌ Sistema de contratos no disponible');
+                    alert('⚠️ El sistema de contratos no está cargado correctamente. Por favor, recarga la página.');
                 }
-            } else if (window.ContractsSystem && window.ContractsSystem.openRenewalUI) {
-                try {
-                    window.ContractsSystem.openRenewalUI(state);
-                    console.log('✅ ContractsSystem.openRenewalUI llamado correctamente');
-                } catch (error) {
-                    console.error('❌ Error al llamar ContractsSystem.openRenewalUI:', error);
-                    alert('Error al abrir renovaciones: ' + error.message);
-                }
+
+                window.contractsPageInitialized = true; // 🔹 Evita bucle infinito
             } else {
-                console.error('❌ Sistema de contratos no disponible');
-                alert('⚠️ El sistema de contratos no está cargado correctamente. Por favor, recarga la página.');
+                console.log('⚠️ contractsPage ya inicializada, no se vuelve a abrir.');
             }
-        }
+            break;
     }
-}
+};
+
         
         window.closePage = function(pageId) {
             const page = document.getElementById(pageId);
