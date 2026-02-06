@@ -2,6 +2,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
   
 // Configuración directa de Firebase  
 const firebaseConfig = {  
@@ -110,7 +112,25 @@ if (firebaseConfig.enabled) {
         resolveAuthReady = null;  
     }  
 }  
-  
+
+const storage = getStorage(app);
+window.firebaseStorage = storage;
+
+// Función para subir imágenes
+async function uploadImage(file, path) {
+    try {
+        const storageRef = ref(storage, path);
+        const snapshot = await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(snapshot.ref);
+        return { success: true, url };
+    } catch (error) {
+        console.error('Error subiendo imagen:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+window.uploadImageToFirebase = uploadImage;
+
 // ==========================================  
 // FUNCIONES PARA DATOS DE EQUIPOS (GLOBALES)  
 // ==========================================  
