@@ -1702,9 +1702,26 @@ export {
 
 if (typeof window !== 'undefined') {
     window.gameLogic = {
+        gameState,
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
+        generateLeagueCalendar,
+        generateInitialSquad,
+        generateInitialAcademy,
+        setupNewSeason,
+        signPlayer,
+        signYoungster,
+        promoteYoungster,
+        sellPlayer,
+        startNegotiation,
+        offerToPlayer,
+        offerToClub,
+        endNegotiation,
+        setTrainingFocus,
+        addNews,
+        markNewsAsRead,
+        // Añade aquí cualquier otra función que otros módulos necesiten
     };
 }
 
