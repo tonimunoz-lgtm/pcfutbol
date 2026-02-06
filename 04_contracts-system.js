@@ -524,6 +524,9 @@
         }).join('');
     }
 
+window.renderContractsTable = renderContractsTable;
+
+    
     // ===========================================
     // FUNCIONES AUXILIARES
     // ===========================================
