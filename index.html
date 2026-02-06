@@ -603,29 +603,38 @@
         // ============================================
         
         window.openPage = function(pageId) {
-            const page = document.getElementById(pageId);
-            if (page) {
-                page.classList.add('active');
-                
-                // Actualizar contenido según la página
-                const state = gameLogic.getGameState();
-                if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
-                if (pageId === 'academy') ui.renderAcademyList(state.academy);
-                if (pageId === 'transfers') {
-                    window.searchPlayersMarket();
-                    window.renderAvailableYoungsters();
-                }
-                if (pageId === 'finance') window.updateFinanceDisplay(state);
-                if (pageId === 'facilities') window.updateFacilitiesDisplay(state);
-                if (pageId === 'commercial') window.updateCommercialDisplay(state);
-                if (pageId === 'staff') window.updateStaffDisplay(state);
-                if (pageId === 'tactics') window.updateTacticsDisplay(state);
-                if (pageId === 'lineup') window.renderLineupPageUI();
-                if (pageId === 'dashboard') gameLogic.markNewsAsRead();
-                if (pageId === 'calendar') ui.renderCalendarPage(state);
-                if (pageId === 'standings') ui.renderStandingsTable(state);
+    const page = document.getElementById(pageId);
+    if (page) {
+        page.classList.add('active');
+        
+        // Actualizar contenido según la página
+        const state = gameLogic.getGameState();
+        if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
+        if (pageId === 'academy') ui.renderAcademyList(state.academy);
+        if (pageId === 'transfers') {
+            window.searchPlayersMarket();
+            window.renderAvailableYoungsters();
+        }
+        if (pageId === 'finance') window.updateFinanceDisplay(state);
+        if (pageId === 'facilities') window.updateFacilitiesDisplay(state);
+        if (pageId === 'commercial') window.updateCommercialDisplay(state);
+        if (pageId === 'staff') window.updateStaffDisplay(state);
+        if (pageId === 'tactics') window.updateTacticsDisplay(state);
+        if (pageId === 'lineup') window.renderLineupPageUI();
+        if (pageId === 'dashboard') gameLogic.markNewsAsRead();
+        if (pageId === 'calendar') ui.renderCalendarPage(state);
+        if (pageId === 'standings') ui.renderStandingsTable(state);
+        
+        // 🆕 AÑADIR RENOVACIONES
+        if (pageId === 'renewContracts') {
+            if (window.ContractsSystem && window.ContractsSystem.openRenewalUI) {
+                window.ContractsSystem.openRenewalUI(state);
+            } else {
+                alert('⚠️ El sistema de contratos no está cargado correctamente.');
             }
-        };
+        }
+    }
+};
         
         window.closePage = function(pageId) {
             const page = document.getElementById(pageId);
