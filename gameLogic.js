@@ -1649,3 +1649,47 @@ function getAgeModifier(age) {
     if (age <= 33) return 0.3;
     return -0.5;
 }
+
+// Al final de gameLogic.js, añadir:
+
+// Inicializar sistemas al cargar el juego
+function initializeGameSystems() {
+    // Sistema de contratos
+    if (window.ContractsSystem && gameState.squad) {
+        gameState.squad = window.ContractsSystem.initialize(gameState.squad, gameState.division);
+    }
+    
+    // Sistema de tarjetas y lesiones
+    if (window.CardsInjuriesSystem && gameState.squad) {
+        gameState.squad = window.CardsInjuriesSystem.initializeCards(gameState.squad);
+        gameState.squad = window.CardsInjuriesSystem.initializeInjuries(gameState.squad);
+    }
+    
+    console.log('✅ Sistemas de juego inicializados');
+}
+
+// Llamar al inicializar
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initializeGameSystems, 1000);
+});
+
+// Procesar sistemas al avanzar semana
+const originalAdvanceWeek = advanceWeek;
+function advanceWeek() {
+    // Llamar función original
+    const result = originalAdvanceWeek();
+    
+    // Procesar contratos
+    if (window.ContractsSystem) {
+        window.ContractsSystem.processWeekly(gameState);
+    }
+    
+    // Procesar tarjetas y lesiones
+    if (window.CardsInjuriesSystem) {
+        window.CardsInjuriesSystem.processWeeklySuspensions(gameState.squad, gameState.week);
+        window.CardsInjuriesSystem.processWeeklyRecoveries(gameState.squad, gameState);
+        window.CardsInjuriesSystem.resetWeeklyMinutes(gameState.squad);
+    }
+    
+    return result;
+}
