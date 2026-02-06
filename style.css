@@ -332,7 +332,12 @@ body {
     font-size: 1.2em; /* Ajusta tamaño según quieras */
     margin-right: 5px; /* Si quieres espacio entre el icono y el texto */
 }
-
+.cantera-icon::before {
+    content: "🌱";  /* Aquí va el emoji */
+    display: inline-block;
+    font-size: 1.2em; /* Ajusta tamaño según quieras */
+    margin-right: 5px; /* Si quieres espacio entre el icono y el texto */
+}
 
 /* ============================================
    PÁGINAS DE CONTENIDO - Pantallas secundarias
