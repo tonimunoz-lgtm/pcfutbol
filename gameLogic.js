@@ -1109,6 +1109,25 @@ function simulateFullWeek() {
             }
         }
     });
+
+    // 🆕 PROCESAR CONTRATOS SEMANALMENTE
+if (window.ContractsSystem) {
+    window.ContractsSystem.processWeekly(gameState);
+}
+
+// 🆕 PROCESAR COPA DEL REY
+if (gameState.copa && window.CopaDelRey) {
+    const copa = new window.CopaDelRey(gameState.currentSeason);
+    copa.import(gameState.copa);
+    
+    const userMatch = copa.getUserMatch(gameState.team);
+    if (userMatch && !userMatch.played) {
+        const result = copa.simulateMatch(userMatch, gameState);
+        // El partido ya se añadió a las noticias dentro de simulateMatch
+    }
+    
+    gameState.copa = copa.export();
+}
     
     gameState.academy.forEach(y => {  
         if (y.isInjured) {  
@@ -1677,21 +1696,85 @@ function getAgeModifier(age) {
 // Al final de gameLogic.js, añadir:
 
 // Inicializar sistemas al cargar el juego
+// Inicializar sistemas al cargar el juego
 function initializeGameSystems() {
+    console.log('🎮 Inicializando sistemas del juego...');
+    
     // Sistema de contratos
     if (window.ContractsSystem && gameState.squad) {
-        gameState.squad = window.ContractsSystem.initialize(gameState.squad, gameState.division);
+        gameState.squad = window.ContractsSystem.initialize(
+            gameState.squad, 
+            gameState.division
+        );
+        console.log('✅ Sistema de contratos inicializado');
     }
     
     // Sistema de tarjetas y lesiones
     if (window.CardsInjuriesSystem && gameState.squad) {
         gameState.squad = window.CardsInjuriesSystem.initializeCards(gameState.squad);
         gameState.squad = window.CardsInjuriesSystem.initializeInjuries(gameState.squad);
+        console.log('✅ Sistema de tarjetas y lesiones inicializado');
     }
     
-    console.log('✅ Sistemas de juego inicializados');
+    // Copa del Rey (si está habilitada)
+    if (window.CopaDelReySystem && gameState.division) {
+        // Solo inicializar Copa si ya hay una temporada en marcha
+        if (gameState.week > 0 && gameState.seasonType === 'regular') {
+            const divisions = {
+                primera: window.TEAMS_DATA?.primera || [],
+                segunda: window.TEAMS_DATA?.segunda || []
+            };
+            window.CopaDelReySystem.initialize(gameState, divisions);
+            console.log('✅ Copa del Rey inicializada');
+        }
+    }
+    
+    // Competiciones Europeas (solo Primera División)
+    if (window.EuropeanCompetitions && gameState.division === 'primera') {
+        // Solo inicializar si ya hay clasificación
+        if (gameState.standings && Object.keys(gameState.standings).length > 0) {
+            const position = getTeamPosition(gameState);
+            
+            if (position && position <= 4 && !gameState.championsLeague) {
+                // Clasificado a Champions League
+                gameState.championsLeague = window.EuropeanCompetitions.initializeChampions(
+                    gameState.currentSeason,
+                    [gameState.team]
+                );
+                console.log('✅ Champions League inicializada');
+            } else if (position && position <= 6 && !gameState.europaLeague) {
+                // Clasificado a Europa League
+                gameState.europaLeague = window.EuropeanCompetitions.initializeEuropa(
+                    gameState.currentSeason,
+                    [gameState.team]
+                );
+                console.log('✅ Europa League inicializada');
+            }
+        }
+    }
+    
+    console.log('✅ Todos los sistemas inicializados correctamente');
 }
 
+// Función auxiliar para obtener posición del equipo
+function getTeamPosition(gameState) {
+    if (!gameState.standings || !gameState.team) return null;
+    
+    const standings = Object.entries(gameState.standings)
+        .sort((a, b) => {
+            // Ordenar por puntos
+            if (b[1].pts !== a[1].pts) return b[1].pts - a[1].pts;
+            // Diferencia de goles
+            const dgA = (a[1].gf || 0) - (a[1].gc || 0);
+            const dgB = (b[1].gf || 0) - (b[1].gc || 0);
+            if (dgB !== dgA) return dgB - dgA;
+            // Goles a favor
+            return (b[1].gf || 0) - (a[1].gf || 0);
+        });
+    
+    const pos = standings.findIndex(([team]) => team === gameState.team);
+    return pos >= 0 ? pos + 1 : null;
+}
 // Llamar al inicializar
 window.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeGameSystems, 1000);
