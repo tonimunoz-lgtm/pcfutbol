@@ -1,39 +1,33 @@
 // ============================================
-// FIX FINAL REAL - Compatible con tu estructura
+// FIX QUE SÍ FUNCIONA - Intercepta openPage
 // ============================================
 
 (function() {
     'use strict';
     
-    console.log('🔧 [FIX FINAL REAL] Iniciando...');
+    console.log('🔧 [FIX WORKING] Iniciando...');
     
     let checkCount = 0;
     const checkInterval = setInterval(function() {
         checkCount++;
         
-        // Verificar que TODO esté disponible
-        if (window.gameLogic && 
-            window.ui && 
-            window.ui.renderSquadList &&
-            window.openPage) {
-            
+        if (window.gameLogic && window.openPage) {
             clearInterval(checkInterval);
-            console.log('✅ Sistemas detectados, aplicando en 1 segundo...');
+            console.log('✅ Sistemas detectados, aplicando...');
             setTimeout(applyFixes, 1000);
-            
         } else if (checkCount > 100) {
             clearInterval(checkInterval);
-            console.error('❌ Timeout - Sistemas no disponibles');
+            console.error('❌ Timeout');
         }
     }, 200);
     
     function applyFixes() {
         console.log('🔄 Aplicando correcciones...');
         
-        // 1. Parchear plantilla
-        patchSquad();
+        // 1. Interceptar openPage (única forma que funciona)
+        interceptOpenPage();
         
-        // 2. Parchear venta
+        // 2. Venta
         patchSell();
         
         // 3. Ofertas
@@ -42,100 +36,114 @@
         // 4. Mercado
         if (!window.transferMarket) window.transferMarket = [];
         
-        console.log('✅ [FIX FINAL REAL] Aplicado correctamente');
+        console.log('✅ [FIX WORKING] Aplicado');
     }
     
     // ==========================================
-    // PARCHEAR PLANTILLA
+    // INTERCEPTAR OPENPAGE
     // ==========================================
-    function patchSquad() {
-        const orig = window.ui.renderSquadList;
+    function interceptOpenPage() {
+        const orig = window.openPage;
         
-        window.ui.renderSquadList = function(squad, teamName) {
-            const c = document.getElementById('squadList');
-            if (!c) return;
+        window.openPage = function(pageId) {
+            // Llamar original
+            orig.apply(this, arguments);
             
-            c.innerHTML = ''; // CRÍTICO
-            
-            const t = document.createElement('table');
-            t.style.width = '100%';
-            t.style.borderCollapse = 'collapse';
-            
-            t.innerHTML = `
-                <thead>
-                    <tr style="background: rgba(233, 69, 96, 0.3); border-bottom: 2px solid #e94560;">
-                        <th style="padding: 10px; text-align: left; color: #fff;">Jugador</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Pos</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Media</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Estado</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Contrato</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Duración</th>
-                        <th style="padding: 10px; text-align: right; color: #fff;">Salario</th>
-                        <th style="padding: 10px; text-align: center; color: #fff;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
-            
-            const tb = t.querySelector('tbody');
-            
-            squad.forEach((p, i) => {
-                const r = document.createElement('tr');
-                r.style.borderBottom = '1px solid rgba(233, 69, 96, 0.1)';
-                
-                // Estado
-                let s = '<span style="color: #00ff00; font-weight: bold;">✅ Apto</span>';
-                if (p.isInjured) s = `<span style="color: #ff0000; font-weight: bold;">❌ Lesión (${p.weeksOut || 0}sem)</span>`;
-                else if (p.isSuspended) s = `<span style="color: #FFA500; font-weight: bold;">⛔ Sanción (${p.suspensionWeeks || 0})</span>`;
-                
-                if (p.yellowCards > 0) s += ` <span style="background: #FFD700; color: #000; padding: 3px 6px; border-radius: 3px;">🟨${p.yellowCards}</span>`;
-                if (p.redCards > 0) s += ` <span style="background: #DC143C; color: #fff; padding: 3px 6px; border-radius: 3px;">🟥${p.redCards}</span>`;
-                
-                // Contrato
-                const ct = p.contractType === 'loan' ? 'Cedido' : 'Propiedad';
-                const cc = p.contractType === 'loan' ? '#4169E1' : '#00ff00';
-                
-                // Duración
-                let d = '';
-                if (p.contractType === 'loan') {
-                    d = '<span style="color: #4169E1; font-weight: bold;">1 (Cesión)</span>';
-                } else {
-                    const y = p.contractYears || 0;
-                    const col = y <= 1 ? '#ff0000' : (y <= 2 ? '#FFA500' : '#00ff00');
-                    d = `<span style="color: ${col}; font-weight: bold;">${y}</span>`;
-                }
-                
-                r.innerHTML = `
-                    <td style="padding: 10px; color: #fff; font-weight: bold;">${p.name}</td>
-                    <td style="padding: 10px; text-align: center; color: #fff;">${p.position}</td>
-                    <td style="padding: 10px; text-align: center; color: #00ff00; font-weight: bold;">${p.overall || 65}</td>
-                    <td style="padding: 10px; text-align: center;">${s}</td>
-                    <td style="padding: 10px; text-align: center; color: ${cc}; font-weight: bold;">${ct}</td>
-                    <td style="padding: 10px; text-align: center;">${d}</td>
-                    <td style="padding: 10px; text-align: right; color: #fff; font-weight: bold;">${(p.salary || 0).toLocaleString('es-ES')}€</td>
-                    <td style="padding: 10px; text-align: center;">
-                        <button class="bt" style="background: #4169E1; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">💪</button>
-                        <button class="bs" style="background: #FFA500; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">💰</button>
-                        <button class="bf" style="background: #DC143C; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">⚠️</button>
-                    </td>
-                `;
-                
-                r.querySelector('.bt').onclick = () => { if (window.openTrainingModal) window.openTrainingModal(i); };
-                r.querySelector('.bs').onclick = () => openTM(p);
-                r.querySelector('.bf').onclick = () => fireP(p);
-                
-                tb.appendChild(r);
-            });
-            
-            c.appendChild(t);
-            console.log(`✅ Plantilla: ${squad.length} jugadores`);
+            // Si es plantilla, renderizar nuestra versión
+            if (pageId === 'squad') {
+                setTimeout(() => renderSquad(), 200);
+            }
         };
         
-        console.log('✅ renderSquadList parcheado');
+        console.log('✅ openPage interceptado');
+    }
+    
+    function renderSquad() {
+        const c = document.getElementById('squadList');
+        if (!c) return;
+        
+        const gs = window.gameLogic.getGameState();
+        if (!gs || !gs.squad) return;
+        
+        // LIMPIAR
+        c.innerHTML = '';
+        
+        const t = document.createElement('table');
+        t.style.width = '100%';
+        t.style.borderCollapse = 'collapse';
+        
+        t.innerHTML = `
+            <thead>
+                <tr style="background: rgba(233, 69, 96, 0.3); border-bottom: 2px solid #e94560;">
+                    <th style="padding: 10px; text-align: left; color: #fff;">Jugador</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Pos</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Media</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Estado</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Contrato</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Duración</th>
+                    <th style="padding: 10px; text-align: right; color: #fff;">Salario</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        const tb = t.querySelector('tbody');
+        
+        gs.squad.forEach((p, i) => {
+            const r = document.createElement('tr');
+            r.style.borderBottom = '1px solid rgba(233, 69, 96, 0.1)';
+            
+            // Estado
+            let s = '<span style="color: #00ff00; font-weight: bold;">✅ Apto</span>';
+            if (p.isInjured) s = `<span style="color: #ff0000; font-weight: bold;">❌ Lesión (${p.weeksOut || 0}sem)</span>`;
+            else if (p.isSuspended) s = `<span style="color: #FFA500; font-weight: bold;">⛔ Sanción (${p.suspensionWeeks || 0})</span>`;
+            
+            if (p.yellowCards > 0) s += ` <span style="background: #FFD700; color: #000; padding: 3px 6px; border-radius: 3px;">🟨${p.yellowCards}</span>`;
+            if (p.redCards > 0) s += ` <span style="background: #DC143C; color: #fff; padding: 3px 6px; border-radius: 3px;">🟥${p.redCards}</span>`;
+            
+            // Contrato
+            const ct = p.contractType === 'loan' ? 'Cedido' : 'Propiedad';
+            const cc = p.contractType === 'loan' ? '#4169E1' : '#00ff00';
+            
+            // Duración
+            let d = '';
+            if (p.contractType === 'loan') {
+                d = '<span style="color: #4169E1; font-weight: bold;">1 (Cesión)</span>';
+            } else {
+                const y = p.contractYears || 0;
+                const col = y <= 1 ? '#ff0000' : (y <= 2 ? '#FFA500' : '#00ff00');
+                d = `<span style="color: ${col}; font-weight: bold;">${y}</span>`;
+            }
+            
+            r.innerHTML = `
+                <td style="padding: 10px; color: #fff; font-weight: bold;">${p.name}</td>
+                <td style="padding: 10px; text-align: center; color: #fff;">${p.position}</td>
+                <td style="padding: 10px; text-align: center; color: #00ff00; font-weight: bold;">${p.overall || 65}</td>
+                <td style="padding: 10px; text-align: center;">${s}</td>
+                <td style="padding: 10px; text-align: center; color: ${cc}; font-weight: bold;">${ct}</td>
+                <td style="padding: 10px; text-align: center;">${d}</td>
+                <td style="padding: 10px; text-align: right; color: #fff; font-weight: bold;">${(p.salary || 0).toLocaleString('es-ES')}€</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button class="bt" style="background: #4169E1; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">💪</button>
+                    <button class="bs" style="background: #FFA500; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">💰</button>
+                    <button class="bf" style="background: #DC143C; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin: 2px;">⚠️</button>
+                </td>
+            `;
+            
+            r.querySelector('.bt').onclick = () => { if (window.openTrainingModal) window.openTrainingModal(i); };
+            r.querySelector('.bs').onclick = () => openTM(p);
+            r.querySelector('.bf').onclick = () => fireP(p);
+            
+            tb.appendChild(r);
+        });
+        
+        c.appendChild(t);
+        console.log(`✅ Plantilla: ${gs.squad.length} jugadores`);
     }
     
     // ==========================================
-    // PARCHEAR VENTA
+    // VENTA
     // ==========================================
     function patchSell() {
         window.sellPlayer = function(n) {
