@@ -210,6 +210,7 @@ function renderSquadList(squad, currentTeam) {
 }
 
 
+
   
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
