@@ -171,10 +171,13 @@
             // Si es ida y vuelta, crear partido de vuelta
             if (roundConfig.twoLegs) {
                 match.isFirstLeg = true;
-                const returnMatch = {
-                    ...match,
-                    home: match.away,
-                    away: match.home,
+               const returnMatch = {
+    ...match,
+    home: match.away,
+    away: match.home,
+    homeTeam: match.awayTeam,
+    awayTeam: match.homeTeam,
+
                     week: startWeek + 1,
                     isFirstLeg: false,
                     firstLegId: matches.length
