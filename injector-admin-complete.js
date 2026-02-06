@@ -158,6 +158,7 @@ loadTeamData: async function() {
 // En injector-admin-complete.js, modificar saveTeamData:
 
 // En injector-admin-complete.js, modificar saveTeamData:
+
 saveTeamData: async function() {
     if (!this.currentTeam) {
         alert('Selecciona un equipo primero');
@@ -171,59 +172,43 @@ saveTeamData: async function() {
         stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
         stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
         initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
-        logo: null,
-        stadiumImage: null
+        logoUrl: null,
+        stadiumImageUrl: null
     };
 
     // Cargar datos existentes
-    // Asumiendo que window.getTeamData puede obtener datos actuales de Firebase
     const existingData = await window.getTeamData(this.currentTeam);
-    teamData.logo = existingData.logo;
-    teamData.stadiumImage = existingData.stadiumImage;
+    teamData.logoUrl = existingData.logoUrl;
+    teamData.stadiumImageUrl = existingData.stadiumImageUrl;
 
-    // Procesar archivos de imagen
-    const promises = [];
-
+    // SUBIR A FIREBASE STORAGE (NO BASE64)
     if (logoFile) {
-        promises.push(
-            new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    teamData.logo = e.target.result;
-                    resolve();
-                };
-                reader.readAsDataURL(logoFile);
-            })
+        const uploadResult = await window.uploadImageToFirebase(
+            logoFile, 
+            `teams/${this.currentTeam}/logo.png`
         );
+        if (uploadResult.success) {
+            teamData.logoUrl = uploadResult.url;
+        }
     }
 
     if (stadiumFile) {
-        promises.push(
-            new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    teamData.stadiumImage = e.target.result;
-                    resolve();
-                };
-                reader.readAsDataURL(stadiumFile);
-            })
+        const uploadResult = await window.uploadImageToFirebase(
+            stadiumFile, 
+            `teams/${this.currentTeam}/stadium.png`
         );
+        if (uploadResult.success) {
+            teamData.stadiumImageUrl = uploadResult.url;
+        }
     }
 
-    await Promise.all(promises);
-
-    // Guardar en Firebase (o donde sea que se almacenen los datos del equipo)
-    // *** ESTA ES LA PARTE ARREGLADA ***
-    try {
-        await window.saveTeamData(this.currentTeam, teamData); // Asumiendo que hay una función global window.saveTeamData
-        alert('✅ Datos del equipo guardados correctamente.');
-        // Recargar los datos para mostrar la última versión en el panel
-        await this.loadTeamData();
-    } catch (error) {
-        alert('❌ Error al guardar los datos del equipo: ' + error.message);
-        console.error('Error saving team data:', error);
+    // Guardar solo URLs en Firestore (NO base64)
+    const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
+    
+    if (saveResult.success) {
+        alert(`✅ Datos guardados correctamente en Firebase`);
     }
-} // Fin de saveTeamData
+}
 
 
 // Modificar exportAllData:
