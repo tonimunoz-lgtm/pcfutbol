@@ -97,6 +97,48 @@
         <button class="btn" onclick="window.closeSettingsPage()">Cerrar</button>
     </div>
     
+<div id="contractsPage" class="page">
+    <h1>✍️ Gestión de Contratos</h1>
+    <button class="page-close-btn" onclick="closePage('contractsPage')">✖ CERRAR</button>
+
+    <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stat-card">
+            <div class="stat-value" id="totalPlayers">0</div>
+            <div class="stat-label">Jugadores</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="expiringContracts">0</div>
+            <div class="stat-label">Contratos &lt; 1 año</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalSalaries">€0</div>
+            <div class="stat-label">Gasto Salarial Semanal</div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>
+            <input type="checkbox" id="filterExpiring"> Solo contratos por expirar
+        </label>
+    </div>
+
+    <table id="contractsTable" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Jugador</th>
+                <th>Pos</th>
+                <th>Overall</th>
+                <th>Tipo</th>
+                <th>Años</th>
+                <th>Salario</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="contractsTableBody"></tbody>
+    </table>
+</div>
+
+
     
     <!-- DASHBOARD / RESULTADOS -->
     <div id="dashboard" class="page">
