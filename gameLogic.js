@@ -97,17 +97,42 @@ function initStandings(teamsArray) {
     return standings;  
 }  
   
-function generateLeagueCalendar(teams) {  
-    const numTeams = teams.length;  
-    if (numTeams < 2) return [];  
+function generateLeagueCalendar(teams) {
+    // 🆕 USAR EL NUEVO GENERADOR DE CALENDARIO SI ESTÁ DISPONIBLE
+    if (window.CalendarGenerator && window.CalendarGenerator.generateOptimizedCalendar) {
+        console.log('📅 Usando generador de calendario mejorado');
+        
+        try {
+            const calendar = window.CalendarGenerator.generateOptimizedCalendar(teams);
+            
+            // Validar calendario
+            const validation = window.CalendarGenerator.validateCalendar(calendar);
+            if (validation.valid) {
+                console.log('✅ Calendario generado y validado:', validation.stats);
+                return calendar;
+            } else {
+                console.warn('⚠️ Calendario generado pero con advertencias:', validation.issues);
+                return calendar;
+            }
+        } catch (error) {
+            console.error('❌ Error al generar calendario mejorado, usando fallback:', error);
+            // Continuar con el método antiguo si falla
+        }
+    }
+    
+    console.warn('⚠️ Generador de calendario mejorado no disponible, usando método básico');
+    
+    // MÉTODO ANTIGUO (FALLBACK) - Tu código original
+    const numTeams = teams.length;
+    if (numTeams < 2) return [];
   
-    let schedule = [];  
-    let tempTeams = [...teams];  
+    let schedule = [];
+    let tempTeams = [...teams];
   
     if (numTeams % 2 !== 0) {  
         tempTeams.push("BYE");  
-    }  
-    const numActualTeams = tempTeams.length;  
+    }
+    const numActualTeams = tempTeams.length;
     const numRounds = numActualTeams - 1;
   
     for (let round = 0; round < numRounds; round++) {  
@@ -136,8 +161,7 @@ function generateLeagueCalendar(teams) {
     fullSchedule.sort((a, b) => a.week - b.week);
   
     return fullSchedule;  
-}  
-  
+}
   
 function generateInitialSquad() {  
     const squad = [];  
