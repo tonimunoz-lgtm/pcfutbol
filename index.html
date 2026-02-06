@@ -635,10 +635,14 @@
         window.openPage = function(pageId) {
     const page = document.getElementById(pageId);
     if (page) {
+        // Mostrar la página y ocultar las demás
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         page.classList.add('active');
-        
-        // Actualizar contenido según la página
+
         const state = gameLogic.getGameState();
+        if (!state) return;
+
+        // Renderizado de cada página
         if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
         if (pageId === 'academy') ui.renderAcademyList(state.academy);
         if (pageId === 'transfers') {
@@ -656,7 +660,8 @@
         if (pageId === 'standings') ui.renderStandingsTable(state);
         
         // 🆕 AÑADIR RENOVACIONES
-        if (pageId === 'renewContracts') {
+        if (pageId === 'contractsPage') {
+            renderContractsTable(state);
             console.log('🔍 Abriendo página de renovaciones...');
             console.log('ContractsSystem disponible:', !!window.ContractsSystem);
             console.log('openRenewalUI disponible:', !!window.openRenewalUI);
