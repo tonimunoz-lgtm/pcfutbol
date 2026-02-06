@@ -457,15 +457,31 @@
     /**
      * Actualiza la tabla de clasificación en la UI
      */
-    function updateStandingsUI(standings, division, userTeam) {
-        const standingsContainer = document.getElementById('standingsContainer');
-        if (!standingsContainer) {
-            console.warn('Contenedor de clasificación no encontrado');
-            return;
-        }
-        
-        standingsContainer.innerHTML = generateStandingsTable(standings, division, userTeam);
+ function updateStandingsUI(standings, division, userTeam) {
+    const standingsContainer = document.getElementById('standingsTable'); // Cambiar aquí
+    if (!standingsContainer) {
+        console.warn('⚠️ Contenedor de clasificación no encontrado (es normal si no estás en esa página)');
+        return;
     }
+    
+    // Usar el método de ui.js existente primero
+    if (window.ui && window.ui.renderStandingsTable) {
+        window.ui.renderStandingsTable({ standings, team: userTeam, division });
+    }
+    
+    // Luego añadir colores
+    const rows = standingsContainer.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+        const position = index + 1;
+        const config = getPositionConfig(position, division);
+        
+        if (config && config.gradient !== 'transparent') {
+            row.style.background = config.gradient;
+            row.style.color = 'white';
+            row.style.fontWeight = 'bold';
+        }
+    });
+}
     
     /**
      * Actualiza el widget de posición en el dashboard
