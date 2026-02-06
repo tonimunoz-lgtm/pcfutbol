@@ -3,7 +3,7 @@ import {
     TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
     STAFF_ROLES, STAFF_LEVEL_EFFECTS, DIVISION_MULTIPLIERS,  
     BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS,  
-    FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Eliminado SEASON_WEEKS de aquí  
+    FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION  
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
 import { getTeamData, saveTeamData } from './teamData.js';
@@ -12,11 +12,11 @@ import { getTeamData, saveTeamData } from './teamData.js';
 // Estado global del juego  
 const gameState = {  
     team: null, 
-    teamLogo: null, // NUEVO
-    stadiumImage: null, // NUEVO
-    stadiumName: 'Estadio', // NUEVO
+    teamLogo: null,
+    stadiumImage: null,
+    stadiumName: 'Estadio',
     week: 1,  
-    division: 'Primera', // La división actual del equipo del jugador (puede ser 'rfef_grupo1' etc.)  
+    division: 'Primera',
     squad: [],  
     academy: [],  
     standings: {},  
@@ -61,10 +61,8 @@ const gameState = {
     leagueTeams: [],  
     nextOpponent: null,  
     cupProgress: 0,  
-    europeanProgress: 0,  
-    // NEW: Para almacenar el calendario de la temporada  
-    seasonCalendar: [],  
-    // NEW: Máximo de semanas en la temporada (dinámico)  
+    europeanProgress: 0,
+    seasonCalendar: [],
     maxSeasonWeeks: 38  
 };  
   
@@ -82,7 +80,7 @@ function addNews(message, type = 'info', read = false) {
     if (gameState.newsFeed.length > 20) {  
         gameState.newsFeed.pop();  
     }  
-    if (type !== 'system' && !read) { // Solo incrementar contador si no es una noticia del sistema  
+    if (type !== 'system' && !read) {
         gameState.unreadNewsCount++;  
     }  
 }  
@@ -99,7 +97,6 @@ function initStandings(teamsArray) {
     return standings;  
 }  
   
-// NEW: Función para generar el calendario de la liga (Round-robin)  
 function generateLeagueCalendar(teams) {  
     const numTeams = teams.length;  
     if (numTeams < 2) return [];  
@@ -107,14 +104,12 @@ function generateLeagueCalendar(teams) {
     let schedule = [];  
     let tempTeams = [...teams];  
   
-    // Si el número de equipos es impar, añade un "BYE" para la rotación  
     if (numTeams % 2 !== 0) {  
         tempTeams.push("BYE");  
     }  
     const numActualTeams = tempTeams.length;  
-    const numRounds = numActualTeams - 1; // Cada equipo juega una vez contra todos  
+    const numRounds = numActualTeams - 1;
   
-    // Primera vuelta (ida)  
     for (let round = 0; round < numRounds; round++) {  
         for (let i = 0; i < numActualTeams / 2; i++) {  
             const homeTeam = tempTeams[i];  
@@ -125,24 +120,20 @@ function generateLeagueCalendar(teams) {
             }  
         }  
   
-        // Rotar los equipos (mantener el primer equipo fijo)  
         const lastTeam = tempTeams.pop();  
         tempTeams.splice(1, 0, lastTeam);  
     }  
   
-    // Segunda vuelta (vuelta)  
-    // Crear una nueva lista de partidos para la segunda vuelta, invirtiendo local/visitante  
     const secondHalfSchedule = schedule.map(match => ({  
         home: match.away,  
         away: match.home,  
-        week: match.week + numRounds, // Sumar numRounds para que las semanas sean consecutivas  
+        week: match.week + numRounds,
         homeGoals: null,  
         awayGoals: null  
     }));  
   
-    // Combinar y ordenar por semana  
     const fullSchedule = [...schedule, ...secondHalfSchedule];  
-    fullSchedule.sort((a, b) => a.week - b.week); // Ordenar por semana  
+    fullSchedule.sort((a, b) => a.week - b.week);
   
     return fullSchedule;  
 }  
@@ -150,23 +141,31 @@ function generateLeagueCalendar(teams) {
   
 function generateInitialSquad() {  
     const squad = [];  
-    const allAvailablePlayers = initPlayerDatabase(); // Obtener la lista completa de jugadores generados  
+    const allAvailablePlayers = initPlayerDatabase();
   
-    // Intentar añadir jugadores específicos del Atlético de Madrid si ese es el equipo  
-    // Esto se haría idealmente después de seleccionar el equipo, pero para el ejemplo inicial  
-    // si el equipo elegido es "Atlético Madrid", podemos hacer una simulación aquí.  
     const elitePlayersNames = ['Griezmann', 'Koke', 'Oblak', 'Nahuel Molina', 'José Giménez', 'Samuel Lino', 'Álvaro Morata', 'Reinildo Mandava', 'Marcos Llorente', 'Pablo Barrios', 'Axel Witsel'];  
     if (gameState.team === 'Atlético Madrid') {  
         elitePlayersNames.forEach(name => {  
             const p = allAvailablePlayers.find(ep => ep.name === name);  
-            if (p && !squad.some(s => s.name === p.name)) { // Evitar duplicados  
-                squad.push({ ...p, club: gameState.team, isInjured: false, weeksOut: 0, matches: 0, form: 70 + Math.floor(Math.random() * 20) });  
+            if (p && !squad.some(s => s.name === p.name)) {
+                squad.push({ 
+                    ...p, 
+                    club: gameState.team, 
+                    isInjured: false, 
+                    weeksOut: 0, 
+                    matches: 0, 
+                    form: 70 + Math.floor(Math.random() * 20),
+                    // 🆕 CAMPOS DE TARJETAS
+                    yellowCards: 0,
+                    redCards: 0,
+                    isSuspended: false,
+                    suspensionWeeks: 0
+                });  
             }  
         });  
     }  
   
-    // Rellenar hasta 18 jugadores con jugadores aleatorios si es necesario  
-    while (squad.length < 18) { // 11 titulares + 7 suplentes para empezar  
+    while (squad.length < 18) {
         const pos = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];  
         const player = {  
             name: generateRandomName(),  
@@ -176,9 +175,14 @@ function generateInitialSquad() {
             matches: 0,  
             form: 60 + Math.floor(Math.random() * 20),  
             isInjured: false,  
-            weeksOut: 0,  
+            weeksOut: 0,
+            // 🆕 CAMPOS DE TARJETAS
+            yellowCards: 0,
+            redCards: 0,
+            isSuspended: false,
+            suspensionWeeks: 0,
             ...ATTRIBUTES.reduce((acc, attr) => {  
-                acc[attr] = 40 + Math.floor(Math.random() * 30); // Atributos entre 40 y 70  
+                acc[attr] = 40 + Math.floor(Math.random() * 30);
                 return acc;  
             }, {})  
         };  
@@ -190,7 +194,7 @@ function generateInitialSquad() {
     }  
   
     squad.sort((a,b) => b.overall - a.overall);  
-    gameState.lineup = squad.slice(0, 11); // Los 11 mejores por defecto  
+    gameState.lineup = squad.slice(0, 11);
     return squad;  
 }  
   
@@ -206,9 +210,14 @@ function generateInitialAcademy() {
             matches: 0,  
             form: 50 + Math.floor(Math.random() * 20),  
             isInjured: false,  
-            weeksOut: 0,  
+            weeksOut: 0,
+            // 🆕 CAMPOS DE TARJETAS (cantera también)
+            yellowCards: 0,
+            redCards: 0,
+            isSuspended: false,
+            suspensionWeeks: 0,
             ...ATTRIBUTES.reduce((acc, attr) => {  
-                acc[attr] = 30 + Math.floor(Math.random() * 20); // Atributos entre 30 y 50  
+                acc[attr] = 30 + Math.floor(Math.random() * 20);
                 return acc;  
             }, {})  
         };  
@@ -273,11 +282,16 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.matches = 0;  
         p.form = 70 + Math.floor(Math.random() * 20);  
         p.isInjured = false;  
-        p.weeksOut = 0;  
+        p.weeksOut = 0;
+        
+        // 🆕 RESETEAR TARJETAS AL INICIO DE TEMPORADA
+        p.yellowCards = 0;
+        p.redCards = 0;
+        p.isSuspended = false;
+        p.suspensionWeeks = 0;
 
         const stage = getAgeStage(p.age);
 
-        // 🔻 Declive físico por edad
         if (stage === 'decline_soft' || stage === 'decline_hard') {
             const physicalAttrs = ['VE', 'AG', 'RE'];
             physicalAttrs.forEach(attr => {
@@ -287,7 +301,6 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
             });
         }
 
-        // 🔻 Declive mental MUY suave (solo mayores)
         if (stage === 'decline_hard') {
             ['VI', 'PA', 'CO'].forEach(attr => {
                 if (p[attr] > 50 && Math.random() < 0.2) {
@@ -296,10 +309,8 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
             });
         }
 
-        // 🔄 Recalcular overall tras cambios
         p.overall = calculatePlayerOverall(p);
 
-        // 🛑 Retiro
         if (p.age >= 36 && Math.random() < 0.25) {
             addNews(`${p.name} se ha retirado del fútbol a los ${p.age} años.`, 'info');
             return false;
@@ -314,12 +325,16 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.matches = 0;  
         p.form = 60 + Math.floor(Math.random() * 20);  
         p.isInjured = false;  
-        p.weeksOut = 0;  
+        p.weeksOut = 0;
+        // 🆕 RESETEAR TARJETAS CANTERA
+        p.yellowCards = 0;
+        p.redCards = 0;
+        p.isSuspended = false;
+        p.suspensionWeeks = 0;
     });  
   
-    // Reestablecer alineación
     const availablePlayers = gameState.squad
-        .filter(p => !p.isInjured)
+        .filter(p => !p.isInjured && !p.isSuspended) // 🆕 TAMBIÉN FILTRAR SANCIONADOS
         .sort((a, b) => b.overall - a.overall);  
 
     setLineup(availablePlayers.slice(0, 11));  
@@ -327,7 +342,6 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
  
   
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    // 🔄 RESET COMPLETO DEL ESTADO
     Object.assign(gameState, {
         team: teamName,
         division: divisionType,
@@ -349,7 +363,6 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.squad = generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
-    // Cargar datos personalizados si existen
     if (window.getTeamData) {
         const teamData = await window.getTeamData(teamName);
 
@@ -360,7 +373,6 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         gameState.balance = teamData.initialBudget || gameState.balance;
     }
 
-    // Cargar equipos y calendario
     let teamsInDivision = TEAMS_DATA[divisionType] || TEAMS_DATA.primera;
     if (!teamsInDivision.includes(teamName)) teamsInDivision.push(teamName);
 
@@ -387,7 +399,12 @@ function signPlayer(player) {
     newPlayer.form = 70 + Math.floor(Math.random() * 20);  
     newPlayer.matches = 0;  
     newPlayer.isInjured = false;  
-    newPlayer.weeksOut = 0;  
+    newPlayer.weeksOut = 0;
+    // 🆕 INICIALIZAR TARJETAS EN NUEVOS FICHAJES
+    newPlayer.yellowCards = newPlayer.yellowCards || 0;
+    newPlayer.redCards = newPlayer.redCards || 0;
+    newPlayer.isSuspended = newPlayer.isSuspended || false;
+    newPlayer.suspensionWeeks = newPlayer.suspensionWeeks || 0;
   
     gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
@@ -407,7 +424,12 @@ function signYoungster(youngster) {
     newYoungster.overall = calculatePlayerOverall(newYoungster);  
     newYoungster.form = 60 + Math.floor(Math.random() * 20);  
     newYoungster.isInjured = false;  
-    newYoungster.weeksOut = 0;  
+    newYoungster.weeksOut = 0;
+    // 🆕 INICIALIZAR TARJETAS
+    newYoungster.yellowCards = 0;
+    newYoungster.redCards = 0;
+    newYoungster.isSuspended = false;
+    newYoungster.suspensionWeeks = 0;
   
     gameState.balance -= newYoungster.cost;  
     gameState.academy.push(newYoungster);  
@@ -433,7 +455,12 @@ function promoteYoungster(name) {
     promotedPlayer.club = gameState.team;  
     promotedPlayer.matches = 0;  
     promotedPlayer.isInjured = false;  
-    promotedPlayer.weeksOut = 0;  
+    promotedPlayer.weeksOut = 0;
+    // 🆕 MANTENER TARJETAS AL ASCENDER
+    promotedPlayer.yellowCards = promotedPlayer.yellowCards || 0;
+    promotedPlayer.redCards = promotedPlayer.redCards || 0;
+    promotedPlayer.isSuspended = promotedPlayer.isSuspended || false;
+    promotedPlayer.suspensionWeeks = promotedPlayer.suspensionWeeks || 0;
   
     gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
@@ -728,18 +755,54 @@ function generateInjury(player) {
         return true;  
     }  
     return false;  
-}  
+}
+
+// 🆕 FUNCIÓN PARA GENERAR TARJETAS
+function generateCards(player) {
+    const baseCardProb = 0.18; // 18% probabilidad base de tarjeta
+    let cardProb = baseCardProb;
+    
+    // Jugadores más agresivos (bajo DF, alto AT) tienen más probabilidad
+    if (player.DF < 60) cardProb *= 1.3;
+    if (player.AT > 80) cardProb *= 1.2;
+    
+    // Mentalidad ofensiva = más tarjetas
+    if (gameState.mentality === 'offensive') cardProb *= 1.15;
+    
+    if (Math.random() < cardProb) {
+        const isRed = Math.random() < 0.08; // 8% de que sea roja directa
+        
+        if (isRed) {
+            player.redCards++;
+            player.isSuspended = true;
+            player.suspensionWeeks = 1; // 1 partido de sanción por roja
+            addNews(`🟥 ¡${player.name} ha visto tarjeta ROJA! Sancionado 1 partido.`, 'error');
+            return 'red';
+        } else {
+            player.yellowCards++;
+            addNews(`🟨 ${player.name} ha visto tarjeta amarilla.`, 'warning');
+            
+            // Ciclo de 5 amarillas = sanción
+            if (player.yellowCards >= 5) {
+                player.isSuspended = true;
+                player.suspensionWeeks = 1;
+                player.yellowCards = 0; // Reset tras sanción
+                addNews(`⚠️ ${player.name} sancionado por acumulación de 5 amarillas. Descansa 1 partido.`, 'warning');
+                return 'yellow-suspension';
+            }
+            return 'yellow';
+        }
+    }
+    return null;
+}
   
 function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'balanced', isHome = true, teamForm = 75, opponentForm = 75 }) {
-    // Base de goles según nivel global y forma
     let teamFactor = teamOverall / 100 * (teamForm / 100);
     let opponentFactor = opponentOverall / 100 * (opponentForm / 100);
 
-    // Ventaja de local
     if (isHome) teamFactor *= 1.1;
     else opponentFactor *= 1.1;
 
-    // Ajuste por mentalidad
     switch (mentality) {
         case 'offensive':
             teamFactor *= 1.15;
@@ -751,12 +814,10 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
             break;
         case 'balanced':
         default:
-            // no hace nada
             break;
     }
 
-    // Aleatoriedad estilo PC Fútbol
-    const randomModTeam = (Math.random() - 0.5) * 0.2; // ±10%
+    const randomModTeam = (Math.random() - 0.5) * 0.2;
     const randomModOpp = (Math.random() - 0.5) * 0.2;
 
     teamFactor += randomModTeam;
@@ -765,8 +826,7 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
     teamFactor = Math.max(0.1, teamFactor);
     opponentFactor = Math.max(0.1, opponentFactor);
 
-    // Cálculo de goles aproximado
-    const teamGoals = Math.round(teamFactor * (Math.random() * 4 + 1)); // 1 a 5 goles base multiplicado
+    const teamGoals = Math.round(teamFactor * (Math.random() * 4 + 1));
     const opponentGoals = Math.round(opponentFactor * (Math.random() * 4 + 1));
 
     return {
@@ -778,7 +838,6 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
 
   
 function playMatch(homeTeamName, awayTeamName) {
-    // Overalls iniciales
     let homeTeamOverall = 70 + Math.floor(Math.random() * 20);
     let awayTeamOverall = 70 + Math.floor(Math.random() * 20);
 
@@ -787,7 +846,6 @@ function playMatch(homeTeamName, awayTeamName) {
     let homeMentality = 'balanced';
     let awayMentality = 'balanced';
 
-    // Si mi equipo está jugando, usar su squad y mentalidad
     if (homeTeamName === gameState.team) {
         homeTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
         homeMentality = gameState.mentality;
@@ -797,7 +855,6 @@ function playMatch(homeTeamName, awayTeamName) {
         awayMentality = gameState.mentality;
     }
 
-    // Calcular goles
     const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome({
         teamOverall: homeTeamOverall,
         opponentOverall: awayTeamOverall,
@@ -807,7 +864,6 @@ function playMatch(homeTeamName, awayTeamName) {
         opponentForm: awayForm
     });
 
-    // Actualizar standings
     const updateStats = (team, gf, gc) => {
         const s = gameState.standings[team];
         if (s) {
@@ -822,8 +878,17 @@ function playMatch(homeTeamName, awayTeamName) {
     updateStats(homeTeamName, homeGoals, awayGoals);
     updateStats(awayTeamName, awayGoals, homeGoals);
 
-    // Añadir noticia si mi equipo jugó
+    // 🆕 GENERAR TARJETAS Y LESIONES PARA MI EQUIPO
     if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
+        gameState.lineup.forEach(player => {
+            if (player && !player.isInjured) {
+                // Generar tarjetas
+                generateCards(player);
+                // 🔧 GENERAR LESIONES
+                generateInjury(player);
+            }
+        });
+        
         addNews(`Partido: ${homeTeamName} ${homeGoals} - ${awayGoals} ${awayTeamName}`, 'info');
     }
 
@@ -836,7 +901,7 @@ function secondCoachAdvice() {
     if (!gameState.staff.segundoEntrenador) return;  
   
     const currentLineup = gameState.lineup;  
-    const availableSquad = gameState.squad.filter(p => !p.isInjured);  
+    const availableSquad = gameState.squad.filter(p => !p.isInjured && !p.isSuspended); // 🆕 FILTRAR SANCIONADOS
   
     if (gameState.trainingFocus.playerIndex === -1 && Math.random() < 0.7) {  
         addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`, 'warning');  
@@ -876,13 +941,25 @@ function secondCoachAdvice() {
         }  
     }  
   
-    // Comprobación de alineación por el segundo entrenador ANTES de la simulación  
+    // 🆕 AVISOS SOBRE TARJETAS Y SANCIONES
+    const playersWithYellows = gameState.squad.filter(p => p.yellowCards >= 4);
+    if (playersWithYellows.length > 0) {
+        playersWithYellows.forEach(p => {
+            addNews(`[Segundo Entrenador - ATENCIÓN] ${p.name} tiene ${p.yellowCards} amarillas. ¡Una más y será sancionado!`, 'warning');
+        });
+    }
+    
+    const suspendedPlayers = currentLineup.filter(p => p.isSuspended);
+    if (suspendedPlayers.length > 0) {
+        suspendedPlayers.forEach(p => {
+            addNews(`[Segundo Entrenador - CRÍTICO] ¡${p.name} está SANCIONADO y no puede jugar! Retíralo de la alineación.`, 'error');
+        });
+    }
+    
     const lineupValidation = validateLineup(currentLineup);  
-    if (!lineupValidation.success) {  
-        // Noticia para el segundo entrenador que se muestra ANTES de simular la jornada  
+    if (!lineupValidation.success) {
         addNews(`[Segundo Entrenador - ALINEACIÓN CRÍTICA] Tu alineación es INVÁLIDA: ${lineupValidation.message}. Por favor, corrígela.`, 'error');  
     }  
-    // NOTA: La decisión de bloquear la simulación se maneja en simulateWeek() en index.html  
 }  
   
 function boardMessages() {  
@@ -922,7 +999,7 @@ function endSeason() {
   
     const promoReleConfig = PROMOTION_RELEGATION[currentDivision];  
   
-    if (currentDivision.includes('rfef')) { // Aplica tanto para rfef_grupo1 como rfef_grupo2  
+    if (currentDivision.includes('rfef')) {
         const numPromote = promoReleConfig.promote;  
         const teamsInMyGroup = gameState.leagueTeams;  
         const sortedMyGroup = teams.filter(([teamName]) => teamsInMyGroup.includes(teamName));  
@@ -933,7 +1010,7 @@ function endSeason() {
             nextDivisionKey = 'segunda';  
         } else if (myTeamRankInGroup > (teamsInMyGroup.length - promoReleConfig.relegate)) {  
             seasonSummary += `¡Has descendido a Tercera RFEF! Es hora de reconstruir.\n`;  
-            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1 (o elegir aleatoriamente si hay más grupos)  
+            nextDivisionKey = 'rfef_grupo1';
         }  
         else {  
             seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
@@ -1006,13 +1083,13 @@ function simulateFullWeek() {
         return { myMatch: null, forcedLoss: false };
     }  
   
-    // Validar alineación ANTES de simular
     const preSimLineupValidation = validateLineup(gameState.lineup);  
   
     applyWeeklyTraining();  
   
-    // Reducir lesiones
-    gameState.squad.forEach(p => {  
+    // 🆕 REDUCIR SANCIONES Y LESIONES
+    gameState.squad.forEach(p => {
+        // Lesiones
         if (p.isInjured) {  
             p.weeksOut--;  
             if (p.weeksOut <= 0) {  
@@ -1020,7 +1097,17 @@ function simulateFullWeek() {
                 p.weeksOut = 0;  
                 addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
             }  
-        }  
+        }
+        
+        // 🆕 SANCIONES
+        if (p.isSuspended) {
+            p.suspensionWeeks--;
+            if (p.suspensionWeeks <= 0) {
+                p.isSuspended = false;
+                p.suspensionWeeks = 0;
+                addNews(`✅ ${p.name} ha cumplido su sanción y puede volver a jugar.`, 'success');
+            }
+        }
     });
     
     gameState.academy.forEach(y => {  
@@ -1031,7 +1118,16 @@ function simulateFullWeek() {
                 y.weeksOut = 0;  
                 addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
             }  
-        }  
+        }
+        
+        // 🆕 SANCIONES CANTERA
+        if (y.isSuspended) {
+            y.suspensionWeeks--;
+            if (y.suspensionWeeks <= 0) {
+                y.isSuspended = false;
+                y.suspensionWeeks = 0;
+            }
+        }
     });  
   
     secondCoachAdvice();
@@ -1040,20 +1136,16 @@ function simulateFullWeek() {
         boardMessages();  
     }  
         
-    // Obtener partidos de la jornada actual
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
     
     console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
   
-    // Encontrar partido de nuestro equipo
     let myTeamMatch = currentWeekMatches.find(match => 
         match.home === gameState.team || match.away === gameState.team
     );  
   
-    // ===== SIMULAR PARTIDO DE NUESTRO EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            // Alineación inválida = derrota 0-3
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
                 
             let homeGoals = 0;  
@@ -1065,7 +1157,6 @@ function simulateFullWeek() {
                 homeGoals = 3;
             }  
   
-            // Actualizar standings manualmente
             const updateStats = (team, gf, gc) => {
                 const s = gameState.standings[team];
                 if (s) {
@@ -1101,7 +1192,6 @@ function simulateFullWeek() {
             gameState.fanbase = Math.max(0, gameState.fanbase - 500);  
   
         } else {
-            // Alineación válida - simular normalmente
             const result = playMatch(myTeamMatch.home, myTeamMatch.away);
             myMatchResult = {  
                 home: result.homeTeam,  
@@ -1111,7 +1201,6 @@ function simulateFullWeek() {
                 score: `${result.homeGoals}-${result.awayGoals}`,  
             };
             
-            // Añadir al historial (playMatch ya actualiza standings)
             gameState.matchHistory.push({  
                 week: gameState.week,  
                 home: result.homeTeam,  
@@ -1121,11 +1210,9 @@ function simulateFullWeek() {
         }  
     }  
   
-    // ===== SIMULAR RESTO DE PARTIDOS DE LA JORNADA =====
     currentWeekMatches
         .filter(match => match !== myTeamMatch)
         .forEach(match => {  
-            // Verificar si ya se jugó
             const alreadyPlayed = gameState.matchHistory.some(mh =>  
                 mh.week === gameState.week &&  
                 mh.home === match.home && 
@@ -1135,7 +1222,6 @@ function simulateFullWeek() {
             if (!alreadyPlayed) {  
                 const result = playMatch(match.home, match.away);
                 
-                // ⚠️ IMPORTANTE: Añadir al historial
                 gameState.matchHistory.push({  
                     week: gameState.week,  
                     home: result.homeTeam,  
@@ -1152,14 +1238,12 @@ function simulateFullWeek() {
     gameState.week++;  
     updateWeeklyFinancials();  
   
-    // Mensajes de crisis económica
     if (gameState.staff.segundoEntrenador && 
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
         gameState.balance < 0) {  
         addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
     }  
   
-    // Game Over por quiebra
     if (gameState.balance < -100000 && gameState.week > 10) {  
         addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
         alert("¡GAME OVER! Has sido despedido por la directiva.");  
@@ -1167,7 +1251,6 @@ function simulateFullWeek() {
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
     }  
   
-    // Fin de temporada
     if (gameState.week > gameState.maxSeasonWeeks) {  
         endSeason();  
     }  
@@ -1252,7 +1335,7 @@ function generateStaffCandidates(role, forceNew = false) {
     const divisionFactor = DIVISION_MULTIPLIERS[divisionForMultiplier] || 1;  
   
     for (let i = 0; i < 3; i++) {  
-        const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
+        const level = 1 + Math.floor(Math.random() * 5);
         const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5));  
         const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
   
@@ -1330,17 +1413,13 @@ function getReservePlayers() {
 }  
   
 function setLineup(newLineup) {  
-    // Asegurarse de que la nueva alineación no tenga más de 11 jugadores      
     if (newLineup.length > 11) {  
-        // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
         console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
         newLineup = newLineup.slice(0, 11);  
     }  
           
-    // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
-    // Esto es importante para que siempre haya 11 en `gameState.lineup`      
     if (newLineup.length < 11) {  
-        const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
+        const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured && !p.isSuspended); // 🆕 FILTRAR SANCIONADOS
         const currentLineupNames = new Set(newLineup.map(p => p.name));  
         const playersToFill = availableSquadPlayers  
                                 .filter(p => !currentLineupNames.has(p.name))  
@@ -1348,7 +1427,6 @@ function setLineup(newLineup) {
                                 .slice(0, 11 - newLineup.length);  
               
         gameState.lineup = [...newLineup, ...playersToFill];  
-        // Asegurarse de que no hay más de 11 después de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
         }  
@@ -1356,18 +1434,14 @@ function setLineup(newLineup) {
         gameState.lineup = newLineup;  
     }  
   
-    // Asegurarse de que todos los jugadores en gameState.lineup existen en gameState.squad      
     const validPlayers = gameState.lineup.every(p => gameState.squad.some(s => s.name === p.name));  
     if (!validPlayers) {  
-        // Si hay jugadores en la alineación que ya no están en la plantilla (ej. vendidos),      
-        // limpiar y reconstruir la alineación      
         console.warn("Jugadores en la alineación no encontrados en la plantilla. Reconstruyendo alineación.");  
         const currentSquadNames = new Set(gameState.squad.map(p => p.name));  
         const filteredLineup = gameState.lineup.filter(p => currentSquadNames.has(p.name));  
         gameState.lineup = filteredLineup;  
-        // Rellenar de nuevo si es necesario      
         if (gameState.lineup.length < 11) {  
-            const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
+            const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured && !p.isSuspended); // 🆕 FILTRAR SANCIONADOS
             const currentFilteredLineupNames = new Set(filteredLineup.map(p => p.name));  
             const playersToFill = availableSquadPlayers  
                                     .filter(p => !currentFilteredLineupNames.has(p.name))  
@@ -1385,7 +1459,7 @@ function validateLineup(lineupToCheck) {
         return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
     }  
   
-    const availablePlayers = gameState.squad.filter(p => !p.isInjured);  
+    const availablePlayers = gameState.squad.filter(p => !p.isInjured && !p.isSuspended); // 🆕 FILTRAR SANCIONADOS
     const availablePlayerNames = new Set(availablePlayers.map(p => p.name));  
     const playerNamesInLineup = new Set();  
     let hasGK = false;  
@@ -1404,7 +1478,11 @@ function validateLineup(lineupToCheck) {
             const fullPlayer = gameState.squad.find(p => p.name === player.name);  
             if (fullPlayer && fullPlayer.isInjured) {  
                 return { success: false, message: `¡Error! ${player.name} está lesionado y no puede jugar.` };  
-            }  
+            }
+            // 🆕 VALIDAR SANCIONES
+            if (fullPlayer && fullPlayer.isSuspended) {
+                return { success: false, message: `¡Error! ${player.name} está SANCIONADO y no puede jugar.` };
+            }
             return { success: false, message: `¡Error! ${player.name} no está en la plantilla o no está apto.` };  
         }  
   
@@ -1443,24 +1521,37 @@ function loadFromLocalStorage() {
         if (!gameState.newsFeed) gameState.newsFeed = [];  
         if (!gameState.unreadNewsCount) gameState.unreadNewsCount = 0;  
         if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
+        
+        // 🆕 MIGRACIÓN: Añadir campos de tarjetas a partidas antiguas
+        gameState.squad.forEach(p => {
+            if (p.yellowCards === undefined) p.yellowCards = 0;
+            if (p.redCards === undefined) p.redCards = 0;
+            if (p.isSuspended === undefined) p.isSuspended = false;
+            if (p.suspensionWeeks === undefined) p.suspensionWeeks = 0;
+        });
+        
+        gameState.academy.forEach(y => {
+            if (y.yellowCards === undefined) y.yellowCards = 0;
+            if (y.redCards === undefined) y.redCards = 0;
+            if (y.isSuspended === undefined) y.isSuspended = false;
+            if (y.suspensionWeeks === undefined) y.suspensionWeeks = 0;
+        });
               
-        // Si no hay alineación o está incompleta, rellenar      
         if (!gameState.lineup || gameState.lineup.length === 0) {  
             gameState.lineup = gameState.squad.slice(0, 11);  
         } else if (gameState.lineup.length < 11) {  
-            setLineup(gameState.lineup); // setLineup ya rellena automáticamente      
+            setLineup(gameState.lineup);
         }  
               
         if (!gameState.currentSeason) gameState.currentSeason = '2025/2026';  
         if (!gameState.seasonType) gameState.seasonType = 'preseason';  
         if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) {  
-            // Reconstruir leagueTeams basado en la división actual para evitar errores      
             const divisionKey = gameState.division;  
             let teamsInDivision = TEAMS_DATA[divisionKey];  
-            if (!teamsInDivision) { // Fallback si la división es desconocida (old saves or malformed data)  
+            if (!teamsInDivision) {
                 console.warn(`División "${divisionKey}" no encontrada al cargar. Usando 'primera' por defecto.`);  
                 teamsInDivision = TEAMS_DATA.primera;  
-                gameState.division = 'primera'; // Forzar a una división conocida  
+                gameState.division = 'primera';
             }  
       
             if (!teamsInDivision.includes(gameState.team)) {  
@@ -1468,25 +1559,22 @@ function loadFromLocalStorage() {
             }  
             gameState.leagueTeams = teamsInDivision;  
         }  
-        // NEW: Generar calendario si no existe o se cargó vacío  
         if (!gameState.seasonCalendar || gameState.seasonCalendar.length === 0) {  
             console.log("Generando calendario al cargar partida.");  
             gameState.seasonCalendar = generateLeagueCalendar(gameState.leagueTeams);  
         }  
-        // NEW: Asegurar que maxSeasonWeeks esté definido  
         if (!gameState.maxSeasonWeeks || gameState.maxSeasonWeeks === 0) {  
             gameState.maxSeasonWeeks = gameState.leagueTeams.length * 2 - 2;  
         }  
     
         if (!gameState.nextOpponent) gameState.nextOpponent = null;  
-        // NEW: Recalcular nextOpponent si la partida se cargó sin él (o con uno desactualizado)  
         if (!gameState.nextOpponent && gameState.seasonCalendar.length > 0 && gameState.week <= gameState.maxSeasonWeeks) {  
             const matchesForCurrentWeek = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
             const myMatch = matchesForCurrentWeek.find(match => match.home === gameState.team || match.away === gameState.team);  
             if (myMatch) {  
                 gameState.nextOpponent = (myMatch.home === gameState.team) ? myMatch.away : myMatch.home;  
             } else {  
-                gameState.nextOpponent = "No hay oponente"; // Por si no hay partido para nuestra semana  
+                gameState.nextOpponent = "No hay oponente";
             }  
         }  
             
@@ -1503,7 +1591,6 @@ function resetGame() {
     window.location.reload();  
 }  
   
-// NEW: Función para obtener el calendario completo  
 function getSeasonCalendar() {  
     return gameState.seasonCalendar;  
 }  
@@ -1541,28 +1628,24 @@ export {
     getLineup,  
     getReservePlayers,  
     setLineup,  
-    validateLineup,  
-    // NEW EXPORTS  
+    validateLineup,
     generateLeagueCalendar,  
     getSeasonCalendar  
 };  
-// Al final de gameLogic.js, añadir:
-// Exponer funciones globalmente para injectors
+
 if (typeof window !== 'undefined') {
     window.gameLogic = {
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
-        // ... otras funciones que necesites exponer
     };
 }
 
 function getAgeModifier(age) {
-    if (age <= 20) return 1.5;        // Juvenil explota
-    if (age <= 24) return 1.2;        // Crecimiento
-    if (age <= 27) return 1.0;        // Normal
-    if (age <= 30) return 0.7;        // Se ralentiza
-    if (age <= 33) return 0.3;        // Casi estancado
-    return -0.5;                      // Declive
+    if (age <= 20) return 1.5;
+    if (age <= 24) return 1.2;
+    if (age <= 27) return 1.0;
+    if (age <= 30) return 0.7;
+    if (age <= 33) return 0.3;
+    return -0.5;
 }
-
