@@ -461,10 +461,10 @@
         // Crear página de contratos
         const contractsPage = document.createElement('div');
         contractsPage.id = 'contractsPage';
-        contractsPage.className = 'page active';
+        contractsPage.className = 'page';
         contractsPage.innerHTML = `
-            <h1>📝 Gestión de Contratos</h1>
-            
+            <h1>✍️ Gestión de Contratos</h1>
+            <button class="page-close-btn" onclick="closePage('contractsPage')">✖ CERRAR</button>
             <div class="stats-grid" style="margin-bottom: 20px;">
                 <div class="stat-card">
                     <div class="stat-value" id="totalPlayers">0</div>
