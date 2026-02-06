@@ -1,142 +1,239 @@
 // ============================================
-// FIX DEFINITIVO - Evento DOMContentLoaded + Delay
+// CORRECCIÓN COMPLETA - VERSIÓN 2 CORREGIDA
 // ============================================
 
 (function() {
     'use strict';
     
-    console.log('🔧 [FIX DEFINITIVO] Script cargado, esperando inicialización del juego...');
-    
-    // Esperar a que el DOM esté listo Y el juego inicializado
-    window.addEventListener('DOMContentLoaded', function() {
-        console.log('📄 DOM cargado, esperando gameState...');
-        waitForGameState();
-    });
-    
-    // Si DOMContentLoaded ya pasó, intentar inmediatamente
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(waitForGameState, 0);
-    }
-    
-    function waitForGameState() {
-        let attempts = 0;
-        const maxAttempts = 100;
-        
-        const checkInterval = setInterval(function() {
-            attempts++;
-            
-            // Verificar que TODOS los elementos necesarios estén disponibles
-            if (window.gameState && 
-                window.openPage && 
-                window.ui && 
-                window.ui.renderSquadList &&
-                window.gameLogic) {
-                
-                clearInterval(checkInterval);
-                console.log('✅ Todos los sistemas del juego detectados, aplicando parches...');
-                setTimeout(applyPatches, 500); // Esperar medio segundo extra por seguridad
-                
-            } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                console.error('❌ Timeout: No se pudieron cargar los sistemas del juego');
-                console.log('Debug - gameState:', !!window.gameState);
-                console.log('Debug - openPage:', !!window.openPage);
-                console.log('Debug - ui:', !!window.ui);
-                console.log('Debug - renderSquadList:', !!window.ui?.renderSquadList);
-                console.log('Debug - gameLogic:', !!window.gameLogic);
-            }
-        }, 100);
-    }
-    
-    function applyPatches() {
-        try {
-            // 1. Parchear renovaciones (añadir botón cerrar)
-            patchRenewalsPage();
-            
-            // 2. Parchear plantilla (reemplazar render completo)
-            patchSquadPage();
-            
-            // 3. Sobrescribir sellPlayer
-            patchSellPlayer();
-            
-            // 4. Sistema de ofertas
-            patchSimulateWeek();
-            
-            // 5. Inicializar mercado
-            if (!window.transferMarket) {
-                window.transferMarket = [];
-            }
-            
-            console.log('✅ [FIX DEFINITIVO] Todos los parches aplicados exitosamente');
-        } catch (error) {
-            console.error('❌ Error aplicando parches:', error);
-        }
-    }
-    
-    // ==========================================
-    // PARCHEAR RENOVACIONES - AÑADIR BOTÓN CERRAR
-    // ==========================================
-    function patchRenewalsPage() {
-        const originalOpenPage = window.openPage;
-        
-        window.openPage = function(pageId) {
-            // Llamar a la función original
-            originalOpenPage.apply(this, arguments);
-            
-            // Si es renovaciones, añadir botón cerrar
-            if (pageId === 'renewContracts') {
-                setTimeout(() => {
-                    addCloseButtonToRenewals();
-                }, 300);
-            }
-        };
-        
-        console.log('✅ openPage parcheado para renovaciones');
-    }
-    
-    function addCloseButtonToRenewals() {
-        const renewPage = document.getElementById('renewContracts');
-        if (!renewPage) return;
-        
-        // Si ya tiene botón cerrar, salir
-        if (renewPage.querySelector('.page-close-btn')) {
-            console.log('ℹ️ Botón cerrar ya existe en renovaciones');
+    console.log('🔧 [FIX V2 CORREGIDO] Iniciando correcciones completas...');
+
+    // Esperar a que el juego esté completamente cargado
+    function waitForGame() {
+        if (!window.gameLogic || !window.ui || !window.gameState) {
+            console.log('⏳ Esperando a que el juego se cargue...');
+            setTimeout(waitForGame, 200);
             return;
         }
         
-        // Buscar el header
-        let header = renewPage.querySelector('.page-header');
-        
-        if (!header) {
-            // Crear header si no existe
-            header = document.createElement('div');
-            header.className = 'page-header';
-            header.style.cssText = 'position: relative; padding: 20px; margin-bottom: 20px;';
-            
-            const h1 = renewPage.querySelector('h1');
-            if (h1) {
-                renewPage.insertBefore(header, h1);
-                header.appendChild(h1);
-            } else {
-                renewPage.insertBefore(header, renewPage.firstChild);
-            }
-        }
-        
-        // Añadir botón cerrar
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'page-close-btn';
-        closeBtn.textContent = '✖ CERRAR';
-        closeBtn.onclick = () => window.closePage('renewContracts');
-        closeBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: #c73446; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em;';
-        
-        header.appendChild(closeBtn);
-        console.log('✅ Botón cerrar añadido a renovaciones');
+        console.log('✅ Juego detectado, aplicando correcciones...');
+        setTimeout(applyAllFixes, 1000); // Esperar 1 segundo para que TODO esté listo
     }
     
-    // ==========================================
-    // PARCHEAR PLANTILLA - REEMPLAZAR RENDER COMPLETO
-    // ==========================================
-    function patchSquadPage() {
+    function applyAllFixes() {
+        fixRenewalsPage();
+        fixSquadDisplay();
+        fixTransferSystem();
+        interceptSimulateWeek();
+        
+        console.log('✅ [FIX V2 CORREGIDO] Todas las correcciones aplicadas');
+    }
+
+    // ============================================
+    // 1. CORREGIR PÁGINA DE RENOVACIONES
+    // ============================================
+    function fixRenewalsPage() {
+        console.log('🔄 Corrigiendo página de renovaciones...');
+        
+        // Interceptar openPage para renovaciones
+        const originalOpenPage = window.openPage;
+        
+        window.openPage = function(pageName) {
+            // Llamar a la función original
+            if (originalOpenPage) {
+                originalOpenPage.apply(this, arguments);
+            }
+            
+            // Si es la página de renovaciones, renderizarla correctamente
+            if (pageName === 'renewContracts') {
+                setTimeout(() => {
+                    renderRenewalsPageFixed();
+                }, 150);
+            }
+            
+            // Si es la página de plantilla, renderizarla con las nuevas columnas
+            if (pageName === 'squad') {
+                setTimeout(() => {
+                    renderSquadPageFixed();
+                }, 150);
+            }
+        };
+        
+        console.log('✅ Página de renovaciones corregida');
+    }
+    
+    function renderRenewalsPageFixed() {
+        const gameState = window.gameState || window.gameLogic?.getGameState();
+        
+        if (!gameState || !gameState.squad) {
+            console.error('❌ No hay gameState disponible en renovaciones');
+            return;
+        }
+        
+        // IMPORTANTE: Buscar el contenedor correcto que SÍ existe en tu HTML
+        const contentContainer = document.getElementById('renewContractsContent');
+        
+        if (!contentContainer) {
+            console.error('❌ No se encontró renewContractsContent');
+            return;
+        }
+        
+        // Limpiar
+        contentContainer.innerHTML = '';
+        
+        // Crear tabla
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '20px';
+        
+        table.innerHTML = `
+            <thead>
+                <tr style="background: rgba(233, 69, 96, 0.3); border-bottom: 2px solid #e94560;">
+                    <th style="padding: 10px; text-align: left; color: #fff;">Jugador</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Pos</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Contrato</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Duración</th>
+                    <th style="padding: 10px; text-align: right; color: #fff;">Salario</th>
+                    <th style="padding: 10px; text-align: center; color: #fff;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        const tbody = table.querySelector('tbody');
+        
+        // Renderizar jugadores
+        gameState.squad.forEach((player) => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(233, 69, 96, 0.1)';
+            
+            const contractType = player.contractType === 'loan' ? 'Cedido' : 'Propiedad';
+            const contractColor = player.contractType === 'loan' ? '#4169E1' : '#00ff00';
+            const years = player.contractType === 'loan' ? '1 (Cesión)' : (player.contractYears || 0);
+            const canRenew = player.contractType !== 'loan';
+            
+            tr.innerHTML = `
+                <td style="padding: 10px; color: #fff; font-weight: bold;">${player.name}</td>
+                <td style="padding: 10px; text-align: center; color: #fff;">${player.position}</td>
+                <td style="padding: 10px; text-align: center; color: ${contractColor}; font-weight: bold;">${contractType}</td>
+                <td style="padding: 10px; text-align: center; color: #fff;">${years} año${years !== 1 && years !== '1 (Cesión)' ? 's' : ''}</td>
+                <td style="padding: 10px; text-align: right; color: #fff; font-weight: bold;">${(player.salary || 0).toLocaleString('es-ES')}€/sem</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button class="btn" style="background: ${canRenew ? '#00ff00' : '#666'}; color: #000; padding: 8px 20px; border: none; border-radius: 5px; cursor: ${canRenew ? 'pointer' : 'not-allowed'}; opacity: ${canRenew ? '1' : '0.5'}; font-weight: bold;"
+                            ${canRenew ? '' : 'disabled'}>
+                        🤝 Negociar
+                    </button>
+                </td>
+            `;
+            
+            const btn = tr.querySelector('button');
+            if (canRenew) {
+                btn.onclick = () => openRenewalModal(player);
+            }
+            
+            tbody.appendChild(tr);
+        });
+        
+        contentContainer.appendChild(table);
+        console.log(`✅ Renovaciones renderizadas: ${gameState.squad.length} jugadores`);
+    }
+    
+    function openRenewalModal(player) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); align-items: center; justify-content: center; z-index: 10000;';
+        
+        const suggestedSalary = Math.round((player.salary || 1000) * 1.15);
+        
+        modal.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 600px; width: 90%;">
+                <h2 style="color: #e94560; margin-top: 0; border-bottom: 2px solid #e94560; padding-bottom: 15px;">💼 Renovar - ${player.name}</h2>
+                
+                <div style="background: rgba(233, 69, 96, 0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #00ff00;">📊 Info</h3>
+                    <p style="margin: 5px 0;"><strong>Posición:</strong> ${player.position}</p>
+                    <p style="margin: 5px 0;"><strong>Media:</strong> ${player.overall || 65}</p>
+                    <p style="margin: 5px 0;"><strong>Contrato actual:</strong> ${player.contractYears} año(s)</p>
+                    <p style="margin: 5px 0;"><strong>Salario actual:</strong> ${(player.salary || 0).toLocaleString('es-ES')}€/sem</p>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">⏰ Duración:</label>
+                    <select id="renewYears" style="width: 100%; padding: 12px; border-radius: 8px; background: #1a1a2e; color: #fff; border: 2px solid #e94560; font-size: 1.1em;">
+                        <option value="1">1 año</option>
+                        <option value="2" selected>2 años</option>
+                        <option value="3">3 años</option>
+                        <option value="4">4 años</option>
+                        <option value="5">5 años</option>
+                    </select>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">💰 Salario semanal:</label>
+                    <input type="number" id="renewSalary" value="${suggestedSalary}" min="${Math.round((player.salary || 1000) * 0.8)}" step="100" 
+                           style="width: 100%; padding: 12px; border-radius: 8px; background: #1a1a2e; color: #00ff00; border: 2px solid #e94560; font-size: 1.2em; font-weight: bold;">
+                    <small style="color: #aaa; display: block; margin-top: 5px;">Mínimo: ${Math.round((player.salary || 1000) * 0.8).toLocaleString('es-ES')}€ | Sugerido: ${suggestedSalary.toLocaleString('es-ES')}€</small>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <button id="btnRenew" style="flex: 1; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
+                        ✅ Ofrecer
+                    </button>
+                    <button id="btnCancel" style="flex: 1; padding: 15px; background: #c73446; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#btnRenew').onclick = () => {
+            const years = parseInt(modal.querySelector('#renewYears').value);
+            const salary = parseInt(modal.querySelector('#renewSalary').value);
+            processRenewal(player, years, salary, modal);
+        };
+        
+        modal.querySelector('#btnCancel').onclick = () => modal.remove();
+    }
+    
+    function processRenewal(player, years, salary, modal) {
+        const salaryRatio = salary / (player.salary || 1000);
+        let acceptance = 0.5;
+        
+        if (salaryRatio >= 1.2) acceptance = 0.9;
+        else if (salaryRatio >= 1.1) acceptance = 0.75;
+        else if (salaryRatio >= 1.0) acceptance = 0.6;
+        else if (salaryRatio >= 0.9) acceptance = 0.4;
+        else acceptance = 0.2;
+        
+        if (years >= 4) acceptance += 0.1;
+        
+        const accepted = Math.random() < acceptance;
+        
+        if (accepted) {
+            player.contractYears = years;
+            player.contractWeeks = years * 52;
+            player.salary = salary;
+            
+            if (window.addNews) {
+                window.addNews(`✅ ${player.name} renovó por ${years} años y ${salary.toLocaleString('es-ES')}€/sem`, 'success');
+            }
+            
+            alert(`✅ ¡Renovación exitosa!\n\n${player.name}:\n${years} años × ${salary.toLocaleString('es-ES')}€/sem`);
+            modal.remove();
+            window.openPage('renewContracts');
+        } else {
+            alert(`❌ ${player.name} rechazó la oferta\n\nIntenta:\n• Más salario\n• Más años`);
+        }
+    }
+
+    // ============================================
+    // 2. CORREGIR VISUALIZACIÓN DE PLANTILLA
+    // ============================================
+    function fixSquadDisplay() {
+        console.log('🔄 Corrigiendo visualización de plantilla...');
+        
+        // IMPORTANTE: Sobrescribir completamente renderSquadList para evitar duplicados
         const originalRenderSquadList = window.ui.renderSquadList;
         
         window.ui.renderSquadList = function(squad, teamName) {
@@ -146,14 +243,12 @@
                 return;
             }
             
-            // LIMPIAR COMPLETAMENTE el contenedor (evita duplicados)
+            // CRÍTICO: Limpiar TODO antes de renderizar
             container.innerHTML = '';
             
-            // Crear tabla desde cero
             const table = document.createElement('table');
             table.style.width = '100%';
             table.style.borderCollapse = 'collapse';
-            table.style.marginTop = '10px';
             
             table.innerHTML = `
                 <thead>
@@ -176,67 +271,56 @@
             squad.forEach((p, idx) => {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid rgba(233, 69, 96, 0.1)';
-                tr.style.transition = 'background 0.2s';
-                tr.onmouseenter = () => tr.style.background = 'rgba(233, 69, 96, 0.1)';
-                tr.onmouseleave = () => tr.style.background = 'transparent';
                 
-                // Estado del jugador
-                let statusHTML = '<span style="color: #00ff00; font-weight: bold;">✅ Apto</span>';
+                // Estado
+                let status = '<span style="color: #00ff00; font-weight: bold;">✅ Apto</span>';
                 if (p.isInjured) {
-                    statusHTML = `<span style="color: #ff0000; font-weight: bold;">❌ Lesión (${p.weeksOut || 0}sem)</span>`;
+                    status = `<span style="color: #ff0000; font-weight: bold;">❌ Lesión (${p.weeksOut || 0}sem)</span>`;
                 } else if (p.isSuspended) {
-                    statusHTML = `<span style="color: #FFA500; font-weight: bold;">⛔ Sanción (${p.suspensionWeeks || 0})</span>`;
+                    status = `<span style="color: #FFA500; font-weight: bold;">⛔ Sanción (${p.suspensionWeeks || 0})</span>`;
                 }
                 
                 if (p.yellowCards > 0) {
-                    statusHTML += ` <span style="background: #FFD700; color: #000; padding: 3px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold;">🟨 ${p.yellowCards}</span>`;
+                    status += ` <span style="background: #FFD700; color: #000; padding: 3px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold;">🟨 ${p.yellowCards}</span>`;
                 }
                 if (p.redCards > 0) {
-                    statusHTML += ` <span style="background: #DC143C; color: #fff; padding: 3px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold;">🟥 ${p.redCards}</span>`;
+                    status += ` <span style="background: #DC143C; color: #fff; padding: 3px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold;">🟥 ${p.redCards}</span>`;
                 }
                 
-                // Tipo de contrato
-                const contractType = p.contractType === 'loan' ? 'Cedido' : 'Propiedad';
-                const contractColor = p.contractType === 'loan' ? '#4169E1' : '#00ff00';
+                // Contrato
+                const cType = p.contractType === 'loan' ? 'Cedido' : 'Propiedad';
+                const cColor = p.contractType === 'loan' ? '#4169E1' : '#00ff00';
                 
-                // Duración del contrato
-                let durationHTML = '';
+                // Duración
+                let duration = '';
                 if (p.contractType === 'loan') {
-                    durationHTML = '<span style="color: #4169E1; font-weight: bold;">1 (Cesión)</span>';
+                    duration = '<span style="color: #4169E1; font-weight: bold;">1 (Cesión)</span>';
                 } else {
-                    const years = p.contractYears || 0;
-                    const color = years <= 1 ? '#ff0000' : (years <= 2 ? '#FFA500' : '#00ff00');
-                    durationHTML = `<span style="color: ${color}; font-weight: bold;">${years} año${years !== 1 ? 's' : ''}</span>`;
+                    const y = p.contractYears || 0;
+                    const c = y <= 1 ? '#ff0000' : (y <= 2 ? '#FFA500' : '#00ff00');
+                    duration = `<span style="color: ${c}; font-weight: bold;">${y} año${y !== 1 ? 's' : ''}</span>`;
                 }
                 
                 tr.innerHTML = `
                     <td style="padding: 10px; color: #fff; font-weight: bold;">${p.name}</td>
                     <td style="padding: 10px; text-align: center; color: #fff;">${p.position}</td>
                     <td style="padding: 10px; text-align: center; color: #00ff00; font-weight: bold;">${p.overall || 65}</td>
-                    <td style="padding: 10px; text-align: center;">${statusHTML}</td>
-                    <td style="padding: 10px; text-align: center; color: ${contractColor}; font-weight: bold;">${contractType}</td>
-                    <td style="padding: 10px; text-align: center;">${durationHTML}</td>
+                    <td style="padding: 10px; text-align: center;">${status}</td>
+                    <td style="padding: 10px; text-align: center; color: ${cColor}; font-weight: bold;">${cType}</td>
+                    <td style="padding: 10px; text-align: center;">${duration}</td>
                     <td style="padding: 10px; text-align: right; color: #fff; font-weight: bold;">${(p.salary || 0).toLocaleString('es-ES')}€</td>
                     <td style="padding: 10px; text-align: center;">
-                        <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn-train" style="background: #4169E1; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s;" 
-                                    onmouseover="this.style.background='#5179f1'" onmouseout="this.style.background='#4169E1'"
-                                    title="Entrenar">💪</button>
-                            <button class="btn-sell" style="background: #FFA500; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s;"
-                                    onmouseover="this.style.background='#ffb520'" onmouseout="this.style.background='#FFA500'"
-                                    title="Vender/Ceder">💰</button>
-                            <button class="btn-fire" style="background: #DC143C; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s;"
-                                    onmouseover="this.style.background='#ec244c'" onmouseout="this.style.background='#DC143C'"
-                                    title="Despedir">⚠️</button>
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <button class="btn-train" style="background: #4169E1; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;" title="Entrenar">💪</button>
+                            <button class="btn-sell" style="background: #FFA500; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;" title="Vender/Ceder">💰</button>
+                            <button class="btn-fire" style="background: #DC143C; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;" title="Despedir">⚠️</button>
                         </div>
                     </td>
                 `;
                 
-                // Event listeners
                 tr.querySelector('.btn-train').onclick = () => {
                     if (window.openTrainingModal) window.openTrainingModal(idx);
                 };
-                
                 tr.querySelector('.btn-sell').onclick = () => openTransferModal(p);
                 tr.querySelector('.btn-fire').onclick = () => firePlayer(p);
                 
@@ -244,317 +328,182 @@
             });
             
             container.appendChild(table);
-            console.log(`✅ Plantilla renderizada: ${squad.length} jugadores con nuevas columnas`);
+            console.log(`✅ Plantilla renderizada: ${squad.length} jugadores`);
         };
         
-        console.log('✅ renderSquadList parcheado completamente');
+        console.log('✅ renderSquadList sobrescrito completamente (sin duplicados)');
     }
-    
-    // ==========================================
-    // SOBRESCRIBIR SELLPLAYER
-    // ==========================================
-    function patchSellPlayer() {
+
+    // ============================================
+    // 3. SISTEMA DE TRANSFERENCIAS
+    // ============================================
+    function fixTransferSystem() {
+        console.log('🔄 Instalando sistema de transferencias...');
+        
+        if (!window.transferMarket) {
+            window.transferMarket = [];
+        }
+        
+        // Sobrescribir sellPlayer
         window.sellPlayer = function(playerName) {
-            const player = window.gameState.squad.find(p => p.name === playerName);
-            if (player) {
-                openTransferModal(player);
-            }
+            const p = window.gameState.squad.find(x => x.name === playerName);
+            if (p) openTransferModal(p);
         };
         
-        console.log('✅ sellPlayer parcheado');
+        console.log('✅ Sistema de transferencias instalado');
     }
     
-    // ==========================================
-    // MODALES DE TRANSFERENCIA
-    // ==========================================
     function openTransferModal(player) {
-        const modal = createModal();
-        const suggestedPrice = Math.floor((player.overall || 65) * 2500);
+        const m = createModal();
+        const price = Math.floor((player.overall || 65) * 2500);
         
-        modal.innerHTML = `
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        m.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%;">
                 <h2 style="color: #e94560; margin: 0 0 20px 0; text-align: center;">💰 Transferir - ${player.name}</h2>
-                
                 <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                     <p style="margin: 5px 0;"><strong>Media:</strong> ${player.overall || 65}</p>
-                    <p style="margin: 5px 0;"><strong>Salario:</strong> ${(player.salary || 0).toLocaleString('es-ES')}€/semana</p>
-                    <p style="margin: 5px 0;"><strong>Valor sugerido:</strong> ${suggestedPrice.toLocaleString('es-ES')}€</p>
+                    <p style="margin: 5px 0;"><strong>Salario:</strong> ${(player.salary || 0).toLocaleString('es-ES')}€/sem</p>
+                    <p style="margin: 5px 0;"><strong>Valor:</strong> ${price.toLocaleString('es-ES')}€</p>
                 </div>
-                
-                <button id="btnSale" style="width: 100%; padding: 15px; background: #FFA500; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; margin-bottom: 10px; transition: all 0.2s;">
-                    💵 Poner en VENTA
-                </button>
-                <button id="btnLoan" style="width: 100%; padding: 15px; background: #4169E1; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; margin-bottom: 10px; transition: all 0.2s;">
-                    🔄 Poner en CESIÓN
-                </button>
-                <button id="btnCancel" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-                    Cancelar
-                </button>
+                <button id="bs" style="width: 100%; padding: 15px; background: #FFA500; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">💵 Venta</button>
+                <button id="bl" style="width: 100%; padding: 15px; background: #4169E1; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">🔄 Cesión</button>
+                <button id="bc" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>
             </div>
         `;
         
-        // Hover effects
-        const btnSale = modal.querySelector('#btnSale');
-        btnSale.onmouseenter = () => btnSale.style.background = '#ffb520';
-        btnSale.onmouseleave = () => btnSale.style.background = '#FFA500';
-        
-        const btnLoan = modal.querySelector('#btnLoan');
-        btnLoan.onmouseenter = () => btnLoan.style.background = '#5179f1';
-        btnLoan.onmouseleave = () => btnLoan.style.background = '#4169E1';
-        
-        // Actions
-        btnSale.onclick = () => {
-            modal.remove();
-            openSaleModal(player, suggestedPrice);
-        };
-        
-        btnLoan.onclick = () => {
-            modal.remove();
-            openLoanModal(player);
-        };
-        
-        modal.querySelector('#btnCancel').onclick = () => modal.remove();
+        m.querySelector('#bs').onclick = () => { m.remove(); openSaleModal(player, price); };
+        m.querySelector('#bl').onclick = () => { m.remove(); openLoanModal(player); };
+        m.querySelector('#bc').onclick = () => m.remove();
     }
     
-    function openSaleModal(player, suggestedPrice) {
-        const modal = createModal();
-        
-        modal.innerHTML = `
+    function openSaleModal(player, price) {
+        const m = createModal();
+        m.innerHTML = `
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%;">
-                <h2 style="color: #FFA500; margin: 0 0 20px 0; text-align: center;">💵 Vender - ${player.name}</h2>
-                
-                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">Precio de venta:</label>
-                <input type="number" id="salePrice" value="${suggestedPrice}" min="1000" step="1000" 
-                       style="width: 100%; padding: 12px; border-radius: 8px; background: #1a1a2e; color: #00ff00; border: 2px solid #e94560; font-size: 1.2em; font-weight: bold; margin-bottom: 20px;">
-                
-                <button id="btnConfirm" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">
-                    ✅ Poner a la Venta
-                </button>
-                <button id="btnCancel" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer;">
-                    Cancelar
-                </button>
+                <h2 style="color: #FFA500; margin: 0 0 20px 0;">💵 Vender - ${player.name}</h2>
+                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">Precio:</label>
+                <input type="number" id="pr" value="${price}" min="1000" step="1000" style="width: 100%; padding: 12px; border-radius: 8px; background: #1a1a2e; color: #00ff00; border: 2px solid #e94560; font-size: 1.2em; margin-bottom: 20px;">
+                <button id="ok" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">✅ Confirmar</button>
+                <button id="cc" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>
             </div>
         `;
-        
-        modal.querySelector('#btnConfirm').onclick = () => {
-            const price = parseInt(modal.querySelector('#salePrice').value);
-            listPlayerForSale(player, price);
-            modal.remove();
-        };
-        
-        modal.querySelector('#btnCancel').onclick = () => modal.remove();
+        m.querySelector('#ok').onclick = () => { listForSale(player, parseInt(m.querySelector('#pr').value)); m.remove(); };
+        m.querySelector('#cc').onclick = () => m.remove();
     }
     
     function openLoanModal(player) {
-        const modal = createModal();
-        
-        modal.innerHTML = `
+        const m = createModal();
+        m.innerHTML = `
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%;">
-                <h2 style="color: #4169E1; margin: 0 0 20px 0; text-align: center;">🔄 Ceder - ${player.name}</h2>
-                
-                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">% del salario que pagarás:</label>
-                <input type="range" id="wageSlider" min="0" max="100" value="50" style="width: 100%; margin-bottom: 10px;">
-                <div style="text-align: center; color: #00ff00; margin-bottom: 20px; font-size: 1.5em; font-weight: bold;">
-                    <span id="wageValue">50</span>%
-                </div>
-                
-                <button id="btnConfirm" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">
-                    ✅ Poner en Cesión
-                </button>
-                <button id="btnCancel" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer;">
-                    Cancelar
-                </button>
+                <h2 style="color: #4169E1; margin: 0 0 20px 0;">🔄 Ceder - ${player.name}</h2>
+                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: bold;">% salario que pagas:</label>
+                <input type="range" id="sl" min="0" max="100" value="50" style="width: 100%; margin-bottom: 10px;">
+                <div style="text-align: center; color: #00ff00; margin-bottom: 20px; font-size: 1.5em; font-weight: bold;"><span id="v">50</span>%</div>
+                <button id="ok" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">✅ Confirmar</button>
+                <button id="cc" style="width: 100%; padding: 10px; background: #666; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>
             </div>
         `;
-        
-        const slider = modal.querySelector('#wageSlider');
-        const valueDisplay = modal.querySelector('#wageValue');
-        slider.oninput = () => valueDisplay.textContent = slider.value;
-        
-        modal.querySelector('#btnConfirm').onclick = () => {
-            const wagePercent = parseInt(slider.value);
-            listPlayerForLoan(player, wagePercent);
-            modal.remove();
-        };
-        
-        modal.querySelector('#btnCancel').onclick = () => modal.remove();
+        const sl = m.querySelector('#sl');
+        const v = m.querySelector('#v');
+        sl.oninput = () => v.textContent = sl.value;
+        m.querySelector('#ok').onclick = () => { listForLoan(player, parseInt(sl.value)); m.remove(); };
+        m.querySelector('#cc').onclick = () => m.remove();
     }
     
-    function listPlayerForSale(player, price) {
-        window.transferMarket.push({
-            player: {...player},
-            type: 'sale',
-            price: price,
-            listedWeek: window.gameState.week
-        });
-        
-        if (window.addNews) {
-            window.addNews(`📢 ${player.name} puesto en venta por ${price.toLocaleString('es-ES')}€`, 'info');
-        }
-        
-        alert(`✅ ${player.name} ha sido puesto en venta\n\nRecibirás ofertas en las próximas semanas.`);
+    function listForSale(player, price) {
+        window.transferMarket.push({ player: {...player}, type: 'sale', price: price, listedWeek: window.gameState.week });
+        if (window.addNews) window.addNews(`📢 ${player.name} en venta por ${price.toLocaleString('es-ES')}€`, 'info');
+        alert(`✅ ${player.name} en venta`);
     }
     
-    function listPlayerForLoan(player, wagePercent) {
-        window.transferMarket.push({
-            player: {...player},
-            type: 'loan',
-            wagePercent: wagePercent,
-            listedWeek: window.gameState.week
-        });
-        
-        if (window.addNews) {
-            window.addNews(`📢 ${player.name} puesto en cesión (pagas ${wagePercent}% del salario)`, 'info');
-        }
-        
-        alert(`✅ ${player.name} ha sido puesto en cesión`);
+    function listForLoan(player, wage) {
+        window.transferMarket.push({ player: {...player}, type: 'loan', wagePercent: wage, listedWeek: window.gameState.week });
+        if (window.addNews) window.addNews(`📢 ${player.name} en cesión (pagas ${wage}%)`, 'info');
+        alert(`✅ ${player.name} en cesión`);
     }
     
     function firePlayer(player) {
-        const compensation = (player.salary || 1000) * (player.contractWeeks || 52);
-        
-        if (!confirm(`⚠️ DESPEDIR A ${player.name}\n\nIndemnización: ${compensation.toLocaleString('es-ES')}€\n\n¿Confirmar?`)) {
-            return;
-        }
-        
-        if (window.gameState.balance < compensation) {
-            alert('❌ No tienes suficiente dinero para pagar la indemnización');
-            return;
-        }
-        
-        window.gameState.balance -= compensation;
-        const idx = window.gameState.squad.findIndex(p => p.name === player.name);
+        const comp = (player.salary || 1000) * (player.contractWeeks || 52);
+        if (!confirm(`⚠️ DESPEDIR A ${player.name}\n\nIndemnización: ${comp.toLocaleString('es-ES')}€\n\n¿Confirmar?`)) return;
+        if (window.gameState.balance < comp) { alert('❌ Sin dinero'); return; }
+        window.gameState.balance -= comp;
+        const idx = window.gameState.squad.findIndex(x => x.name === player.name);
         if (idx !== -1) window.gameState.squad.splice(idx, 1);
-        
-        if (window.addNews) {
-            window.addNews(`⚠️ ${player.name} despedido. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`, 'warning');
-        }
-        
-        alert(`✅ ${player.name} ha sido despedido`);
+        if (window.addNews) window.addNews(`⚠️ ${player.name} despedido. Indemnización: ${comp.toLocaleString('es-ES')}€`, 'warning');
+        alert(`✅ ${player.name} despedido`);
         window.openPage('squad');
     }
-    
+
+    // ============================================
+    // 4. GENERAR OFERTAS SEMANALMENTE
     // ==========================================
-    // SISTEMA DE OFERTAS
-    // ==========================================
-    function patchSimulateWeek() {
-        const original = window.simulateWeek;
-        if (!original) {
-            console.warn('⚠️ simulateWeek no encontrado');
-            return;
-        }
+    function interceptSimulateWeek() {
+        const orig = window.simulateWeek;
+        if (!orig) return;
         
         window.simulateWeek = function() {
-            // Generar ofertas ANTES de simular
-            generateWeeklyOffers();
-            
-            // Llamar a la función original
-            return original.apply(this, arguments);
+            generateOffers();
+            return orig.apply(this, arguments);
         };
         
-        console.log('✅ simulateWeek parcheado');
+        console.log('✅ simulateWeek interceptado');
     }
     
-    function generateWeeklyOffers() {
+    function generateOffers() {
         if (!window.transferMarket || window.transferMarket.length === 0) return;
         
-        const teams = ['Real Madrid', 'Atlético de Madrid', 'FC Barcelona', 'Sevilla FC', 'Valencia CF', 'Real Betis', 'Athletic Club', 'Real Sociedad'];
+        const teams = ['Real Madrid', 'Atlético', 'Barcelona', 'Sevilla', 'Valencia', 'Betis'];
         
         window.transferMarket.forEach((listing, idx) => {
-            const weeksSinceListed = window.gameState.week - listing.listedWeek;
-            const offerChance = Math.min(0.3 + (weeksSinceListed * 0.1), 0.7);
-            
-            if (Math.random() < offerChance) {
-                const buyingClub = teams[Math.floor(Math.random() * teams.length)];
-                const offerAmount = Math.floor(listing.price * (0.7 + Math.random() * 0.4));
+            const weeks = window.gameState.week - listing.listedWeek;
+            if (Math.random() < Math.min(0.3 + weeks * 0.1, 0.7)) {
+                const club = teams[Math.floor(Math.random() * teams.length)];
+                const offer = Math.floor(listing.price * (0.7 + Math.random() * 0.4));
                 
-                if (window.addNews) {
-                    window.addNews(
-                        `📨 OFERTA RECIBIDA: ${buyingClub} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${listing.player.name}`,
-                        'info'
-                    );
-                }
+                if (window.addNews) window.addNews(`📨 OFERTA: ${club} ofrece ${offer.toLocaleString('es-ES')}€ por ${listing.player.name}`, 'info');
                 
-                // Mostrar modal de oferta
-                setTimeout(() => {
-                    showOfferModal(listing, idx, buyingClub, offerAmount);
-                }, 500);
+                setTimeout(() => showOffer(listing, idx, club, offer), 500);
             }
         });
     }
     
-    function showOfferModal(listing, listingIndex, buyingClub, offerAmount) {
-        const modal = createModal();
-        
-        modal.innerHTML = `
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                <h2 style="color: #00ff00; margin: 0 0 20px 0; text-align: center;">📨 Oferta Recibida</h2>
-                
+    function showOffer(listing, idx, club, offer) {
+        const m = createModal();
+        m.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 30px; border-radius: 15px; border: 2px solid #e94560; max-width: 500px; width: 90%;">
+                <h2 style="color: #00ff00; margin: 0 0 20px 0; text-align: center;">📨 Oferta</h2>
                 <div style="background: rgba(233, 69, 96, 0.1); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-                    <p style="font-size: 1.1em; margin-bottom: 10px;"><strong>${buyingClub}</strong> quiere fichar a</p>
-                    <p style="font-size: 1.3em; color: #00ff00; font-weight: bold; margin: 10px 0;">${listing.player.name}</p>
-                    <p style="font-size: 2em; color: #00ff00; font-weight: bold; margin: 15px 0;">${offerAmount.toLocaleString('es-ES')}€</p>
-                    <p style="color: #aaa; font-size: 0.9em;">Precio pedido: ${listing.price.toLocaleString('es-ES')}€</p>
+                    <p><strong>${club}</strong> quiere</p>
+                    <p style="font-size: 1.3em; color: #00ff00; font-weight: bold;">${listing.player.name}</p>
+                    <p style="font-size: 2em; color: #00ff00; font-weight: bold;">${offer.toLocaleString('es-ES')}€</p>
+                    <p style="color: #aaa;">Pedías: ${listing.price.toLocaleString('es-ES')}€</p>
                 </div>
-                
-                <button id="btnAccept" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">
-                    ✅ Aceptar Oferta
-                </button>
-                <button id="btnReject" style="width: 100%; padding: 15px; background: #c73446; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
-                    ❌ Rechazar Oferta
-                </button>
+                <button id="a" style="width: 100%; padding: 15px; background: #00ff00; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">✅ Aceptar</button>
+                <button id="r" style="width: 100%; padding: 15px; background: #c73446; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">❌ Rechazar</button>
             </div>
         `;
-        
-        modal.querySelector('#btnAccept').onclick = () => {
-            acceptOffer(listing, listingIndex, offerAmount);
-            modal.remove();
-        };
-        
-        modal.querySelector('#btnReject').onclick = () => {
-            if (window.addNews) {
-                window.addNews(`❌ Has rechazado la oferta de ${buyingClub} por ${listing.player.name}`, 'info');
-            }
-            modal.remove();
-        };
+        m.querySelector('#a').onclick = () => { accept(listing, idx, offer); m.remove(); };
+        m.querySelector('#r').onclick = () => { if (window.addNews) window.addNews(`❌ Oferta rechazada`, 'info'); m.remove(); };
     }
     
-    function acceptOffer(listing, listingIndex, offerAmount) {
-        // Añadir dinero
-        window.gameState.balance += offerAmount;
-        
-        // Eliminar jugador de la plantilla
-        const playerIndex = window.gameState.squad.findIndex(p => p.name === listing.player.name);
-        if (playerIndex !== -1) {
-            window.gameState.squad.splice(playerIndex, 1);
-        }
-        
-        // Eliminar del mercado
-        window.transferMarket.splice(listingIndex, 1);
-        
-        if (window.addNews) {
-            window.addNews(
-                `✅ ¡VENTA COMPLETADA! ${listing.player.name} vendido por ${offerAmount.toLocaleString('es-ES')}€`,
-                'success'
-            );
-        }
-        
-        alert(`✅ ¡Venta completada!\n\n${listing.player.name} vendido por ${offerAmount.toLocaleString('es-ES')}€\n\nNuevo saldo: ${window.gameState.balance.toLocaleString('es-ES')}€`);
-        
-        // Refrescar UI
-        if (window.ui && window.ui.refreshUI) {
-            window.ui.refreshUI(window.gameState);
-        }
+    function accept(listing, idx, offer) {
+        window.gameState.balance += offer;
+        const pIdx = window.gameState.squad.findIndex(x => x.name === listing.player.name);
+        if (pIdx !== -1) window.gameState.squad.splice(pIdx, 1);
+        window.transferMarket.splice(idx, 1);
+        if (window.addNews) window.addNews(`✅ ${listing.player.name} vendido por ${offer.toLocaleString('es-ES')}€!`, 'success');
+        alert(`✅ Venta!\n${listing.player.name} vendido por ${offer.toLocaleString('es-ES')}€`);
+        if (window.ui?.refreshUI) window.ui.refreshUI(window.gameState);
     }
     
-    // ==========================================
-    // UTILIDADES
-    // ==========================================
     function createModal() {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.3s;';
-        document.body.appendChild(modal);
-        return modal;
+        const m = document.createElement('div');
+        m.style.cssText = 'display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;z-index:10000;';
+        document.body.appendChild(m);
+        return m;
     }
+    
+    // Iniciar
+    waitForGame();
     
 })();
