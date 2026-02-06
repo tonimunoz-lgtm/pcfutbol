@@ -453,68 +453,20 @@
      * Abre la vista completa de gestión de contratos
      */
     function openContractsView(gameState) {
-        if (!gameState || !gameState.squad) {
-            console.error('GameState inválido');
-            return;
-        }
-        
-        // Crear página de contratos
-        const contractsPage = document.createElement('div');
-        contractsPage.id = 'contractsPage';
-        contractsPage.className = 'page';
-        contractsPage.innerHTML = `
-            <h1>✍️ Gestión de Contratos</h1>
-            <button class="page-close-btn" onclick="closePage('contractsPage')">✖ CERRAR</button>
-            <div class="stats-grid" style="margin-bottom: 20px;">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalPlayers">0</div>
-                    <div class="stat-label">Jugadores</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="expiringContracts">0</div>
-                    <div class="stat-label">Contratos < 1 año</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalSalaries">€0</div>
-                    <div class="stat-label">Gasto Salarial Semanal</div>
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>
-                    <input type="checkbox" id="filterExpiring"> Solo contratos por expirar
-                </label>
-            </div>
-            
-            <table id="contractsTable" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: rgba(233,69,96,0.2); border-bottom: 2px solid #e94560;">
-                        <th style="padding: 10px; text-align: left;">Jugador</th>
-                        <th style="padding: 10px; text-align: left;">Pos</th>
-                        <th style="padding: 10px; text-align: center;">Overall</th>
-                        <th style="padding: 10px; text-align: left;">Tipo</th>
-                        <th style="padding: 10px; text-align: center;">Años</th>
-                        <th style="padding: 10px; text-align: right;">Salario</th>
-                        <th style="padding: 10px; text-align: center;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="contractsTableBody"></tbody>
-            </table>
-        `;
-        
-        // Reemplazar página actual
-        const mainContent = document.querySelector('.main-content') || document.body;
-        const existingPage = mainContent.querySelector('.page.active');
-        if (existingPage) existingPage.classList.remove('active');
-        mainContent.appendChild(contractsPage);
-        
-        renderContractsTable(gameState);
-        
-        // Event listener para filtro
-        document.getElementById('filterExpiring').addEventListener('change', () => {
-            renderContractsTable(gameState);
-        });
+
+    if (!gameState || !gameState.squad) {
+        console.error('GameState inválido');
+        return;
     }
+
+    openPage('contractsPage');
+    renderContractsTable(gameState);
+
+    document.getElementById('filterExpiring').onchange = () => {
+        renderContractsTable(gameState);
+    };
+}
+
     
     /**
      * Renderiza la tabla de contratos
