@@ -451,26 +451,37 @@
     }
 
     // ===========================================
-    // EXPORTAR FUNCIONES GLOBALES
-    // ===========================================
+// EXPORTAR FUNCIONES GLOBALES
+// ===========================================
+
+window.CalendarGenerator = {
+    // Generación (con alias para compatibilidad)
+    generateLeague: generateLeagueCalendar,
+    generateOptimizedCalendar: generateLeagueCalendar, // ← ALIAS AÑADIDO
     
-    window.CalendarGenerator = {
-        // Generación
-        generateLeague: generateLeagueCalendar,
-        
-        // Integración
-        integrateCopa: integrateCopaDelRey,
-        integrateEuropean: integrateEuropeanCompetition,
-        
-        // Utilidades
-        format: formatCalendar,
-        validate: validateCalendar,
-        getStats: getCalendarStats,
-        
-        // Configuración
-        CONFIG: CALENDAR_CONFIG
-    };
+    // Integración
+    integrateCopa: integrateCopaDelRey,
+    integrateEuropean: integrateEuropeanCompetition,
     
-    console.log('✅ Generador de Calendarios: Cargado correctamente');
+    // Utilidades
+    format: formatCalendar,
+    validate: validateCalendar,
+    validateCalendar: validateCalendar, // ← ALIAS AÑADIDO
+    getStats: getCalendarStats,
     
+    // Configuración
+    CONFIG: CALENDAR_CONFIG
+};
+
+console.log('✅ Generador de Calendarios: Cargado correctamente');
+
+// Verificar que las funciones están disponibles
+setTimeout(() => {
+    if (window.CalendarGenerator.generateOptimizedCalendar) {
+        console.log('✅ generateOptimizedCalendar disponible');
+    } else {
+        console.error('❌ generateOptimizedCalendar NO disponible');
+    }
+}, 100);
+
 })();
