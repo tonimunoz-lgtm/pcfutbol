@@ -509,12 +509,26 @@ function renderCalendarPage(state) {
   
   
 function refreshUI(state) {
-  window.gameLogic.updateSuspensionsAndInjuries?.();  
-  updateDashboardStats(state);
-    renderStandingsTable(state);
+    // Actualizar suspensiones y lesiones
+    window.gameLogic.updateSuspensionsAndInjuries?.();
+    
+    // Actualizar estadísticas del dashboard
+    updateDashboardStats(state);
+    
+    // Renderizar clasificación
+    if (window.StandingsVisual) {
+        // Usar clasificación con colores
+        window.StandingsVisual.updateUI(state.standings, state.division, state.team);
+    } else {
+        // Fallback a versión básica si no está cargado el sistema visual
+        renderStandingsTable(state);
+    }
+    
+    // Renderizar plantilla y cantera
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
     
+    // Actualizar logo del equipo en header
     const teamNameElement = document.getElementById('teamName');
     if (teamNameElement && state.team) {
         const storedData = localStorage.getItem(`team_data_${state.team}`);
@@ -522,7 +536,9 @@ function refreshUI(state) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
                 teamNameElement.innerHTML = `
-                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
+                    <img src="${teamData.logo}" 
+                         style="width: 25px; height: 25px; object-fit: contain; 
+                                vertical-align: middle; margin-right: 5px;">
                     ${state.team}
                 `;
             } else {
@@ -533,18 +549,44 @@ function refreshUI(state) {
         }
     }
 
-    if (document.getElementById('lineup') && document.getElementById('lineup').classList.contains('active')) {
-        window.renderLineupPageUI();
+    // Actualizar alineación si está visible
+    if (document.getElementById('lineup') && 
+        document.getElementById('lineup').classList.contains('active')) {
+        window.renderLineupPageUI?.();
     }
 
+    // Actualizar modal de negociación si está activo
     if (state.negotiationStep > 0) {
-        window.updateNegotiationModal();
+        window.updateNegotiationModal?.();
     } else {
-        window.closeModal('negotiation');
+        window.closeModal?.('negotiation');
     }
 
+    // Actualizar tarjeta del próximo partido
     const opponentName = state.nextOpponent || 'Rival Indefinido';
     renderNextMatchCard(state.team, opponentName, state.week);
+    
+    // ========================================
+    // 🆕 SISTEMA DE CLASIFICACIÓN VISUAL CON COLORES
+    // ========================================
+    
+    // Actualizar clasificación con colores (si el sistema está cargado)
+    if (window.StandingsVisual) {
+        try {
+            // Actualizar tabla de clasificación con colores
+            window.StandingsVisual.updateUI(state.standings, state.division, state.team);
+            
+            // Actualizar widget de posición en dashboard (si existe)
+            const posWidget = document.getElementById('positionWidget');
+            if (posWidget) {
+                window.StandingsVisual.updateWidget(state.standings, state.team, state.division);
+            }
+            
+            console.log('✅ Clasificación visual actualizada');
+        } catch (error) {
+            console.warn('⚠️ Error actualizando clasificación visual:', error);
+        }
+    }
 }
 
 function renderTeamLogo(teamName, size = '30px') {
