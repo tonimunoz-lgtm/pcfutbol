@@ -118,152 +118,144 @@
             document.getElementById('adminTeamDataContainer').style.display = 'none';
         },
 
-       // En injector-admin-complete.js, modificar loadTeamData:
-loadTeamData: async function() {
-    const teamName = document.getElementById('adminTeamSelect').value;
-    if (!teamName) {
-        document.getElementById('adminTeamDataContainer').style.display = 'none';
-        return;
-    }
-
-    this.currentTeam = teamName;
-    document.getElementById('adminCurrentTeamName').textContent = teamName;
-    document.getElementById('adminTeamDataContainer').style.display = 'block';
-
-    // Cargar datos usando la nueva función que busca en Firebase
-    const teamData = await window.getTeamData(teamName);
-
-    // Rellenar formulario
-    document.getElementById('adminStadiumName').value = teamData.stadiumName || '';
-    document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
-    document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
-
-    // Mostrar previews si existen
-    if (teamData.logo) {
-        document.getElementById('adminLogoPreview').innerHTML = 
-            `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
-    } else {
-        document.getElementById('adminLogoPreview').innerHTML = '<p style="color: #999;">No hay escudo cargado</p>';
-    }
-
-    if (teamData.stadiumImage) {
-        document.getElementById('adminStadiumPreview').innerHTML = 
-            `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border: 2px solid #e94560; border-radius: 5px;">`;
-    } else {
-        document.getElementById('adminStadiumPreview').innerHTML = '<p style="color: #999;">No hay foto del estadio</p>';
-    }
-},
-
-// Modificar saveTeamData:
-// En injector-admin-complete.js, modificar saveTeamData:
-
-// En injector-admin-complete.js, modificar saveTeamData:
-
-saveTeamData: async function() {
-    if (!this.currentTeam) {
-        alert('Selecciona un equipo primero');
-        return;
-    }
-
-    const logoFile = document.getElementById('adminTeamLogo').files[0];
-    const stadiumFile = document.getElementById('adminStadiumImage').files[0];
-
-    const teamData = {
-        stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
-        stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
-        initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
-        logoUrl: null,
-        stadiumImageUrl: null
-    };
-
-    // Cargar datos existentes
-    const existingData = await window.getTeamData(this.currentTeam);
-    teamData.logoUrl = existingData.logoUrl;
-    teamData.stadiumImageUrl = existingData.stadiumImageUrl;
-
-    // SUBIR A FIREBASE STORAGE (NO BASE64)
-    if (logoFile) {
-        const uploadResult = await window.uploadImageToFirebase(
-            logoFile, 
-            `teams/${this.currentTeam}/logo.png`
-        );
-        if (uploadResult.success) {
-            teamData.logoUrl = uploadResult.url;
-        }
-    }
-
-    if (stadiumFile) {
-        const uploadResult = await window.uploadImageToFirebase(
-            stadiumFile, 
-            `teams/${this.currentTeam}/stadium.png`
-        );
-        if (uploadResult.success) {
-            teamData.stadiumImageUrl = uploadResult.url;
-        }
-    }
-
-    // Guardar solo URLs en Firestore (NO base64)
-    const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
-    
-    if (saveResult.success) {
-        alert(`✅ Datos guardados correctamente en Firebase`);
-    }
-}
-
-
-// Modificar exportAllData:
-exportAllData: async function() {
-    const allData = await window.getAllTeamsData();
-
-    const dataStr = JSON.stringify(allData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pcfutbol_teams_data_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    
-    URL.revokeObjectURL(url);
-    alert(`✅ Datos exportados correctamente (${Object.keys(allData).length} equipos)`);
-},
-
-// Modificar importAllData:
-importAllData: async function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            
-            // Guardar todos los datos en Firebase
-            const promises = Object.keys(data).map(teamName => 
-                window.saveTeamData(teamName, data[teamName])
-            );
-            
-            await Promise.all(promises);
-            
-            alert(`✅ Datos importados correctamente a Firebase para ${Object.keys(data).length} equipos`);
-            
-            if (this.currentTeam) {
-                await this.loadTeamData();
+        loadTeamData: async function() {
+            const teamName = document.getElementById('adminTeamSelect').value;
+            if (!teamName) {
+                document.getElementById('adminTeamDataContainer').style.display = 'none';
+                return;
             }
-        } catch (error) {
-            alert('❌ Error al importar los datos: ' + error.message);
-       }
-    };
-    reader.readAsText(file);
-    
-    event.target.value = '';
-}
-    }; // <-- Este es el cierre del objeto window.adminBackend
 
-    // Auto-activar panel de admin al cargar (para testing)
+            this.currentTeam = teamName;
+            document.getElementById('adminCurrentTeamName').textContent = teamName;
+            document.getElementById('adminTeamDataContainer').style.display = 'block';
+
+            // Cargar datos usando la nueva función que busca en Firebase
+            const teamData = await window.getTeamData(teamName);
+
+            // Rellenar formulario
+            document.getElementById('adminStadiumName').value = teamData.stadiumName || '';
+            document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
+            document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
+
+            // Mostrar previews si existen
+            if (teamData.logo) {
+                document.getElementById('adminLogoPreview').innerHTML = 
+                    `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
+            } else {
+                document.getElementById('adminLogoPreview').innerHTML = '<p style="color: #999;">No hay escudo cargado</p>';
+            }
+
+            if (teamData.stadiumImage) {
+                document.getElementById('adminStadiumPreview').innerHTML = 
+                    `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border: 2px solid #e94560; border-radius: 5px;">`;
+            } else {
+                document.getElementById('adminStadiumPreview').innerHTML = '<p style="color: #999;">No hay foto del estadio</p>';
+            }
+        },
+
+        saveTeamData: async function() {
+            if (!this.currentTeam) {
+                alert('Selecciona un equipo primero');
+                return;
+            }
+
+            const logoFile = document.getElementById('adminTeamLogo').files[0];
+            const stadiumFile = document.getElementById('adminStadiumImage').files[0];
+
+            const teamData = {
+                stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
+                stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
+                initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
+                logoUrl: null,
+                stadiumImageUrl: null
+            };
+
+            // Cargar datos existentes
+            const existingData = await window.getTeamData(this.currentTeam);
+            teamData.logoUrl = existingData.logoUrl;
+            teamData.stadiumImageUrl = existingData.stadiumImageUrl;
+
+            // SUBIR A FIREBASE STORAGE (NO BASE64)
+            if (logoFile) {
+                const uploadResult = await window.uploadImageToFirebase(
+                    logoFile, 
+                    `teams/${this.currentTeam}/logo.png`
+                );
+                if (uploadResult.success) {
+                    teamData.logoUrl = uploadResult.url;
+                }
+            }
+
+            if (stadiumFile) {
+                const uploadResult = await window.uploadImageToFirebase(
+                    stadiumFile, 
+                    `teams/${this.currentTeam}/stadium.png`
+                );
+                if (uploadResult.success) {
+                    teamData.stadiumImageUrl = uploadResult.url;
+                }
+            }
+
+            // Guardar solo URLs en Firestore (NO base64)
+            const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
+            
+            if (saveResult.success) {
+                alert(`✅ Datos guardados correctamente en Firebase`);
+            }
+        },
+
+        exportAllData: async function() {
+            const allData = await window.getAllTeamsData();
+
+            const dataStr = JSON.stringify(allData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pcfutbol_teams_data_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            alert(`✅ Datos exportados correctamente (${Object.keys(allData).length} equipos)`);
+        },
+
+        importAllData: async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Guardar todos los datos en Firebase
+                    const promises = Object.keys(data).map(teamName => 
+                        window.saveTeamData(teamName, data[teamName])
+                    );
+                    
+                    await Promise.all(promises);
+                    
+                    alert(`✅ Datos importados correctamente a Firebase para ${Object.keys(data).length} equipos`);
+                    
+                    if (this.currentTeam) {
+                        await this.loadTeamData();
+                    }
+                } catch (error) {
+                    alert('❌ Error al importar los datos: ' + error.message);
+                    console.error('Error al importar:', error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input
+            event.target.value = '';
+        }
+    }; // ← ESTA ES LA LLAVE QUE FALTABA
+
+    // Auto-activar panel de admin al cargar
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
-            // Añadir botón de admin al header
             const headerInfo = document.querySelector('.header-info');
             if (headerInfo && !document.getElementById('adminButton')) {
                 const adminBtn = document.createElement('button');
