@@ -244,7 +244,212 @@ function initYoungsterDatabase() {
         ALL_AVAILABLE_YOUNGSTERS.push(generateRandomYoungster(50, 70, true));  
     }  
 }  
-  
+
+// Añadir a players.js
+
+const DIVISION_QUALITY = {
+    primera: {
+        overall_range: { min: 70, max: 95 },
+        starter_min: 75,
+        bench_min: 70,
+        youth_max: 72,
+        squad_size: { min: 22, max: 28 },
+        salaryMultiplier: 1.5
+    },
+    segunda: {
+        overall_range: { min: 60, max: 80 },
+        starter_min: 65,
+        bench_min: 60,
+        youth_max: 62,
+        squad_size: { min: 20, max: 26 },
+        salaryMultiplier: 1.0
+    },
+    rfef_grupo1: {
+        overall_range: { min: 50, max: 70 },
+        starter_min: 55,
+        bench_min: 50,
+        youth_max: 52,
+        squad_size: { min: 18, max: 24 },
+        salaryMultiplier: 0.5
+    },
+    rfef_grupo2: {
+        overall_range: { min: 50, max: 70 },
+        starter_min: 55,
+        bench_min: 50,
+        youth_max: 52,
+        squad_size: { min: 18, max: 24 },
+        salaryMultiplier: 0.5
+    }
+};
+
+// Equipos de élite (Primera División)
+const ELITE_TEAMS = {
+    'Real Madrid': {
+        overall_range: { min: 80, max: 95 },
+        budget_multiplier: 5.0,
+        min_starters: 11,
+        starter_overall: 85
+    },
+    'FC Barcelona': {
+        overall_range: { min: 78, max: 94 },
+        budget_multiplier: 4.5,
+        min_starters: 11,
+        starter_overall: 83
+    },
+    'Atlético Madrid': {
+        overall_range: { min: 76, max: 90 },
+        budget_multiplier: 3.5,
+        min_starters: 11,
+        starter_overall: 80
+    },
+    'Athletic Club': {
+        overall_range: { min: 72, max: 85 },
+        budget_multiplier: 2.5,
+        min_starters: 11,
+        starter_overall: 76
+    },
+    'Real Sociedad': {
+        overall_range: { min: 72, max: 85 },
+        budget_multiplier: 2.5,
+        min_starters: 11,
+        starter_overall: 76
+    },
+    'Villarreal CF': {
+        overall_range: { min: 72, max: 85 },
+        budget_multiplier: 2.5,
+        min_starters: 11,
+        starter_overall: 76
+    },
+    'Sevilla FC': {
+        overall_range: { min: 72, max: 85 },
+        budget_multiplier: 2.5,
+        min_starters: 11,
+        starter_overall: 76
+    },
+    'Valencia CF': {
+        overall_range: { min: 72, max: 85 },
+        budget_multiplier: 2.5,
+        min_starters: 11,
+        starter_overall: 76
+    },
+    'Real Betis': {
+        overall_range: { min: 70, max: 82 },
+        budget_multiplier: 2.0,
+        min_starters: 11,
+        starter_overall: 74
+    }
+};
+
+/**
+ * Genera una plantilla realista según división y equipo
+ */
+function generateRealisticSquad(teamName, division) {
+    // Determinar si es equipo de élite
+    const isElite = ELITE_TEAMS[teamName] !== undefined;
+    const config = isElite ? ELITE_TEAMS[teamName] : DIVISION_QUALITY[division];
+    
+    const squad = [];
+    const squadSize = Math.floor(
+        Math.random() * (config.squad_size.max - config.squad_size.min + 1)
+    ) + config.squad_size.min;
+    
+    // Distribución de posiciones
+    const positionDistribution = {
+        'POR': 3,
+        'DFC': 5,
+        'LI': 2,
+        'LD': 2,
+        'MC': 5,
+        'MCO': 2,
+        'MD': 2,
+        'MI': 2,
+        'EXT': 3,
+        'DC': Math.max(2, squadSize - 26)  // Resto son delanteros
+    };
+    
+    // Generar jugadores por posición
+    for (const [position, count] of Object.entries(positionDistribution)) {
+        for (let i = 0; i < count; i++) {
+            const isStarter = i === 0; // Primero de cada posición es titular
+            
+            let targetOverall;
+            if (isStarter) {
+                targetOverall = config.starter_overall || config.overall_range.min + 5;
+            } else {
+                targetOverall = config.bench_min || config.overall_range.min;
+            }
+            
+            // Variación aleatoria
+            targetOverall += Math.floor(Math.random() * 5) - 2;
+            
+            // Limitar al rango de la división
+            targetOverall = Math.max(config.overall_range.min, 
+                                    Math.min(config.overall_range.max, targetOverall));
+            
+            const player = generatePlayerWithTargetOverall(position, targetOverall, teamName);
+            squad.push(player);
+        }
+    }
+    
+    return squad;
+}
+
+/**
+ * Genera un jugador con un overall objetivo
+ */
+function generatePlayerWithTargetOverall(position, targetOverall, teamName) {
+    const player = {
+        id: `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: generateRandomName(),
+        age: 18 + Math.floor(Math.random() * 17), // 18-34 años
+        nationality: 'España',
+        position: position,
+        foot: Math.random() < 0.7 ? 'Derecho' : 'Zurdo',
+        currentTeam: teamName
+    };
+    
+    // Generar atributos para alcanzar el overall objetivo
+    const weights = POSITION_ATTRIBUTE_WEIGHTS[position];
+    const attributes = {};
+    
+    // Primera pasada: valores aleatorios
+    for (const attr in weights) {
+        attributes[attr] = 40 + Math.floor(Math.random() * 40); // 40-80
+    }
+    
+    // Segunda pasada: ajustar para alcanzar overall objetivo
+    let currentOverall = calculateOverallFromAttributes(attributes, weights);
+    const diff = targetOverall - currentOverall;
+    
+    // Distribuir la diferencia proporcionalmente según los pesos
+    for (const attr in weights) {
+        const adjustment = diff * weights[attr];
+        attributes[attr] = Math.max(30, Math.min(99, attributes[attr] + adjustment));
+    }
+    
+    // Asignar atributos al jugador
+    Object.assign(player, attributes);
+    
+    return player;
+}
+
+function calculateOverallFromAttributes(attributes, weights) {
+    let weightedSum = 0;
+    let totalWeight = 0;
+    
+    for (const attr in weights) {
+        weightedSum += (attributes[attr] || 50) * weights[attr];
+        totalWeight += weights[attr];
+    }
+    
+    return Math.round(weightedSum / totalWeight);
+}
+
+// Exportar
+window.generateRealisticSquad = generateRealisticSquad;
+
+
+
 function getPlayerMarket(filters = {}, scoutLevel = 0) {  
     let filteredPlayers = [...ALL_AVAILABLE_PLAYERS];  
   
