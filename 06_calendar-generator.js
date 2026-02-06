@@ -49,7 +49,11 @@
         const firstHalf = generateRoundRobin(teams, userTeam);
         const secondHalf = invertHomeAway(firstHalf);
         
-        return [...firstHalf, ...secondHalf];
+       const fullCalendar = [...firstHalf, ...secondHalf];
+
+// Convertir a array plano de partidos
+return fullCalendar.flat();
+
     }
     
     /**
