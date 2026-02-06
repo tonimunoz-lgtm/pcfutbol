@@ -650,4 +650,27 @@ window.openRenewalUI = function(gameState) {
 console.log('✅ Sistema de Contratos: Cargado correctamente');
 console.log('✅ Función openRenewalUI expuesta globalmente');
 
+// ===========================================
+// HOOK PARA openPage
+// ===========================================
+
+const originalOpenPage = window.openPage;
+
+window.openPage = function(pageId) {
+
+    if (originalOpenPage) originalOpenPage(pageId);
+
+    if (pageId === 'contractsPage') {
+
+        const gameState = window.gameLogic
+            ? window.gameLogic.getGameState()
+            : window.gameState;
+
+        if (gameState) {
+            renderContractsTable(gameState);
+        }
+    }
+};
+
+    
 })();
