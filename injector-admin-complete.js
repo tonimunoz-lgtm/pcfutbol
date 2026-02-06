@@ -208,40 +208,7 @@ saveTeamData: async function() {
 
     await Promise.all(promises);
 
-    // Guardar en Firebase y localStorage
-    const saveResult = await window.saveTeamData(this.currentTeam, teamData);
-    
-    if (saveResult.success) {
-        // Actualizar el juego si es el equipo actual
-        if (window.gameLogic) {
-            const state = window.gameLogic.getGameState();
-            if (state.team === this.currentTeam) {
-                console.log('🔄 Actualizando datos del equipo actual en el juego...');
-                state.teamLogo = teamData.logo;
-                state.stadiumImage = teamData.stadiumImage;
-                state.stadiumName = teamData.stadiumName;
-                state.stadiumCapacity = teamData.stadiumCapacity;
-                
-                window.gameLogic.updateGameState(state);
-                
-                if (window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(state);
-                }
-            }
-        }
-        
-        alert(`✅ Datos guardados en Firebase para ${this.currentTeam}:\n\n` +
-              `🏟️ Estadio: ${teamData.stadiumName}\n` +
-              `👥 Capacidad: ${teamData.stadiumCapacity.toLocaleString()}\n` +
-              `💰 Presupuesto: ${teamData.initialBudget.toLocaleString()}€\n` +
-              `🛡️ Escudo: ${teamData.logo ? 'Sí' : 'No'}\n` +
-              `📷 Foto estadio: ${teamData.stadiumImage ? 'Sí' : 'No'}`);
-        
-        this.loadTeamData();
-    } else {
-        alert(`❌ Error al guardar en Firebase: ${saveResult.error}\n\nLos datos se guardaron localmente, pero no se sincronizaron.`);
-    }
-},
+    // Guardar en Fir
 
 // Modificar exportAllData:
 exportAllData: async function() {
