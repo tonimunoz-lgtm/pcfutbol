@@ -115,6 +115,8 @@ function renderStandingsTable(state) {
 
 
   
+// ✅ FUNCIÓN renderSquadList CORREGIDA - REEMPLAZAR COMPLETA en ui.js
+
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
     if (!list) return;  
@@ -124,35 +126,41 @@ function renderSquadList(squad, currentTeam) {
         return;  
     }  
   
-   let headerHtml = `
-    <div style="overflow-x: auto;">
-        <table style="font-size: 0.8em; min-width: 1400px;">
-            <thead>
-                <tr>
-                    <th>Nº</th>
-                    <th>JUGADOR</th>
-                    <th>OVR</th>
-                    <th>POT</th>
-                    <th>EDAD</th>
-                    <th>POS</th>
-                    <th>PIE</th>
-                    ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
-                    <th>FORMA</th>
-                    <th>ESTADO</th>
-                    <th>CONTRATO</th>          <!-- ✅ NUEVA COLUMNA -->
-                    <th>DURACIÓN</th>           <!-- ✅ NUEVA COLUMNA -->
-                    <th>CLÁUSULA</th>           <!-- ✅ NUEVA COLUMNA -->
-                    <th>SALARIO</th>
-                    <th>VALOR</th>
-                    <th>ACCIONES</th>
-                </tr>
-            </thead>
+    let headerHtml = `
+        <div style="overflow-x: auto;">
+            <table style="font-size: 0.8em; min-width: 1400px;">
+                <thead>
+                    <tr>
+                        <th>Nº</th>
+                        <th>JUGADOR</th>
+                        <th>OVR</th>
+                        <th>POT</th>
+                        <th>EDAD</th>
+                        <th>POS</th>
+                        <th>PIE</th>
+                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
+                        <th>FORMA</th>
+                        <th>ESTADO</th>
+                        <th>CONTRATO</th>
+                        <th>DURACIÓN</th>
+                        <th>CLÁUSULA</th>
+                        <th>SALARIO</th>
+                        <th>VALOR</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
                 <tbody>  
     `;  
   
     const sorted = squad.sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {  
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
+        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
+        
+        // ✅ VALORES CON DEFAULTS
+        const contractType = p.contractType || 'owned';
+        const contractYears = p.contractYears || 0;
+        const releaseClause = p.releaseClause || 0;
+        
         return `  
             <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
@@ -164,47 +172,49 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
                 <td>${p.form || 0}</td>  
-                <td>${statusText}</td>  
+                <td>${statusText}</td>
+                
+                <!-- ✅ COLUMNAS EN ORDEN CORRECTO -->
+                <td>
+                    <span style="color: ${contractType === 'owned' ? '#4CAF50' : '#FF9800'};">
+                        ${contractType === 'owned' ? '✅ Contratado' : '🔄 Cedido'}
+                    </span>
+                </td>
+                <td>
+                    <span style="color: ${contractYears <= 1 ? '#ff3333' : '#FFF'}; font-weight: ${contractYears <= 1 ? 'bold' : 'normal'};">
+                        ${contractYears} ${contractYears === 1 ? 'año' : 'años'}
+                    </span>
+                </td>
+                <td>${releaseClause.toLocaleString('es-ES')}€</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td>  
-                 <!-- ✅ NUEVAS COLUMNAS -->
-        <td>
-            <span style="color: ${p.contractType === 'owned' ? '#4CAF50' : '#FF9800'};">
-                ${p.contractType === 'owned' ? '✅ Contratado' : '🔄 Cedido'}
-            </span>
-        </td>
-        <td>
-            <span style="color: ${p.contractYears <= 1 ? '#ff3333' : '#FFF'}; font-weight: ${p.contractYears <= 1 ? 'bold' : 'normal'};">
-                ${p.contractYears || 0} ${p.contractYears === 1 ? 'año' : 'años'}
-            </span>
-        </td>
-        <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
-               <td style="display: flex; gap: 5px; flex-wrap: wrap;">
-    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">
-        💪 Entrenar
-    </button>
-    
-    ${p.contractType === 'owned' ? `
-        <button class="btn btn-sm" style="background: #FF9800;" 
-                onclick="window.openSellPlayerModal(${idx})">
-            💰 Vender
-        </button>
-        <button class="btn btn-sm" style="background: #c73446;" 
-                onclick="window.firePlayerConfirm('${p.name}')">
-            🚪 Despedir
-        </button>
-    ` : `
-        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>
-            🔒 Cedido
-        </button>
-    `}
-</td>
+                <td>${p.value.toLocaleString('es-ES')}€</td>
+                
+                <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">
+                        💪 Entrenar
+                    </button>
+                    
+                    ${contractType === 'owned' ? `
+                        <button class="btn btn-sm" style="background: #FF9800;" 
+                                onclick="window.openSellPlayerModal(${idx})">
+                            💰 Vender
+                        </button>
+                        <button class="btn btn-sm" style="background: #c73446;" 
+                                onclick="window.firePlayerConfirm('${p.name}')">
+                            🚪 Despedir
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>
+                            🔒 Cedido
+                        </button>
+                    `}
+                </td>
             </tr>  
         `;  
     }).join('');  
   
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
-}  
+} 
   
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
