@@ -657,12 +657,11 @@ window.openPage = function(pageId) {
         case 'standings':
             ui.renderStandingsTable(state);
             break;
-           case 'renewContracts':
-                // NEW_06_renewals_manager.js se encarga automáticamente
-                console.log('✅ Página de renovaciones abierta');
-                break;
-            } // <--- ¡Esta llave de cierre es la que falta!
-
+        case 'renewContracts':
+            console.log('✅ Página de renovaciones abierta');
+            break;
+            }
+};
             // Ahora, el resto de tus funciones pueden seguir aquí
             window.closePage = function(pageId) {
                 const page = document.getElementById(pageId);
