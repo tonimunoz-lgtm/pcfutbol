@@ -403,11 +403,19 @@ function getPlayerMarket(filters = {}, scoutLevel = 0) {
     if (filters.searchName) {  
         const searchTerm = filters.searchName.toLowerCase();  
         filteredPlayers = filteredPlayers.filter(p => p.name.toLowerCase().includes(searchTerm));  
-    }  
+    }
+    
+    // ✅ AÑADIR FILTROS DE TRANSFERIBLES Y CEDIBLES
+    if (filters.transferListed) {
+        filteredPlayers = filteredPlayers.filter(p => p.transferListed === true);
+    }
+    if (filters.loanListed) {
+        filteredPlayers = filteredPlayers.filter(p => p.loanListed === true);
+    }
   
     const revealCount = Math.min(filteredPlayers.length, 30 + scoutLevel * 10);  
     return filteredPlayers.slice(0, revealCount);  
-}  
+}
   
 function getYoungsterMarket(filters = {}) {  
     let filteredYoungsters = [...ALL_AVAILABLE_YOUNGSTERS];  
