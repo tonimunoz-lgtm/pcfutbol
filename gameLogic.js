@@ -1091,115 +1091,73 @@ function endSeason() {
     setupNewSeason(currentDivision, nextDivisionKey);  
 }  
   
-function simulateFullWeek() {  
+unction simulateFullWeek() {
     let myMatchResult = null;
-    let forcedLoss = false;  
-  
-    if (gameState.seasonType === 'preseason') {  
-        handlePreseasonWeek();  
-        gameState.week++;  
-        updateWeeklyFinancials();  
-        if (gameState.week > PRESEASON_WEEKS) {  
-            gameState.seasonType = 'regular';  
-            gameState.week = 1;  
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
-        }  
+    let forcedLoss = false;
+
+    // 🆕 PROCESAR SISTEMA DE TRANSFERENCIAS AL INICIO
+    if (window.TransferContractsSystem) {
+        window.TransferContractsSystem.processWeekly(gameState);
+    }
+
+    if (gameState.seasonType === 'preseason') {
+        handlePreseasonWeek();
+        gameState.week++;
+        updateWeeklyFinancials();
+        if (gameState.week > PRESEASON_WEEKS) {
+            gameState.seasonType = 'regular';
+            gameState.week = 1;
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+        }
         return { myMatch: null, forcedLoss: false };
-    }  
-  
-    const preSimLineupValidation = validateLineup(gameState.lineup);  
-  
-    applyWeeklyTraining();  
-  
-    // 🆕 REDUCIR SANCIONES Y LESIONES
+    }
+
+    const preSimLineupValidation = validateLineup(gameState.lineup);
+
+    applyWeeklyTraining();
+
+    // Reducir sanciones y lesiones
     gameState.squad.forEach(p => {
         // Lesiones
-        if (p.isInjured) {  
-            p.weeksOut--;  
-            if (p.weeksOut <= 0) {  
-                p.isInjured = false;  
-                p.weeksOut = 0;  
-                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
-            }  
+        if (p.isInjured) {
+            p.weeksOut--;
+            if (p.weeksOut <= 0) {
+                p.isInjured = false;
+                p.weeksOut = 0;
+                addNews(`${p.name} se ha recuperado de su lesión.`, 'success');
+            }
         }
         
-        // 🆕 SANCIONES
-        if (p.isSuspended) {
+        // Sanciones
+        if (p.isSuspended && p.suspensionWeeks > 0) {
             p.suspensionWeeks--;
             if (p.suspensionWeeks <= 0) {
                 p.isSuspended = false;
                 p.suspensionWeeks = 0;
-                addNews(`✅ ${p.name} ha cumplido su sanción y puede volver a jugar.`, 'success');
+                addNews(`${p.name} ha cumplido su sanción y está disponible.`, 'success');
             }
         }
     });
 
-    // 🆕 PROCESAR CONTRATOS SEMANALMENTE
-if (window.TransferContractsSystem) {
-        window.TransferContractsSystem.processWeekly(gameState);
-    }
+    const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);
 
-// 🆕 PROCESAR COPA DEL REY
-if (gameState.copa && window.CopaDelRey) {
-    const copa = new window.CopaDelRey(gameState.currentSeason);
-    copa.import(gameState.copa);
-    
-    const userMatch = copa.getUserMatch(gameState.team);
-    if (userMatch && !userMatch.played) {
-        const result = copa.simulateMatch(userMatch, gameState);
-        // El partido ya se añadió a las noticias dentro de simulateMatch
-    }
-    
-    gameState.copa = copa.export();
-}
-    
-    gameState.academy.forEach(y => {  
-        if (y.isInjured) {  
-            y.weeksOut--;  
-            if (y.weeksOut <= 0) {  
-                y.isInjured = false;  
-                y.weeksOut = 0;  
-                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
-            }  
-        }
-        
-        // 🆕 SANCIONES CANTERA
-        if (y.isSuspended) {
-            y.suspensionWeeks--;
-            if (y.suspensionWeeks <= 0) {
-                y.isSuspended = false;
-                y.suspensionWeeks = 0;
-            }
-        }
-    });  
-  
-    secondCoachAdvice();
-  
-    if (gameState.week % 4 === 0) {  
-        boardMessages();  
-    }  
-        
-    const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
-    
-    console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
-  
     let myTeamMatch = currentWeekMatches.find(match => 
         match.home === gameState.team || match.away === gameState.team
-    );  
-  
-    if (myTeamMatch) {  
+    );
+
+    if (myTeamMatch) {
         if (!preSimLineupValidation.success) {
-            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
-                
-            let homeGoals = 0;  
-            let awayGoals = 0;  
-  
-            if (myTeamMatch.home === gameState.team) {  
+            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');
+            
+            let homeGoals = 0;
+            let awayGoals = 0;
+
+            if (myTeamMatch.home === gameState.team) {
                 awayGoals = 3;
-            } else {  
+            } else {
                 homeGoals = 3;
-            }  
-  
+            }
+
             const updateStats = (team, gf, gc) => {
                 const s = gameState.standings[team];
                 if (s) {
@@ -1214,92 +1172,128 @@ if (gameState.copa && window.CopaDelRey) {
             
             updateStats(myTeamMatch.home, homeGoals, awayGoals);
             updateStats(myTeamMatch.away, awayGoals, homeGoals);
-                
-            gameState.matchHistory.push({  
-                week: gameState.week,  
-                home: myTeamMatch.home,  
-                away: myTeamMatch.away,  
+            
+            gameState.matchHistory.push({
+                week: gameState.week,
+                home: myTeamMatch.home,
+                away: myTeamMatch.away,
                 score: `${homeGoals}-${awayGoals}`
-            });  
-                
-            myMatchResult = {  
-                home: myTeamMatch.home,  
-                away: myTeamMatch.away,  
-                homeGoals: homeGoals,  
-                awayGoals: awayGoals,  
-                score: `${homeGoals}-${awayGoals}`,  
-            };  
-            forcedLoss = true;  
-  
+            });
+            
+            myMatchResult = {
+                home: myTeamMatch.home,
+                away: myTeamMatch.away,
+                homeGoals: homeGoals,
+                awayGoals: awayGoals,
+                score: `${homeGoals}-${awayGoals}`,
+            };
+            forcedLoss = true;
+
             gameState.popularity = Math.max(0, gameState.popularity - 5);
-            gameState.fanbase = Math.max(0, gameState.fanbase - 500);  
-  
+            gameState.fanbase = Math.max(0, gameState.fanbase - 500);
+
         } else {
             const result = playMatch(myTeamMatch.home, myTeamMatch.away);
-            myMatchResult = {  
-                home: result.homeTeam,  
-                away: result.awayTeam,  
-                homeGoals: result.homeGoals,  
-                awayGoals: result.awayGoals,  
-                score: `${result.homeGoals}-${result.awayGoals}`,  
+            myMatchResult = {
+                home: result.homeTeam,
+                away: result.awayTeam,
+                homeGoals: result.homeGoals,
+                awayGoals: result.awayGoals,
+                score: `${result.homeGoals}-${result.awayGoals}`,
             };
             
-            gameState.matchHistory.push({  
-                week: gameState.week,  
-                home: result.homeTeam,  
-                away: result.awayTeam,  
+            gameState.matchHistory.push({
+                week: gameState.week,
+                home: result.homeTeam,
+                away: result.awayTeam,
                 score: `${result.homeGoals}-${result.awayGoals}`
             });
-        }  
-    }  
-  
+        }
+    }
+
     currentWeekMatches
         .filter(match => match !== myTeamMatch)
-        .forEach(match => {  
-            const alreadyPlayed = gameState.matchHistory.some(mh =>  
-                mh.week === gameState.week &&  
+        .forEach(match => {
+            const alreadyPlayed = gameState.matchHistory.some(mh =>
+                mh.week === gameState.week &&
                 mh.home === match.home && 
                 mh.away === match.away
             );
             
-            if (!alreadyPlayed) {  
+            if (!alreadyPlayed) {
                 const result = playMatch(match.home, match.away);
                 
-                gameState.matchHistory.push({  
-                    week: gameState.week,  
-                    home: result.homeTeam,  
-                    away: result.awayTeam,  
+                gameState.matchHistory.push({
+                    week: gameState.week,
+                    home: result.homeTeam,
+                    away: result.awayTeam,
                     score: `${result.homeGoals}-${result.awayGoals}`
                 });
                 
                 console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
-            }  
+            }
         });
     
     console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
-  
-    gameState.week++;  
-    updateWeeklyFinancials();  
-  
+
+    gameState.week++;
+    updateWeeklyFinancials();
+
     if (gameState.staff.segundoEntrenador && 
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
-        gameState.balance < 0) {  
-        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
-    }  
-  
-    if (gameState.balance < -100000 && gameState.week > 10) {  
-        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
-        alert("¡GAME OVER! Has sido despedido por la directiva.");  
-        resetGame();  
-        return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
-    }  
-  
-    if (gameState.week > gameState.maxSeasonWeeks) {  
-        endSeason();  
-    }  
-        
-    return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
+        gameState.balance < 0) {
+        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');
+    }
+
+    if (gameState.balance < -100000 && gameState.week > 10) {
+        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');
+        alert("¡GAME OVER! Has sido despedido por la directiva.");
+        resetGame();
+        return { myMatch: null, forcedLoss: false };
+    }
+
+    if (gameState.week > gameState.maxSeasonWeeks) {
+        endSeason();
+        return { myMatch: myMatchResult, forcedLoss: forcedLoss };
+    }
+
+    const nextMatches = gameState.seasonCalendar.filter(m => m.week === gameState.week);
+    const nextMatch = nextMatches.find(m => m.home === gameState.team || m.away === gameState.team);
+    
+    if (nextMatch) {
+        gameState.nextOpponent = (nextMatch.home === gameState.team) ? nextMatch.away : nextMatch.home;
+    } else {
+        gameState.nextOpponent = "Descanso";
+    }
+
+    return { myMatch: myMatchResult, forcedLoss: forcedLoss };
 }
+
+
+// ============================================================================
+// 3. AL FINAL DEL ARCHIVO - AÑADIR ESTA FUNCIÓN DE DEBUG
+//    Copiar esto al FINAL de gameLogic.js, antes del export
+// ============================================================================
+
+// Función de debug para desarrollo
+if (typeof window !== 'undefined') {
+    window.debugGameState = () => {
+        console.log('📊 GameState actual:', gameState);
+        console.log('👥 Squad:', gameState.squad.length, 'jugadores');
+        console.log('💰 Balance:', gameState.balance.toLocaleString('es-ES') + '€');
+        console.log('📅 Semana:', gameState.week);
+        
+        if (window.TransferContractsSystem) {
+            console.log('\n💼 Sistema de Transferencias:');
+            console.log('En venta/cesión:', window.TransferContractsSystem.getTransferMarket());
+            console.log('Ofertas recibidas:', window.TransferContractsSystem.getIncomingOffers());
+            console.log('Cedidos fuera:', window.TransferContractsSystem.getLoanedOut());
+        }
+    };
+    
+    console.log('🔍 Debug disponible: escribe window.debugGameState() en consola');
+}
+
 
   
 function handlePreseasonWeek() {  
@@ -1741,7 +1735,7 @@ function getAgeModifier(age) {
 function initializeGameSystems() {
     console.log('🎮 Inicializando sistemas del juego...');
     
-   // 🆕 INICIALIZAR SISTEMA DE TRANSFERENCIAS
+    // 🆕 SISTEMA DE TRANSFERENCIAS Y CONTRATOS INTEGRADO
     if (window.TransferContractsSystem) {
         window.TransferContractsSystem.initialize(gameState);
         console.log('✅ Sistema de transferencias inicializado');
@@ -1756,7 +1750,6 @@ function initializeGameSystems() {
     
     // Copa del Rey (si está habilitada)
     if (window.CopaDelReySystem && gameState.division) {
-        // Solo inicializar Copa si ya hay una temporada en marcha
         if (gameState.week > 0 && gameState.seasonType === 'regular') {
             const divisions = {
                 primera: window.TEAMS_DATA?.primera || [],
@@ -1769,25 +1762,9 @@ function initializeGameSystems() {
     
     // Competiciones Europeas (solo Primera División)
     if (window.EuropeanCompetitions && gameState.division === 'primera') {
-        // Solo inicializar si ya hay clasificación
-        if (gameState.standings && Object.keys(gameState.standings).length > 0) {
-            const position = getTeamPosition(gameState);
-            
-            if (position && position <= 4 && !gameState.championsLeague) {
-                // Clasificado a Champions League
-                gameState.championsLeague = window.EuropeanCompetitions.initializeChampions(
-                    gameState.currentSeason,
-                    [gameState.team]
-                );
-                console.log('✅ Champions League inicializada');
-            } else if (position && position <= 6 && !gameState.europaLeague) {
-                // Clasificado a Europa League
-                gameState.europaLeague = window.EuropeanCompetitions.initializeEuropa(
-                    gameState.currentSeason,
-                    [gameState.team]
-                );
-                console.log('✅ Europa League inicializada');
-            }
+        if (gameState.week > 0 && gameState.standings) {
+            window.EuropeanCompetitions.initialize(gameState);
+            console.log('✅ Competiciones Europeas inicializadas');
         }
     }
     
