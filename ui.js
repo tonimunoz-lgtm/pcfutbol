@@ -695,5 +695,6 @@ export {
     updateDashboardStats,  
     refreshUI,  
     // NEW EXPORT  
-    renderCalendarPage  
+    renderCalendarPage,  
+    renderNegotiationsList
 };  
