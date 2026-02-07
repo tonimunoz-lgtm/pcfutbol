@@ -368,3 +368,129 @@
 
     console.log('✅ Function Exposure Injector cargado correctamente');
 })();
+
+// Funciones adicionales para completar la funcionalidad de iconos
+
+// Función para despedir/rescindir contrato de un jugador
+window.firePlayerConfirm = function(playerName) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad.find(p => p.name === playerName);
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    if (player.contractType !== 'owned') {
+        alert('Solo puedes despedir jugadores en propiedad. Los cedidos volverán a su club al finalizar la cesión.');
+        return;
+    }
+    
+    // Calcular indemnización (20% del valor del jugador)
+    const compensation = Math.round(player.value * 0.2);
+    
+    const confirmed = confirm(
+        `¿Estás seguro de que quieres despedir a ${playerName}?\n\n` +
+        `Tendrás que pagar una indemnización de ${compensation.toLocaleString('es-ES')}€\n` +
+        `(20% del valor de mercado del jugador)\n\n` +
+        `Esta acción no se puede deshacer.`
+    );
+    
+    if (!confirmed) return;
+    
+    // Verificar si hay suficiente dinero
+    if (state.balance < compensation) {
+        alert(`No tienes suficiente dinero para pagar la indemnización de ${compensation.toLocaleString('es-ES')}€`);
+        return;
+    }
+    
+    // Realizar el despido
+    const playerIndex = state.squad.findIndex(p => p.name === playerName);
+    if (playerIndex !== -1) {
+        state.squad.splice(playerIndex, 1);
+        state.balance -= compensation;
+        
+        if (window.gameLogic.addNews) {
+            window.gameLogic.addNews(
+                `🚫 Has despedido a ${playerName}. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`,
+                'warning'
+            );
+        }
+        
+        alert(`${playerName} ha sido despedido del club.\nIndemnización pagada: ${compensation.toLocaleString('es-ES')}€`);
+        
+        // Actualizar alineación si el jugador estaba en ella
+        if (state.lineup.some(p => p && p.name === playerName)) {
+            const newLineup = state.lineup.filter(p => p && p.name !== playerName);
+            window.gameLogic.setLineup(newLineup);
+        }
+        
+        // Refrescar UI
+        if (window.ui && window.ui.refreshUI) {
+            window.ui.refreshUI(state);
+        }
+    }
+};
+
+// Función para abrir interfaz de venta (conecta con el sistema existente)
+window.openSellPlayerUI = function(playerIndex) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[playerIndex];
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    if (player.contractType !== 'owned') {
+        alert('Solo puedes vender jugadores en propiedad');
+        return;
+    }
+    
+    // Calcular precio sugerido (valor de mercado)
+    const suggestedPrice = player.value;
+    const minPrice = Math.round(player.value * 0.7); // 70% del valor
+    
+    const priceInput = prompt(
+        `Poner a ${player.name} en el mercado de transferencias\n\n` +
+        `Valor de mercado: ${suggestedPrice.toLocaleString('es-ES')}€\n` +
+        `Precio mínimo recomendado: ${minPrice.toLocaleString('es-ES')}€\n\n` +
+        `Introduce el precio de venta:`,
+        suggestedPrice
+    );
+    
+    if (!priceInput) return;
+    
+    const price = parseInt(priceInput);
+    
+    if (isNaN(price) || price < 0) {
+        alert('Precio inválido');
+        return;
+    }
+    
+    if (price < minPrice) {
+        const confirmLowPrice = confirm(
+            `El precio introducido (${price.toLocaleString('es-ES')}€) está por debajo del mínimo recomendado.\n\n` +
+            `¿Estás seguro de vender por este precio?`
+        );
+        if (!confirmLowPrice) return;
+    }
+    
+    // Marcar jugador como transferible
+    player.transferListed = true;
+    player.askingPrice = price;
+    
+    if (window.gameLogic.addNews) {
+        window.gameLogic.addNews(
+            `💰 ${player.name} ha sido puesto en el mercado por ${price.toLocaleString('es-ES')}€`,
+            'info'
+        );
+    }
+    
+    alert(`${player.name} ha sido puesto en el mercado de transferencias por ${price.toLocaleString('es-ES')}€`);
+    
+    // Refrescar UI
+    if (window.ui && window.ui.refreshUI) {
+        window.ui.refreshUI(state);
+    }
+};
