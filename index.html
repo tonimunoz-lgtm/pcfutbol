@@ -1,6 +1,4 @@
 <!DOCTYPE HTML>
-
-
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -61,9 +59,8 @@
         <div class="quadrant bottom-left">
             <div class="section-title">🔄 FICHAJES</div>
             <button class="menu-button orange-button transfer-icon" onclick="openPage('transfers')">Fichar</button>
-            <button class="menu-button orange-button renovation-icon" onclick="openPage('renewContracts')">Renovaciones</button>
             <button class="menu-button orange-button squad-icon" onclick="openPage('squad')">Plantilla</button>
-            <button class="menu-button orange-button cantera-icon" onclick="openPage('academy')">Cantera</button>
+            <button class="menu-button orange-button" onclick="openPage('academy')">Cantera</button>
         </div>
 
         <!-- CUADRANTE INFERIOR DERECHO: GESTIÓN -->
@@ -98,18 +95,6 @@
         <button class="btn" onclick="window.closeSettingsPage()">Cerrar</button>
     </div>
     
-<!-- RENOVAR CONTRATOS -->
-<div id="renewContracts" class="page">
-    <div class="page-header">
-        <h1>✍️ Renovar Contratos</h1>
-        <button class="page-close-btn" onclick="closePage('renewContracts')">✖ CERRAR</button>
-    </div>
-    <div id="renewContractsContent">
-        <!-- La tabla se carga automáticamente por NEW_06_renewals_manager.js -->
-    </div>
-</div>
-
-
     
     <!-- DASHBOARD / RESULTADOS -->
     <div id="dashboard" class="page">
@@ -119,15 +104,6 @@
         </div>
         
         <div id="warningAlert" style="display: none;"></div>
-
-        <!-- 🆕 WIDGET DE POSICIÓN VISUAL -->
-    <div class="dashboard-section" style="margin: 20px 0;">
-        <h2>📊 Tu Posición en la Liga</h2>
-        <div id="positionWidget">
-            <!-- El widget se generará aquí automáticamente -->
-        </div>
-    </div>
-    <!-- FIN WIDGET -->
         
         <div class="data-grid">
             <div class="data-box">
@@ -592,83 +568,41 @@
         import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS } from './config.js';
         import { getPlayerMarket, getYoungsterMarket } from './players.js';
 
-        // 🆕 IMPORTAR FUNCIONES DE BADGES
-        const { renderPlayerStatusBadges, applyPlayerStatusClasses } = ui;
-
-        // 🆕 Exponer globalmente para uso en HTML
-        window.renderPlayerStatusBadges = renderPlayerStatusBadges;
-        window.applyPlayerStatusClasses = applyPlayerStatusClasses;
-
         // ============================================
         // FUNCIONES PARA NAVEGACIÓN DE PÁGINAS
         // ============================================
         
-       // Variable global para evitar bucle infinito
-window.contractsPageInitialized = false;
-
-window.openPage = function(pageId) {
-    const page = document.getElementById(pageId);
-    if (!page) return;
-
-    // Ocultar todas las páginas y mostrar la actual
-    const alreadyActive = page.classList.contains('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    page.classList.add('active');
-
-    const state = gameLogic.getGameState();
-    if (!state) return;
-
-    // Renderizado de otras páginas
-    switch(pageId) {
-        case 'squad':
-            ui.renderSquadList(state.squad, state.team);
-            break;
-        case 'academy':
-            ui.renderAcademyList(state.academy);
-            break;
-        case 'transfers':
-            window.searchPlayersMarket();
-            window.renderAvailableYoungsters();
-            break;
-        case 'finance':
-            window.updateFinanceDisplay(state);
-            break;
-        case 'facilities':
-            window.updateFacilitiesDisplay(state);
-            break;
-        case 'commercial':
-            window.updateCommercialDisplay(state);
-            break;
-        case 'staff':
-            window.updateStaffDisplay(state);
-            break;
-        case 'tactics':
-            window.updateTacticsDisplay(state);
-            break;
-        case 'lineup':
-            window.renderLineupPageUI();
-            break;
-        case 'dashboard':
-            gameLogic.markNewsAsRead();
-            break;
-        case 'calendar':
-            ui.renderCalendarPage(state);
-            break;
-        case 'standings':
-            ui.renderStandingsTable(state);
-            break;
-        case 'renewContracts':
-            console.log('✅ Página de renovaciones abierta');
-            break;
-            }
-};
-            // Ahora, el resto de tus funciones pueden seguir aquí
-            window.closePage = function(pageId) {
-                const page = document.getElementById(pageId);
-                if (page) {
-                    page.classList.remove('active');
+        window.openPage = function(pageId) {
+            const page = document.getElementById(pageId);
+            if (page) {
+                page.classList.add('active');
+                
+                // Actualizar contenido según la página
+                const state = gameLogic.getGameState();
+                if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
+                if (pageId === 'academy') ui.renderAcademyList(state.academy);
+                if (pageId === 'transfers') {
+                    window.searchPlayersMarket();
+                    window.renderAvailableYoungsters();
                 }
-            };
+                if (pageId === 'finance') window.updateFinanceDisplay(state);
+                if (pageId === 'facilities') window.updateFacilitiesDisplay(state);
+                if (pageId === 'commercial') window.updateCommercialDisplay(state);
+                if (pageId === 'staff') window.updateStaffDisplay(state);
+                if (pageId === 'tactics') window.updateTacticsDisplay(state);
+                if (pageId === 'lineup') window.renderLineupPageUI();
+                if (pageId === 'dashboard') gameLogic.markNewsAsRead();
+                if (pageId === 'calendar') ui.renderCalendarPage(state);
+                if (pageId === 'standings') ui.renderStandingsTable(state);
+            }
+        };
+        
+        window.closePage = function(pageId) {
+            const page = document.getElementById(pageId);
+            if (page) {
+                page.classList.remove('active');
+            }
+        };
 
         window.handleExit = function() {
             if (confirm('¿Estás seguro de que quieres salir? Asegúrate de guardar tu partida antes.')) {
@@ -709,28 +643,18 @@ window.openPage = function(pageId) {
             ev.currentTarget.classList.add('highlight');
         };
 
-      window.drag = function(ev, playerJson) {
-    const player = JSON.parse(decodeURIComponent(playerJson));
+        window.drag = function(ev, playerJson) {
+            const player = JSON.parse(decodeURIComponent(playerJson));
+            if (player.isInjured) {
+                ev.preventDefault();
+                alert("Los jugadores lesionados no pueden ser alineados.");
+                return;
+            }
+            draggedPlayer = player;
+            ev.dataTransfer.setData("text/plain", playerJson);
+            ev.dataTransfer.effectAllowed = "move";
+        };
 
-    // Validar lesiones
-    if (player.isInjured) {
-        ev.preventDefault();
-        alert("Los jugadores lesionados no pueden ser alineados.");
-        return;
-    }
-
-    // 🆕 VALIDAR SANCIONES
-    if (player.isSuspended) {
-        ev.preventDefault();
-        alert(`${player.name} está sancionado y no puede jugar.`);
-        return;
-    }
-
-    draggedPlayer = player;
-    ev.dataTransfer.setData("text/plain", playerJson);
-    ev.dataTransfer.effectAllowed = "move";
-};
-        
         window.drop = function(ev, targetSlotId) {
             ev.preventDefault();
             ev.currentTarget.classList.remove('highlight');
@@ -1466,29 +1390,13 @@ window.selectTeamAndStart = function(teamName, division) {
         window.updateCommercialDisplay = updateCommercialDisplay;
 
         // Alineación
-       window.renderLineupPageUI = function() {
-    const state = gameLogic.getGameState();
-    const currentFormation = FORMATIONS[state.formation];
-    let lineup = gameLogic.getLineup();
-    let reserves = gameLogic.getReservePlayers();
+        window.renderLineupPageUI = function() {
+            const state = gameLogic.getGameState();
+            const currentFormation = FORMATIONS[state.formation];
+            let lineup = gameLogic.getLineup();
+            let reserves = gameLogic.getReservePlayers();
 
-    // 🆕 VALIDAR ALINEACIÓN Y MOSTRAR ADVERTENCIA
-    const lineupValidation = gameLogic.validateLineup(lineup);
-    const lineupMessageElem = document.getElementById('lineupMessage');
-    
-    if (lineupMessageElem) {
-        if (!lineupValidation.success) {
-            lineupMessageElem.className = 'alert alert-error';
-            lineupMessageElem.innerHTML = `⚠️ <strong>ALINEACIÓN INVÁLIDA:</strong> ${lineupValidation.message}`;
-            lineupMessageElem.style.fontSize = '1.1em';
-            lineupMessageElem.style.fontWeight = 'bold';
-        } else {
-            lineupMessageElem.className = 'alert alert-info';
-            lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
-        }
-    }
-
-const pitchContainer = document.getElementById('pitchContainer');
+            const pitchContainer = document.getElementById('pitchContainer');
             const reservesList = document.getElementById('reservesList');
 
             pitchContainer.innerHTML = '';
@@ -1510,8 +1418,7 @@ const pitchContainer = document.getElementById('pitchContainer');
                 slot.style.width = `${slotWidth}%`;
                 slot.style.height = `${slotHeight}%`;
 
-                slot.textContent = posData.pos; // Muestra la posición táctica
-
+                slot.textContent = posData.pos;
                 slot.ondragover = window.allowDrop;
                 slot.ondragleave = window.dragleave;
                 slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
@@ -1520,34 +1427,10 @@ const pitchContainer = document.getElementById('pitchContainer');
                 if (playerInSlot) {
                     const playerDiv = document.createElement('div');
                     playerDiv.classList.add('pitch-player');
-
-                    // 🆕 Aplicar clases CSS de estado
-                    window.applyPlayerStatusClasses(playerDiv, playerInSlot);
-
-                    // 🆕 NO PERMITIR ARRASTRAR SI LESIONADO O SANCIONADO
-                    playerDiv.draggable = !playerInSlot.isInjured && !playerInSlot.isSuspended;
-
-                    playerDiv.ondragstart = (ev) => {
-                        // 🆕 VALIDAR ANTES DE ARRASTRAR (Ya lo tienes, solo asegúrate de que esté aquí)
-                        if (playerInSlot.isInjured) {
-                            ev.preventDefault();
-                            alert(`❌ ${playerInSlot.name} está LESIONADO y no puede jugar.`);
-                            return;
-                        }
-                        if (playerInSlot.isSuspended) {
-                            ev.preventDefault();
-                            alert(`⛔ ${playerInSlot.name} está SANCIONADO y no puede jugar.`);
-                            return;
-                        }
-                        window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    };
-
-                    // 🆕 Contenido del jugador con nombre, overall y badges
-                    playerDiv.innerHTML = `
-                        <span>${playerInSlot.name}</span>
-                        <span>(${playerInSlot.position}, ${playerInSlot.overall})</span>
-                        ${window.renderPlayerStatusBadges(playerInSlot)}
-                    `;
+                    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
+                    playerDiv.draggable = true;
+                    playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
                     slot.appendChild(playerDiv);
                 }
@@ -1557,33 +1440,10 @@ const pitchContainer = document.getElementById('pitchContainer');
             reserves.forEach(player => {
                 const playerDiv = document.createElement('div');
                 playerDiv.classList.add('draggable-player');
-
-                // 🆕 Aplicar clases CSS de estado
-                window.applyPlayerStatusClasses(playerDiv, player);
-
-                // 🆕 NO PERMITIR ARRASTRAR
-                playerDiv.draggable = !player.isInjured && !player.isSuspended;
-
-                playerDiv.ondragstart = (ev) => {
-                    // 🆕 VALIDAR ESTADO (Ya lo tienes, solo asegúrate de que esté aquí)
-                    if (player.isInjured) {
-                        ev.preventDefault();
-                        alert(`❌ ${player.name} está LESIONADO (${player.weeksOut} semanas) y no puede jugar.`);
-                        return;
-                    }
-                    if (player.isSuspended) {
-                        ev.preventDefault();
-                        alert(`⛔ ${player.name} está SANCIONADO (${player.suspensionWeeks} partidos) y no puede jugar.`);
-                        return;
-                    }
-                    window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-                };
-
-                // 🆕 Contenido del jugador con nombre, overall, posición y badges
-                playerDiv.innerHTML = `
-                    ${player.name} (${player.overall}) - ${player.position}
-                    ${window.renderPlayerStatusBadges(player)}
-                `;
+                if (player.isInjured) playerDiv.classList.add('injured');
+                playerDiv.draggable = true;
+                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
                 playerDiv.dataset.playername = player.name;
                 reservesList.appendChild(playerDiv);
             });
@@ -1592,6 +1452,7 @@ const pitchContainer = document.getElementById('pitchContainer');
             reservesList.ondragleave = window.dragleave;
             reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
 
+            const lineupMessageElem = document.getElementById('lineupMessage');
             if (lineupMessageElem) {
                 const validation = gameLogic.validateLineup(lineup);
                 if (!validation.success) {
@@ -1605,43 +1466,41 @@ const pitchContainer = document.getElementById('pitchContainer');
         };
 
         window.saveLineup = function() {
-    const state = gameLogic.getGameState();
-    const currentFormation = FORMATIONS[state.formation];
-    const newLayout = Array(11).fill(null);
+            const state = gameLogic.getGameState();
+            const currentFormation = FORMATIONS[state.formation];
+            const newLayout = Array(11).fill(null);
 
-    currentFormation.layout.forEach((posData, index) => {
-        const slot = document.getElementById(`pitch-slot-${index}`);
-        const playerDiv = slot?.querySelector('.pitch-player');
-        if (playerDiv) {
-            const playerName = playerDiv.dataset.playername;
-            const fullPlayer = state.squad.find(p => p.name === playerName);
-            if (fullPlayer) {
-                newLayout[index] = fullPlayer;
+            currentFormation.layout.forEach((posData, index) => {
+                const slot = document.getElementById(`pitch-slot-${index}`);
+                const playerDiv = slot?.querySelector('.pitch-player');
+                if (playerDiv) {
+                    const playerName = playerDiv.dataset.playername;
+                    const fullPlayer = state.squad.find(p => p.name === playerName);
+                    if (fullPlayer) {
+                        newLayout[index] = fullPlayer;
+                    }
+                }
+            });
+
+            const validationResult = gameLogic.validateLineup(newLayout);
+            if (!validationResult.success) {
+                alert(`Error al guardar la alineación: ${validationResult.message}`);
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar: ${validationResult.message}`, 'error');
+                window.renderLineupPageUI();
+                return;
             }
-        }
-    });
 
-    // 🆕 VALIDAR ANTES DE GUARDAR
-    const validationResult = gameLogic.validateLineup(newLayout);
-    
-    if (!validationResult.success) {
-        alert(`❌ NO SE PUEDE GUARDAR LA ALINEACIÓN:\n\n${validationResult.message}\n\nPor favor, corrige los errores antes de guardar.`);
-        gameLogic.addNews(`[Alineación] Intento de guardar alineación inválida: ${validationResult.message}`, 'error');
-        window.renderLineupPageUI(); // Re-renderizar para mostrar errores
-        return;
-    }
-
-    const result = gameLogic.setLineup(newLayout);
-    if (result.success) {
-        gameLogic.addNews('✅ Alineación guardada correctamente', 'success');
-        alert('✅ ' + result.message);
-        ui.refreshUI(gameLogic.getGameState());
-        window.renderLineupPageUI();
-    } else {
-        gameLogic.addNews(`[Alineación] Error: ${result.message}`, 'error');
-        alert(`❌ Error al guardar la alineación: ${result.message}`);
-    }
-};
+            const result = gameLogic.setLineup(newLayout);
+            if (result.success) {
+                gameLogic.addNews('¡Alineación guardada con éxito!', 'success');
+                alert(result.message);
+                ui.refreshUI(gameLogic.getGameState());
+                window.renderLineupPageUI();
+            } else {
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar la alineación: ${result.message}`, 'error');
+                alert(`Error al guardar la alineación: ${result.message}`);
+            }
+        };
 
         // Guardar/Cargar
         window.saveCurrentGame = async function() {
@@ -1729,22 +1588,6 @@ const pitchContainer = document.getElementById('pitchContainer');
     <script src="./injector-player-arrows.js"></script>
     <script src="./injector-admin-complete.js"></script>
     <script src="./injector-expose-functions.js"></script>
-    <!-- Después de config.js -->
-<!-- En tu index.html, después de config.js -->
 
-<!-- Sistemas Core -->
-<script src="NEW_04_transfer_contracts_INTEGRATED.js"></script>
-<script src="NEW_05_squad_manager_INTEGRATED.js"></script>
-<script src="NEW_06_renewals_manager.js"></script>
-<script src="05_cards-injuries-system.js"></script>
-<script src="06_calendar-generator.js"></script>
-
-<!-- Competiciones -->
-<script src="07_copa-del-rey.js"></script>
-<script src="08_european-competitions.js"></script>
-
-<!-- Visualización -->
-<script src="10_standings-visual.js"></script>
-    
 </body>
 </html>
