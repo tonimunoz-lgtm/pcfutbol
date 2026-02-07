@@ -186,6 +186,24 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
     player.loanListed = Math.random() < 0.2 && age < 25;  
     player.askingPrice = player.value + Math.floor(Math.random() * player.value * 0.5);  
     player.loanWageContribution = Math.random() < 0.5 ? Math.floor(Math.random() * 0.3 * player.salary) : 0;  
+
+   // ✅ AÑADIR CAMPOS DE CONTRATO (AÑADIR ANTES DE "return player;")
+function calculateReleaseClause(player) {
+    let multiplier = 2.0;
+    if (player.age < 25) multiplier += 0.5;
+    if (player.potential > 80) multiplier += 1.0;
+    if (player.overall > 80) multiplier += 1.0;
+    const clause = Math.floor(player.value * multiplier);
+    return Math.round(clause / 10000) * 10000;
+}
+
+// En generateRandomPlayer(), ANTES de "return player;":
+player.contractType = 'owned';
+player.contractYears = player.age < 23 ? Math.floor(Math.random() * 3) + 3 : // 3-5 años jóvenes
+                       player.age < 30 ? Math.floor(Math.random() * 3) + 2 : // 2-4 años adultos
+                       Math.floor(Math.random() * 2) + 1; // 1-2 años veteranos
+player.releaseClause = calculateReleaseClause(player);
+
   
     return player;
 }  
@@ -221,6 +239,13 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, highPotenti
     player.contractType = 'free_agent';
     player.contractYears = 0;
     player.releaseClause = 0;
+
+  // En generateRandomYoungster(), ANTES de "return youngster;":
+youngster.contractType = 'owned';
+youngster.contractYears = Math.floor(Math.random() * 4) + 2; // 2-5 años para juveniles
+youngster.releaseClause = calculateReleaseClause(youngster);
+
+
   
     return player;  
 }  
