@@ -189,19 +189,32 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>
                 
-                <td style="display: flex; gap: 5px; flex-wrap: wrap;">
-                    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">💪</button>
-                    
-                    ${contractType === 'owned' ? `
-                        <button class="btn btn-sm" style="background: #FF9800;" 
-                                onclick="window.openSellPlayerModal(${idx})">💰</button>
-                        <button class="btn btn-sm" style="background: #c73446;" 
-                                onclick="window.firePlayerConfirm('${p.name}')">🚪</button>
-                    ` : `
-                        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>🔒</button>
-                    `}
-                </td>
-            </tr>  
+                // ✅ MODIFICAR en ui.js - SOLO LA SECCIÓN DE BOTONES
+
+// Busca en renderSquadList la parte de los botones y reemplázala por:
+
+<td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
+    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})" 
+            title="Entrenar" style="padding: 5px 8px;">
+        💪
+    </button>
+    
+    ${contractType === 'owned' ? `
+        <button class="btn btn-sm" style="background: #FF9800; padding: 5px 8px;" 
+                onclick="window.openSellPlayerModal(${idx})" title="Vender">
+            💰
+        </button>
+        <button class="btn btn-sm" style="background: #c73446; padding: 5px 8px;" 
+                onclick="window.firePlayerConfirm('${p.name}')" title="Despedir">
+            🚪
+        </button>
+    ` : `
+        <button class="btn btn-sm" style="background: #9E9E9E; padding: 5px 8px;" 
+                disabled title="Cedido">
+            🔒
+        </button>
+    `}
+</td>
         `;  
     }).join('');  
   
