@@ -278,7 +278,7 @@ function renderPlayerMarketList(players) {
   
     let headerHtml = `  
         <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1300px;">  
+            <table style="font-size: 0.8em; min-width: 1400px;">  
                 <thead>  
                     <tr>  
                         <th>JUGADOR</th>  
@@ -291,6 +291,7 @@ function renderPlayerMarketList(players) {
                         <th>CLUB</th>  
                         <th>SALARIO</th>  
                         <th>VALOR</th>  
+                        <th>CLÁUSULA</th>  
                         <th>PRECIO P.</th>  
                         <th>ESTADO</th>  
                         <th>ACCIONES</th>  
@@ -302,6 +303,8 @@ function renderPlayerMarketList(players) {
     let playersHtml = players.map((p, idx) => {  
         const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
         const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
+        const clauseAmount = p.releaseClause || (p.value * 3);
+        
         return `  
             <tr>  
                 <td>${p.name}</td>  
@@ -314,19 +317,29 @@ function renderPlayerMarketList(players) {
                 <td>${p.club}</td>  
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td style="color: #FF9800; font-weight: bold;">
+                    ${clauseAmount.toLocaleString('es-ES')}€
+                </td>
                 <td>${askingPrice}</td>  
                 <td>${estado}</td>  
                 <td>  
-                    <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
-                        Negociar  
-                    </button>  
+                    ${p.transferListed || p.loanListed ? `
+                        <button class="btn btn-sm" onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
+                            Negociar  
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm" style="background: #FF5722;" 
+                                onclick="window.payReleaseClause('${encodeURIComponent(JSON.stringify(p))}')">
+                            💰 Cláusula
+                        </button>
+                    `}
                 </td>  
             </tr>  
         `;  
     }).join('');  
   
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
-}  
+}
   
   
 function renderAvailableYoungstersMarket(youngsters) {  
