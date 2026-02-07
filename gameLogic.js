@@ -15,6 +15,8 @@ const gameState = {
     teamLogo: null, // NUEVO
     stadiumImage: null, // NUEVO
     stadiumName: 'Estadio', // NUEVO
+     playerPurchases: 0,      // ✅ AÑADIR
+    playerSalesIncome: 0,    // ✅ AÑADIR
     week: 1,  
     division: 'Primera', // La división actual del equipo del jugador (puede ser 'rfef_grupo1' etc.)  
     squad: [],  
