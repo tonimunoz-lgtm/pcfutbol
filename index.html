@@ -687,42 +687,6 @@ window.openPage = function(pageId) {
             ui.renderStandingsTable(state);
             break;
 
-        // 🆕 Página de Contratos
-        case 'contractsPage':
-            if (!window.contractsPageInitialized) {
-                renderContractsTable(state);
-                console.log('🔍 Abriendo página de renovaciones...');
-                console.log('ContractsSystem disponible:', !!window.ContractsSystem);
-                console.log('openRenewalUI disponible:', !!window.openRenewalUI);
-
-                if (window.openRenewalUI) {
-                    try {
-                        window.openRenewalUI(state);
-                        console.log('✅ openRenewalUI llamado correctamente');
-                    } catch (error) {
-                        console.error('❌ Error al llamar openRenewalUI:', error);
-                        alert('Error al abrir renovaciones: ' + error.message);
-                    }
-                } else if (window.ContractsSystem && window.ContractsSystem.openRenewalUI) {
-                    try {
-                        window.ContractsSystem.openRenewalUI(state);
-                        console.log('✅ ContractsSystem.openRenewalUI llamado correctamente');
-                    } catch (error) {
-                        console.error('❌ Error al llamar ContractsSystem.openRenewalUI:', error);
-                        alert('Error al abrir renovaciones: ' + error.message);
-                    }
-                } else {
-                    console.error('❌ Sistema de contratos no disponible');
-                    alert('⚠️ El sistema de contratos no está cargado correctamente. Por favor, recarga la página.');
-                }
-
-                window.contractsPageInitialized = true; // 🔹 Evita bucle infinito
-            } else {
-                console.log('⚠️ contractsPage ya inicializada, no se vuelve a abrir.');
-            }
-            break;
-    }
-};
 
         
         window.closePage = function(pageId) {
