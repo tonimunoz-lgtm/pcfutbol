@@ -1135,9 +1135,9 @@ function simulateFullWeek() {
     });
 
     // 🆕 PROCESAR CONTRATOS SEMANALMENTE
-if (window.ContractsSystem) {
-    window.ContractsSystem.processWeekly(gameState);
-}
+if (window.TransferContractsSystem) {
+        window.TransferContractsSystem.processWeekly(gameState);
+    }
 
 // 🆕 PROCESAR COPA DEL REY
 if (gameState.copa && window.CopaDelRey) {
