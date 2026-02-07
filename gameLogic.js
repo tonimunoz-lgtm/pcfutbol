@@ -564,8 +564,32 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             merchPercent: offeredMerchPercent,  
             ticketPercent: offeredTicketPercent  
         };  
-        gameState.negotiationStep = 2;  
-        return { success: true, message: `${player.name} ha aceptado tu oferta personal. Ahora a negociar con su club, el ${player.club}.` };  
+        
+        // ✅ VERIFICAR SI SE PAGÓ LA CLÁUSULA
+        if (player.clausePaid === true) {
+            // FICHAJE DIRECTO - Sin negociación con club
+            const newPlayer = {  
+                ...player,  
+                salary: offeredSalary,  
+                loan: false,  
+                club: gameState.team,
+                contractType: 'owned',
+                contractYears: 3 + Math.floor(Math.random() * 3) // 3-5 años
+            };
+            
+            endNegotiation(true);
+            
+            addNews(
+                `✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`,
+                'success'
+            );
+            
+            return signPlayer(newPlayer);
+        } else {
+            // Continuar a negociación con club
+            gameState.negotiationStep = 2;  
+            return { success: true, message: `${player.name} ha aceptado tu oferta personal. Ahora a negociar con su club, el ${player.club}.` };
+        }
     } else {  
         if (roll > 0.8) {  
             endNegotiation();  
@@ -574,7 +598,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             return { success: false, message: `${player.name} encuentra tu oferta insuficiente. Podrías subir el salario o añadir más incentivos.` };  
         }  
     }  
-}  
+}
   
 function offerToClub(offerAmount, playerExchange = [], isLoan = false) {  
     const player = gameState.negotiatingPlayer;  
