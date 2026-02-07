@@ -124,26 +124,29 @@ function renderSquadList(squad, currentTeam) {
         return;  
     }  
   
-    let headerHtml = `  
-        <div style="overflow-x: auto;">  
-            <table style="font-size: 0.8em; min-width: 1200px;">  
-                <thead>  
-                    <tr>  
-                        <th>Nº</th>  
-                        <th>JUGADOR</th>  
-                        <th>OVR</th>  
-                        <th>POT</th>  
-                        <th>EDAD</th>  
-                        <th>POS</th>  
-                        <th>PIE</th>  
-                        ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th>  
-                        <th>ESTADO</th>  
-                        <th>SALARIO</th>  
-                        <th>VALOR</th>  
-                        <th>ACCIONES</th>  
-                    </tr>  
-                </thead>  
+   let headerHtml = `
+    <div style="overflow-x: auto;">
+        <table style="font-size: 0.8em; min-width: 1400px;">
+            <thead>
+                <tr>
+                    <th>Nº</th>
+                    <th>JUGADOR</th>
+                    <th>OVR</th>
+                    <th>POT</th>
+                    <th>EDAD</th>
+                    <th>POS</th>
+                    <th>PIE</th>
+                    ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
+                    <th>FORMA</th>
+                    <th>ESTADO</th>
+                    <th>CONTRATO</th>          <!-- ✅ NUEVA COLUMNA -->
+                    <th>DURACIÓN</th>           <!-- ✅ NUEVA COLUMNA -->
+                    <th>CLÁUSULA</th>           <!-- ✅ NUEVA COLUMNA -->
+                    <th>SALARIO</th>
+                    <th>VALOR</th>
+                    <th>ACCIONES</th>
+                </tr>
+            </thead>
                 <tbody>  
     `;  
   
@@ -164,6 +167,18 @@ function renderSquadList(squad, currentTeam) {
                 <td>${statusText}</td>  
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>  
+                 <!-- ✅ NUEVAS COLUMNAS -->
+        <td>
+            <span style="color: ${p.contractType === 'owned' ? '#4CAF50' : '#FF9800'};">
+                ${p.contractType === 'owned' ? '✅ Contratado' : '🔄 Cedido'}
+            </span>
+        </td>
+        <td>
+            <span style="color: ${p.contractYears <= 1 ? '#ff3333' : '#FFF'}; font-weight: ${p.contractYears <= 1 ? 'bold' : 'normal'};">
+                ${p.contractYears || 0} ${p.contractYears === 1 ? 'año' : 'años'}
+            </span>
+        </td>
+        <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
                 <td>  
                     <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>  
                     <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
