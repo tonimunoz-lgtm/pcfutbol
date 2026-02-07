@@ -439,23 +439,48 @@ function signPlayer(player) {
     if (gameState.squad.length >= 25) {  
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
     }  
+    
     const newPlayer = { ...player };  
+    
     ATTRIBUTES.forEach(attr => {  
         if (newPlayer[attr] === undefined) {  
             newPlayer[attr] = 50 + Math.floor(Math.random() * 30);  
         }  
     });  
+    
     newPlayer.overall = calculatePlayerOverall(newPlayer);  
     newPlayer.form = 70 + Math.floor(Math.random() * 20);  
     newPlayer.matches = 0;  
     newPlayer.isInjured = false;  
     newPlayer.weeksOut = 0;  
+    
+    // ✅ PRESERVAR campos de contrato
+    // Si viene de una cesión
+    if (newPlayer.loan === true) {
+        newPlayer.contractType = 'loaned';
+        newPlayer.contractYears = 1;
+    }
+    // Si no tiene contractType, asignar
+    else if (!newPlayer.contractType) {
+        newPlayer.contractType = 'owned';
+        newPlayer.contractYears = 3 + Math.floor(Math.random() * 3);
+    }
+    
+    // Calcular cláusula si no tiene
+    if (!newPlayer.releaseClause) {
+        let multiplier = 2.0;
+        if (newPlayer.age < 25) multiplier += 0.5;
+        if (newPlayer.potential > 80) multiplier += 1.0;
+        if (newPlayer.overall > 80) multiplier += 1.0;
+        const clause = Math.floor(newPlayer.value * multiplier);
+        newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
+    }
   
     gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
     addNews(`¡${player.name} ha sido fichado!`, 'success');  
     return { success: true, message: `¡${player.name} ha sido fichado!` };  
-}  
+}
   
 function signYoungster(youngster) {  
     if (gameState.balance < youngster.cost) {  
