@@ -190,23 +190,15 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.value.toLocaleString('es-ES')}€</td>
                 
                 <td style="display: flex; gap: 5px; flex-wrap: wrap;">
-                    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">
-                        💪 Entrenar
-                    </button>
+                    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">💪</button>
                     
                     ${contractType === 'owned' ? `
                         <button class="btn btn-sm" style="background: #FF9800;" 
-                                onclick="window.openSellPlayerModal(${idx})">
-                            💰 Vender
-                        </button>
+                                onclick="window.openSellPlayerModal(${idx})">💰</button>
                         <button class="btn btn-sm" style="background: #c73446;" 
-                                onclick="window.firePlayerConfirm('${p.name}')">
-                            🚪 Despedir
-                        </button>
+                                onclick="window.firePlayerConfirm('${p.name}')">🚪</button>
                     ` : `
-                        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>
-                            🔒 Cedido
-                        </button>
+                        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>🔒</button>
                     `}
                 </td>
             </tr>  
