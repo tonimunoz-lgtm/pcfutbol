@@ -458,17 +458,20 @@ function updateDashboardStats(state) {
     const weekly = state.weeklyIncome - state.weeklyExpenses;  
     document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
-  // ✅ AÑADIR INFORMACIÓN DE TRANSFERENCIAS
+// ✅ AÑADIR INFORMACIÓN DE TRANSFERENCIAS
 const purchases = state.playerPurchases || 0;
 const sales = state.playerSalesIncome || 0;
-const transferBalance = sales - purchases;
+const compensations = state.playerCompensations || 0;
+const transferBalance = sales - purchases - compensations;
 
 const dashPurchasesEl = document.getElementById('dashPurchases');
 const dashSalesEl = document.getElementById('dashSales');
+const dashCompensationsEl = document.getElementById('dashCompensations');
 const dashTransferBalanceEl = document.getElementById('dashTransferBalance');
 
 if (dashPurchasesEl) dashPurchasesEl.textContent = purchases.toLocaleString('es-ES') + '€';
 if (dashSalesEl) dashSalesEl.textContent = sales.toLocaleString('es-ES') + '€';
+if (dashCompensationsEl) dashCompensationsEl.textContent = compensations.toLocaleString('es-ES') + '€';
 
 if (dashTransferBalanceEl) {
     dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + '€';
