@@ -656,19 +656,19 @@ window.openPage = function(pageId) {
         case 'standings':
             ui.renderStandingsTable(state);
             break;
-            case 'renewContracts':
-        // NEW_06_renewals_manager.js se encarga automáticamente
-        console.log('✅ Página de renovaciones abierta');
-        break;
+           case 'renewContracts':
+                // NEW_06_renewals_manager.js se encarga automáticamente
+                console.log('✅ Página de renovaciones abierta');
+                break;
+            } // <--- ¡Esta llave de cierre es la que falta!
 
-
-        
-        window.closePage = function(pageId) {
-            const page = document.getElementById(pageId);
-            if (page) {
-                page.classList.remove('active');
-            }
-        };
+            // Ahora, el resto de tus funciones pueden seguir aquí
+            window.closePage = function(pageId) {
+                const page = document.getElementById(pageId);
+                if (page) {
+                    page.classList.remove('active');
+                }
+            };
 
         window.handleExit = function() {
             if (confirm('¿Estás seguro de que quieres salir? Asegúrate de guardar tu partida antes.')) {
