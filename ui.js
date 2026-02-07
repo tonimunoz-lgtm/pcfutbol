@@ -660,9 +660,6 @@ function renderNegotiationsList(state) {
 }
 
 
-// ✅ EXPORTAR
-export { renderNegotiationsList, ... };
-
 // Función para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
