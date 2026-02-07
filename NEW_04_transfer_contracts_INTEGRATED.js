@@ -2,6 +2,7 @@
 // 04_transfer_contracts_INTEGRATED.js - VERSIÓN AUTOCONTENIDA
 // ============================================================================
 
+
 console.log('📦 [INICIO] Cargando Sistema de Transferencias...');
 
 (function() {
