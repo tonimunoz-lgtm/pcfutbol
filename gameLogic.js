@@ -150,27 +150,26 @@ function generateLeagueCalendar(teams) {
   
 function generateInitialSquad() {  
     const squad = [];  
-    const allAvailablePlayers = initPlayerDatabase(); // Obtener la lista completa de jugadores generados  
+    const allAvailablePlayers = initPlayerDatabase();
   
-    // Intentar añadir jugadores específicos del Atlético de Madrid si ese es el equipo  
-    // Esto se haría idealmente después de seleccionar el equipo, pero para el ejemplo inicial  
-    // si el equipo elegido es "Atlético Madrid", podemos hacer una simulación aquí.  
     const elitePlayersNames = ['Griezmann', 'Koke', 'Oblak', 'Nahuel Molina', 'José Giménez', 'Samuel Lino', 'Álvaro Morata', 'Reinildo Mandava', 'Marcos Llorente', 'Pablo Barrios', 'Axel Witsel'];  
     if (gameState.team === 'Atlético Madrid') {  
         elitePlayersNames.forEach(name => {  
             const p = allAvailablePlayers.find(ep => ep.name === name);  
-            if (p && !squad.some(s => s.name === p.name)) { // Evitar duplicados  
+            if (p && !squad.some(s => s.name === p.name)) {
                 squad.push({ ...p, club: gameState.team, isInjured: false, weeksOut: 0, matches: 0, form: 70 + Math.floor(Math.random() * 20) });  
             }  
         });  
     }  
   
-    // Rellenar hasta 18 jugadores con jugadores aleatorios si es necesario  
-    while (squad.length < 18) { // 11 titulares + 7 suplentes para empezar  
+    // Rellenar hasta 18 jugadores
+    while (squad.length < 18) {
         const pos = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];  
+        const age = 18 + Math.floor(Math.random() * 10);
+        
         const player = {  
             name: generateRandomName(),  
-            age: 18 + Math.floor(Math.random() * 10),  
+            age: age,  
             position: pos,  
             foot: Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro'),  
             matches: 0,  
@@ -178,29 +177,47 @@ function generateInitialSquad() {
             isInjured: false,  
             weeksOut: 0,  
             ...ATTRIBUTES.reduce((acc, attr) => {  
-                acc[attr] = 40 + Math.floor(Math.random() * 30); // Atributos entre 40 y 70  
+                acc[attr] = 40 + Math.floor(Math.random() * 30);
                 return acc;  
             }, {})  
         };  
+        
         player.overall = calculatePlayerOverall(player);  
         player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall));  
         player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000);  
-        player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5);  
+        player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5);
+        
+        // ✅ AÑADIR CAMPOS DE CONTRATO
+        player.contractType = 'owned';
+        player.contractYears = age < 23 ? 3 + Math.floor(Math.random() * 3) : 
+                               age < 30 ? 2 + Math.floor(Math.random() * 3) : 
+                               1 + Math.floor(Math.random() * 2);
+        
+        // Calcular cláusula de rescisión
+        let multiplier = 2.0;
+        if (age < 25) multiplier += 0.5;
+        if (player.potential > 80) multiplier += 1.0;
+        if (player.overall > 80) multiplier += 1.0;
+        const clause = Math.floor(player.value * multiplier);
+        player.releaseClause = Math.round(clause / 10000) * 10000;
+        
         squad.push({ ...player, club: gameState.team });  
     }  
   
     squad.sort((a,b) => b.overall - a.overall);  
-    gameState.lineup = squad.slice(0, 11); // Los 11 mejores por defecto  
+    gameState.lineup = squad.slice(0, 11);
     return squad;  
-}  
+}
   
 function generateInitialAcademy() {  
     const academy = [];  
     for (let i = 0; i < 5; i++) {  
-        const pos = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];  
+        const pos = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];
+        const age = 16 + Math.floor(Math.random() * 2);
+        
         const player = {  
             name: generateRandomName(),  
-            age: 16 + Math.floor(Math.random() * 2),  
+            age: age,  
             position: pos,  
             foot: Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro'),  
             matches: 0,  
@@ -208,20 +225,31 @@ function generateInitialAcademy() {
             isInjured: false,  
             weeksOut: 0,  
             ...ATTRIBUTES.reduce((acc, attr) => {  
-                acc[attr] = 30 + Math.floor(Math.random() * 20); // Atributos entre 30 y 50  
+                acc[attr] = 30 + Math.floor(Math.random() * 20);
                 return acc;  
             }, {})  
         };  
+        
         player.overall = calculatePlayerOverall(player);  
         player.potential = player.overall + Math.floor(Math.random() * (95 - player.overall));  
         player.salary = Math.floor(player.overall * 50 + Math.random() * 200);  
         player.value = Math.floor(player.overall * 1000 + player.potential * 500 + player.salary * 5);  
-        player.cost = player.value;  
+        player.cost = player.value;
+        
+        // ✅ AÑADIR CAMPOS DE CONTRATO PARA CANTERA
+        player.contractType = 'owned';
+        player.contractYears = 3 + Math.floor(Math.random() * 3); // 3-5 años para jóvenes
+        
+        let multiplier = 2.0;
+        if (age < 25) multiplier += 0.5;
+        if (player.potential > 80) multiplier += 1.0;
+        const clause = Math.floor(player.value * multiplier);
+        player.releaseClause = Math.round(clause / 10000) * 10000;
   
         academy.push({ ...player, club: gameState.team });  
     }  
     return academy;  
-}  
+}
 
 function getAgeStage(age) {
     if (age <= 20) return 'youth';
