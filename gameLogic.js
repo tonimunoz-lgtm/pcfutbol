@@ -409,31 +409,71 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
 }
 
   
-function signPlayer(player) {  
-    if (gameState.squad.length >= 25) {  
-        return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
-    }  
-    const newPlayer = { ...player };  
-    ATTRIBUTES.forEach(attr => {  
-        if (newPlayer[attr] === undefined) {  
-            newPlayer[attr] = 50 + Math.floor(Math.random() * 30);  
-        }  
-    });  
-    newPlayer.overall = calculatePlayerOverall(newPlayer);  
-    newPlayer.form = 70 + Math.floor(Math.random() * 20);  
-    newPlayer.matches = 0;  
-    newPlayer.isInjured = false;  
+// ============================================
+// FRAGMENTO 1: Función signPlayer CORREGIDA
+// ============================================
+// UBICACIÓN: Buscar "function signPlayer(player)" en gameLogic.js
+// ACCIÓN: REEMPLAZAR la función completa
+
+function signPlayer(player, contractYears = 3, isLoan = false) {
+    if (gameState.squad.length >= 25) {
+        return { success: false, message: 'No hay espacio en la plantilla (máximo 25 jugadores).' };
+    }
+    
+    // Verificación de presupuesto si no es cesión
+    if (!isLoan && gameState.balance < player.value) {
+        return { success: false, message: 'No tienes suficiente dinero para fichar a este jugador.' };
+    }
+    
+    const newPlayer = { ...player };
+    
+    // Asegurar que todos los atributos existen
+    ATTRIBUTES.forEach(attr => {
+        if (newPlayer[attr] === undefined) {
+            newPlayer[attr] = 50 + Math.floor(Math.random() * 30);
+        }
+    });
+    
+    // Calcular overall si no existe
+    newPlayer.overall = calculatePlayerOverall(newPlayer);
+    newPlayer.form = 70 + Math.floor(Math.random() * 20);
+    newPlayer.matches = 0;
+    
+    // Estado de lesiones y tarjetas
+    newPlayer.isInjured = false;
     newPlayer.weeksOut = 0;
-    // 🆕 INICIALIZAR TARJETAS EN NUEVOS FICHAJES
     newPlayer.yellowCards = newPlayer.yellowCards || 0;
     newPlayer.redCards = newPlayer.redCards || 0;
     newPlayer.isSuspended = newPlayer.isSuspended || false;
     newPlayer.suspensionWeeks = newPlayer.suspensionWeeks || 0;
-  
-    gameState.squad.push(newPlayer);  
-    updateWeeklyFinancials();  
-    addNews(`¡${player.name} ha sido fichado!`, 'success');  
-    return { success: true, message: `¡${player.name} ha sido fichado!` };  
+    
+    // 🆕 CONFIGURACIÓN CORRECTA DEL CONTRATO
+    if (isLoan) {
+        // Es una cesión
+        newPlayer.contractType = 'loan';
+        newPlayer.loanWeeksRemaining = contractYears * 52;
+        newPlayer.contractYears = contractYears; // Solo para display
+        // NO establecer contractWeeks en cesiones
+        delete newPlayer.contractWeeks;
+    } else {
+        // Es un fichaje en propiedad
+        newPlayer.contractType = 'owned';
+        newPlayer.contractWeeks = contractYears * 52;
+        newPlayer.contractYears = contractYears; // Solo para display
+        // NO establecer loanWeeksRemaining en propios
+        delete newPlayer.loanWeeksRemaining;
+    }
+    
+    // Actualizar club
+    newPlayer.club = gameState.team;
+    
+    // Añadir a la plantilla
+    gameState.squad.push(newPlayer);
+    updateWeeklyFinancials();
+    
+    const messageType = isLoan ? 'cedido' : 'fichado';
+    addNews(`¡${player.name} ha sido ${messageType}!`, 'success');
+    return { success: true, message: `¡${player.name} ha sido ${messageType}!` };
 }  
   
 function signYoungster(youngster) {  
