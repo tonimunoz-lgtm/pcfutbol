@@ -179,10 +179,26 @@ function renderSquadList(squad, currentTeam) {
             </span>
         </td>
         <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
-                <td>  
-                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>  
-                    <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
-                </td>  
+               <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+    <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})">
+        💪 Entrenar
+    </button>
+    
+    ${p.contractType === 'owned' ? `
+        <button class="btn btn-sm" style="background: #FF9800;" 
+                onclick="window.openSellPlayerModal(${idx})">
+            💰 Vender
+        </button>
+        <button class="btn btn-sm" style="background: #c73446;" 
+                onclick="window.firePlayerConfirm('${p.name}')">
+            🚪 Despedir
+        </button>
+    ` : `
+        <button class="btn btn-sm" style="background: #9E9E9E;" disabled>
+            🔒 Cedido
+        </button>
+    `}
+</td>
             </tr>  
         `;  
     }).join('');  
