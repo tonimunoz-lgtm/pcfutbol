@@ -1998,7 +1998,7 @@ window.submitRenewalOffer = function() {
     if (accepted) {
         // ✅ ACTUALIZAR CONTRATO
         player.salary = newSalary;
-        player.contractYears = newYears;
+        player.contractYears = player.contractYears + newYears;  // ✅ SUMAR años
         player.releaseClause = newClause;
         
         let renewalCost = 0;
