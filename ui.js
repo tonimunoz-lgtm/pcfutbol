@@ -571,6 +571,92 @@ function refreshUI(state) {
     renderNextMatchCard(state.team, opponentName, state.week);
 }
 
+
+// ✅ AÑADIR NUEVA FUNCIÓN EN ui.js
+
+function renderNegotiationsList(state) {
+    const list = document.getElementById('negotiationsSquadList');
+    if (!list) return;
+    
+    if (!state.squad || state.squad.length === 0) {
+        list.innerHTML = '<div class="alert alert-info">No hay jugadores en plantilla</div>';
+        return;
+    }
+    
+    // Filtrar solo jugadores propios (no cedidos)
+    const ownedPlayers = state.squad.filter(p => p.contractType === 'owned');
+    
+    if (ownedPlayers.length === 0) {
+        list.innerHTML = '<div class="alert alert-info">No tienes jugadores propios para renovar</div>';
+        return;
+    }
+    
+    // Ordenar por años restantes (urgentes primero)
+    const sorted = ownedPlayers.sort((a, b) => a.contractYears - b.contractYears);
+    
+    let html = `
+        <div style="overflow-x: auto;">
+            <table style="font-size: 0.9em; min-width: 1000px;">
+                <thead>
+                    <tr>
+                        <th>JUGADOR</th>
+                        <th>EDAD</th>
+                        <th>POS</th>
+                        <th>OVR</th>
+                        <th>AÑOS RESTANTES</th>
+                        <th>SALARIO</th>
+                        <th>CLÁUSULA</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    sorted.forEach((p, idx) => {
+        const urgencyColor = p.contractYears <= 1 ? '#ff3333' : 
+                           p.contractYears <= 2 ? '#FF9800' : '#4CAF50';
+        
+        html += `
+            <tr style="background: ${p.contractYears <= 1 ? 'rgba(255, 51, 51, 0.1)' : ''};">
+                <td>${p.name}</td>
+                <td>${p.age}</td>
+                <td>${p.position}</td>
+                <td>${p.overall}</td>
+                <td style="color: ${urgencyColor}; font-weight: bold;">
+                    ${p.contractYears} ${p.contractYears === 1 ? 'año' : 'años'}
+                    ${p.contractYears <= 1 ? '⚠️' : ''}
+                </td>
+                <td>${p.salary.toLocaleString('es-ES')}€</td>
+                <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
+                <td>
+                    <button class="btn btn-sm" onclick="window.openRenewalModal(${state.squad.indexOf(p)})">
+                        📝 Renovar
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    list.innerHTML = html;
+}
+
+// ✅ ACTUALIZAR refreshUI para incluir negociaciones
+function refreshUI(state) {
+    // ... código existente ...
+    
+    // Añadir al final:
+    renderNegotiationsList(state);
+}
+
+// ✅ EXPORTAR
+export { renderNegotiationsList, ... };
+
 // Función para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
