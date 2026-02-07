@@ -1530,28 +1530,94 @@ window.selectTeamAndStart = function(teamName, division) {
             }
         };
 
-        function updateFinanceDisplay(state) {
-            document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';
-            document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';
-            document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';
-            document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');
+       function updateFinanceDisplay(state) {
+    // === DATOS PRINCIPALES ===
+    document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';
+    document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';
+    document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '€';
 
-            let expectedAttendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
-            expectedAttendance = Math.max(0, Math.min(state.stadiumCapacity, expectedAttendance));
-            document.getElementById('financeExpectedAttendance').textContent = expectedAttendance.toLocaleString('es-ES');
+    // === ESTADIO ===
+    document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');
 
-            const ticketPriceInput = document.getElementById('ticketPriceInput');
-            if (ticketPriceInput) ticketPriceInput.value = state.ticketPrice;
+    // Calcular asistencia esperada
+    let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
+    attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
+    document.getElementById('financeExpectedAttendance').textContent = attendance.toLocaleString('es-ES');
 
-            document.getElementById('financePopularity').textContent = state.popularity + '%';
-            document.getElementById('financeFanbase').textContent = state.fanbase.toLocaleString('es-ES');
-            document.getElementById('financeMerchandisingItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');
+    // Precio de entrada
+    const ticketPriceInput = document.getElementById('ticketPriceInput');
+    if (ticketPriceInput) ticketPriceInput.value = state.ticketPrice;
+    
+    // ✅ NUEVO: Ingresos por taquilla
+    const ticketIncome = Math.floor(state.ticketPrice * attendance);
+    const ticketIncomeElement = document.getElementById('financeTicketIncome');
+    if (ticketIncomeElement) {
+        ticketIncomeElement.textContent = ticketIncome.toLocaleString('es-ES') + '€';
+    }
 
-            const merchandisingPriceInput = document.getElementById('merchandisingPriceInput');
-            if (merchandisingPriceInput) merchandisingPriceInput.value = state.merchandisingPrice;
+    // === POPULARIDAD Y MERCHANDISING ===
+    document.getElementById('financePopularity').textContent = state.popularity + '%';
+    document.getElementById('financeFanbase').textContent = state.fanbase.toLocaleString('es-ES');
+    document.getElementById('financeMerchandisingItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');
 
-            document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';
-        }
+    const merchandisingPriceInput = document.getElementById('merchandisingPriceInput');
+    if (merchandisingPriceInput) merchandisingPriceInput.value = state.merchandisingPrice;
+
+    document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '€';
+
+    // ========================================
+    // ✅ NUEVAS SECCIONES: TRANSACCIONES DE JUGADORES
+    // ========================================
+    
+    // === VENTAS DE JUGADORES ===
+    const playerSales = state.playerSalesIncome || 0;
+    const playerSalesElement = document.getElementById('financePlayerSales');
+    if (playerSalesElement) {
+        playerSalesElement.textContent = playerSales.toLocaleString('es-ES') + '€';
+    }
+
+    // === GASTOS: SALARIOS ===
+    const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
+    const playerSalariesElement = document.getElementById('financePlayerSalaries');
+    if (playerSalariesElement) {
+        playerSalariesElement.textContent = playerSalaries.toLocaleString('es-ES') + '€/sem';
+    }
+
+    const staffSalaries = Object.values(state.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);
+    const staffSalariesElement = document.getElementById('financeStaffSalaries');
+    if (staffSalariesElement) {
+        staffSalariesElement.textContent = staffSalaries.toLocaleString('es-ES') + '€/sem';
+    }
+
+    // === COMPRAS DE JUGADORES ===
+    const playerPurchases = state.playerPurchases || 0;
+    const playerPurchasesElement = document.getElementById('financePlayerPurchases');
+    if (playerPurchasesElement) {
+        playerPurchasesElement.textContent = playerPurchases.toLocaleString('es-ES') + '€';
+    }
+
+    // === INDEMNIZACIONES ===
+    const compensations = state.playerCompensations || 0;
+    const compensationsElement = document.getElementById('financeCompensations');
+    if (compensationsElement) {
+        compensationsElement.textContent = compensations.toLocaleString('es-ES') + '€';
+    }
+
+    // === TOTAL GASTOS SEMANALES ===
+    const totalExpenses = state.weeklyExpenses;
+    const totalExpensesElement = document.getElementById('financeTotalExpenses');
+    if (totalExpensesElement) {
+        totalExpensesElement.textContent = totalExpenses.toLocaleString('es-ES') + '€';
+    }
+
+    // === BALANCE SEMANAL ===
+    const weeklyBalance = state.weeklyIncome - state.weeklyExpenses;
+    const weeklyBalanceElement = document.getElementById('financeWeeklyBalance');
+    if (weeklyBalanceElement) {
+        weeklyBalanceElement.textContent = (weeklyBalance >= 0 ? '+' : '') + weeklyBalance.toLocaleString('es-ES') + '€';
+        weeklyBalanceElement.style.color = weeklyBalance >= 0 ? '#4CAF50' : '#ff3333';
+    }
+}
         window.updateFinanceDisplay = updateFinanceDisplay;
 
         function updateCommercialDisplay(state) {
