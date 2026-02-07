@@ -1824,7 +1824,248 @@ window.selectTeamAndStart = function(teamName, division) {
             }
         });
 
-   
+
+        // ============================================
+// SISTEMA DE RENOVACIONES DE CONTRATOS
+// ============================================
+
+// Variable global para el jugador en renovación
+let currentRenewalPlayerIndex = -1;
+
+// Abrir modal de renovación
+window.openRenewalModal = function(playerIndex) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[playerIndex];
+    
+    if (!player) {
+        alert('Error: Jugador no encontrado');
+        return;
+    }
+    
+    if (player.contractType !== 'owned') {
+        alert('No puedes renovar a jugadores cedidos');
+        return;
+    }
+    
+    currentRenewalPlayerIndex = playerIndex;
+    
+    // Rellenar información del jugador
+    document.getElementById('renewalPlayerName').textContent = player.name;
+    document.getElementById('renewalPlayerPosition').textContent = player.position;
+    document.getElementById('renewalPlayerAge').textContent = player.age;
+    document.getElementById('renewalPlayerOverall').textContent = player.overall;
+    
+    // Contrato actual
+    document.getElementById('renewalCurrentYears').textContent = player.contractYears + ' años';
+    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + '€/sem';
+    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + '€';
+    
+    // Valores por defecto para nueva oferta
+    document.getElementById('renewalNewYears').value = 3;
+    document.getElementById('renewalNewSalary').value = Math.round(player.salary * 1.1);
+    document.getElementById('renewalNewClause').value = player.releaseClause || (player.value * 3);
+    
+    // Resetear checkboxes
+    document.getElementById('renewalBonus').checked = false;
+    document.getElementById('renewalCar').checked = false;
+    document.getElementById('renewalHouse').checked = false;
+    
+    // Abrir modal
+    const modal = document.getElementById('renewalModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+    
+    // Calcular probabilidad inicial
+    updateRenewalProbability();
+};
+
+// Actualizar probabilidad de aceptación
+window.updateRenewalProbability = function() {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[currentRenewalPlayerIndex];
+    
+    if (!player) return;
+    
+    const newSalary = parseInt(document.getElementById('renewalNewSalary').value) || 0;
+    const newYears = parseInt(document.getElementById('renewalNewYears').value) || 0;
+    const bonus = document.getElementById('renewalBonus').checked;
+    const car = document.getElementById('renewalCar').checked;
+    const house = document.getElementById('renewalHouse').checked;
+    
+    let probability = 50;
+    
+    const salaryIncrease = (newSalary - player.salary) / player.salary;
+    if (salaryIncrease >= 0.2) probability += 30;
+    else if (salaryIncrease >= 0.1) probability += 20;
+    else if (salaryIncrease >= 0) probability += 10;
+    else if (salaryIncrease >= -0.1) probability -= 20;
+    else probability -= 40;
+    
+    if (newYears >= 4) probability += 15;
+    else if (newYears >= 3) probability += 10;
+    else if (newYears >= 2) probability += 5;
+    
+    if (bonus) probability += 10;
+    if (car) probability += 5;
+    if (house) probability += 5;
+    
+    if (player.age > 30 && newYears >= 3) probability += 10;
+    if (player.contractYears <= 1) probability += 15;
+    
+    probability = Math.max(0, Math.min(100, probability));
+    
+    const probabilityElement = document.getElementById('renewalProbability');
+    if (probabilityElement) {
+        probabilityElement.textContent = Math.round(probability) + '%';
+        
+        if (probability >= 70) {
+            probabilityElement.style.color = '#4CAF50';
+        } else if (probability >= 40) {
+            probabilityElement.style.color = '#FF9800';
+        } else {
+            probabilityElement.style.color = '#ff3333';
+        }
+    }
+    
+    const warningElement = document.getElementById('renewalSalaryWarning');
+    if (warningElement) {
+        if (newSalary < player.salary * 0.9) {
+            warningElement.style.display = 'block';
+        } else {
+            warningElement.style.display = 'none';
+        }
+    }
+};
+
+// Enviar oferta de renovación
+window.submitRenewalOffer = function() {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[currentRenewalPlayerIndex];
+    
+    if (!player) {
+        alert('Error: Jugador no encontrado');
+        return;
+    }
+    
+    const newSalary = parseInt(document.getElementById('renewalNewSalary').value) || 0;
+    const newYears = parseInt(document.getElementById('renewalNewYears').value) || 0;
+    const newClause = parseInt(document.getElementById('renewalNewClause').value) || 0;
+    const bonus = document.getElementById('renewalBonus').checked;
+    const car = document.getElementById('renewalCar').checked;
+    const house = document.getElementById('renewalHouse').checked;
+    
+    if (newSalary <= 0) {
+        alert('El salario debe ser mayor que 0');
+        return;
+    }
+    
+    if (newYears < 1 || newYears > 5) {
+        alert('La duración debe ser entre 1 y 5 años');
+        return;
+    }
+    
+    if (newClause < 0) {
+        alert('La cláusula no puede ser negativa');
+        return;
+    }
+    
+    // Calcular probabilidad
+    let probability = 50;
+    
+    const salaryIncrease = (newSalary - player.salary) / player.salary;
+    if (salaryIncrease >= 0.2) probability += 30;
+    else if (salaryIncrease >= 0.1) probability += 20;
+    else if (salaryIncrease >= 0) probability += 10;
+    else if (salaryIncrease >= -0.1) probability -= 20;
+    else probability -= 40;
+    
+    if (newYears >= 4) probability += 15;
+    else if (newYears >= 3) probability += 10;
+    else if (newYears >= 2) probability += 5;
+    
+    if (bonus) probability += 10;
+    if (car) probability += 5;
+    if (house) probability += 5;
+    
+    if (player.age > 30 && newYears >= 3) probability += 10;
+    if (player.contractYears <= 1) probability += 15;
+    
+    probability = Math.max(5, Math.min(95, probability));
+    
+    const accepted = Math.random() * 100 < probability;
+    
+    if (accepted) {
+        // ✅ ACTUALIZAR CONTRATO
+        player.salary = newSalary;
+        player.contractYears = newYears;
+        player.releaseClause = newClause;
+        
+        let renewalCost = 0;
+        if (bonus) renewalCost += newSalary * 10;
+        if (car) renewalCost += 50000;
+        if (house) renewalCost += 200000;
+        
+        state.balance -= renewalCost;
+        
+        window.gameLogic.addNews(
+            `✅ ¡${player.name} ha aceptado la renovación! Nuevo contrato: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem`,
+            'success'
+        );
+        
+        if (renewalCost > 0) {
+            window.gameLogic.addNews(
+                `💰 Coste de renovación: ${renewalCost.toLocaleString('es-ES')}€`,
+                'info'
+            );
+        }
+        
+        // ✅ GUARDAR Y REFRESCAR
+        window.gameLogic.updateGameState(state);
+        window.gameLogic.saveToLocalStorage();
+        
+        window.closeModal('renewal');
+        window.ui.refreshUI(state);
+        
+        // Refrescar páginas si están abiertas
+        if (document.getElementById('negotiations').classList.contains('active')) {
+            window.ui.renderNegotiationsList(state);
+        }
+        
+        if (document.getElementById('squad').classList.contains('active')) {
+            window.ui.renderSquadList(state.squad, state.team);
+        }
+        
+        alert(`✅ ¡${player.name} ha aceptado la renovación!\n\nNuevo contrato: ${newYears} años\nSalario: ${newSalary.toLocaleString('es-ES')}€/sem\nCoste total: ${renewalCost.toLocaleString('es-ES')}€`);
+        
+    } else {
+        window.gameLogic.addNews(
+            `❌ ${player.name} ha rechazado tu oferta de renovación`,
+            'warning'
+        );
+        
+        alert(`❌ ${player.name} ha rechazado tu oferta.\n\nProbabilidad de aceptación: ${Math.round(probability)}%\n\nPuedes intentarlo de nuevo con una mejor oferta.`);
+    }
+    
+    currentRenewalPlayerIndex = -1;
+};
+
+// Event listeners para actualizar probabilidad en tiempo real
+document.addEventListener('DOMContentLoaded', () => {
+    const renewalSalary = document.getElementById('renewalNewSalary');
+    const renewalYears = document.getElementById('renewalNewYears');
+    const renewalBonus = document.getElementById('renewalBonus');
+    const renewalCar = document.getElementById('renewalCar');
+    const renewalHouse = document.getElementById('renewalHouse');
+    
+    if (renewalSalary) renewalSalary.addEventListener('input', window.updateRenewalProbability);
+    if (renewalYears) renewalYears.addEventListener('change', window.updateRenewalProbability);
+    if (renewalBonus) renewalBonus.addEventListener('change', window.updateRenewalProbability);
+    if (renewalCar) renewalCar.addEventListener('change', window.updateRenewalProbability);
+    if (renewalHouse) renewalHouse.addEventListener('change', window.updateRenewalProbability);
+});
+       
+        
         // Exponer globalmente
         window.gameLogic = gameLogic;
         window.ui = ui;
