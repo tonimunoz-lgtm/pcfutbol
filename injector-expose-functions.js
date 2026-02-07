@@ -831,3 +831,196 @@ window.firePlayerConfirm = function(playerName) {
         alert(result.message);
     }
 };
+
+// ========================================
+// SISTEMA DE RENOVACIONES
+// ========================================
+
+let currentRenewalPlayerIndex = -1;
+
+window.openRenewalModal = function(playerIndex) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[playerIndex];
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    if (player.contractType !== 'owned') {
+        alert('Solo puedes renovar jugadores en propiedad');
+        return;
+    }
+    
+    currentRenewalPlayerIndex = playerIndex;
+    
+    // Rellenar información
+    document.getElementById('renewalPlayerName').textContent = player.name;
+    document.getElementById('renewalPlayerPosition').textContent = player.position;
+    document.getElementById('renewalPlayerAge').textContent = player.age;
+    document.getElementById('renewalPlayerOverall').textContent = player.overall;
+    
+    document.getElementById('renewalCurrentYears').textContent = player.contractYears + (player.contractYears === 1 ? ' año' : ' años');
+    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + '€/sem';
+    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + '€';
+    
+    // Sugerir valores
+    const suggestedSalary = Math.round(player.salary * 1.1); // +10%
+    const suggestedClause = Math.round(player.releaseClause * 1.2); // +20%
+    
+    document.getElementById('renewalNewSalary').value = suggestedSalary;
+    document.getElementById('renewalNewClause').value = suggestedClause;
+    
+    // Listener para avisar de salario bajo
+    document.getElementById('renewalNewSalary').addEventListener('input', function() {
+        const newSalary = parseInt(this.value);
+        const warning = document.getElementById('renewalSalaryWarning');
+        
+        if (newSalary < player.salary) {
+            warning.style.display = 'block';
+        } else {
+            warning.style.display = 'none';
+        }
+    });
+    
+    window.openModal('renewal');
+};
+
+window.submitRenewalOffer = function() {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[currentRenewalPlayerIndex];
+    
+    if (!player) {
+        alert('Error: Jugador no encontrado');
+        return;
+    }
+    
+    const newYears = parseInt(document.getElementById('renewalNewYears').value);
+    const newSalary = parseInt(document.getElementById('renewalNewSalary').value);
+    const newClause = parseInt(document.getElementById('renewalNewClause').value);
+    const hasBonus = document.getElementById('renewalBonus').checked;
+    const hasCar = document.getElementById('renewalCar').checked;
+    const hasHouse = document.getElementById('renewalHouse').checked;
+    
+    if (!newSalary || newSalary <= 0 || !newClause || newClause <= 0) {
+        alert('Introduce valores válidos');
+        return;
+    }
+    
+    // Calcular probabilidad de aceptación
+    let acceptanceChance = 0.5;
+    
+    // Factor salario
+    const salaryRatio = newSalary / player.salary;
+    if (salaryRatio >= 1.2) acceptanceChance += 0.3;
+    else if (salaryRatio >= 1.1) acceptanceChance += 0.2;
+    else if (salaryRatio >= 1.0) acceptanceChance += 0.1;
+    else if (salaryRatio < 0.9) acceptanceChance -= 0.3;
+    
+    // Factor años
+    if (newYears >= 4) acceptanceChance += 0.1;
+    else if (newYears <= 2) acceptanceChance -= 0.1;
+    
+    // Incentivos
+    if (hasBonus) acceptanceChance += 0.1;
+    if (hasCar) acceptanceChance += 0.05;
+    if (hasHouse) acceptanceChance += 0.05;
+    
+    // Factor edad
+    if (player.age > 30 && newYears >= 3) acceptanceChance += 0.1;
+    
+    // Urgencia (si le queda poco contrato, más probable que acepte)
+    if (player.contractYears <= 1) acceptanceChance += 0.15;
+    
+    // Efecto secretario
+    const secretaryEffect = state.staff.secretario ? 
+        (window.STAFF_LEVEL_EFFECTS[state.staff.secretario.level]?.negotiation || 0.1) : 0;
+    acceptanceChance += secretaryEffect;
+    
+    // Limitar entre 0 y 1
+    acceptanceChance = Math.max(0, Math.min(1, acceptanceChance));
+    
+    // Registrar oferta
+    window.gameLogic.addNews(
+        `📝 Has enviado oferta de renovación a ${player.name}: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem`,
+        'info'
+    );
+    
+    window.closeModal('renewal');
+    
+    // Simular respuesta (después de 3 segundos)
+    setTimeout(() => {
+        const accepted = Math.random() < acceptanceChance;
+        
+        if (accepted) {
+            // ACEPTADA
+            player.contractYears = newYears;
+            player.salary = newSalary;
+            player.releaseClause = newClause;
+            
+            window.gameLogic.addNews(
+                `✅ ¡Renovación exitosa! ${player.name} ha firmado por ${newYears} años`,
+                'success'
+            );
+            
+            alert(`¡${player.name} ha aceptado la renovación!\n\nNuevo contrato: ${newYears} años\nSalario: ${newSalary.toLocaleString('es-ES')}€/sem`);
+            
+        } else {
+            // RECHAZADA
+            window.gameLogic.addNews(
+                `❌ ${player.name} ha rechazado tu oferta de renovación. Necesita mejores condiciones.`,
+                'warning'
+            );
+            
+            alert(`${player.name} ha rechazado la oferta.\n\nIntenta mejorar las condiciones o espera a que esté más cerca del final de su contrato.`);
+        }
+        
+        window.ui.refreshUI(state);
+    }, 3000);
+    
+    alert('Oferta enviada. Esperando respuesta del jugador...');
+};
+
+// ========================================
+// PAGAR CLÁUSULA DE RESCISIÓN
+// ========================================
+
+window.payReleaseClause = function(encodedPlayerJson) {
+    const player = JSON.parse(decodeURIComponent(encodedPlayerJson));
+    const state = window.gameLogic.getGameState();
+    
+    const clause = player.releaseClause || player.value * 3;
+    
+    const confirmed = confirm(
+        `¿Pagar la cláusula de rescisión de ${player.name}?\n\n` +
+        `Cláusula: ${clause.toLocaleString('es-ES')}€\n\n` +
+        `⚠️ Si pagas la cláusula, el ${player.club} no puede negarse.\n` +
+        `Solo necesitarás convencer al jugador.`
+    );
+    
+    if (!confirmed) return;
+    
+    if (state.balance < clause) {
+        alert(`No tienes suficiente dinero.\n\nNecesitas: ${clause.toLocaleString('es-ES')}€\nTienes: ${state.balance.toLocaleString('es-ES')}€`);
+        return;
+    }
+    
+    // Pagar cláusula
+    state.balance -= clause;
+    
+    // Registrar gasto
+    if (!state.playerPurchases) state.playerPurchases = 0;
+    state.playerPurchases += clause;
+    
+    window.gameLogic.addNews(
+        `💰 Has pagado la cláusula de ${player.name} por ${clause.toLocaleString('es-ES')}€. Ahora negocia con él.`,
+        'info'
+    );
+    
+    // Iniciar negociación solo con jugador (saltar fase de club)
+    player.clausePaid = true;
+    player.askingPrice = 0; // Ya pagamos
+    window.startNegotiationUI(encodeURIComponent(JSON.stringify(player)));
+    
+    alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
+};
