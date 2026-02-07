@@ -2008,13 +2008,13 @@ window.submitRenewalOffer = function() {
         
         state.balance -= renewalCost;
         
-        window.gameLogic.addNews(
+        gameLogic.addNews(
             `✅ ¡${player.name} ha aceptado la renovación! Nuevo contrato: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem`,
             'success'
         );
         
         if (renewalCost > 0) {
-            window.gameLogic.addNews(
+            gameLogic.addNews(
                 `💰 Coste de renovación: ${renewalCost.toLocaleString('es-ES')}€`,
                 'info'
             );
@@ -2039,7 +2039,7 @@ window.submitRenewalOffer = function() {
         alert(`✅ ¡${player.name} ha aceptado la renovación!\n\nNuevo contrato: ${newYears} años\nSalario: ${newSalary.toLocaleString('es-ES')}€/sem\nCoste total: ${renewalCost.toLocaleString('es-ES')}€`);
         
     } else {
-        window.gameLogic.addNews(
+        gameLogic.addNews(
             `❌ ${player.name} ha rechazado tu oferta de renovación`,
             'warning'
         );
