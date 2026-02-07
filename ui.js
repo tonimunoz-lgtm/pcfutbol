@@ -127,8 +127,6 @@ function renderStandingsTable(state) {
 }
 
   
-// Fragmento modificado de ui.js para la tabla de plantilla
-
 function renderSquadList(squad, currentTeam) {
     const list = document.getElementById('squadList');  
     if (!list) return;
@@ -146,8 +144,7 @@ function renderSquadList(squad, currentTeam) {
                     <tr>  
                         <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>SALARIO</th><th>VALOR</th>
-                        <th>TIPO</th><th>CONTRATO</th><th>ACCIONES</th>  
+                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
@@ -181,91 +178,8 @@ function renderSquadList(squad, currentTeam) {
         }
         if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
 
-        // Tipo de contrato
-        let contractTypeText = '';
-        if (p.contractType === 'loan') {
-            contractTypeText = '<span style="background:#FFA500;color:#000;padding:2px 6px;border-radius:3px;font-size:0.85em;">📋 Cedido</span>';
-        } else {
-            contractTypeText = '<span style="background:#00AA00;color:#FFF;padding:2px 6px;border-radius:3px;font-size:0.85em;">✅ Propiedad</span>';
-        }
-
-        // Información del contrato
-        let contractInfo = '';
-        if (p.contractType === 'loan') {
-            const weeksRemaining = p.loanWeeksRemaining || 0;
-            const monthsRemaining = Math.ceil(weeksRemaining / 4);
-            contractInfo = `${monthsRemaining} meses`;
-        } else {
-            const years = p.contractYears || 0;
-            const weeks = p.contractWeeks || 0;
-            const months = Math.floor(weeks / 4);
-            const remainingWeeks = weeks % 4;
-            
-            if (years > 0) {
-                contractInfo = `${years}a ${months}m`;
-            } else {
-                contractInfo = `${months}m ${remainingWeeks}s`;
-            }
-            
-            // Color de advertencia si queda poco contrato
-            if (weeks <= 12 && p.contractType === 'owned') {
-                contractInfo = `<span style="color:#ff0000;font-weight:bold;">${contractInfo} ⚠️</span>`;
-            } else if (weeks <= 24 && p.contractType === 'owned') {
-                contractInfo = `<span style="color:#FFA500;font-weight:bold;">${contractInfo}</span>`;
-            }
-        }
-
         // Clase para fila según estado
         const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
-
-        // ICONOS DE ACCIONES (Nueva funcionalidad)
-        let actionsHtml = '<div style="display:flex;gap:5px;justify-content:center;">';
-        
-        // Icono de Entrenar (solo si no está lesionado ni sancionado)
-        if (!p.isInjured && !p.isSuspended) {
-            actionsHtml += `
-                <button class="action-icon-btn" title="Entrenar" 
-                    onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">
-                    🏋️
-                </button>
-            `;
-        } else {
-            actionsHtml += `<button class="action-icon-btn" disabled title="No disponible">🏋️</button>`;
-        }
-
-        // Icono de Renovar (solo para jugadores en propiedad)
-        if (p.contractType === 'owned') {
-            actionsHtml += `
-                <button class="action-icon-btn" title="Renovar contrato" 
-                    onclick="window.openRenewalNegotiationUI?.(${realIndex})">
-                    ✍️
-                </button>
-            `;
-        }
-
-        // Icono de Vender (conecta al proceso de venta de la nueva tabla)
-        if (p.contractType === 'owned') {
-            actionsHtml += `
-                <button class="action-icon-btn" title="Poner en venta" 
-                    style="background:rgba(255,140,0,0.2);border-color:#FF8C00;"
-                    onclick="window.openSellPlayerUI?.(${realIndex})">
-                    💰
-                </button>
-            `;
-        }
-
-        // Icono de Despedir/Rescindir (solo para jugadores en propiedad)
-        if (p.contractType === 'owned') {
-            actionsHtml += `
-                <button class="action-icon-btn" title="Despedir/Rescindir contrato" 
-                    style="background:rgba(199,52,70,0.3);border-color:#c73446;"
-                    onclick="window.firePlayerConfirm('${p.name}')">
-                    🚫
-                </button>
-            `;
-        }
-
-        actionsHtml += '</div>';
 
         return `
             <tr class="${rowClass}">
@@ -282,9 +196,12 @@ function renderSquadList(squad, currentTeam) {
                 <td>${cardsText}</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>
                 <td>${p.value.toLocaleString('es-ES')}€</td>
-                <td>${contractTypeText}</td>
-                <td>${contractInfo}</td>
-                <td>${actionsHtml}</td>
+                <td>
+                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''}
+                        onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">Entrenar</button>
+                    <button class="btn btn-sm" style="background:#c73446;" 
+                        onclick="window.sellPlayerConfirm('${p.name}')">Vender</button>
+                </td>
             </tr>
         `;
     }).join('');
@@ -292,10 +209,6 @@ function renderSquadList(squad, currentTeam) {
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;
 }
 
-// Exportar la función
-if (typeof window !== 'undefined') {
-    window.renderSquadList = renderSquadList;
-}
 
 
   
