@@ -60,7 +60,7 @@
         <div class="quadrant bottom-left">
             <div class="section-title">🔄 FICHAJES</div>
             <button class="menu-button orange-button transfer-icon" onclick="openPage('transfers')">Fichar</button>
-            <button class="menu-button orange-button renovation-icon" onclick="openPage('contractsPage')">Renovaciones</button>
+            <button class="menu-button orange-button renovation-icon" onclick="openPage('renewContracts')">Renovaciones</button>
             <button class="menu-button orange-button squad-icon" onclick="openPage('squad')">Plantilla</button>
             <button class="menu-button orange-button cantera-icon" onclick="openPage('academy')">Cantera</button>
         </div>
@@ -97,45 +97,15 @@
         <button class="btn" onclick="window.closeSettingsPage()">Cerrar</button>
     </div>
     
-<div id="contractsPage" class="page">
-    <h1>✍️ Gestión de Contratos</h1>
-    <button class="page-close-btn" onclick="closePage('contractsPage')">✖ CERRAR</button>
-
-    <div class="stats-grid" style="margin-bottom: 20px;">
-        <div class="stat-card">
-            <div class="stat-value" id="totalPlayers">0</div>
-            <div class="stat-label">Jugadores</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="expiringContracts">0</div>
-            <div class="stat-label">Contratos &lt; 1 año</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="totalSalaries">€0</div>
-            <div class="stat-label">Gasto Salarial Semanal</div>
-        </div>
+<!-- RENOVAR CONTRATOS -->
+<div id="renewContracts" class="page">
+    <div class="page-header">
+        <h1>✍️ Renovar Contratos</h1>
+        <button class="page-close-btn" onclick="closePage('renewContracts')">✖ CERRAR</button>
     </div>
-
-    <div style="margin-bottom: 15px;">
-        <label>
-            <input type="checkbox" id="filterExpiring"> Solo contratos por expirar
-        </label>
+    <div id="renewContractsContent">
+        <!-- La tabla se carga automáticamente por NEW_06_renewals_manager.js -->
     </div>
-
-    <table id="contractsTable" style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr>
-                <th>Jugador</th>
-                <th>Pos</th>
-                <th>Overall</th>
-                <th>Tipo</th>
-                <th>Años</th>
-                <th>Salario</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="contractsTableBody"></tbody>
-    </table>
 </div>
 
 
