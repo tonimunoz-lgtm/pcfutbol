@@ -1540,6 +1540,58 @@ function resetGame() {
 function getSeasonCalendar() {  
     return gameState.seasonCalendar;  
 }  
+
+// ✅ AÑADIR EN gameLogic.js
+
+function firePlayer(playerName) {
+    const playerIndex = gameState.squad.findIndex(p => p.name === playerName);
+    
+    if (playerIndex === -1) {
+        return { success: false, message: 'Jugador no encontrado.' };
+    }
+    
+    const player = gameState.squad[playerIndex];
+    
+    // Solo se pueden despedir jugadores propios
+    if (player.contractType !== 'owned') {
+        return { success: false, message: 'Solo puedes despedir jugadores en propiedad.' };
+    }
+    
+    // Calcular indemnización (salario × años restantes)
+    const compensation = player.salary * player.contractYears * 52; // 52 semanas/año
+    
+    if (gameState.balance < compensation) {
+        return { 
+            success: false, 
+            message: `No tienes suficiente dinero para pagar la indemnización de ${compensation.toLocaleString('es-ES')}€` 
+        };
+    }
+    
+    // Pagar indemnización
+    gameState.balance -= compensation;
+    
+    // Registrar gasto
+    if (!gameState.playerCompensations) gameState.playerCompensations = 0;
+    gameState.playerCompensations += compensation;
+    
+    // Eliminar jugador
+    gameState.squad.splice(playerIndex, 1);
+    
+    // Noticia
+    addNews(
+        `🚪 ${playerName} ha sido despedido del club. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`,
+        'warning'
+    );
+    
+    return { 
+        success: true, 
+        message: `${playerName} ha sido despedido. Indemnización: ${compensation.toLocaleString('es-ES')}€`,
+        compensation: compensation
+    };
+}
+
+// ✅ EXPORTAR
+export { firePlayer, ... };
       
 export {  
     getGameState,  
