@@ -1091,7 +1091,7 @@ function endSeason() {
     setupNewSeason(currentDivision, nextDivisionKey);  
 }  
   
-unction simulateFullWeek() {
+function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;
 
