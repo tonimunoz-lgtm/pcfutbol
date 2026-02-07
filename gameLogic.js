@@ -273,7 +273,40 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.matches = 0;  
         p.form = 70 + Math.floor(Math.random() * 20);  
         p.isInjured = false;  
-        p.weeksOut = 0;  
+        p.weeksOut = 0; 
+
+        // ========================================
+    // ✅ NUEVO: REDUCIR AÑOS DE CONTRATO
+    // ========================================
+    if (p.contractYears !== undefined && p.contractYears > 0) {
+        p.contractYears--;
+        
+        // Avisar si le queda 1 año
+        if (p.contractYears === 1 && p.contractType === 'owned') {
+            addNews(
+                `⚠️ A ${p.name} le queda solo 1 año de contrato. Deberías renovarlo pronto.`, 
+                'warning'
+            );
+        }
+        
+        // Avisar si el contrato ha expirado
+        if (p.contractYears === 0) {
+            if (p.contractType === 'owned') {
+                addNews(
+                    `🔴 ¡URGENTE! El contrato de ${p.name} ha expirado. Si no renuevas, se irá libre.`, 
+                    'error'
+                );
+            } else if (p.contractType === 'loaned') {
+                // Jugador cedido vuelve a su club
+                addNews(
+                    `🔄 ${p.name} ha regresado a su club de origen tras finalizar la cesión.`, 
+                    'info'
+                );
+                return false; // ❌ ELIMINAR jugador cedido
+            }
+        }
+    }
+    // ========================================
 
         const stage = getAgeStage(p.age);
 
