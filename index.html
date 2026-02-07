@@ -2007,6 +2007,10 @@ window.submitRenewalOffer = function() {
         if (house) renewalCost += 200000;
         
         state.balance -= renewalCost;
+
+                // ✅ GUARDAR Y REFRESCAR
+        window.gameLogic.updateGameState(state);
+        window.gameLogic.saveToLocalStorage();
         
         window.gameLogic.addNews(
             `✅ ¡${player.name} ha aceptado la renovación! Nuevo contrato: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem`,
@@ -2019,11 +2023,7 @@ window.submitRenewalOffer = function() {
                 'info'
             );
         }
-        
-        // ✅ GUARDAR Y REFRESCAR
-        window.gameLogic.updateGameState(state);
-        window.gameLogic.saveToLocalStorage();
-        
+                
         window.closeModal('renewal');
         window.ui.refreshUI(state);
         
