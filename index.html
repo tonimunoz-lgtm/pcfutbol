@@ -225,6 +225,107 @@
         </div>
     </div>
 
+   <!-- MODAL: PONER EN VENTA JUGADOR -->
+<div id="sellPlayerModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="window.closeModal('sellPlayer')">&times;</span>
+        <h1>💰 Poner en Venta</h1>
+        
+        <div id="sellPlayerInfo">
+            <h3><span id="sellPlayerName"></span></h3>
+            <p>Posición: <span id="sellPlayerPosition"></span> | Edad: <span id="sellPlayerAge"></span> | Overall: <span id="sellPlayerOverall"></span></p>
+            <p>Valor de Mercado: <span id="sellPlayerValue"></span>€</p>
+            <p>Cláusula de Rescisión: <span id="sellPlayerClause"></span>€</p>
+        </div>
+        
+        <div class="form-group">
+            <label>Tipo de Operación:</label>
+            <select id="sellOperationType" onchange="window.updateSellOperationType()">
+                <option value="transfer">Venta Definitiva</option>
+                <option value="loan">Cesión</option>
+            </select>
+        </div>
+        
+        <!-- VENTA DEFINITIVA -->
+        <div id="sellTransferOptions">
+            <div class="form-group">
+                <label>Precio de Venta:</label>
+                <input type="number" id="sellTransferPrice" min="0" step="10000">€
+                <p class="alert alert-info">
+                    💡 Precio mínimo recomendado: <span id="sellMinPrice"></span>€
+                </p>
+            </div>
+        </div>
+        
+        <!-- CESIÓN -->
+        <div id="sellLoanOptions" style="display: none;">
+            <div class="form-group">
+                <label>% de Salario que Asumimos:</label>
+                <input type="range" id="sellLoanWagePercent" min="0" max="100" value="50" 
+                       oninput="document.getElementById('sellLoanWageValue').textContent=this.value">
+                <span id="sellLoanWageValue">50</span>%
+                <p class="alert alert-info">
+                    📊 Salario actual: <span id="sellPlayerCurrentSalary"></span>€/sem<br>
+                    💵 Pagaremos: <span id="sellLoanOurCost"></span>€/sem<br>
+                    💰 Ellos pagan: <span id="sellLoanTheirCost"></span>€/sem
+                </p>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" onclick="window.confirmListPlayer()">
+                ✅ Poner en Venta
+            </button>
+            <button class="btn" style="background: #666;" onclick="window.closeModal('sellPlayer')">
+                ❌ Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: OFERTA RECIBIDA -->
+<div id="offerReceivedModal" class="modal">
+    <div class="modal-content">
+        <h1>📨 ¡Oferta Recibida!</h1>
+        
+        <div class="alert alert-success">
+            <p><strong><span id="offerBuyerTeam"></span></strong> está interesado en <strong><span id="offerPlayerName"></span></strong></p>
+        </div>
+        
+        <div id="offerDetails">
+            <h3>Detalles de la Oferta:</h3>
+            <table style="width: 100%; margin: 20px 0;">
+                <tr>
+                    <td>Tipo:</td>
+                    <td id="offerType" style="font-weight: bold;"></td>
+                </tr>
+                <tr>
+                    <td>Cantidad Ofrecida:</td>
+                    <td id="offerAmount" style="font-weight: bold; color: #4CAF50;"></td>
+                </tr>
+                <tr>
+                    <td>Tu Precio Solicitado:</td>
+                    <td id="offerAsking" style="font-weight: bold;"></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer()">
+                ✅ Aceptar Oferta
+            </button>
+            <button class="btn" style="background: #FF9800;" onclick="window.counterOffer()">
+                🔄 Contraoferta
+            </button>
+            <button class="btn" style="background: #c73446;" onclick="window.rejectOffer()">
+                ❌ Rechazar
+            </button>
+        </div>
+    </div>
+</div> 
+    
+    
+    
     <!-- MERCADO / FICHAJES -->
     <div id="transfers" class="page">
         <div class="page-header">
