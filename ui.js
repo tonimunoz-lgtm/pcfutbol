@@ -458,7 +458,22 @@ function updateDashboardStats(state) {
     const weekly = state.weeklyIncome - state.weeklyExpenses;  
     document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
-  
+  // ✅ AÑADIR INFORMACIÓN DE TRANSFERENCIAS
+const purchases = state.playerPurchases || 0;
+const sales = state.playerSalesIncome || 0;
+const transferBalance = sales - purchases;
+
+const dashPurchasesEl = document.getElementById('dashPurchases');
+const dashSalesEl = document.getElementById('dashSales');
+const dashTransferBalanceEl = document.getElementById('dashTransferBalance');
+
+if (dashPurchasesEl) dashPurchasesEl.textContent = purchases.toLocaleString('es-ES') + '€';
+if (dashSalesEl) dashSalesEl.textContent = sales.toLocaleString('es-ES') + '€';
+
+if (dashTransferBalanceEl) {
+    dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + '€';
+    dashTransferBalanceEl.style.color = transferBalance >= 0 ? '#4CAF50' : '#f44336';
+}
   
     const warningAlert = document.getElementById('warningAlert');  
     if (warningAlert) {  
