@@ -326,6 +326,91 @@
 </div> 
     
     
+    <!-- NEGOCIACIONES / RENOVACIONES -->
+<div id="negotiations" class="page">
+    <div class="page-header">
+        <h1>📝 Renovaciones de Contratos</h1>
+        <button class="page-close-btn" onclick="closePage('negotiations')">✖ CERRAR</button>
+    </div>
+    
+    <div class="alert alert-info">
+        💡 Aquí puedes renovar contratos de tus jugadores actuales. Ten especial atención a los que tienen menos de 2 años restantes.
+    </div>
+    
+    <div id="negotiationsSquadList">
+        <!-- Se llenará dinámicamente -->
+    </div>
+</div>
+
+<!-- MODAL: RENOVACIÓN DE CONTRATO -->
+<div id="renewalModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="window.closeModal('renewal')">&times;</span>
+        <h1>📝 Renovación de Contrato</h1>
+        
+        <div class="renewal-player-info">
+            <h3><span id="renewalPlayerName"></span></h3>
+            <p>Posición: <span id="renewalPlayerPosition"></span> | Edad: <span id="renewalPlayerAge"></span> | Overall: <span id="renewalPlayerOverall"></span></p>
+        </div>
+        
+        <h3>Contrato Actual:</h3>
+        <table style="width: 100%; margin-bottom: 20px;">
+            <tr>
+                <td>Años Restantes:</td>
+                <td id="renewalCurrentYears" style="font-weight: bold;"></td>
+            </tr>
+            <tr>
+                <td>Salario Actual:</td>
+                <td id="renewalCurrentSalary" style="font-weight: bold;"></td>
+            </tr>
+            <tr>
+                <td>Cláusula Actual:</td>
+                <td id="renewalCurrentClause" style="font-weight: bold;"></td>
+            </tr>
+        </table>
+        
+        <h3>Propuesta de Renovación:</h3>
+        <div class="form-group">
+            <label>Duración del Contrato:</label>
+            <select id="renewalNewYears">
+                <option value="1">1 año</option>
+                <option value="2">2 años</option>
+                <option value="3" selected>3 años</option>
+                <option value="4">4 años</option>
+                <option value="5">5 años</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Nuevo Salario Semanal:</label>
+            <input type="number" id="renewalNewSalary" min="0" step="100">€
+            <p class="alert alert-warning" id="renewalSalaryWarning" style="display: none;">
+                ⚠️ El jugador podría rechazar si el salario es muy bajo
+            </p>
+        </div>
+        
+        <div class="form-group">
+            <label>Nueva Cláusula de Rescisión:</label>
+            <input type="number" id="renewalNewClause" min="0" step="10000">€
+        </div>
+        
+        <div class="form-group">
+            <label><input type="checkbox" id="renewalBonus"> Prima de Fichaje (mejora aceptación)</label>
+            <label><input type="checkbox" id="renewalCar"> Coche de Empresa</label>
+            <label><input type="checkbox" id="renewalHouse"> Casa Pagada</label>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" onclick="window.submitRenewalOffer()">
+                ✅ Enviar Oferta
+            </button>
+            <button class="btn" style="background: #666;" onclick="window.closeModal('renewal')">
+                ❌ Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
     
     <!-- MERCADO / FICHAJES -->
     <div id="transfers" class="page">
