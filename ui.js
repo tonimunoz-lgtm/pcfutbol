@@ -1,40 +1,9 @@
 // ui.js - Renderizado y UI  
   
 import * as gameLogic from './gameLogic.js';  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js';
-
-// ============================================
-// 🆕 FUNCIONES PARA SISTEMA DE TARJETAS Y LESIONES
-// ============================================
-
-function renderPlayerStatusBadges(player) {
-    let badges = '';
-    
-    if (player.isInjured) {
-        badges += `<span class="injured-badge">❌ Lesión (${player.weeksOut}sem)</span>`;
-    }
-    
-    if (player.isSuspended) {
-        badges += `<span class="suspended-badge">⛔ SANCIÓN (${player.suspensionWeeks})</span>`;
-    }
-    
-    if (player.redCards > 0) {
-        badges += `<span class="red-card-badge">🟥 x${player.redCards}</span>`;
-    }
-    
-    if (player.yellowCards > 0) {
-        const isWarning = player.yellowCards >= 4;
-        const badgeClass = isWarning ? 'warning-badge' : 'yellow-card-badge';
-        badges += `<span class="${badgeClass}">🟨 x${player.yellowCards}${isWarning ? ' ⚠️' : ''}</span>`;
-    }
-    
-    return badges;
-}
-
-function applyPlayerStatusClasses(element, player) {
-    if (player.isInjured) element.classList.add('injured');
-    if (player.isSuspended) element.classList.add('suspended');
-}
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
+  
+// ui.js - Añadir al principio del archivo
 
 function getTeamLogo(teamName, size = '25px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
@@ -44,18 +13,20 @@ function getTeamLogo(teamName, size = '25px') {
             return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
         }
     }
-    return '';
+    return ''; // Sin logo
 }
 
 function renderStandingsTable(state) {
     const standingsDiv = document.getElementById('standingsTable');
     if (!standingsDiv) return;
 
+    // ✅ Validación: verificar que standings exista
     if (!state.standings || Object.keys(state.standings).length === 0) {
         standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
         return;
     }
 
+    // ✅ Filtrar equipos con datos inválidos
     const validStandings = Object.entries(state.standings)
         .filter(([team, stats]) => {
             if (!stats || stats.pts === undefined) {
@@ -70,6 +41,7 @@ function renderStandingsTable(state) {
         return;
     }
 
+    // Ordenar por puntos, diferencia de goles, goles a favor
     const sorted = validStandings.sort((a, b) => {
         const ptsA = a[1].pts || 0;
         const ptsB = b[1].pts || 0;
@@ -82,12 +54,21 @@ function renderStandingsTable(state) {
         return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
+    // Generar HTML de la tabla
     let html = `
         <table class="standings-table">
             <thead>
                 <tr>
-                    <th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th>
-                    <th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+                    <th>Pos</th>
+                    <th>Equipo</th>
+                    <th>PJ</th>
+                    <th>G</th>
+                    <th>E</th>
+                    <th>P</th>
+                    <th>GF</th>
+                    <th>GC</th>
+                    <th>DG</th>
+                    <th>Pts</th>
                 </tr>
             </thead>
             <tbody>
@@ -97,6 +78,7 @@ function renderStandingsTable(state) {
         const isMyTeam = team === state.team;
         const rowClass = isMyTeam ? 'my-team-row' : '';
 
+        // Obtener logo del equipo
         let teamLogo = '';
         const storedData = localStorage.getItem(`team_data_${team}`);
         if (storedData) {
@@ -122,95 +104,76 @@ function renderStandingsTable(state) {
         `;
     });
 
-    html += `</tbody></table>`;
+    html += `
+            </tbody>
+        </table>
+    `;
+
     standingsDiv.innerHTML = html;
 }
 
+
+
   
-function renderSquadList(squad, currentTeam) {
+function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
-    if (!list) return;
-
-    if (!squad || squad.length === 0) {
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';
-        return;
-    }
-
-    // Cabecera de la tabla
+    if (!list) return;  
+  
+    if (!squad || squad.length === 0) {  
+        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';  
+        return;  
+    }  
+  
     let headerHtml = `  
         <div style="overflow-x: auto;">  
             <table style="font-size: 0.8em; min-width: 1200px;">  
                 <thead>  
                     <tr>  
-                        <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
+                        <th>Nº</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>  
+                        <th>FORMA</th>  
+                        <th>ESTADO</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>ACCIONES</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
     `;  
-
-    // Ordenar por overall descendente
-    const sorted = [...squad].sort((a, b) => b.overall - a.overall);
-    const squadIndexMap = new Map();
-    squad.forEach((p, i) => squadIndexMap.set(p.name, i));
-
-    // Filas de jugadores
-    let playersHtml = sorted.map((p, idx) => {
-        const realIndex = squadIndexMap.get(p.name);
-
-        // Estado dinámico
-        let statusText = '<span style="color: #00ff00;">Apto</span>';
-        if (p.isInjured) {
-            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
-        } else if (p.isSuspended) {
-            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks} partidos)</span>`;
-        }
-
-        // Tarjetas
-        let cardsText = '';
-        if (p.yellowCards > 0) {
-            const warning = p.yellowCards >= 4 ? ' ⚠️' : '';
-            cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}${warning}</span>`;
-        }
-        if (p.redCards > 0) {
-            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
-        }
-        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
-
-        // Clase para fila según estado
-        const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
-
-        return `
-            <tr class="${rowClass}">
-                <td>${idx + 1}</td>
-                <td>${p.name}</td>
-                <td><strong>${p.overall}</strong></td>
-                <td>${p.potential}</td>
-                <td>${p.age}</td>
-                <td>${p.position || 'N/A'}</td>
-                <td>${p.foot || 'N/A'}</td>
-                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}
-                <td>${p.form || 0}</td>
-                <td>${statusText}</td>
-                <td>${cardsText}</td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>
-                <td>${p.value.toLocaleString('es-ES')}€</td>
-                <td>
-                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''}
-                        onclick="window.setPlayerTrainingFocusUI(${realIndex}, '${p.name}')">Entrenar</button>
-                    <button class="btn btn-sm" style="background:#c73446;" 
-                        onclick="window.sellPlayerConfirm('${p.name}')">Vender</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;
-}
-
-
-
+  
+    const sorted = squad.sort((a, b) => b.overall - a.overall);  
+    let playersHtml = sorted.map((p, idx) => {  
+        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
+        return `  
+            <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+                <td>${idx + 1}</td>  
+                <td>${p.name}</td>  
+                <td><strong>${p.overall}</strong></td>  
+                <td>${p.potential}</td>  
+                <td>${p.age}</td>  
+                <td>${p.position || 'N/A'}</td>  
+                <td>${p.foot || 'N/A'}</td>  
+                ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
+                <td>${p.form || 0}</td>  
+                <td>${statusText}</td>  
+                <td>${p.salary.toLocaleString('es-ES')}€</td>  
+                <td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td>  
+                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.setPlayerTrainingFocusUI(${idx}, '${p.name}')">Entrenar</button>  
+                    <button class="btn btn-sm" onclick="window.sellPlayerConfirm('${p.name}')" style="background: #c73446;">Vender</button>  
+                </td>  
+            </tr>  
+        `;  
+    }).join('');  
+  
+    list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
+}  
   
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
@@ -226,43 +189,45 @@ function renderAcademyList(academy) {
             <table style="font-size: 0.8em; min-width: 1200px;">  
                 <thead>  
                     <tr>  
-                        <th>Nº</th><th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
+                        <th>Nº</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th><th>ESTADO</th><th>TARJETAS</th><th>PART.</th><th>SALARIO</th><th>VALOR</th><th>ACCIONES</th>  
+                        <th>FORMA</th>  
+                        <th>ESTADO</th>  
+                        <th>PART.</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>ACCIONES</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
     `;  
   
     const sorted = academy.sort((a, b) => b.overall - a.overall);  
-    let youngstersHtml = sorted.map((p, idx) => {
-        let statusText = '<span style="color: #00ff00;">Apto</span>';
-        if (p.isInjured) {
-            statusText = `<span style="color: #ff3333; font-weight: bold;">❌ Lesionado (${p.weeksOut} sem)</span>`;
-        } else if (p.isSuspended) {
-            statusText = `<span style="color: #FF4500; font-weight: bold;">⛔ Sancionado (${p.suspensionWeeks})</span>`;
-        }
-        
-        let cardsText = '';
-        if (p.yellowCards > 0) {
-            cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}</span>`;
-        }
-        if (p.redCards > 0) {
-            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
-        }
-        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
-        
-        const rowClass = p.isInjured ? 'injured' : p.isSuspended ? 'suspended' : '';
-        
+    let youngstersHtml = sorted.map((p, idx) => {  
+        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
         return `  
-            <tr class="${rowClass}" style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
-                <td>${idx + 1}</td><td>${p.name}</td><td><strong>${p.overall}</strong></td><td>${p.potential}</td>  
-                <td>${p.age}</td><td>${p.position || 'N/A'}</td><td>${p.foot || 'N/A'}</td>  
+            <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
+                <td>${idx + 1}</td>  
+                <td>${p.name}</td>  
+                <td><strong>${p.overall}</strong></td>  
+                <td>${p.potential}</td>  
+                <td>${p.age}</td>  
+                <td>${p.position || 'N/A'}</td>  
+                <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.form || 0}</td><td>${statusText}</td><td>${cardsText}</td><td>${p.matches || 0}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td><td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td>${p.form || 0}</td>  
+                <td>${statusText}</td>  
+                <td>${p.matches || 0}</td>  
+                <td>${p.salary.toLocaleString('es-ES')}€</td>  
+                <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>  
-                    <button class="btn btn-sm" ${p.isInjured || p.isSuspended ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
+                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
                 </td>  
             </tr>  
         `;  
@@ -285,39 +250,45 @@ function renderPlayerMarketList(players) {
             <table style="font-size: 0.8em; min-width: 1300px;">  
                 <thead>  
                     <tr>  
-                        <th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>CLUB</th><th>TARJETAS</th><th>SALARIO</th><th>VALOR</th><th>PRECIO P.</th><th>ESTADO</th><th>ACCIONES</th>  
+                        <th>CLUB</th>  
+                        <th>SALARIO</th>  
+                        <th>VALOR</th>  
+                        <th>PRECIO P.</th>  
+                        <th>ESTADO</th>  
+                        <th>ACCIONES</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
     `;  
   
-    let playersHtml = players.map((p, idx) => {
-        let cardsText = '';
-        if (p.yellowCards > 0) {
-            cardsText += `<span style="background:#FFD700;color:#000;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟨 x${p.yellowCards}</span>`;
-        }
-        if (p.redCards > 0) {
-            cardsText += `<span style="background:#C70000;color:#FFF;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:0.85em;">🟥 x${p.redCards}</span>`;
-        }
-        if (p.isSuspended) {
-            cardsText += `<span style="background:#FF4500;color:#FFF;padding:2px 6px;border-radius:3px;font-size:0.85em;">⛔ SANCIONADO</span>`;
-        }
-        if (!cardsText) cardsText = '<span style="color: #888;">-</span>';
-        
+    let playersHtml = players.map((p, idx) => {  
         const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
         const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
-        
         return `  
             <tr>  
-                <td>${p.name}</td><td><strong>${p.overall}</strong></td><td>${p.potential}</td><td>${p.age}</td>  
-                <td>${p.position || 'N/A'}</td><td>${p.foot || 'N/A'}</td>  
+                <td>${p.name}</td>  
+                <td><strong>${p.overall}</strong></td>  
+                <td>${p.potential}</td>  
+                <td>${p.age}</td>  
+                <td>${p.position || 'N/A'}</td>  
+                <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.club}</td><td>${cardsText}</td><td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td><td>${askingPrice}</td><td>${estado}</td>  
+                <td>${p.club}</td>  
+                <td>${p.salary.toLocaleString('es-ES')}€</td>  
+                <td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td>${askingPrice}</td>  
+                <td>${estado}</td>  
                 <td>  
-                    <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">Negociar</button>  
+                    <button class="btn btn-sm" ${!p.transferListed && !p.loanListed ? 'disabled' : ''} onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
+                        Negociar  
+                    </button>  
                 </td>  
             </tr>  
         `;  
@@ -340,9 +311,16 @@ function renderAvailableYoungstersMarket(youngsters) {
             <table style="font-size: 0.8em; min-width: 1100px;">  
                 <thead>  
                     <tr>  
-                        <th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>  
+                        <th>JUGADOR</th>  
+                        <th>OVR</th>  
+                        <th>POT</th>  
+                        <th>EDAD</th>  
+                        <th>POS</th>  
+                        <th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>CLUB</th><th>COSTE</th><th>ACCIONES</th>  
+                        <th>CLUB</th>  
+                        <th>COSTE</th>  
+                        <th>ACCIONES</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
@@ -350,10 +328,15 @@ function renderAvailableYoungstersMarket(youngsters) {
   
     let youngstersHtml = youngsters.map(y => `  
         <tr>  
-            <td>${y.name}</td><td><strong>${y.overall}</strong></td><td>${y.potential}</td><td>${y.age}</td>  
-            <td>${y.position || 'N/A'}</td><td>${y.foot || 'N/A'}</td>  
+            <td>${y.name}</td>  
+            <td><strong>${y.overall}</strong></td>  
+            <td>${y.potential}</td>  
+            <td>${y.age}</td>  
+            <td>${y.position || 'N/A'}</td>  
+            <td>${y.foot || 'N/A'}</td>  
             ${ATTRIBUTES.map(attr => `<td>${y[attr] || 0}</td>`).join('')}  
-            <td>${y.club}</td><td>${y.cost.toLocaleString('es-ES')}€</td>  
+            <td>${y.club}</td>  
+            <td>${y.cost.toLocaleString('es-ES')}€</td>  
             <td>  
                 <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
             </td>  
@@ -420,6 +403,7 @@ function updateDashboardStats(state) {
     document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
   
+  
     const warningAlert = document.getElementById('warningAlert');  
     if (warningAlert) {  
         if (weekly < 0) {  
@@ -455,30 +439,33 @@ function updateDashboardStats(state) {
     }  
 }  
   
+// NEW: Función para renderizar la página de calendario (modificada)  
 function renderCalendarPage(state) {  
     const calendarContent = document.getElementById('calendarContent');  
     if (!calendarContent) return;  
   
-    const calendar = state.seasonCalendar;
+    const calendar = state.seasonCalendar; // Usar directamente el calendario del estado  
     if (!calendar || calendar.length === 0) {  
         calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
         return;  
     }  
   
     let calendarHtml = '';  
-    const numJornadas = state.maxSeasonWeeks;
+    const numJornadas = state.maxSeasonWeeks; // Usar el máximo de semanas definido en el estado  
   
     for (let i = 1; i <= numJornadas; i++) {  
-        const jornadaMatches = calendar.filter(match => match.week === i);
+        const jornadaMatches = calendar.filter(match => match.week === i); // Filtra los partidos de la semana 'i'  
   
-        if (jornadaMatches.length === 0) continue;
+        if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
   
         calendarHtml += `  
             <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
             <table>  
                 <thead>  
                     <tr>  
-                        <th>Local</th><th>Visitante</th><th>Resultado</th>  
+                        <th>Local</th>  
+                        <th>Visitante</th>  
+                        <th>Resultado</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
@@ -487,6 +474,7 @@ function renderCalendarPage(state) {
             const isOurMatch = match.home === state.team || match.away === state.team;  
             const rowStyle = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
   
+            // Buscar el resultado en el matchHistory  
             const playedMatch = state.matchHistory.find(  
                 mh => mh.week === i &&  
                       ((mh.home === match.home && mh.away === match.away) ||  
@@ -497,11 +485,16 @@ function renderCalendarPage(state) {
   
             calendarHtml += `  
                 <tr style="${rowStyle}">  
-                    <td>${match.home}</td><td>${match.away}</td><td>${score}</td>  
+                    <td>${match.home}</td>  
+                    <td>${match.away}</td>  
+                    <td>${score}</td>  
                 </tr>  
             `;  
         });  
-        calendarHtml += `</tbody></table>`;  
+        calendarHtml += `  
+                </tbody>  
+            </table>  
+        `;  
     }  
   
     calendarContent.innerHTML = calendarHtml;  
@@ -509,26 +502,12 @@ function renderCalendarPage(state) {
   
   
 function refreshUI(state) {
-    // Actualizar suspensiones y lesiones
-    window.gameLogic.updateSuspensionsAndInjuries?.();
-    
-    // Actualizar estadísticas del dashboard
     updateDashboardStats(state);
-    
-    // Renderizar clasificación
-    if (window.StandingsVisual) {
-        // Usar clasificación con colores
-        window.StandingsVisual.updateUI(state.standings, state.division, state.team);
-    } else {
-        // Fallback a versión básica si no está cargado el sistema visual
-        renderStandingsTable(state);
-    }
-    
-    // Renderizar plantilla y cantera
+    renderStandingsTable(state.standings, state.team);
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
     
-    // Actualizar logo del equipo en header
+    // Actualizar header con logo
     const teamNameElement = document.getElementById('teamName');
     if (teamNameElement && state.team) {
         const storedData = localStorage.getItem(`team_data_${state.team}`);
@@ -536,9 +515,7 @@ function refreshUI(state) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
                 teamNameElement.innerHTML = `
-                    <img src="${teamData.logo}" 
-                         style="width: 25px; height: 25px; object-fit: contain; 
-                                vertical-align: middle; margin-right: 5px;">
+                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
                     ${state.team}
                 `;
             } else {
@@ -549,46 +526,21 @@ function refreshUI(state) {
         }
     }
 
-    // Actualizar alineación si está visible
-    if (document.getElementById('lineup') && 
-        document.getElementById('lineup').classList.contains('active')) {
-        window.renderLineupPageUI?.();
+    if (document.getElementById('lineup').classList.contains('active')) {
+        window.renderLineupPageUI();
     }
 
-    // Actualizar modal de negociación si está activo
     if (state.negotiationStep > 0) {
-        window.updateNegotiationModal?.();
+        window.updateNegotiationModal();
     } else {
-        window.closeModal?.('negotiation');
+        window.closeModal('negotiation');
     }
 
-    // Actualizar tarjeta del próximo partido
     const opponentName = state.nextOpponent || 'Rival Indefinido';
     renderNextMatchCard(state.team, opponentName, state.week);
-    
-    // ========================================
-    // 🆕 SISTEMA DE CLASIFICACIÓN VISUAL CON COLORES
-    // ========================================
-    
-    // Actualizar clasificación con colores (si el sistema está cargado)
-    if (window.StandingsVisual) {
-        try {
-            // Actualizar tabla de clasificación con colores
-            window.StandingsVisual.updateUI(state.standings, state.division, state.team);
-            
-            // Actualizar widget de posición en dashboard (si existe)
-            const posWidget = document.getElementById('positionWidget');
-            if (posWidget) {
-                window.StandingsVisual.updateWidget(state.standings, state.team, state.division);
-            }
-            
-            console.log('✅ Clasificación visual actualizada');
-        } catch (error) {
-            console.warn('⚠️ Error actualizando clasificación visual:', error);
-        }
-    }
 }
 
+// Función para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
     if (storedData) {
@@ -597,12 +549,7 @@ function renderTeamLogo(teamName, size = '30px') {
             return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px;">`;
         }
     }
-    return '';
-}
-
-if (typeof window !== 'undefined') {
-    window.renderPlayerStatusBadges = renderPlayerStatusBadges;
-    window.applyPlayerStatusClasses = applyPlayerStatusClasses;
+    return ''; // Sin logo
 }
 
 export {  
@@ -614,8 +561,7 @@ export {
     renderAvailableYoungstersMarket,  
     renderNextMatchCard,  
     updateDashboardStats,  
-    refreshUI,
-    renderCalendarPage,
-    renderPlayerStatusBadges,
-    applyPlayerStatusClasses
-};
+    refreshUI,  
+    // NEW EXPORT  
+    renderCalendarPage  
+};  
