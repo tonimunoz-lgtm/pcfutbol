@@ -791,3 +791,43 @@ window.counterOffer = function() {
         }
     }
 };
+
+// ✅ AÑADIR
+
+window.firePlayerConfirm = function(playerName) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad.find(p => p.name === playerName);
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    const compensation = player.salary * player.contractYears * 52;
+    
+    const confirmed = confirm(
+        `¿Estás seguro de DESPEDIR a ${playerName}?\n\n` +
+        `Años restantes: ${player.contractYears}\n` +
+        `Salario semanal: ${player.salary.toLocaleString('es-ES')}€\n` +
+        `Indemnización total: ${compensation.toLocaleString('es-ES')}€\n\n` +
+        `⚠️ Esta acción NO se puede deshacer`
+    );
+    
+    if (!confirmed) return;
+    
+    const result = window.gameLogic.firePlayer(playerName);
+    
+    if (result.success) {
+        alert(`${playerName} ha sido despedido.\n\nIndemnización pagada: ${result.compensation.toLocaleString('es-ES')}€`);
+        
+        // Actualizar alineación si estaba en ella
+        if (state.lineup.some(p => p && p.name === playerName)) {
+            const newLineup = state.lineup.filter(p => p && p.name !== playerName);
+            window.gameLogic.setLineup(newLineup);
+        }
+        
+        window.ui.refreshUI(state);
+    } else {
+        alert(result.message);
+    }
+};
