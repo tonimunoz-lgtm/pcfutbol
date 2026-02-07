@@ -1112,3 +1112,85 @@ Salida
     font-size: 1.3em;
     font-weight: bold;
 }
+
+/* Estilos para los botones de iconos en la tabla de plantilla */
+
+.action-icon-btn {
+    background: rgba(85, 136, 255, 0.2);
+    border: 1px solid #5588FF;
+    color: #FFF;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.action-icon-btn:hover:not(:disabled) {
+    background: rgba(85, 136, 255, 0.4);
+    border-color: #FFD700;
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.action-icon-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.action-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(128, 128, 128, 0.2);
+    border-color: #666;
+}
+
+/* Tooltip para los botones */
+.action-icon-btn[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #FFF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 0.75em;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Flecha del tooltip */
+.action-icon-btn[title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 105%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Animación para iconos especiales */
+@keyframes pulse-icon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.action-icon-btn.urgent {
+    animation: pulse-icon 2s infinite;
+}
+
