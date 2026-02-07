@@ -659,13 +659,6 @@ function renderNegotiationsList(state) {
     list.innerHTML = html;
 }
 
-// ✅ ACTUALIZAR refreshUI para incluir negociaciones
-function refreshUI(state) {
-    // ... código existente ...
-    
-    // Añadir al final:
-    renderNegotiationsList(state);
-}
 
 // ✅ EXPORTAR
 export { renderNegotiationsList, ... };
