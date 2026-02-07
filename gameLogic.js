@@ -187,11 +187,12 @@ function generateInitialSquad() {
         player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000);  
         player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5);
         
-        // ✅ AÑADIR CAMPOS DE CONTRATO
-        player.contractType = 'owned';
-        player.contractYears = age < 23 ? 3 + Math.floor(Math.random() * 3) : 
-                               age < 30 ? 2 + Math.floor(Math.random() * 3) : 
-                               1 + Math.floor(Math.random() * 2);
+        // ✅ AÑADIR CAMPOS DE CONTRATO (80% owned, 20% loaned)
+player.contractType = Math.random() < 0.8 ? 'owned' : 'loaned';
+player.contractYears = player.contractType === 'loaned' ? 1 : 
+                       age < 23 ? 3 + Math.floor(Math.random() * 3) : 
+                       age < 30 ? 2 + Math.floor(Math.random() * 3) : 
+                       1 + Math.floor(Math.random() * 2);
         
         // Calcular cláusula de rescisión
         let multiplier = 2.0;
