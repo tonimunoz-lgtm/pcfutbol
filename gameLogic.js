@@ -692,6 +692,9 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
                 return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };  
             }  
             gameState.balance -= offerAmount;  
+            // ✅ REGISTRAR GASTO EN FICHAJES
+if (!gameState.playerPurchases) gameState.playerPurchases = 0;
+gameState.playerPurchases += offerAmount;
             playerExchange.forEach(pName => {  
                 const index = gameState.squad.findIndex(p => p.name === pName);  
                 if (index !== -1) {  
