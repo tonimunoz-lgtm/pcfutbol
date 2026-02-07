@@ -133,13 +133,19 @@
             </div>
         </div>
         
-        <h2>Estado Financiero</h2>
-        <table>
-            <tr><td>Dinero en Caja:</td><td id="dashBalance">0€</td></tr>
-            <tr><td>Ingresos Semanales:</td><td id="dashIncome">0€</td></tr>
-            <tr><td>Gastos Semanales:</td><td id="dashExpenses">0€</td></tr>
-            <tr><td>Balance Semanal:</td><td id="dashWeekly" class="data-value">+0€</td></tr>
-        </table>
+       <h2>Estado Financiero</h2>
+<table>
+    <tr><td>💰 Dinero en Caja:</td><td id="dashBalance" style="font-weight: bold;">0€</td></tr>
+    <tr style="background: rgba(76, 175, 80, 0.1);"><td>📈 Ingresos Semanales:</td><td id="dashIncome" style="color: #4CAF50;">0€</td></tr>
+    <tr style="background: rgba(244, 67, 54, 0.1);"><td>📉 Gastos Semanales:</td><td id="dashExpenses" style="color: #f44336;">0€</td></tr>
+    <tr style="border-top: 2px solid #333;"><td><strong>Balance Semanal:</strong></td><td id="dashWeekly" class="data-value" style="font-weight: bold;">+0€</td></tr>
+    
+    <tr style="height: 10px;"><td colspan="2"></td></tr>
+    
+    <tr style="background: rgba(33, 150, 243, 0.1);"><td>🔵 Fichajes (esta temporada):</td><td id="dashPurchases" style="color: #2196F3;">0€</td></tr>
+    <tr style="background: rgba(76, 175, 80, 0.1);"><td>🟢 Ventas (esta temporada):</td><td id="dashSales" style="color: #4CAF50;">0€</td></tr>
+    <tr style="border-top: 2px solid #333;"><td><strong>Balance Transferencias:</strong></td><td id="dashTransferBalance" style="font-weight: bold;">+0€</td></tr>
+</table>
         
         <h2>Últimas Noticias</h2>
         <div id="newsFeed">
