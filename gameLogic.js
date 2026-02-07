@@ -538,7 +538,10 @@ function sellPlayer(name) {
     const player = gameState.squad.splice(index, 1)[0];  
   
     const salePrice = Math.floor(player.overall * 2000 + (player.matches * 500) * (1 + Math.random() * 0.5));  
-    gameState.balance += salePrice;  
+    gameState.balance += salePrice; 
+    // ✅ REGISTRAR INGRESO POR VENTA
+if (!gameState.playerSalesIncome) gameState.playerSalesIncome = 0;
+gameState.playerSalesIncome += salePrice;
     updateWeeklyFinancials();  
     addNews(`¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}€!`, 'info');  
     return { success: true, message: `${player.name} vendido por ${salePrice}€.` };  
