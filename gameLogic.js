@@ -476,6 +476,119 @@ function signPlayer(player, contractYears = 3, isLoan = false) {
     return { success: true, message: `¡${player.name} ha sido ${messageType}!` };
 }  
   
+
+// ============================================
+// FRAGMENTO 3: Nueva función updateContractsWeekly
+// ============================================
+// UBICACIÓN: Añadir ANTES de la función simulateFullWeek en gameLogic.js
+// ACCIÓN: INSERTAR esta función completa
+
+/**
+ * Actualiza todos los contratos de la plantilla semanalmente
+ * - Decrementa contractWeeks para jugadores propios
+ * - Decrementa loanWeeksRemaining para jugadores cedidos
+ * - Elimina jugadores sin contrato
+ * - Envía avisos de renovación
+ */
+function updateContractsWeekly() {
+    if (!gameState || !gameState.squad) {
+        console.warn('GameState no válido para actualizar contratos');
+        return;
+    }
+    
+    const playersToRemove = [];
+    const renewalWarnings = [];
+    const urgentRenewals = [];
+    
+    gameState.squad.forEach((player, index) => {
+        // Asegurar que todos los jugadores tienen contractType
+        if (!player.contractType) {
+            player.contractType = 'owned';
+        }
+        
+        // ========================================
+        // JUGADORES EN PROPIEDAD
+        // ========================================
+        if (player.contractType === 'owned') {
+            // Inicializar contractWeeks si no existe (jugadores antiguos)
+            if (!player.contractWeeks) {
+                player.contractWeeks = (player.contractYears || 1) * 52;
+            }
+            
+            // Decrementar semanas de contrato
+            player.contractWeeks--;
+            
+            // Actualizar años (solo para display en UI)
+            player.contractYears = Math.floor(player.contractWeeks / 52);
+            
+            // Avisos de renovación
+            if (player.contractWeeks === 12) {
+                urgentRenewals.push(player.name);
+            } else if (player.contractWeeks === 24) {
+                renewalWarnings.push(player.name);
+            }
+            
+            // Contrato expirado
+            if (player.contractWeeks <= 0) {
+                playersToRemove.push(index);
+                addNews(
+                    `⏰ ${player.name} ha finalizado su contrato y abandona el club como agente libre.`,
+                    'warning'
+                );
+            }
+        }
+        
+        // ========================================
+        // JUGADORES CEDIDOS
+        // ========================================
+        else if (player.contractType === 'loan') {
+            // Inicializar loanWeeksRemaining si no existe
+            if (!player.loanWeeksRemaining) {
+                player.loanWeeksRemaining = 52; // 1 año por defecto
+            }
+            
+            // Decrementar semanas de cesión
+            player.loanWeeksRemaining--;
+            
+            // Cesión terminada
+            if (player.loanWeeksRemaining <= 0) {
+                playersToRemove.push(index);
+                addNews(
+                    `🔄 ${player.name} ha finalizado su cesión y vuelve a su club de origen.`,
+                    'info'
+                );
+            }
+        }
+    });
+    
+    // Eliminar jugadores (en orden inverso para no afectar índices)
+    for (let i = playersToRemove.length - 1; i >= 0; i--) {
+        const removedPlayer = gameState.squad[playersToRemove[i]];
+        gameState.squad.splice(playersToRemove[i], 1);
+        
+        // Si el jugador estaba en la alineación, actualizarla
+        if (gameState.lineup.some(p => p && p.name === removedPlayer.name)) {
+            const newLineup = gameState.lineup.filter(p => !p || p.name !== removedPlayer.name);
+            setLineup(newLineup);
+        }
+    }
+    
+    // Notificaciones de renovación
+    if (renewalWarnings.length > 0) {
+        addNews(
+            `📋 ${renewalWarnings.length} jugador(es) con contrato por menos de 6 meses: ${renewalWarnings.slice(0, 3).join(', ')}${renewalWarnings.length > 3 ? '...' : ''}`,
+            'info'
+        );
+    }
+    
+    if (urgentRenewals.length > 0) {
+        addNews(
+            `⚠️ URGENTE: ${urgentRenewals.length} jugador(es) terminan contrato en 3 meses: ${urgentRenewals.slice(0, 3).join(', ')}${urgentRenewals.length > 3 ? '...' : ''}`,
+            'warning'
+        );
+    }
+}
+
 function signYoungster(youngster) {  
     if (gameState.balance < youngster.cost) {  
         return { success: false, message: 'Dinero insuficiente para contratar a este joven.' };  
