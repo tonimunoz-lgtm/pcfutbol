@@ -1741,13 +1741,10 @@ function getAgeModifier(age) {
 function initializeGameSystems() {
     console.log('🎮 Inicializando sistemas del juego...');
     
-    // Sistema de contratos
-    if (window.ContractsSystem && gameState.squad) {
-        gameState.squad = window.ContractsSystem.initialize(
-            gameState.squad, 
-            gameState.division
-        );
-        console.log('✅ Sistema de contratos inicializado');
+   // 🆕 INICIALIZAR SISTEMA DE TRANSFERENCIAS
+    if (window.TransferContractsSystem) {
+        window.TransferContractsSystem.initialize(gameState);
+        console.log('✅ Sistema de transferencias inicializado');
     }
     
     // Sistema de tarjetas y lesiones
