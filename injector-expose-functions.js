@@ -494,3 +494,300 @@ window.openSellPlayerUI = function(playerIndex) {
         window.ui.refreshUI(state);
     }
 };
+
+// ========================================
+// SISTEMA DE VENTAS MEJORADO
+// ========================================
+
+let currentSellPlayerIndex = -1;
+let currentOffer = null;
+
+// Abrir modal de venta
+window.openSellPlayerModal = function(playerIndex) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[playerIndex];
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    if (player.contractType !== 'owned') {
+        alert('Solo puedes vender jugadores en propiedad (no cedidos)');
+        return;
+    }
+    
+    currentSellPlayerIndex = playerIndex;
+    
+    // Rellenar información
+    document.getElementById('sellPlayerName').textContent = player.name;
+    document.getElementById('sellPlayerPosition').textContent = player.position;
+    document.getElementById('sellPlayerAge').textContent = player.age;
+    document.getElementById('sellPlayerOverall').textContent = player.overall;
+    document.getElementById('sellPlayerValue').textContent = player.value.toLocaleString('es-ES');
+    document.getElementById('sellPlayerClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES');
+    document.getElementById('sellPlayerCurrentSalary').textContent = player.salary.toLocaleString('es-ES');
+    
+    // Precio recomendado (70% del valor)
+    const minPrice = Math.round(player.value * 0.7);
+    document.getElementById('sellMinPrice').textContent = minPrice.toLocaleString('es-ES');
+    document.getElementById('sellTransferPrice').value = player.value;
+    
+    // Mostrar modal
+    window.openModal('sellPlayer');
+};
+
+// Actualizar tipo de operación
+window.updateSellOperationType = function() {
+    const type = document.getElementById('sellOperationType').value;
+    
+    if (type === 'transfer') {
+        document.getElementById('sellTransferOptions').style.display = 'block';
+        document.getElementById('sellLoanOptions').style.display = 'none';
+    } else {
+        document.getElementById('sellTransferOptions').style.display = 'none';
+        document.getElementById('sellLoanOptions').style.display = 'block';
+        window.updateLoanCostPreview();
+    }
+};
+
+// Actualizar preview de costes de cesión
+window.updateLoanCostPreview = function() {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[currentSellPlayerIndex];
+    
+    if (!player) return;
+    
+    const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
+    const ourCost = Math.round(player.salary * (wagePercent / 100));
+    const theirCost = player.salary - ourCost;
+    
+    document.getElementById('sellLoanOurCost').textContent = ourCost.toLocaleString('es-ES');
+    document.getElementById('sellLoanTheirCost').textContent = theirCost.toLocaleString('es-ES');
+};
+
+// Actualizar en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    const loanSlider = document.getElementById('sellLoanWagePercent');
+    if (loanSlider) {
+        loanSlider.addEventListener('input', window.updateLoanCostPreview);
+    }
+});
+
+// Confirmar poner en venta
+window.confirmListPlayer = function() {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[currentSellPlayerIndex];
+    
+    if (!player) {
+        alert('Error: Jugador no encontrado');
+        return;
+    }
+    
+    const operationType = document.getElementById('sellOperationType').value;
+    
+    if (operationType === 'transfer') {
+        const price = parseInt(document.getElementById('sellTransferPrice').value);
+        
+        if (!price || price <= 0) {
+            alert('Introduce un precio válido');
+            return;
+        }
+        
+        // Marcar jugador como en venta
+        player.transferListed = true;
+        player.loanListed = false;
+        player.askingPrice = price;
+        
+        window.gameLogic.addNews(
+            `💰 Has puesto a ${player.name} en venta por ${price.toLocaleString('es-ES')}€`,
+            'info'
+        );
+        
+        alert(`${player.name} ha sido puesto en venta por ${price.toLocaleString('es-ES')}€`);
+        
+    } else {
+        // Cesión
+        const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value);
+        
+        player.transferListed = false;
+        player.loanListed = true;
+        player.loanWageContribution = Math.round(player.salary * ((100 - wagePercent) / 100));
+        
+        window.gameLogic.addNews(
+            `🔄 Has puesto a ${player.name} disponible para cesión (asumes ${wagePercent}% salario)`,
+            'info'
+        );
+        
+        alert(`${player.name} ha sido puesto disponible para cesión`);
+    }
+    
+    window.closeModal('sellPlayer');
+    window.ui.refreshUI(state);
+    
+    // Programar generación de oferta
+    setTimeout(() => window.generateOfferForPlayer(player), 5000);
+};
+
+// Generar oferta de IA
+window.generateOfferForPlayer = function(player) {
+    if (!player.transferListed && !player.loanListed) return;
+    
+    // 30% de probabilidad de oferta
+    if (Math.random() > 0.3) return;
+    
+    const state = window.gameLogic.getGameState();
+    const allTeams = [
+        ...window.TEAMS_DATA.primera,
+        ...window.TEAMS_DATA.segunda,
+        ...window.TEAMS_DATA.rfef_grupo1,
+        ...window.TEAMS_DATA.rfef_grupo2
+    ].filter(t => t !== state.team);
+    
+    const buyerTeam = allTeams[Math.floor(Math.random() * allTeams.length)];
+    
+    if (player.transferListed) {
+        // Oferta de compra (70%-110% del precio solicitado)
+        const offerMultiplier = 0.7 + Math.random() * 0.4;
+        const offerAmount = Math.round(player.askingPrice * offerMultiplier);
+        
+        currentOffer = {
+            player: player,
+            playerIndex: state.squad.indexOf(player),
+            buyerTeam: buyerTeam,
+            type: 'transfer',
+            amount: offerAmount,
+            askingPrice: player.askingPrice
+        };
+        
+        // Mostrar oferta
+        document.getElementById('offerBuyerTeam').textContent = buyerTeam;
+        document.getElementById('offerPlayerName').textContent = player.name;
+        document.getElementById('offerType').textContent = '💼 Traspaso Definitivo';
+        document.getElementById('offerAmount').textContent = offerAmount.toLocaleString('es-ES') + '€';
+        document.getElementById('offerAsking').textContent = player.askingPrice.toLocaleString('es-ES') + '€';
+        
+        window.gameLogic.addNews(
+            `📨 ¡Oferta recibida! ${buyerTeam} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${player.name}`,
+            'info'
+        );
+        
+        window.openModal('offerReceived');
+        
+    } else if (player.loanListed) {
+        // Oferta de cesión
+        const wagePercentTheyPay = 30 + Math.floor(Math.random() * 40); // 30%-70%
+        
+        currentOffer = {
+            player: player,
+            playerIndex: state.squad.indexOf(player),
+            buyerTeam: buyerTeam,
+            type: 'loan',
+            wagePercent: wagePercentTheyPay
+        };
+        
+        document.getElementById('offerBuyerTeam').textContent = buyerTeam;
+        document.getElementById('offerPlayerName').textContent = player.name;
+        document.getElementById('offerType').textContent = '🔄 Cesión (1 año)';
+        document.getElementById('offerAmount').textContent = `Asumen ${wagePercentTheyPay}% del salario`;
+        document.getElementById('offerAsking').textContent = 'Cesión';
+        
+        window.gameLogic.addNews(
+            `📨 ¡Oferta de cesión! ${buyerTeam} quiere ceder a ${player.name} (asumen ${wagePercentTheyPay}% salario)`,
+            'info'
+        );
+        
+        window.openModal('offerReceived');
+    }
+};
+
+// Aceptar oferta
+window.acceptOffer = function() {
+    if (!currentOffer) return;
+    
+    const state = window.gameLogic.getGameState();
+    const player = currentOffer.player;
+    
+    if (currentOffer.type === 'transfer') {
+        // Venta definitiva
+        const income = currentOffer.amount;
+        state.balance += income;
+        
+        // Eliminar jugador
+        state.squad.splice(currentOffer.playerIndex, 1);
+        
+        // Registrar en finanzas
+        if (!state.playerSalesIncome) state.playerSalesIncome = 0;
+        state.playerSalesIncome += income;
+        
+        window.gameLogic.addNews(
+            `✅ ¡Venta cerrada! Has vendido a ${player.name} al ${currentOffer.buyerTeam} por ${income.toLocaleString('es-ES')}€`,
+            'success'
+        );
+        
+        alert(`¡Venta exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nIngreso: ${income.toLocaleString('es-ES')}€`);
+        
+    } else if (currentOffer.type === 'loan') {
+        // Cesión
+        const newSalary = Math.round(player.salary * ((100 - currentOffer.wagePercent) / 100));
+        
+        player.contractType = 'loaned_out'; // Cedido a otro equipo
+        player.originalSalary = player.salary;
+        player.salary = newSalary;
+        player.loanedTo = currentOffer.buyerTeam;
+        player.contractYears = 1;
+        
+        window.gameLogic.addNews(
+            `✅ ¡Cesión cerrada! Has cedido a ${player.name} al ${currentOffer.buyerTeam} (pagan ${currentOffer.wagePercent}% salario)`,
+            'success'
+        );
+        
+        alert(`¡Cesión exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nAhorro salarial: ${(player.originalSalary - newSalary).toLocaleString('es-ES')}€/sem`);
+    }
+    
+    window.closeModal('offerReceived');
+    window.ui.refreshUI(state);
+    currentOffer = null;
+};
+
+// Rechazar oferta
+window.rejectOffer = function() {
+    if (!currentOffer) return;
+    
+    window.gameLogic.addNews(
+        `❌ Has rechazado la oferta de ${currentOffer.buyerTeam} por ${currentOffer.player.name}`,
+        'info'
+    );
+    
+    alert(`Oferta rechazada. ${currentOffer.player.name} seguirá en venta.`);
+    
+    window.closeModal('offerReceived');
+    currentOffer = null;
+};
+
+// Contraoferta
+window.counterOffer = function() {
+    if (!currentOffer) return;
+    
+    if (currentOffer.type === 'transfer') {
+        const newPrice = prompt(
+            `Oferta actual: ${currentOffer.amount.toLocaleString('es-ES')}€\n` +
+            `Tu precio: ${currentOffer.askingPrice.toLocaleString('es-ES')}€\n\n` +
+            `Introduce tu contraoferta:`,
+            currentOffer.askingPrice
+        );
+        
+        if (newPrice && parseInt(newPrice) > 0) {
+            // 50% de aceptación si es razonable
+            if (Math.random() < 0.5 && parseInt(newPrice) <= currentOffer.askingPrice * 1.2) {
+                currentOffer.amount = parseInt(newPrice);
+                alert(`${currentOffer.buyerTeam} ha aceptado tu contraoferta de ${parseInt(newPrice).toLocaleString('es-ES')}€`);
+                window.acceptOffer();
+            } else {
+                alert(`${currentOffer.buyerTeam} ha rechazado tu contraoferta`);
+                window.closeModal('offerReceived');
+                currentOffer = null;
+            }
+        }
+    }
+};
