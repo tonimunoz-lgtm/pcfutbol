@@ -605,96 +605,116 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     }  
 }  
   
-function offerToClub(offerAmount, playerExchange = [], isLoan = false) {  
-    const player = gameState.negotiatingPlayer;  
-    if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
-  
-    if (player.loanListed && isLoan) {  
-        const myWageContribution = offerAmount;  
-        if (myWageContribution < 0 || myWageContribution > 100) {  
-             return { success: false, message: 'La contribución salarial debe ser un porcentaje entre 0 y 100.' };  
-        }  
-  
-        const actualWageToPay = player.salary * (myWageContribution / 100);  
-        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0);  
-  
-        let acceptanceChance = 0.5;  
-        if (myWageContribution >= 80) acceptanceChance += 0.3;  
-        else if (myWageContribution >= 50) acceptanceChance += 0.1;  
-        else if (myWageContribution < 30) acceptanceChance -= 0.2;  
-  
-        const roll = Math.random();  
-        const accepted = roll < acceptanceChance;  
-  
-        if (accepted) {  
-            gameState.clubOffer = { type: 'loan', wageContribution: myWageContribution, finalWageForUs };  
-            endNegotiation(true);  
-            const newPlayer = {  
-                ...player,  
-                salary: finalWageForUs,  
-                loan: true,  
-                club: gameState.team  
-            };  
-            return signPlayer(newPlayer);  
-        } else {  
-            endNegotiation();  
-            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.`, type: 'error' };  
-        }  
-  
-    } else {  
-        const playerAskingPrice = player.askingPrice;  
-  
-        let acceptanceChance = 0.5;  
-        const offerFactor = offerAmount / playerAskingPrice;  
-        if (offerFactor >= 1) acceptanceChance += 0.3;  
-        else if (offerFactor >= 0.8) acceptanceChance += 0.1;  
-        else if (offerFactor < 0.6) acceptanceChance -= 0.3;  
-  
-        if (playerExchange.length > 0) {  
-            const totalExchangeValue = playerExchange.reduce((sum, pName) => {  
-                const p = gameState.squad.find(s => s.name === pName);  
-                return sum + (p ? p.value : 0);  
-            }, 0);  
-            acceptanceChance += (totalExchangeValue / player.value) * 0.1;  
-        }  
-  
-        const roll = Math.random();  
-        const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;  
-        acceptanceChance += secretaryEffect;  
-  
-        const accepted = roll < acceptanceChance;  
-  
-        if (accepted) {  
-            if (gameState.balance < offerAmount) {  
-                endNegotiation();  
-                return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };  
-            }  
-            gameState.balance -= offerAmount;  
-            playerExchange.forEach(pName => {  
-                const index = gameState.squad.findIndex(p => p.name === pName);  
-                if (index !== -1) {  
-                    gameState.squad.splice(index, 1);  
-                }  
-            });  
-  
-            const newPlayer = {  
-                ...player,  
-                salary: gameState.playerOffer.salary,  
-                loan: false,  
-                club: gameState.team  
-            };  
-            endNegotiation(true);  
-            return signPlayer(newPlayer);  
-        } else {  
-            if (roll > 0.8) {  
-                endNegotiation();  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.`, type: 'error' };  
-            } else {  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
-            }  
-        }  
-    }  
-}  
+// ============================================
+// FRAGMENTO 2: Función offerToClub CORREGIDA
+// ============================================
+// UBICACIÓN: Buscar "function offerToClub(" en gameLogic.js
+// ACCIÓN: REEMPLAZAR la función completa
+
+function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
+    const player = gameState.negotiatingPlayer;
+    if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };
+
+    // ========================================
+    // CASO 1: CESIÓN (LOAN)
+    // ========================================
+    if (player.loanListed && isLoan) {
+        const myWageContribution = offerAmount;
+        if (myWageContribution < 0 || myWageContribution > 100) {
+             return { success: false, message: 'La contribución salarial debe ser un porcentaje entre 0 y 100.' };
+        }
+
+        const actualWageToPay = player.salary * (myWageContribution / 100);
+        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0);
+
+        let acceptanceChance = 0.5;
+        if (myWageContribution >= 80) acceptanceChance += 0.3;
+        else if (myWageContribution >= 50) acceptanceChance += 0.1;
+        else if (myWageContribution < 30) acceptanceChance -= 0.2;
+
+        const roll = Math.random();
+        const accepted = roll < acceptanceChance;
+
+        if (accepted) {
+            gameState.clubOffer = { type: 'loan', wageContribution: myWageContribution, finalWageForUs };
+            endNegotiation(true);
+            
+            const newPlayer = {
+                ...player,
+                salary: finalWageForUs,
+                club: gameState.team
+            };
+            
+            // 🆕 CORRECCIÓN: Pasar años de cesión y flag isLoan
+            const loanYears = gameState.playerOffer?.contractYears || 1;
+            return signPlayer(newPlayer, loanYears, true);  // ✅ true = es cesión
+        } else {
+            endNegotiation();
+            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.`, type: 'error' };
+        }
+
+    // ========================================
+    // CASO 2: COMPRA (TRANSFER)
+    // ========================================
+    } else {
+        const playerAskingPrice = player.askingPrice;
+
+        let acceptanceChance = 0.5;
+        const offerFactor = offerAmount / playerAskingPrice;
+        if (offerFactor >= 1) acceptanceChance += 0.3;
+        else if (offerFactor >= 0.8) acceptanceChance += 0.1;
+        else if (offerFactor < 0.6) acceptanceChance -= 0.3;
+
+        if (playerExchange.length > 0) {
+            const totalExchangeValue = playerExchange.reduce((sum, pName) => {
+                const p = gameState.squad.find(s => s.name === pName);
+                return sum + (p ? p.value : 0);
+            }, 0);
+            acceptanceChance += (totalExchangeValue / player.value) * 0.1;
+        }
+
+        const roll = Math.random();
+        const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;
+        acceptanceChance += secretaryEffect;
+
+        const accepted = roll < acceptanceChance;
+
+        if (accepted) {
+            if (gameState.balance < offerAmount) {
+                endNegotiation();
+                return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };
+            }
+            
+            gameState.balance -= offerAmount;
+            
+            playerExchange.forEach(pName => {
+                const index = gameState.squad.findIndex(p => p.name === pName);
+                if (index !== -1) {
+                    gameState.squad.splice(index, 1);
+                }
+            });
+
+            const newPlayer = {
+                ...player,
+                salary: gameState.playerOffer.salary,
+                club: gameState.team
+            };
+            
+            endNegotiation(true);
+            
+            // 🆕 CORRECCIÓN: Pasar años de contrato y flag isLoan = false
+            const contractYears = gameState.playerOffer?.contractYears || 3;
+            return signPlayer(newPlayer, contractYears, false);  // ✅ false = no es cesión
+        } else {
+            if (roll > 0.8) {
+                endNegotiation();
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.`, type: 'error' };
+            } else {
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };
+            }
+        }
+    }
+}
   
 function endNegotiation(success = false) {  
     if (!success && gameState.negotiatingPlayer) {  
