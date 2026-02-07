@@ -1842,5 +1842,20 @@ window.selectTeamAndStart = function(teamName, division) {
     <script src="./injector-admin-complete.js"></script>
     <script src="./injector-expose-functions.js"></script>
 
+<!-- ✅ AÑADIR ESTE MODAL AL FINAL DE index.html (antes del </body>) -->
+
+<!-- MODAL: Ofertas Recibidas -->
+<div id="offersModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <span class="modal-close" onclick="window.closeModal('offersModal')">&times;</span>
+        <div id="offersList">
+            <!-- Aquí se renderizan las ofertas -->
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn" onclick="window.closeModal('offersModal')">Cerrar</button>
+        </div>
+    </div>
+</div>
+    
 </body>
 </html>
