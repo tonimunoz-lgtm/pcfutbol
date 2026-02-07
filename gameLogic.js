@@ -1590,8 +1590,6 @@ function firePlayer(playerName) {
     };
 }
 
-// ✅ EXPORTAR
-export { firePlayer, ... };
       
 export {  
     getGameState,  
@@ -1603,6 +1601,7 @@ export {
     signYoungster,  
     promoteYoungster,  
     sellPlayer,  
+    firePlayer,  // <-- ✅ AÑADE ESTA LÍNEA
     expandStadium,  
     improveFacilities,  
     generateStaffCandidates,  
@@ -1626,11 +1625,10 @@ export {
     getLineup,  
     getReservePlayers,  
     setLineup,  
-    validateLineup,  
-    // NEW EXPORTS  
+    validateLineup,
     generateLeagueCalendar,  
     getSeasonCalendar  
-};  
+}; 
 // Al final de gameLogic.js, añadir:
 // Exponer funciones globalmente para injectors
 if (typeof window !== 'undefined') {
