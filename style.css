@@ -1184,3 +1184,24 @@ Salida
     animation: pulse-icon 2s infinite;
 }
 
+
+/* ============================================
+   BOTONES EN ESPEJO – CUADRANTES DERECHOS
+   ============================================ */
+
+/* 1️⃣ Alinear texto a la derecha */
+.quadrant.top-right .menu-button,
+.quadrant.bottom-right .menu-button {
+    text-align: right;
+    padding-left: 15px;      /* quitamos hueco del icono izquierdo */
+    padding-right: 50px;     /* dejamos hueco para icono derecho */
+}
+
+/* 2️⃣ Mover el icono al lado derecho */
+.quadrant.top-right .menu-button::before,
+.quadrant.bottom-right .menu-button::before {
+    left: auto;
+    right: 15px;
+}
+
+
