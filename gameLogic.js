@@ -1704,7 +1704,11 @@ function firePlayer(playerName) {
 
 // Función que se ejecuta cada semana para generar ofertas
 function generateAIOffers() {
-    const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
+    // ✅ FILTRAR: solo jugadores propios (owned) que estén en venta/cesión
+    const playersForSale = gameState.squad.filter(p => 
+        (p.transferListed || p.loanListed) && 
+        p.contractType === 'owned'
+    );
     
     if (playersForSale.length === 0) return;
     
