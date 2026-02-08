@@ -198,6 +198,7 @@ function renderSquadList(squad, currentTeam) {
         return statusHTML;
     })()}
 </td>
+                <td>${contractYears} ${contractYears === 1 ? 'año' : 'años'}</td>
                 <td>${releaseClause.toLocaleString('es-ES')}€</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>
