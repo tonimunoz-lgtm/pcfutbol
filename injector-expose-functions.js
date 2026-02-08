@@ -758,7 +758,7 @@ window.acceptOffer = function() {
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
     
-    window.closeModal('offerReceived');
+    window.closeModal('offerReceivedModal');
     // ✅ Refrescar con estado ACTUALIZADO
     const updatedState = window.gameLogic.getGameState();
     window.ui.refreshUI(updatedState);
