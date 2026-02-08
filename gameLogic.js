@@ -2084,14 +2084,21 @@ export {
     generateLeagueCalendar,  
     getSeasonCalendar  
 }; 
-// Al final de gameLogic.js, añadir:
-// Exponer funciones globalmente para injectors
+
+// ✅ Exponer funciones de ofertas globalmente
 if (typeof window !== 'undefined') {
+    window.acceptOffer = acceptOffer;
+    window.rejectOffer = rejectOffer;
+    window.counterOffer = counterOffer;
+    
+    // También exponer el gameLogic completo
     window.gameLogic = {
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
-        // ... otras funciones que necesites exponer
+        addNews,
+        saveToLocalStorage,
+        // ... resto de funciones que necesites
     };
 }
 
