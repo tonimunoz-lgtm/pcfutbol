@@ -603,6 +603,7 @@ window.confirmListPlayer = function() {
         player.transferListed = true;
         player.loanListed = false;
         player.askingPrice = price;
+        player.weeksOnMarket = 0; // ✅ Inicializar contador
         
         window.gameLogic.addNews(
             `💰 Has puesto a ${player.name} en venta por ${price.toLocaleString('es-ES')}€`,
@@ -618,6 +619,7 @@ window.confirmListPlayer = function() {
         player.transferListed = false;
         player.loanListed = true;
         player.loanWageContribution = Math.round(player.salary * ((100 - wagePercent) / 100));
+        player.weeksOnMarket = 0; // ✅ Inicializar contador
         
         window.gameLogic.addNews(
             `🔄 Has puesto a ${player.name} disponible para cesión (asumes ${wagePercent}% salario)`,
@@ -627,11 +629,23 @@ window.confirmListPlayer = function() {
         alert(`${player.name} ha sido puesto disponible para cesión`);
     }
     
+    // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
+    window.gameLogic.updateGameState(state);
+    window.gameLogic.saveToLocalStorage();
+    
     window.closeModal('sellPlayer');
-    window.ui.refreshUI(state);
+    
+    // ✅ Refrescar con estado actualizado
+    const updatedState = window.gameLogic.getGameState();
+    window.ui.refreshUI(updatedState);
     
     // Programar generación de oferta
-    setTimeout(() => window.generateOfferForPlayer(player), 5000);
+    setTimeout(() => {
+        if (window.gameLogic && window.gameLogic.generateOfferForPlayer) {
+            // Si está en gameLogic, no tiene window.
+            console.log('⚠️ generateOfferForPlayer está en gameLogic, no en window');
+        }
+    }, 5000);
 };
 
 // Generar oferta de IA
