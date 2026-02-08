@@ -145,7 +145,7 @@ function renderSquadList(squad, currentTeam) {
                         <th>DURACIÓN</th>
                         <th>CLÁUSULA</th>
                         <th>SALARIO</th>
-              <!--          <th>VALOR</th>   ✅ COLUMNAS EN ORDEN CORRECTO -->
+                        <th>VALOR</th>
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
@@ -201,7 +201,7 @@ function renderSquadList(squad, currentTeam) {
                 <td>${contractYears} ${contractYears === 1 ? 'año' : 'años'}</td>
                 <td>${releaseClause.toLocaleString('es-ES')}€</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
-      <!--          <td>${p.value.toLocaleString('es-ES')}€</td>  -->
+                <td>${p.value.toLocaleString('es-ES')}€</td>
                 
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
