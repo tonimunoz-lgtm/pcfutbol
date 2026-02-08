@@ -776,7 +776,7 @@ window.rejectOffer = function() {
     
     alert(`Oferta rechazada. ${currentOffer.player.name} seguirá en venta.`);
     
-    window.closeModal('offerReceived');
+    window.closeModal('offerReceivedModal');
     currentOffer = null;
 };
 
@@ -800,7 +800,7 @@ window.counterOffer = function() {
                 window.acceptOffer();
             } else {
                 alert(`${currentOffer.buyerTeam} ha rechazado tu contraoferta`);
-                window.closeModal('offerReceived');
+                window.closeModal('offerReceivedModal');
                 currentOffer = null;
             }
         }
