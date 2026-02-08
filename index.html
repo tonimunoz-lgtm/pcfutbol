@@ -2078,29 +2078,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renewalHouse) renewalHouse.addEventListener('change', window.updateRenewalProbability);
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const mobileMaxWidth = 768;
-    let styleLink = document.querySelector('link[data-theme="dynamic"]');
 
-    // Si no existe, lo creamos
-    if (!styleLink) {
-        styleLink = document.createElement('link');
-        styleLink.rel = 'stylesheet';
-        styleLink.dataset.theme = 'dynamic';
-        document.head.appendChild(styleLink);
-    }
-
-    // Función para actualizar el CSS según ancho de pantalla
-    function applyResponsiveCSS() {
-        const isMobile = window.innerWidth <= mobileMaxWidth;
-        styleLink.href = isMobile ? 'stylemobil.css' : 'style.css'; // mismo nivel que index.html
-        console.log('CSS aplicado:', styleLink.href);
-    }
-
-    // Ejecuta al cargar y al redimensionar
-    applyResponsiveCSS();
-    window.addEventListener('resize', applyResponsiveCSS);
-});
         
         
         // Exponer globalmente
