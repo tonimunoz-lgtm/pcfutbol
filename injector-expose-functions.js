@@ -733,22 +733,26 @@ window.acceptOffer = function() {
         alert(`¡Venta exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nIngreso: ${income.toLocaleString('es-ES')}€`);
         
     } else if (currentOffer.type === 'loan') {
-        // Cesión
-        const newSalary = Math.round(player.salary * ((100 - currentOffer.wagePercent) / 100));
+    // Cesión - Modificar jugador DIRECTAMENTE en squad
+    const squadPlayer = state.squad[currentOffer.playerIndex]; // ✅ Obtener del squad
+    
+    if (squadPlayer) {
+        const newSalary = Math.round(squadPlayer.salary * ((100 - currentOffer.wagePercent) / 100));
         
-        player.contractType = 'loaned_out'; // Cedido a otro equipo
-        player.originalSalary = player.salary;
-        player.salary = newSalary;
-        player.loanedTo = currentOffer.buyerTeam;
-        player.contractYears = 1;
+        squadPlayer.contractType = 'loaned_out'; // ✅ Cedido a otro equipo
+        squadPlayer.originalSalary = squadPlayer.salary;
+        squadPlayer.salary = newSalary;
+        squadPlayer.loanedTo = currentOffer.buyerTeam; // ✅ Guardar equipo destino
+        squadPlayer.contractYears = 1;
         
         window.gameLogic.addNews(
-            `✅ ¡Cesión cerrada! Has cedido a ${player.name} al ${currentOffer.buyerTeam} (pagan ${currentOffer.wagePercent}% salario)`,
+            `✅ ¡Cesión cerrada! Has cedido a ${squadPlayer.name} al ${currentOffer.buyerTeam} (pagan ${currentOffer.wagePercent}% salario)`,
             'success'
         );
         
-        alert(`¡Cesión exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nAhorro salarial: ${(player.originalSalary - newSalary).toLocaleString('es-ES')}€/sem`);
+        alert(`¡Cesión exitosa!\n\n${squadPlayer.name} → ${currentOffer.buyerTeam}\nAhorro salarial: ${(squadPlayer.originalSalary - newSalary).toLocaleString('es-ES')}€/sem`);
     }
+}
 
     // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
     window.gameLogic.updateGameState(state);
