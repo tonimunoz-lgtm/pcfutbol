@@ -677,7 +677,7 @@ window.generateOfferForPlayer = function(player) {
             'info'
         );
         
-        window.openModal('offerReceived');
+        window.openModal('offerReceivedModal');
         
     } else if (player.loanListed) {
         // Oferta de cesión
@@ -702,7 +702,7 @@ window.generateOfferForPlayer = function(player) {
             'info'
         );
         
-        window.openModal('offerReceived');
+        window.openModal('offerReceivedModal');
     }
 };
 
