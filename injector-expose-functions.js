@@ -800,7 +800,7 @@ window.counterOffer = function() {
                 window.acceptOffer();
             } else {
                 alert(`${currentOffer.buyerTeam} ha rechazado tu contraoferta`);
-                window.closeModal('offerReceivedModal');
+                window.closeModal('offerReceived');
                 currentOffer = null;
             }
         }
