@@ -409,6 +409,9 @@ window.firePlayerConfirm = function(playerName) {
     if (playerIndex !== -1) {
         state.squad.splice(playerIndex, 1);
         state.balance -= compensation;
+        // ✅ REGISTRAR INDEMNIZACIÓN
+if (!state.playerCompensations) state.playerCompensations = 0;
+state.playerCompensations += compensation;
         
         if (window.gameLogic.addNews) {
             window.gameLogic.addNews(
