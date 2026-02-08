@@ -924,8 +924,8 @@
     }        
 };
 
-        window.closeModal = function(modalId) {
-    const modal = document.getElementById(modalId);
+        window.closeModal = function(type) {
+    const modal = document.getElementById(type + 'Modal);
     if (modal) {
         modal.classList.remove('active');
     } else {
