@@ -176,15 +176,28 @@ function renderSquadList(squad, currentTeam) {
                 
                 <!-- ✅ COLUMNAS EN ORDEN CORRECTO -->
                 <td>
-                    <span style="color: ${contractType === 'owned' ? '#4CAF50' : '#FF9800'};">
-                        ${contractType === 'owned' ? '✅ Contratado' : '🔄 Cedido'}
-                    </span>
-                </td>
-                <td>
-                    <span style="color: ${contractYears <= 1 ? '#ff3333' : '#FFF'}; font-weight: ${contractYears <= 1 ? 'bold' : 'normal'};">
-                        ${contractYears} ${contractYears === 1 ? 'año' : 'años'}
-                    </span>
-                </td>
+    ${(() => {
+        let statusHTML = '';
+        
+        // Estado de contrato
+        if (p.contractType === 'loaned_out') {
+            statusHTML += `<span style="color: #9E9E9E;">📤 Cedido a ${p.loanedTo || '?'}</span>`;
+        } else if (p.contractType === 'loaned') {
+            statusHTML += `<span style="color: #FF9800;">🔄 Cedido</span>`;
+        } else {
+            statusHTML += `<span style="color: #4CAF50;">✅ Contratado</span>`;
+        }
+        
+        // Indicador de mercado
+        if (p.transferListed) {
+            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">💰 En venta (${p.askingPrice.toLocaleString('es-ES')}€)</span>`;
+        } else if (p.loanListed) {
+            statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">🔄 Cedible</span>`;
+        }
+        
+        return statusHTML;
+    })()}
+</td>
                 <td>${releaseClause.toLocaleString('es-ES')}€</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
                 <td>${p.value.toLocaleString('es-ES')}€</td>
