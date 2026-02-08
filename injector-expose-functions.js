@@ -677,7 +677,7 @@ window.generateOfferForPlayer = function(player) {
             'info'
         );
         
-        window.openModal('offerReceivedModal');
+        window.openModal('offerReceived');
         
     } else if (player.loanListed) {
         // Oferta de cesión
@@ -702,7 +702,7 @@ window.generateOfferForPlayer = function(player) {
             'info'
         );
         
-        window.openModal('offerReceivedModal');
+        window.openModal('offerReceived');
     }
 };
 
@@ -758,7 +758,7 @@ window.acceptOffer = function() {
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
     
-    window.closeModal('offerReceivedModal');
+    window.closeModal('offerReceived');
     // ✅ Refrescar con estado ACTUALIZADO
     const updatedState = window.gameLogic.getGameState();
     window.ui.refreshUI(updatedState);
@@ -776,7 +776,7 @@ window.rejectOffer = function() {
     
     alert(`Oferta rechazada. ${currentOffer.player.name} seguirá en venta.`);
     
-    window.closeModal('offerReceivedModal');
+    window.closeModal('offerReceived');
     currentOffer = null;
 };
 
