@@ -1039,3 +1039,32 @@ window.payReleaseClause = function(encodedPlayerJson) {
     
     alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
 };
+
+window.removeFromMarket = function(playerIndex) {
+    const state = window.gameLogic.getGameState();
+    const player = state.squad[playerIndex];
+    
+    if (!player) {
+        alert('Jugador no encontrado');
+        return;
+    }
+    
+    const wasForSale = player.transferListed;
+    const wasForLoan = player.loanListed;
+    
+    player.transferListed = false;
+    player.loanListed = false;
+    player.askingPrice = undefined;
+    player.loanWageContribution = undefined;
+    player.weeksOnMarket = 0;
+    
+    const message = wasForSale ? 
+        `${player.name} retirado del mercado de transferencias` :
+        `${player.name} ya no está disponible para cesión`;
+    
+    window.gameLogic.addNews(`🔙 ${message}`, 'info');
+    alert(message);
+    
+    window.gameLogic.updateGameState(state);
+    window.ui.refreshUI(state);
+};
