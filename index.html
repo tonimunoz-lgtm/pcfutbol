@@ -924,14 +924,14 @@
     }        
 };
       
-        window.closeModal = function(type) {
-    const modal = document.getElementById(type + 'Modal');
+       window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('active');
     } else {
-        console.warn(`⚠️ Modal no encontrado: ${type}Modal`);
+        console.warn(`⚠️ Modal no encontrado: ${modalId}`);
     }
-};     
+};
       
        window.startGameMode = function(mode) {        
     window.gameMode = mode;        
