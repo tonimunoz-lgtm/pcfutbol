@@ -1680,20 +1680,6 @@ function firePlayer(playerName) {
     };
 }
 
-// Generar ofertas IA cada semana
-function generateAIOffers() {
-    const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
-    
-    if (playersForSale.length === 0) return;
-    
-    playersForSale.forEach(player => {
-        // 30% probabilidad por jugador
-        if (Math.random() < 0.3 && window.generateOfferForPlayer) {
-            window.generateOfferForPlayer(player);
-        }
-    });
-}
-
 // ========================================
 // SISTEMA DE OFERTAS DE IA PARA VENTAS/CESIONES
 // ========================================
@@ -1706,7 +1692,7 @@ function generateAIOffers() {
     
     playersForSale.forEach(player => {
         // 30% probabilidad de recibir oferta cada semana
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.9) {
             generateOfferForPlayer(player);
         }
     });
