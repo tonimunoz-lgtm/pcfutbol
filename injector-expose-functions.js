@@ -658,7 +658,7 @@ window.generateOfferForPlayer = function(player) {
         
         currentOffer = {
             player: player,
-            playerIndex: state.squad.indexOf(player),
+            playerIndex: state.squad.findIndex(p => p.name === player.name), // ✅ CAMBIO AQUÍ
             buyerTeam: buyerTeam,
             type: 'transfer',
             amount: offerAmount,
@@ -685,7 +685,7 @@ window.generateOfferForPlayer = function(player) {
         
         currentOffer = {
             player: player,
-            playerIndex: state.squad.indexOf(player),
+            playerIndex: state.squad.findIndex(p => p.name === player.name), // ✅ CAMBIO AQUÍ
             buyerTeam: buyerTeam,
             type: 'loan',
             wagePercent: wagePercentTheyPay
