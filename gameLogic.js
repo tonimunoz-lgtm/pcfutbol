@@ -1694,6 +1694,311 @@ function generateAIOffers() {
     });
 }
 
+// ========================================
+// SISTEMA DE OFERTAS DE IA PARA VENTAS/CESIONES
+// ========================================
+
+// Función que se ejecuta cada semana para generar ofertas
+function generateAIOffers() {
+    const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
+    
+    if (playersForSale.length === 0) return;
+    
+    playersForSale.forEach(player => {
+        // 30% probabilidad de recibir oferta cada semana
+        if (Math.random() < 0.3) {
+            generateOfferForPlayer(player);
+        }
+    });
+}
+
+// Generar oferta específica para un jugador
+function generateOfferForPlayer(player) {
+    // Seleccionar club oferente aleatorio
+    const allClubs = [
+        ...TEAMS_DATA.primera,
+        ...TEAMS_DATA.segunda,
+        ...TEAMS_DATA.rfef_grupo1,
+        ...TEAMS_DATA.rfef_grupo2
+    ].filter(club => club !== gameState.team);
+    
+    const offeringClub = allClubs[Math.floor(Math.random() * allClubs.length)];
+    
+    let offer = {};
+    
+    if (player.transferListed) {
+        // Oferta de COMPRA
+        // La IA ofrece entre 70% y 110% del precio solicitado
+        const offerPercentage = 0.7 + Math.random() * 0.4; // 70% - 110%
+        const offerAmount = Math.round(player.askingPrice * offerPercentage);
+        
+        offer = {
+            type: 'transfer',
+            player: player,
+            club: offeringClub,
+            amount: offerAmount,
+            originalAskingPrice: player.askingPrice,
+            timestamp: Date.now()
+        };
+        
+        // Noticia
+        addNews(
+            `📨 ¡Oferta recibida! ${offeringClub} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${player.askingPrice.toLocaleString('es-ES')}€)`,
+            offerAmount >= player.askingPrice ? 'success' : 'info'
+        );
+        
+    } else if (player.loanListed) {
+        // Oferta de CESIÓN
+        // La IA asume entre 30% y 70% del salario
+        const wagePercentage = 0.3 + Math.random() * 0.4; // 30% - 70%
+        const wageContribution = Math.round(player.salary * wagePercentage);
+        
+        offer = {
+            type: 'loan',
+            player: player,
+            club: offeringClub,
+            wageContribution: wageContribution,
+            totalSalary: player.salary,
+            timestamp: Date.now()
+        };
+        
+        // Noticia
+        addNews(
+            `📨 ¡Oferta de cesión! ${offeringClub} quiere ceder a ${player.name} y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`,
+            'info'
+        );
+    }
+    
+    // Guardar oferta en el estado
+    if (!gameState.pendingOffers) gameState.pendingOffers = [];
+    gameState.pendingOffers.push(offer);
+    
+    // Abrir modal de ofertas
+    showOffersModal();
+}
+
+// Mostrar modal con todas las ofertas pendientes
+function showOffersModal() {
+    const modal = document.getElementById('offersModal');
+    if (!modal) {
+        console.error('Modal de ofertas no encontrado');
+        return;
+    }
+    
+    renderOffersList();
+    modal.classList.add('active');
+}
+
+// Renderizar lista de ofertas
+function renderOffersList() {
+    const list = document.getElementById('offersList');
+    if (!list) return;
+    
+    if (!gameState.pendingOffers || gameState.pendingOffers.length === 0) {
+        list.innerHTML = '<div class="alert alert-info">No hay ofertas pendientes</div>';
+        return;
+    }
+    
+    let html = '<h2>📨 Ofertas Recibidas</h2>';
+    
+    gameState.pendingOffers.forEach((offer, index) => {
+        if (offer.type === 'transfer') {
+            // Oferta de COMPRA
+            const percentage = Math.round((offer.amount / offer.originalAskingPrice) * 100);
+            const isGoodOffer = offer.amount >= offer.originalAskingPrice;
+            
+            html += `
+                <div class="offer-card" style="
+                    border: 2px solid ${isGoodOffer ? '#4CAF50' : '#FF9800'};
+                    background: rgba(${isGoodOffer ? '76, 175, 80' : '255, 152, 0'}, 0.1);
+                    padding: 15px;
+                    margin: 10px 0;
+                    border-radius: 5px;
+                ">
+                    <h3 style="color: #FFD700;">💰 Oferta de Compra</h3>
+                    <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
+                    <p><strong>Club:</strong> ${offer.club}</p>
+                    <p><strong>Oferta:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.amount.toLocaleString('es-ES')}€</span></p>
+                    <p><strong>Precio solicitado:</strong> ${offer.originalAskingPrice.toLocaleString('es-ES')}€ 
+                       <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
+                    </p>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer(${index})">
+                            ✅ Aceptar
+                        </button>
+                        <button class="btn" style="background: #2196F3;" onclick="window.counterOffer(${index})">
+                            🔄 Contraoferta
+                        </button>
+                        <button class="btn" style="background: #c73446;" onclick="window.rejectOffer(${index})">
+                            ❌ Rechazar
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (offer.type === 'loan') {
+            // Oferta de CESIÓN
+            const percentage = Math.round((offer.wageContribution / offer.totalSalary) * 100);
+            const isGoodOffer = percentage >= 50;
+            
+            html += `
+                <div class="offer-card" style="
+                    border: 2px solid ${isGoodOffer ? '#2196F3' : '#FF9800'};
+                    background: rgba(${isGoodOffer ? '33, 150, 243' : '255, 152, 0'}, 0.1);
+                    padding: 15px;
+                    margin: 10px 0;
+                    border-radius: 5px;
+                ">
+                    <h3 style="color: #FFD700;">🔄 Oferta de Cesión</h3>
+                    <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
+                    <p><strong>Club:</strong> ${offer.club}</p>
+                    <p><strong>Salario total:</strong> ${offer.totalSalary.toLocaleString('es-ES')}€/sem</p>
+                    <p><strong>Asumen:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.wageContribution.toLocaleString('es-ES')}€/sem</span> 
+                       <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
+                    </p>
+                    <p><strong>Tú pagas:</strong> <span style="color: #ff3333;">${(offer.totalSalary - offer.wageContribution).toLocaleString('es-ES')}€/sem</span></p>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer(${index})">
+                            ✅ Aceptar
+                        </button>
+                        <button class="btn" style="background: #c73446;" onclick="window.rejectOffer(${index})">
+                            ❌ Rechazar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    list.innerHTML = html;
+}
+
+// Aceptar oferta
+function acceptOffer(offerIndex) {
+    const offer = gameState.pendingOffers[offerIndex];
+    
+    if (offer.type === 'transfer') {
+        // Venta
+        gameState.balance += offer.amount;
+        gameState.playerSalesIncome = (gameState.playerSalesIncome || 0) + offer.amount;
+        
+        // Eliminar jugador de plantilla
+        const playerIndex = gameState.squad.findIndex(p => p.name === offer.player.name);
+        if (playerIndex !== -1) {
+            gameState.squad.splice(playerIndex, 1);
+        }
+        
+        addNews(
+            `✅ ¡Venta cerrada! Has vendido a ${offer.player.name} al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}€`,
+            'success'
+        );
+        
+    } else if (offer.type === 'loan') {
+        // Cesión
+        const player = gameState.squad.find(p => p.name === offer.player.name);
+        if (player) {
+            player.contractType = 'loaned_out'; // Nuevo estado
+            player.loanedToClub = offer.club;
+            player.originalSalary = player.salary;
+            player.salary = player.salary - offer.wageContribution; // Reducir salario
+        }
+        
+        addNews(
+            `✅ ¡Cesión cerrada! Has cedido a ${offer.player.name} al ${offer.club}. Asumen ${offer.wageContribution.toLocaleString('es-ES')}€/sem del salario`,
+            'success'
+        );
+    }
+    
+    // Eliminar oferta
+    gameState.pendingOffers.splice(offerIndex, 1);
+    
+    // Actualizar modal
+    if (gameState.pendingOffers.length === 0) {
+        closeModal('offersModal');
+    } else {
+        renderOffersList();
+    }
+    
+    // Refrescar UI
+    if (window.ui && window.ui.refreshUI) {
+        window.ui.refreshUI(gameState);
+    }
+}
+
+// Rechazar oferta
+function rejectOffer(offerIndex) {
+    const offer = gameState.pendingOffers[offerIndex];
+    
+    addNews(
+        `❌ Has rechazado la oferta de ${offer.club} por ${offer.player.name}`,
+        'info'
+    );
+    
+    // Eliminar oferta
+    gameState.pendingOffers.splice(offerIndex, 1);
+    
+    // Actualizar modal
+    if (gameState.pendingOffers.length === 0) {
+        closeModal('offersModal');
+    } else {
+        renderOffersList();
+    }
+}
+
+// Contraoferta (solo para ventas)
+function counterOffer(offerIndex) {
+    const offer = gameState.pendingOffers[offerIndex];
+    
+    const counterAmount = prompt(
+        `Contraoferta para ${offer.player.name}\n\n` +
+        `Oferta actual: ${offer.amount.toLocaleString('es-ES')}€\n` +
+        `Tu precio: ${offer.originalAskingPrice.toLocaleString('es-ES')}€\n\n` +
+        `¿Cuánto quieres pedir?`,
+        offer.originalAskingPrice
+    );
+    
+    if (!counterAmount) return;
+    
+    const counter = parseInt(counterAmount);
+    if (isNaN(counter) || counter < 0) {
+        alert('Cantidad inválida');
+        return;
+    }
+    
+    // 50% probabilidad de que acepten si es razonable
+    const isReasonable = counter <= offer.amount * 1.2; // Hasta 20% más
+    const accepted = isReasonable && Math.random() < 0.5;
+    
+    if (accepted) {
+        // Aceptan contraoferta
+        offer.amount = counter;
+        offer.originalAskingPrice = counter;
+        
+        addNews(
+            `✅ ${offer.club} ha aceptado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            'success'
+        );
+        
+        // Ejecutar venta automáticamente
+        acceptOffer(offerIndex);
+    } else {
+        addNews(
+            `❌ ${offer.club} ha rechazado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            'warning'
+        );
+        
+        // Eliminar oferta
+        gameState.pendingOffers.splice(offerIndex, 1);
+        
+        if (gameState.pendingOffers.length === 0) {
+            closeModal('offersModal');
+        } else {
+            renderOffersList();
+        }
+    }
+}
+
 // Recomendaciones del secretario técnico
 function checkMarketRecommendations() {
     const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
