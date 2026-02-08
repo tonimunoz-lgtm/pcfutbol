@@ -1519,7 +1519,11 @@ function validateLineup(lineupToCheck) {
         return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
     }  
   
-    const availablePlayers = gameState.squad.filter(p => !p.isInjured);  
+    // ✅ Filtrar jugadores disponibles (no lesionados Y no cedidos OUT)
+    const availablePlayers = gameState.squad.filter(p => 
+        !p.isInjured && 
+        p.contractType !== 'loaned_out'
+    );
     const availablePlayerNames = new Set(availablePlayers.map(p => p.name));  
     const playerNamesInLineup = new Set();  
     let hasGK = false;  
@@ -1538,7 +1542,11 @@ function validateLineup(lineupToCheck) {
             const fullPlayer = gameState.squad.find(p => p.name === player.name);  
             if (fullPlayer && fullPlayer.isInjured) {  
                 return { success: false, message: `¡Error! ${player.name} está lesionado y no puede jugar.` };  
-            }  
+            }
+            // ✅ Verificar si está cedido OUT
+            if (fullPlayer && fullPlayer.contractType === 'loaned_out') {
+                return { success: false, message: `¡Error! ${player.name} está cedido al ${fullPlayer.loanedTo} y no puede jugar.` };
+            }
             return { success: false, message: `¡Error! ${player.name} no está en la plantilla o no está apto.` };  
         }  
   
@@ -1557,9 +1565,8 @@ function validateLineup(lineupToCheck) {
         return { success: false, message: '¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
     }  
   
-  
     return { success: true, message: 'Alineación válida.' };  
-}  
+} 
   
 function saveToLocalStorage() {  
     localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
