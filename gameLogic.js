@@ -1955,7 +1955,8 @@ function rejectOffer(offerIndex) {
     
     // Actualizar modal
     if (gameState.pendingOffers.length === 0) {
-        closeModal('offersModal');
+        const modal = document.getElementById('offersModal');
+    if (modal) modal.classList.remove('active');
     } else {
         renderOffersList();
     }
