@@ -1694,7 +1694,37 @@ function generateAIOffers() {
     });
 }
 
-
+// Recomendaciones del secretario técnico
+function checkMarketRecommendations() {
+    const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
+    
+    if (playersForSale.length === 0) return;
+    
+    // Si lleva 3+ semanas sin ofertas
+    playersForSale.forEach(player => {
+        if (!player.weeksOnMarket) player.weeksOnMarket = 0;
+        player.weeksOnMarket++;
+        
+        if (player.weeksOnMarket >= 3 && gameState.staff.secretario) {
+            const recommendation = Math.random();
+            
+            if (player.transferListed) {
+                if (recommendation < 0.5) {
+                    const newPrice = Math.round(player.askingPrice * 0.85);
+                    addNews(
+                        `[Secretario Técnico] ${player.name} lleva ${player.weeksOnMarket} semanas sin ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}€`,
+                        'warning'
+                    );
+                } else {
+                    addNews(
+                        `[Secretario Técnico] ${player.name} no recibe ofertas. Quizá deberías retirarlo del mercado y probarlo en la alineación`,
+                        'info'
+                    );
+                }
+            }
+        }
+    });
+}
 
 export {  
     getGameState,  
