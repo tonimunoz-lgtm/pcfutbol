@@ -2079,16 +2079,31 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updateStyle() {
-    const styleLink = document.getElementById('theme-style');
-    if (window.innerWidth <= 768) {
-        styleLink.href = 'stylemobil.css';
+    const mobileMaxWidth = 768;
+
+    // Busca un link existente que tenga rel=stylesheet
+    let styleLink = document.querySelector('link[data-theme="dynamic"]');
+
+    // Si no existe, lo creamos
+    if (!styleLink) {
+        styleLink = document.createElement('link');
+        styleLink.rel = 'stylesheet';
+        styleLink.dataset.theme = 'dynamic'; // marcador para encontrarlo luego
+        document.head.appendChild(styleLink);
+    }
+
+    // Apunta al CSS según el ancho del viewport
+    if (window.innerWidth <= mobileMaxWidth) {
+        styleLink.href = '/stylemobil.css'; // raíz del servidor
     } else {
-        styleLink.href = 'style.css';
+        styleLink.href = '/style.css'; // raíz del servidor
     }
 }
 
-window.addEventListener('resize', updateStyle);
+// Ejecuta al cargar y al redimensionar
 window.addEventListener('load', updateStyle);
+window.addEventListener('resize', updateStyle);
+
         
         
         // Exponer globalmente
