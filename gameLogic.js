@@ -1886,7 +1886,15 @@ function renderOffersList() {
 }
 
 // Aceptar oferta
+// Aceptar oferta
 function acceptOffer(offerIndex) {
+    // ✅ VALIDAR
+    if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
+        console.error('❌ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no válida');
+        return;
+    }
+    
     const offer = gameState.pendingOffers[offerIndex];
     
     if (offer.type === 'transfer') {
@@ -1909,10 +1917,10 @@ function acceptOffer(offerIndex) {
         // Cesión
         const player = gameState.squad.find(p => p.name === offer.player.name);
         if (player) {
-            player.contractType = 'loaned_out'; // Nuevo estado
-            player.loanedToClub = offer.club;
+            player.contractType = 'loaned_out';
+            player.loanedTo = offer.club; // ✅ Corregido: loanedTo en lugar de loanedToClub
             player.originalSalary = player.salary;
-            player.salary = player.salary - offer.wageContribution; // Reducir salario
+            player.salary = player.salary - offer.wageContribution;
         }
         
         addNews(
@@ -1923,16 +1931,17 @@ function acceptOffer(offerIndex) {
     
     // Eliminar oferta
     gameState.pendingOffers.splice(offerIndex, 1);
+    
     // ✅ GUARDAR CAMBIOS
     updateWeeklyFinancials();
     saveToLocalStorage();
     
     // Actualizar modal
     if (gameState.pendingOffers.length === 0) {
-    const modal = document.getElementById('offersModal');
-    if (modal) modal.classList.remove('active');
-} else {
-    renderOffersList();
+        const modal = document.getElementById('offersModal');
+        if (modal) modal.classList.remove('active');
+    } else {
+        renderOffersList();
     }
     
     // Refrescar UI
@@ -1943,6 +1952,13 @@ function acceptOffer(offerIndex) {
 
 // Rechazar oferta
 function rejectOffer(offerIndex) {
+    // ✅ VALIDAR
+    if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
+        console.error('❌ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no válida');
+        return;
+    }
+    
     const offer = gameState.pendingOffers[offerIndex];
     
     addNews(
@@ -1956,7 +1972,7 @@ function rejectOffer(offerIndex) {
     // Actualizar modal
     if (gameState.pendingOffers.length === 0) {
         const modal = document.getElementById('offersModal');
-    if (modal) modal.classList.remove('active');
+        if (modal) modal.classList.remove('active');
     } else {
         renderOffersList();
     }
@@ -1964,6 +1980,13 @@ function rejectOffer(offerIndex) {
 
 // Contraoferta (solo para ventas)
 function counterOffer(offerIndex) {
+    // ✅ VALIDAR
+    if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
+        console.error('❌ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no válida');
+        return;
+    }
+    
     const offer = gameState.pendingOffers[offerIndex];
     
     const counterAmount = prompt(
@@ -1983,7 +2006,7 @@ function counterOffer(offerIndex) {
     }
     
     // 50% probabilidad de que acepten si es razonable
-    const isReasonable = counter <= offer.amount * 1.2; // Hasta 20% más
+    const isReasonable = counter <= offer.amount * 1.2;
     const accepted = isReasonable && Math.random() < 0.5;
     
     if (accepted) {
