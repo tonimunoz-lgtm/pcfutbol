@@ -2008,7 +2008,8 @@ function counterOffer(offerIndex) {
         gameState.pendingOffers.splice(offerIndex, 1);
         
         if (gameState.pendingOffers.length === 0) {
-            closeModal('offersModal');
+            const modal = document.getElementById('offersModal');
+            if (modal) modal.classList.remove('active');
         } else {
             renderOffersList();
         }
