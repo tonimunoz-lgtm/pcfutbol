@@ -425,10 +425,12 @@ window.firePlayerConfirm = function(playerName) {
             window.gameLogic.setLineup(newLineup);
         }
         
-        // Refrescar UI
-        if (window.ui && window.ui.refreshUI) {
-            window.ui.refreshUI(state);
-        }
+       // ✅ Refrescar UI con estado ACTUALIZADO
+if (window.ui && window.ui.refreshUI) {
+    window.gameLogic.updateGameState(state);  // ✅ Guardar cambios primero
+    const updatedState = window.gameLogic.getGameState();  // ✅ Obtener estado actualizado
+    window.ui.refreshUI(updatedState);  // ✅ Refrescar con estado nuevo
+}
     }
 };
 
