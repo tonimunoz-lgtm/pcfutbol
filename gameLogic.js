@@ -525,7 +525,18 @@ function promoteYoungster(name) {
     promotedPlayer.matches = 0;  
     promotedPlayer.isInjured = false;  
     promotedPlayer.weeksOut = 0;  
+
+    // ✅ FIX: ASIGNAR CONTRATO CORRECTO
+    promotedPlayer.contractType = 'owned';
+    promotedPlayer.contractYears = 3; // 3 años fijos
+    
+    // Calcular cláusula
+    let multiplier = 2.5; // Jóvenes = cláusula más alta
+    if (promotedPlayer.potential > 80) multiplier += 1.0;
+    const clause = Math.floor(promotedPlayer.value * multiplier);
+    promotedPlayer.releaseClause = Math.round(clause / 10000) * 10000;
   
+    
     gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
     addNews(`¡${youngster.name} ha sido ascendido a la primera plantilla!`, 'info');  
