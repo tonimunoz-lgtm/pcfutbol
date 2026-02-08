@@ -749,9 +749,15 @@ window.acceptOffer = function() {
         
         alert(`¡Cesión exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nAhorro salarial: ${(player.originalSalary - newSalary).toLocaleString('es-ES')}€/sem`);
     }
+
+    // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
+    window.gameLogic.updateGameState(state);
+    window.gameLogic.saveToLocalStorage();
     
     window.closeModal('offerReceived');
-    window.ui.refreshUI(state);
+    // ✅ Refrescar con estado ACTUALIZADO
+    const updatedState = window.gameLogic.getGameState();
+    window.ui.refreshUI(updatedState);
     currentOffer = null;
 };
 
