@@ -923,7 +923,15 @@
         document.getElementById('matchResultModal').classList.add('active');        
     }        
 };
-      
+
+        window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    } else {
+        console.warn(`⚠️ Modal no encontrado: ${modalId}`);
+    }
+};
       
        window.startGameMode = function(mode) {        
     window.gameMode = mode;        
@@ -933,12 +941,7 @@
     window.openModal('selectTeam');        
 };    
       
-// -------------------------
-// Renderizado de selección de equipos (robusto)
-// -------------------------
-// -------------------------  
-// Renderizado de selección de equipos (robusto)  
-// -------------------------  
+ 
 function renderTeamSelectors() {  
     // Comprobación de seguridad: TEAMS_DATA debe existir  
     if (!window.TEAMS_DATA) {  
