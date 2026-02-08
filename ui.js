@@ -145,7 +145,7 @@ function renderSquadList(squad, currentTeam) {
                         <th>DURACIÓN</th>
                         <th>CLÁUSULA</th>
                         <th>SALARIO</th>
-                        <th>VALOR</th>
+                        //<th>VALOR</th>
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
