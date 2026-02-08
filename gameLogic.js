@@ -1702,12 +1702,19 @@ function generateAIOffers() {
     if (playersForSale.length === 0) return;
     
     playersForSale.forEach(player => {
-        // 30% probabilidad de recibir oferta cada semana
-        if (Math.random() < 0.9) {
+        // Aumentar probabilidad según tiempo en mercado
+        let offerChance = 0.7;
+        
+        if (player.weeksOnMarket >= 2) offerChance = 0.9; // 90% si lleva 2+ semanas
+        if (player.weeksOnMarket >= 4) offerChance = 1.0; // 100% si lleva 4+ semanas
+        
+        if (Math.random() < offerChance) {
             generateOfferForPlayer(player);
         }
     });
 }
+
+
 
 // Generar oferta específica para un jugador
 function generateOfferForPlayer(player) {
