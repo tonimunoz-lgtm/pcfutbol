@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC Fútbol Manager</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="stylemobil.css" media="screen and (max-width: 768px)">
 
 </head>
 <body>
@@ -2078,7 +2077,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renewalCar) renewalCar.addEventListener('change', window.updateRenewalProbability);
     if (renewalHouse) renewalHouse.addEventListener('change', window.updateRenewalProbability);
 });
-       
+
+function updateStyle() {
+    const styleLink = document.getElementById('theme-style');
+    if (window.innerWidth <= 768) {
+        styleLink.href = 'stylemobil.css';
+    } else {
+        styleLink.href = 'style.css';
+    }
+}
+
+window.addEventListener('resize', updateStyle);
+window.addEventListener('load', updateStyle);
+        
         
         // Exponer globalmente
         window.gameLogic = gameLogic;
