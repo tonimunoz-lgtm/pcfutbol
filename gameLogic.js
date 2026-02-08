@@ -1923,12 +1923,16 @@ function acceptOffer(offerIndex) {
     
     // Eliminar oferta
     gameState.pendingOffers.splice(offerIndex, 1);
+    // ✅ GUARDAR CAMBIOS
+    updateWeeklyFinancials();
+    saveToLocalStorage();
     
     // Actualizar modal
     if (gameState.pendingOffers.length === 0) {
-        closeModal('offersModal');
-    } else {
-        renderOffersList();
+    const modal = document.getElementById('offersModal');
+    if (modal) modal.classList.remove('active');
+} else {
+    renderOffersList();
     }
     
     // Refrescar UI
