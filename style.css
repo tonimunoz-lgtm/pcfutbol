@@ -1215,4 +1215,62 @@ Salida
     right: 15px;
 }
 
+/* ==============================
+   FILA CENTRAL HORIZONTAL
+============================== */
+
+.main-center-row {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    z-index: 5;
+}
+
+/* Grupos de botones */
+.center-buttons {
+    display: flex;
+    gap: 16px;
+}
+
+/* Mantener estilo original de botones */
+.center-option {
+    min-width: 150px;
+}
+
+/* ==============================
+   CÍRCULO CENTRAL
+============================== */
+
+.main-center-circle {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1c1c1c 0%, #000 70%);
+    border: 2px solid #444;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* INFO PRÓXIMO PARTIDO */
+#nextMatchInfo {
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.next-match-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #ffd700;
+}
+
+
 
