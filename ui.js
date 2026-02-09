@@ -605,6 +605,9 @@ function refreshUI(state) {
     renderStandingsTable(state.standings, state.team);
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
+
+  window.renderNextMatchInfo(state);
+
     
     // Actualizar header con logo
     const teamNameElement = document.getElementById('teamName');
@@ -727,18 +730,18 @@ function renderTeamLogo(teamName, size = '30px') {
     return ''; // Sin logo
 }
 
-window.renderNextMatchInfo = function () {
-    const state = gameLogic.getGameState();
-    if (!state || !state.nextMatch) return;
+window.renderNextMatchInfo = function (state) {
+    if (!state || !state.nextOpponent) return;
 
-    const match = state.nextMatch;
+    const teamsEl = document.getElementById('nextMatchTeams');
+    const dateEl = document.getElementById('nextMatchDate');
 
-    document.getElementById('nextMatchTeams').textContent =
-        `${match.home} vs ${match.away}`;
+    if (!teamsEl || !dateEl) return;
 
-    document.getElementById('nextMatchDate').textContent =
-        `Jornada ${state.week}`;
+    teamsEl.textContent = `${state.team} vs ${state.nextOpponent}`;
+    dateEl.textContent = `Jornada ${state.week}`;
 };
+
 
 
 export {  
