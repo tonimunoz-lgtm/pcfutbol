@@ -1152,7 +1152,7 @@ Salida
     display: flex;
     justify-content: space-between; /* izquierda - centro - derecha */
     align-items: center;
-    padding: 0 40px; /* margen desde los bordes */
+    padding: 0 80px; /* margen desde los bordes */
     z-index: 5;
 }
 
@@ -1203,7 +1203,6 @@ Salida
     background-color: #920300;
     font-weight: bold;
     color: #FFF;
-    flex-wrap: nowrap
 }
 
 /* ==============================
