@@ -730,6 +730,18 @@ function renderTeamLogo(teamName, size = '30px') {
     return ''; // Sin logo
 }
 
+/*window.renderNextMatchInfo = function (state) {
+    if (!state || !state.nextOpponent) return;
+
+    const teamsEl = document.getElementById('nextMatchTeams');
+    const dateEl = document.getElementById('nextMatchDate');
+
+    if (!teamsEl || !dateEl) return;
+
+    dateEl.textContent = `Jornada ${state.week}`;
+    teamsEl.textContent = `${state.team} vs ${state.nextOpponent}`;
+};*/
+
 window.renderNextMatchInfo = function (state) {
     if (!state || !state.nextOpponent) return;
 
@@ -738,8 +750,8 @@ window.renderNextMatchInfo = function (state) {
 
     if (!teamsEl || !dateEl) return;
 
-    teamsEl.textContent = `${state.team} vs ${state.nextOpponent}`;
     dateEl.textContent = `Jornada ${state.week}`;
+    teamsEl.textContent = `${state.team}\nvs\n${state.nextOpponent}`;
 };
 
 
