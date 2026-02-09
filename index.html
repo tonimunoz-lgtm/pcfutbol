@@ -75,13 +75,24 @@
         </div>
 
         <!-- CÍRCULO CENTRAL: ACCIONES PRINCIPALES -->
-        <div class="main-center-circle">
-            <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
-            <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
-            <button class="center-option load-btn" onclick="window.openSettingsPage()">☁️ CARGAR PARTIDA</button>
-            <button class="center-option exit-btn" onclick="window.openModal('gameMode')">Nuevo Juego</button>
-        </div>
+        <div class="center-buttons-row">
+    <!-- Botones izquierda -->
+    <div class="left-buttons">
+        <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
+        <button class="center-option load-btn" onclick="window.openSettingsPage()">☁️ CARGAR PARTIDA</button>
     </div>
+
+    <!-- CÍRCULO CENTRAL -->
+    <div class="main-center-circle">
+        <!-- Aquí puedes poner info del próximo partido o dejar vacío -->
+    </div>
+
+    <!-- Botones derecha -->
+    <div class="right-buttons">
+        <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
+        <button class="center-option exit-btn" onclick="window.openModal('gameMode')">Nuevo Juego</button>
+    </div>
+</div>
 
     <!-- ============================================
          PÁGINAS DE CONTENIDO (Ocultas por defecto)
