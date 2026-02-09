@@ -1285,6 +1285,7 @@ function simulateFullWeek() {
     updateWeeklyFinancials();  
     generateAIOffers(); // Generar ofertas de IA
     checkMarketRecommendations(); // Recomendaciones del secretario
+    window.renderNextMatchInfo(currentState);
   
     // Mensajes de crisis económica
     if (gameState.staff.segundoEntrenador && 
@@ -2139,4 +2140,35 @@ function getAgeModifier(age) {
     if (age <= 33) return 0.3;        // Casi estancado
     return -0.5;                      // Declive
 }
+
+// ---------------------------------------------------
+// FUNCIÓN PARA ACTUALIZAR EL CÍRCULO CENTRAL
+// ---------------------------------------------------
+window.renderNextMatchInfo = function(state) {
+    // Si no hay datos, no hacer nada
+    if (!state || !state.nextOpponent) return;
+
+    // Referencias a los elementos del HTML
+    const dateEl = document.getElementById('nextMatchDate'); 
+    const teamsEl = document.getElementById('nextMatchTeams');
+
+    // Si alguno falta, salir
+    if (!dateEl || !teamsEl) return;
+
+    // Actualizar jornada y equipos
+    dateEl.textContent = `Jornada ${state.week}`;
+    teamsEl.textContent = `${state.team}\nvs\n${state.nextOpponent}`;
+};
+
+// Estado inicial
+const currentState = {
+    week: 1,
+    team: "Barcelona",
+    nextOpponent: "Real Madrid"
+};
+
+// Actualizar el círculo cuando la página carga
+window.addEventListener("DOMContentLoaded", () => {
+    window.renderNextMatchInfo(currentState);
+});
 
