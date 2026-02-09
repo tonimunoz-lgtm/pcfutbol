@@ -1160,6 +1160,7 @@ Salida
 .center-buttons {
     display: flex;
     gap: 16px;
+    flex-wrap: nowrap;
 }
 
 /* Estilo de los botones */
