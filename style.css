@@ -1236,7 +1236,7 @@ Salida
     text-align: center;
     font-weight: bold;
     color: #fff; /* opcional, para que combine con tu círculo */
-    font-size: 14px; /* ajusta según el tamaño del círculo */
+    font-size: 16px; /* ajusta según el tamaño del círculo */
 }
 
 .next-match-title {
@@ -1247,10 +1247,10 @@ Salida
 }
 
 #nextMatchDate {
-    color: #ed9853;        /* dorado como el título */
+    color: #ed9853;        
     font-weight: bold;
     font-size: 14px;       /* más pequeño que el título */
-    margin-bottom: 4px;    /* separa la jornada del título */
+    margin-bottom: 8px;    /* separa la jornada del título */
     text-align: center;
 }
 
