@@ -727,6 +727,20 @@ function renderTeamLogo(teamName, size = '30px') {
     return ''; // Sin logo
 }
 
+window.renderNextMatchInfo = function () {
+    const state = gameLogic.getGameState();
+    if (!state || !state.nextMatch) return;
+
+    const match = state.nextMatch;
+
+    document.getElementById('nextMatchTeams').textContent =
+        `${match.home} vs ${match.away}`;
+
+    document.getElementById('nextMatchDate').textContent =
+        `Jornada ${state.week}`;
+};
+
+
 export {  
     renderStandingsTable,
     renderTeamLogo,
