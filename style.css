@@ -1219,64 +1219,43 @@ Salida
     right: 15px;
 }
 
-/*botones base añadidos*/
+/* ============================================
+   BOTONES CENTRALES REPOSICIONADOS
+   ============================================ */
 
-.center-buttons {
+/* Botones a la izquierda del círculo */
+.left-buttons {
     position: absolute;
     top: 50%;
-    left: 50%;
-    width: 100%;
+    left: 20px; /* distancia desde el borde izquierdo de la pantalla */
     transform: translateY(-50%);
     display: flex;
-    justify-content: space-between; /* separación izquierda y derecha */
-    padding: 0 20px; /* margen desde los bordes de la pantalla */
-    pointer-events: none; 
-    z-index: 20;
+    gap: 10px; /* separación entre los botones */
+    pointer-events: auto;
+    z-index: 30;
 }
 
-.left-buttons,
+/* Botones a la derecha del círculo */
 .right-buttons {
+    position: absolute;
+    top: 50%;
+    right: 20px; /* distancia desde el borde derecho de la pantalla */
+    transform: translateY(-50%);
     display: flex;
     gap: 10px;
     pointer-events: auto;
+    z-index: 30;
 }
 
-.left-buttons {
-    justify-content: flex-start; /* ¡alineados a la izquierda ahora! */
-}
-
-.right-buttons {
-    justify-content: flex-start; /* ya están correctos, se pegan a la izquierda de su zona */
-}
-
-
+/* Estilo general de todos los botones */
 .center-option {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: auto;
-    width: 150px;
-}
-
-/* IZQUIERDA DEL CÍRCULO */
-.save-btn {
-    left: 50%;
-    margin-left: -340px;
-}
-
-.load-btn {
-    left: 50%;
-    margin-left: -180px;
-}
-
-/* DERECHA DEL CÍRCULO */
-.simulate-btn {
-    left: 50%;
-    margin-left: 180px;
-}
-
-.exit-btn {
-    left: 50%;
-    margin-left: 340px;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background: #3A66B0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
