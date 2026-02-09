@@ -1208,8 +1208,8 @@ Salida
    CÍRCULO CENTRAL
 ============================== */
 .main-center-circle {
-    width: 200px;
-    height: 200px;
+    width: 225px;
+    height: 225px;
     border-radius: 50%;
     background: linear-gradient(45deg, #3A66B0 0%, #1A3E6F 100%);
     border: 3px solid #5588FF;
