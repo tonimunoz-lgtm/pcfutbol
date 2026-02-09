@@ -188,82 +188,6 @@ body {
 
 
 /* ============================================
-   CÍRCULO CENTRAL - Simulación y opciones
-   ============================================ */
-.main-center-circle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #3A66B0 0%, #1A3E6F 100%);
-    border: 3px solid #5588FF;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    z-index: 50;
-}
-
-.center-option {
-    background-color: rgba(0, 0, 0, 0.4);
-    border: 1px solid #5588FF;
-    padding: 8px 15px;
-    border-radius: 5px;
-    color: #FFF;
-    width: 80%;
-    text-align: center;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.center-option:hover {
-    background-color: rgba(0, 0, 0, 0.6);
-    border-color: #FFD700;
-}
-
-.center-option.simulate-btn {
-    background-color: #8BC34A;
-    font-weight: bold;
-    color: #000;
-    border-color: #FFD700;
-}
-
-.center-option.save-btn {
-    background-color: #3A66B0;
-    font-weight: bold;
-    color: #FFD700;
-}
-
-.center-option.exit-btn {
-    background-color: #920300;
-    font-weight: bold;
-    color: #FFF;
-}
-
-.main-ball-decoration {
-    width: 50px;
-    height: 50px;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%238BC34A" d="M504 256c0 136.974-111.026 248-248 248S8 392.974 8 256 119.026 8 256 8s248 111.026 248 248zM192.83 361.35C167.92 386.25 128 357.7 128 322.61V222.84l71.43 14.29c-6.68 13.97-10.6 29.58-10.6 46.12 0 16.54 3.92 32.15 10.6 46.12zm128 0c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12L384 222.84v99.77c0 35.09-39.92 63.64-64.83 38.74zM256 368c-24.58 0-47.78-7.92-67.28-21.43L256 269.43l67.28 77.14C303.78 360.08 280.58 368 256 368zM64 256c0-23.75 6.94-46.06 19.3-65.26L160 216c-3.13 13.9-5 28.53-5 43.6s1.88 29.7 5 43.6l-76.7 25.26C70.94 302.06 64 279.75 64 256zm384 0c0 23.75-6.94 46.06-19.3 65.26L352 296c3.13-13.9 5-28.53 5-43.6s-1.88-29.7-5-43.6l76.7-25.26C441.06 209.94 448 232.25 448 256zM256 144c-16.54 0-32.15 3.92-46.12 10.6L144 192h23l89-102.86V144zM167.28 144c19.5-13.51 42.7-21.43 67.28-21.43s47.78 7.92 67.28 21.43L256 242.57 188.72 165.43zM344.83 154.65c24.91-24.9 64.83 3.65 64.83 38.74v99.77l-71.43-14.29c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12z" /></svg>') no-repeat center center;
-    background-size: contain;
-    position: absolute;
-    bottom: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
-    z-index: 10;
-}
-
-/* ============================================
    BOTONES DE MENÚ - En los cuadrantes
    ============================================ */
 .menu-button {
@@ -1218,34 +1142,19 @@ Salida
 /* ==============================
    FILA CENTRAL HORIZONTAL
 ============================== */
-
-/*.main-center-row {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    z-index: 5;
-}*/
-
 .main-center-row {
     position: absolute;
     top: 50%;
-    left: 0;       /* ocupar todo el ancho desde el borde izquierdo */
-    right: 0;      /* hasta el borde derecho */
-    transform: translateY(-50%); /* solo centrado verticalmente */
+    left: 0;
+    right: 0;
+    transform: translateY(-50%); /* solo centrado vertical */
 
     display: flex;
-    justify-content: space-between; /* separar izquierda, centro y derecha */
+    justify-content: space-between; /* izquierda - centro - derecha */
     align-items: center;
     padding: 0 40px; /* margen desde los bordes */
     z-index: 5;
-    gap: 0; /* ya no necesitamos gap aquí */
 }
-
 
 /* Grupos de botones */
 .center-buttons {
@@ -1253,26 +1162,65 @@ Salida
     gap: 16px;
 }
 
-/* Mantener estilo original de botones */
+/* Estilo de los botones */
 .center-option {
-    min-width: 150px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #5588FF;
+    padding: 8px 15px;
+    border-radius: 5px;
+    color: #FFF;
+    width: 80%;
+    text-align: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.center-option:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: #FFD700;
+}
+
+.center-option.simulate-btn {
+    background-color: #8BC34A;
+    font-weight: bold;
+    color: #000;
+    border-color: #FFD700;
+}
+
+.center-option.save-btn {
+    background-color: #3A66B0;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+.center-option.exit-btn {
+    background-color: #920300;
+    font-weight: bold;
+    color: #FFF;
 }
 
 /* ==============================
    CÍRCULO CENTRAL
 ============================== */
-
 .main-center-circle {
-    width: 260px;
-    height: 260px;
+    width: 300px;
+    height: 300px;
     border-radius: 50%;
-    background: radial-gradient(circle, #1c1c1c 0%, #000 70%);
-    border: 2px solid #444;
+    background: linear-gradient(45deg, #3A66B0 0%, #1A3E6F 100%);
+    border: 3px solid #5588FF;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
 
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    text-align: center;
+    align-items: center;
+    gap: 8px;
+    z-index: 50; /* sobre los botones */
 }
 
 /* INFO PRÓXIMO PARTIDO */
@@ -1280,12 +1228,27 @@ Salida
     color: #fff;
     font-size: 14px;
     line-height: 1.5;
+    text-align: center;
 }
 
 .next-match-title {
     font-weight: bold;
     margin-bottom: 10px;
     color: #ffd700;
+}
+
+/* DECORACIÓN EXTRA DEL CÍRCULO (si la quieres mantener) */
+.main-ball-decoration {
+    width: 50px;
+    height: 50px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%238BC34A" d="M504 256c0 136.974-111.026 248-248 248S8 392.974 8 256 119.026 8 256 8s248 111.026 248 248zM192.83 361.35C167.92 386.25 128 357.7 128 322.61V222.84l71.43 14.29c-6.68 13.97-10.6 29.58-10.6 46.12 0 16.54 3.92 32.15 10.6 46.12zm128 0c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12L384 222.84v99.77c0 35.09-39.92 63.64-64.83 38.74zM256 368c-24.58 0-47.78-7.92-67.28-21.43L256 269.43l67.28 77.14C303.78 360.08 280.58 368 256 368zM64 256c0-23.75 6.94-46.06 19.3-65.26L160 216c-3.13 13.9-5 28.53-5 43.6s1.88 29.7 5 43.6l-76.7 25.26C70.94 302.06 64 279.75 64 256zm384 0c0 23.75-6.94 46.06-19.3 65.26L352 296c3.13-13.9 5-28.53 5-43.6s-1.88-29.7-5-43.6l76.7-25.26C441.06 209.94 448 232.25 448 256zM256 144c-16.54 0-32.15 3.92-46.12 10.6L144 192h23l89-102.86V144zM167.28 144c19.5-13.51 42.7-21.43 67.28-21.43s47.78 7.92 67.28 21.43L256 242.57 188.72 165.43zM344.83 154.65c24.91-24.9 64.83 3.65 64.83 38.74v99.77l-71.43-14.29c6.68-13.97 10.6-29.58 10.6-46.12 0-16.54-3.92-32.15-10.6-46.12z" /></svg>') no-repeat center center;
+    background-size: contain;
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+    z-index: 10;
 }
 
 
