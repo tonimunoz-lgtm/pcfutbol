@@ -1145,19 +1145,25 @@ function simulateFullWeek() {
         nextOpponent: nextOpponent
     });*/
 
-    // ===== CALCULAR PRÓXIMO PARTIDO =====
+   // ===== CALCULAR Y ACTUALIZAR CÍRCULO CENTRAL =====
 let nextWeek;
 let nextOpponent;
 
 if (gameState.seasonType === 'preseason') {
-    if (gameState.week === PRESEASON_WEEKS) {
-        // Última jornada de pretemporada → mostrar jornada 1 regular
+    if (gameState.week >= PRESEASON_WEEKS) {
+        // Última jornada de pretemporada → actualizar a temporada regular
+        gameState.seasonType = 'regular';
+        gameState.week = 1;
+        addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+
+        // Próximo partido → jornada 1 temporada regular
         nextWeek = 1;
         const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
         const nextMatch = nextWeekMatches.find(match =>
             match.home === gameState.team || match.away === gameState.team
         );
         nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+
     } else {
         // Pretemporada normal → siguiente amistoso
         nextWeek = gameState.week + 1;
@@ -1173,12 +1179,13 @@ if (gameState.seasonType === 'preseason') {
     nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
 }
 
-// ===== ACTUALIZAR CÍRCULO CENTRAL =====
+// Actualizar círculo central
 window.renderNextMatchInfo({
     week: nextWeek,
     team: gameState.team,
     nextOpponent: nextOpponent
 });
+
 
 
     // ===== PRETEMPORADA =====
