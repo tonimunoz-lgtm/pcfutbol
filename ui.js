@@ -605,9 +605,6 @@ function refreshUI(state) {
     renderStandingsTable(state.standings, state.team);
     renderSquadList(state.squad, state.team);
     renderAcademyList(state.academy);
-
-  window.renderNextMatchInfo(state);
-
     
     // Actualizar header con logo
     const teamNameElement = document.getElementById('teamName');
@@ -729,7 +726,6 @@ function renderTeamLogo(teamName, size = '30px') {
     }
     return ''; // Sin logo
 }
-
 
 export {  
     renderStandingsTable,
