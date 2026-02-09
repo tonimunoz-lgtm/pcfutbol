@@ -1126,8 +1126,24 @@ function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;  
 
-    // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
-window.updateNextMatchInfo();
+        // ===== CALCULAR PRÓXIMO PARTIDO =====
+    const nextWeek = gameState.week + 1; // siempre mostrar la jornada siguiente
+    const nextWeekMatches = gameState.seasonCalendar.filter(
+        match => match.week === nextWeek
+    );
+    const nextMatch = nextWeekMatches.find(
+        match => match.home === gameState.team || match.away === gameState.team
+    );
+    const nextOpponent = (gameState.seasonType === 'preseason')
+        ? "Rival amistoso"
+        : (nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—");
+
+    // ===== ACTUALIZAR CÍRCULO CENTRAL =====
+    window.renderNextMatchInfo({
+        week: nextWeek,
+        team: gameState.team,
+        nextOpponent: nextOpponent
+    });
 
     // ===== PRETEMPORADA =====
     if (gameState.seasonType === 'preseason') {  
