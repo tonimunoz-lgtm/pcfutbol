@@ -1126,7 +1126,7 @@ function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;  
 
-        // ===== CALCULAR PRÓXIMO PARTIDO =====
+   /*     // ===== CALCULAR PRÓXIMO PARTIDO =====
     const nextWeek = gameState.week + 1; // siempre mostrar la jornada siguiente
     const nextWeekMatches = gameState.seasonCalendar.filter(
         match => match.week === nextWeek
@@ -1143,7 +1143,43 @@ function simulateFullWeek() {
         week: nextWeek,
         team: gameState.team,
         nextOpponent: nextOpponent
-    });
+    });*/
+
+    // ===== CALCULAR PRÓXIMO PARTIDO =====
+let nextWeek;
+let nextOpponent;
+
+if (gameState.seasonType === 'preseason') {
+    if (gameState.week === PRESEASON_WEEKS) {
+        // Última jornada de pretemporada → mostrar jornada 1 regular
+        nextWeek = 1;
+        const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+        const nextMatch = nextWeekMatches.find(match =>
+            match.home === gameState.team || match.away === gameState.team
+        );
+        nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+    } else {
+        // Pretemporada normal → siguiente amistoso
+        nextWeek = gameState.week + 1;
+        nextOpponent = "Rival amistoso";
+    }
+} else {
+    // Temporada regular
+    nextWeek = gameState.week + 1;
+    const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+    const nextMatch = nextWeekMatches.find(match =>
+        match.home === gameState.team || match.away === gameState.team
+    );
+    nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+}
+
+// ===== ACTUALIZAR CÍRCULO CENTRAL =====
+window.renderNextMatchInfo({
+    week: nextWeek,
+    team: gameState.team,
+    nextOpponent: nextOpponent
+});
+
 
     // ===== PRETEMPORADA =====
     if (gameState.seasonType === 'preseason') {  
