@@ -1126,6 +1126,9 @@ function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;  
 
+    // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
+window.updateNextMatchInfo();
+
     // ===== PRETEMPORADA =====
     if (gameState.seasonType === 'preseason') {  
         handlePreseasonWeek();  
@@ -1138,32 +1141,8 @@ function simulateFullWeek() {
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
         }  
 
-        // Actualizar círculo central con próximo partido (pretemporada)
-        const nextWeek = gameState.week;
-        const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
-        const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
-        const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
-
-        window.renderNextMatchInfo({
-            week: nextWeek,
-            team: gameState.team,
-            nextOpponent: nextOpponent
-        });
-
         return { myMatch: null, forcedLoss: false };
     }  
-
-    // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
-    const nextWeek = gameState.week;
-    const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
-    const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
-    const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
-
-    window.renderNextMatchInfo({
-        week: nextWeek,
-        team: gameState.team,
-        nextOpponent: nextOpponent
-    });
 
     // ===== VALIDAR ALINEACIÓN =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
@@ -2158,32 +2137,54 @@ function getAgeModifier(age) {
 // FUNCIÓN PARA ACTUALIZAR EL CÍRCULO CENTRAL
 // ---------------------------------------------------
 window.renderNextMatchInfo = function(state) {
-    if (!state || !state.nextOpponent) return;
+    if (!state) return;
 
     const dateEl = document.getElementById('nextMatchDate'); 
     const teamsEl = document.getElementById('nextMatchTeams');
 
     if (!dateEl || !teamsEl) return;
 
-    // Mostrar la jornada (week) y equipos en líneas separadas
-    dateEl.textContent = `Jornada ${state.week}`;
-    teamsEl.textContent = `${state.team}\nvs\n${state.nextOpponent}`;
+    let nextWeek = state.week;
+    let nextOpponent = state.nextOpponent;
+
+    // Si estamos en pretemporada, mostrar "Rival amistoso"
+    if (gameState.seasonType === 'preseason') {
+        nextOpponent = "Rival amistoso";
+    }
+
+    // Actualizar jornada y equipos
+    dateEl.textContent = `Jornada ${nextWeek}`;
+    teamsEl.textContent = `${state.team}\nvs\n${nextOpponent}`;
 };
 
-// =============================
-// OPCIONAL: actualizar al cargar la página
-// =============================
-window.addEventListener("DOMContentLoaded", () => {
-    // Calcula partido de la próxima jornada automáticamente
-    const nextWeek = gameState.week;
-    const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
-    const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
-    const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+// ---------------------------------------------------
+// FUNCIÓN AUXILIAR: calcular el próximo partido
+// ---------------------------------------------------
+window.updateNextMatchInfo = function() {
+    let nextWeek = gameState.week; // siempre la próxima jornada a jugar
+    let nextOpponent = "—";
+
+    if (gameState.seasonType === 'preseason') {
+        nextOpponent = "Rival amistoso";
+    } else {
+        const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+        const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
+        if (nextMatch) {
+            nextOpponent = nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home;
+        }
+    }
 
     window.renderNextMatchInfo({
         week: nextWeek,
         team: gameState.team,
         nextOpponent: nextOpponent
     });
+};
+
+// ---------------------------------------------------
+// LLAMAR AL CARGAR PÁGINA
+// ---------------------------------------------------
+window.addEventListener("DOMContentLoaded", () => {
+    window.updateNextMatchInfo();
 });
 
