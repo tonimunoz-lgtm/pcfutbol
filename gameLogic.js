@@ -2162,10 +2162,10 @@ window.renderNextMatchInfo = function(state) {
 
 // Estado inicial
 const currentState = {
-    week: 1,
-    team: "Barcelona",
-    nextOpponent: "Real Madrid"
-};
+     week: gameState.week,
+    team: gameState.team,
+    nextOpponent: myTeamMatch ? (myTeamMatch.home === gameState.team ? myTeamMatch.away : myTeamMatch.home) : "—"
+});
 
 // Actualizar el círculo cuando la página carga
 window.addEventListener("DOMContentLoaded", () => {
