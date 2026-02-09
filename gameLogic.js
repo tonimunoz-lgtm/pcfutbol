@@ -103,7 +103,7 @@ function initStandings(teamsArray) {
     return standings;  
 }  
   
-// NEW: Función para generar el calendario de la liga (Round-robin)  
+/*// NEW: Función para generar el calendario de la liga (Round-robin)  
 function generateLeagueCalendar(teams) {  
     const numTeams = teams.length;  
     if (numTeams < 2) return [];  
@@ -149,8 +149,67 @@ function generateLeagueCalendar(teams) {
     fullSchedule.sort((a, b) => a.week - b.week); // Ordenar por semana  
   
     return fullSchedule;  
-}  
-  
+}  */
+
+// Genera calendario de liga con alternancia más realista de casa/fuera
+function generateLeagueCalendar(teams) {
+    const numTeams = teams.length;
+    if (numTeams < 2) return [];
+
+    // Si número de equipos impar, añadimos "BYE"
+    let tempTeams = [...teams];
+    if (numTeams % 2 !== 0) tempTeams.push("BYE");
+
+    const numRounds = tempTeams.length - 1;
+    const schedule = [];
+    const homeAwayTracker = {}; // trackeamos última localía de cada equipo
+
+    tempTeams.forEach(t => homeAwayTracker[t] = null);
+
+    for (let round = 0; round < numRounds; round++) {
+        for (let i = 0; i < tempTeams.length / 2; i++) {
+            let homeTeam = tempTeams[i];
+            let awayTeam = tempTeams[tempTeams.length - 1 - i];
+
+            if (homeTeam === "BYE" || awayTeam === "BYE") continue;
+
+            // Evitar 2 partidos seguidos en casa o fuera
+            if (homeAwayTracker[homeTeam] === 'home' && homeAwayTracker[awayTeam] === 'away') {
+                [homeTeam, awayTeam] = [awayTeam, homeTeam];
+            } else if (homeAwayTracker[homeTeam] === 'home' && homeAwayTracker[awayTeam] === 'home') {
+                // si ambos jugaron en casa, invertir para balancear
+                [homeTeam, awayTeam] = [awayTeam, homeTeam];
+            }
+
+            schedule.push({
+                home: homeTeam,
+                away: awayTeam,
+                week: round + 1,
+                homeGoals: null,
+                awayGoals: null
+            });
+
+            // Actualizar tracker
+            homeAwayTracker[homeTeam] = 'home';
+            homeAwayTracker[awayTeam] = 'away';
+        }
+
+        // Rotación: primer equipo fijo
+        const last = tempTeams.pop();
+        tempTeams.splice(1, 0, last);
+    }
+
+    // Segunda vuelta: invertir local/visitante
+    const secondHalf = schedule.map(match => ({
+        ...match,
+        home: match.away,
+        away: match.home,
+        week: match.week + numRounds
+    }));
+
+    return [...schedule, ...secondHalf].sort((a,b) => a.week - b.week);
+}
+
   
 function generateInitialSquad() {  
     const squad = [];  
