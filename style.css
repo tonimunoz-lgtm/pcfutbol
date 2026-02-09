@@ -1219,7 +1219,7 @@ Salida
    FILA CENTRAL HORIZONTAL
 ============================== */
 
-.main-center-row {
+/*.main-center-row {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1229,7 +1229,23 @@ Salida
     align-items: center;
     gap: 40px;
     z-index: 5;
+}*/
+
+.main-center-row {
+    position: absolute;
+    top: 50%;
+    left: 0;       /* ocupar todo el ancho desde el borde izquierdo */
+    right: 0;      /* hasta el borde derecho */
+    transform: translateY(-50%); /* solo centrado verticalmente */
+
+    display: flex;
+    justify-content: space-between; /* separar izquierda, centro y derecha */
+    align-items: center;
+    padding: 0 40px; /* margen desde los bordes */
+    z-index: 5;
+    gap: 0; /* ya no necesitamos gap aquí */
 }
+
 
 /* Grupos de botones */
 .center-buttons {
