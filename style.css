@@ -1231,6 +1231,14 @@ Salida
     text-align: center;
 }
 
+#nextMatchTeams {
+    white-space: pre-line; /* respeta los saltos de línea \n */
+    text-align: center;
+    font-weight: bold;
+    color: #fff; /* opcional, para que combine con tu círculo */
+    font-size: 14px; /* ajusta según el tamaño del círculo */
+}
+
 .next-match-title {
     font-weight: bold;
     margin-bottom: 10px;
