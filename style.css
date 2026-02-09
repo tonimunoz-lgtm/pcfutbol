@@ -1203,6 +1203,7 @@ Salida
     background-color: #920300;
     font-weight: bold;
     color: #FFF;
+    flex-wrap: nowrap
 }
 
 /* ==============================
