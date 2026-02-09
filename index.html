@@ -74,13 +74,32 @@
             <button class="menu-button red-button stadium-icon" onclick="openPage('facilities')">Estadio</button>
         </div>
 
-        <!-- CÍRCULO CENTRAL: ACCIONES PRINCIPALES -->
-        <div class="main-center-circle">
-            <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
-            <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
-            <button class="center-option load-btn" onclick="window.openSettingsPage()">☁️ CARGAR PARTIDA</button>
-            <button class="center-option exit-btn" onclick="window.openModal('gameMode')">Nuevo Juego</button>
+       <!-- FILA CENTRAL PRINCIPAL -->
+<div class="main-center-row">
+
+    <!-- BOTONES IZQUIERDA -->
+    <div class="center-buttons left">
+        <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ SEGUIR</button>
+        <button class="center-option save-btn" onclick="window.saveCurrentGame()">💾 GRABAR LIGA</button>
+    </div>
+
+    <!-- CÍRCULO CENTRAL -->
+    <div class="main-center-circle">
+        <div id="nextMatchInfo">
+            <div class="next-match-title">PRÓXIMO PARTIDO</div>
+            <div id="nextMatchTeams">-</div>
+            <div id="nextMatchDate">-</div>
         </div>
+    </div>
+
+    <!-- BOTONES DERECHA -->
+    <div class="center-buttons right">
+        <button class="center-option load-btn" onclick="window.openSettingsPage()">☁️ CARGAR PARTIDA</button>
+        <button class="center-option exit-btn" onclick="window.openModal('gameMode')">Nuevo Juego</button>
+    </div>
+
+</div>
+
     </div>
 
     <!-- ============================================
