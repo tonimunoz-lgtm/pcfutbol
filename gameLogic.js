@@ -1138,15 +1138,32 @@ function simulateFullWeek() {
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
         }  
 
-        // Actualizar círculo incluso en pretemporada
+        // Actualizar círculo central con próximo partido (pretemporada)
+        const nextWeek = gameState.week;
+        const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+        const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
+        const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+
         window.renderNextMatchInfo({
-            week: gameState.week,
+            week: nextWeek,
             team: gameState.team,
-            nextOpponent: "—"
+            nextOpponent: nextOpponent
         });
 
         return { myMatch: null, forcedLoss: false };
     }  
+
+    // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
+    const nextWeek = gameState.week;
+    const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+    const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
+    const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+
+    window.renderNextMatchInfo({
+        week: nextWeek,
+        team: gameState.team,
+        nextOpponent: nextOpponent
+    });
 
     // ===== VALIDAR ALINEACIÓN =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
@@ -1181,7 +1198,7 @@ function simulateFullWeek() {
         boardMessages();  
     }  
 
-    // ===== PARTIDOS DE LA JORNADA =====
+    // ===== PARTIDOS DE LA JORNADA ACTUAL =====
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
     console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
 
@@ -1275,17 +1292,6 @@ function simulateFullWeek() {
     
     console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
 
-    // ===== ACTUALIZAR DATOS DEL CÍRCULO CENTRAL =====
-    const nextOpponent = myTeamMatch
-        ? (myTeamMatch.home === gameState.team ? myTeamMatch.away : myTeamMatch.home)
-        : "—";
-
-    window.renderNextMatchInfo({
-        week: gameState.week,
-        team: gameState.team,
-        nextOpponent: nextOpponent
-    });
-
     // ===== FIN DE JORNADA / FINANZAS / AI / SECRETARIO =====
     gameState.week++;  
     updateWeeklyFinancials();  
@@ -1314,6 +1320,7 @@ function simulateFullWeek() {
         
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
 }
+
 
 
   
@@ -2158,20 +2165,25 @@ window.renderNextMatchInfo = function(state) {
 
     if (!dateEl || !teamsEl) return;
 
+    // Mostrar la jornada (week) y equipos en líneas separadas
     dateEl.textContent = `Jornada ${state.week}`;
     teamsEl.textContent = `${state.team}\nvs\n${state.nextOpponent}`;
 };
 
-// Estado inicial con valores por defecto
-const currentState = {
-    week: gameState.week || 1,
-    team: gameState.team || "Mi Equipo",
-    nextOpponent: "—"
-};
-
-// Actualizar el círculo cuando la página carga
+// =============================
+// OPCIONAL: actualizar al cargar la página
+// =============================
 window.addEventListener("DOMContentLoaded", () => {
-    window.renderNextMatchInfo(currentState);
-});
+    // Calcula partido de la próxima jornada automáticamente
+    const nextWeek = gameState.week;
+    const nextWeekMatches = gameState.seasonCalendar.filter(match => match.week === nextWeek);
+    const nextMatch = nextWeekMatches.find(match => match.home === gameState.team || match.away === gameState.team);
+    const nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
 
+    window.renderNextMatchInfo({
+        week: nextWeek,
+        team: gameState.team,
+        nextOpponent: nextOpponent
+    });
+});
 
