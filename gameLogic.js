@@ -1125,25 +1125,34 @@ function endSeason() {
 function simulateFullWeek() {  
     let myMatchResult = null;
     let forcedLoss = false;  
-  
+
+    // ===== PRETEMPORADA =====
     if (gameState.seasonType === 'preseason') {  
         handlePreseasonWeek();  
         gameState.week++;  
         updateWeeklyFinancials();  
+
         if (gameState.week > PRESEASON_WEEKS) {  
             gameState.seasonType = 'regular';  
             gameState.week = 1;  
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
         }  
+
+        // Actualizar círculo incluso en pretemporada
+        window.renderNextMatchInfo({
+            week: gameState.week,
+            team: gameState.team,
+            nextOpponent: "—"
+        });
+
         return { myMatch: null, forcedLoss: false };
     }  
-  
-    // Validar alineación ANTES de simular
+
+    // ===== VALIDAR ALINEACIÓN =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
-  
     applyWeeklyTraining();  
-  
-    // Reducir lesiones
+
+    // Reducir lesiones jugadores y cantera
     gameState.squad.forEach(p => {  
         if (p.isInjured) {  
             p.weeksOut--;  
@@ -1154,7 +1163,7 @@ function simulateFullWeek() {
             }  
         }  
     });
-    
+
     gameState.academy.forEach(y => {  
         if (y.isInjured) {  
             y.weeksOut--;  
@@ -1165,39 +1174,29 @@ function simulateFullWeek() {
             }  
         }  
     });  
-  
+
     secondCoachAdvice();
-  
+
     if (gameState.week % 4 === 0) {  
         boardMessages();  
     }  
-        
-    // Obtener partidos de la jornada actual
+
+    // ===== PARTIDOS DE LA JORNADA =====
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
-    
     console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
-  
-    // Encontrar partido de nuestro equipo
+
     let myTeamMatch = currentWeekMatches.find(match => 
         match.home === gameState.team || match.away === gameState.team
     );  
-  
-    // ===== SIMULAR PARTIDO DE NUESTRO EQUIPO =====
+
+    // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            // Alineación inválida = derrota 0-3
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
-                
-            let homeGoals = 0;  
-            let awayGoals = 0;  
-  
-            if (myTeamMatch.home === gameState.team) {  
-                awayGoals = 3;
-            } else {  
-                homeGoals = 3;
-            }  
-  
-            // Actualizar standings manualmente
+
+            let homeGoals = myTeamMatch.home === gameState.team ? 0 : 3;
+            let awayGoals = myTeamMatch.home === gameState.team ? 3 : 0;
+
             const updateStats = (team, gf, gc) => {
                 const s = gameState.standings[team];
                 if (s) {
@@ -1228,12 +1227,11 @@ function simulateFullWeek() {
                 score: `${homeGoals}-${awayGoals}`,  
             };  
             forcedLoss = true;  
-  
+
             gameState.popularity = Math.max(0, gameState.popularity - 5);
             gameState.fanbase = Math.max(0, gameState.fanbase - 500);  
-  
+
         } else {
-            // Alineación válida - simular normalmente
             const result = playMatch(myTeamMatch.home, myTeamMatch.away);
             myMatchResult = {  
                 home: result.homeTeam,  
@@ -1242,8 +1240,7 @@ function simulateFullWeek() {
                 awayGoals: result.awayGoals,  
                 score: `${result.homeGoals}-${result.awayGoals}`,  
             };
-            
-            // Añadir al historial (playMatch ya actualiza standings)
+
             gameState.matchHistory.push({  
                 week: gameState.week,  
                 home: result.homeTeam,  
@@ -1252,12 +1249,11 @@ function simulateFullWeek() {
             });
         }  
     }  
-  
-    // ===== SIMULAR RESTO DE PARTIDOS DE LA JORNADA =====
+
+    // ===== SIMULAR RESTO DE PARTIDOS =====
     currentWeekMatches
         .filter(match => match !== myTeamMatch)
         .forEach(match => {  
-            // Verificar si ya se jugó
             const alreadyPlayed = gameState.matchHistory.some(mh =>  
                 mh.week === gameState.week &&  
                 mh.home === match.home && 
@@ -1266,8 +1262,6 @@ function simulateFullWeek() {
             
             if (!alreadyPlayed) {  
                 const result = playMatch(match.home, match.away);
-                
-                // ⚠️ IMPORTANTE: Añadir al historial
                 gameState.matchHistory.push({  
                     week: gameState.week,  
                     home: result.homeTeam,  
@@ -1280,35 +1274,47 @@ function simulateFullWeek() {
         });
     
     console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
-  
+
+    // ===== ACTUALIZAR DATOS DEL CÍRCULO CENTRAL =====
+    const nextOpponent = myTeamMatch
+        ? (myTeamMatch.home === gameState.team ? myTeamMatch.away : myTeamMatch.home)
+        : "—";
+
+    window.renderNextMatchInfo({
+        week: gameState.week,
+        team: gameState.team,
+        nextOpponent: nextOpponent
+    });
+
+    // ===== FIN DE JORNADA / FINANZAS / AI / SECRETARIO =====
     gameState.week++;  
     updateWeeklyFinancials();  
-    generateAIOffers(); // Generar ofertas de IA
-    checkMarketRecommendations(); // Recomendaciones del secretario
-    window.renderNextMatchInfo(currentState);
-  
-    // Mensajes de crisis económica
+    generateAIOffers();  
+    checkMarketRecommendations();  
+
+    // ===== CRISIS ECONÓMICA =====
     if (gameState.staff.segundoEntrenador && 
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
         gameState.balance < 0) {  
         addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
     }  
-  
-    // Game Over por quiebra
+
+    // ===== GAME OVER =====
     if (gameState.balance < -100000 && gameState.week > 10) {  
         addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
         alert("¡GAME OVER! Has sido despedido por la directiva.");  
         resetGame();  
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
     }  
-  
-    // Fin de temporada
+
+    // ===== FIN DE TEMPORADA =====
     if (gameState.week > gameState.maxSeasonWeeks) {  
         endSeason();  
     }  
         
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
 }
+
 
   
 function handlePreseasonWeek() {  
@@ -2145,30 +2151,27 @@ function getAgeModifier(age) {
 // FUNCIÓN PARA ACTUALIZAR EL CÍRCULO CENTRAL
 // ---------------------------------------------------
 window.renderNextMatchInfo = function(state) {
-    // Si no hay datos, no hacer nada
     if (!state || !state.nextOpponent) return;
 
-    // Referencias a los elementos del HTML
     const dateEl = document.getElementById('nextMatchDate'); 
     const teamsEl = document.getElementById('nextMatchTeams');
 
-    // Si alguno falta, salir
     if (!dateEl || !teamsEl) return;
 
-    // Actualizar jornada y equipos
     dateEl.textContent = `Jornada ${state.week}`;
     teamsEl.textContent = `${state.team}\nvs\n${state.nextOpponent}`;
 };
 
-// Estado inicial
+// Estado inicial con valores por defecto
 const currentState = {
-     week: gameState.week,
-    team: gameState.team,
-    nextOpponent: myTeamMatch ? (myTeamMatch.home === gameState.team ? myTeamMatch.away : myTeamMatch.home) : "—"
-});
+    week: gameState.week || 1,
+    team: gameState.team || "Mi Equipo",
+    nextOpponent: "—"
+};
 
 // Actualizar el círculo cuando la página carga
 window.addEventListener("DOMContentLoaded", () => {
     window.renderNextMatchInfo(currentState);
 });
+
 
