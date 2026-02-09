@@ -1246,6 +1246,15 @@ Salida
     font-size: 18px;
 }
 
+#nextMatchDate {
+    color: #ed9853;        /* dorado como el título */
+    font-weight: bold;
+    font-size: 14px;       /* más pequeño que el título */
+    margin-bottom: 4px;    /* separa la jornada del título */
+    text-align: center;
+}
+
+
 /* DECORACIÓN EXTRA DEL CÍRCULO (si la quieres mantener) */
 .main-ball-decoration {
     width: 50px;
