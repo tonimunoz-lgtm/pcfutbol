@@ -1220,6 +1220,36 @@ Salida
 }
 
 /*botones base añadidos*/
+
+.center-buttons {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between; /* separación izquierda y derecha */
+    padding: 0 20px; /* margen desde los bordes de la pantalla */
+    pointer-events: none; 
+    z-index: 20;
+}
+
+.left-buttons,
+.right-buttons {
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+}
+
+.left-buttons {
+    justify-content: flex-start; /* ¡alineados a la izquierda ahora! */
+}
+
+.right-buttons {
+    justify-content: flex-start; /* ya están correctos, se pegan a la izquierda de su zona */
+}
+
+
 .center-option {
     position: absolute;
     top: 50%;
