@@ -1679,7 +1679,7 @@ window.selectTeamAndStart = function(teamName, division) {
         window.updateCommercialDisplay = updateCommercialDisplay;
 
         // Alineación
-       /* window.renderLineupPageUI = function() {
+        window.renderLineupPageUI = function() {
             const state = gameLogic.getGameState();
             const currentFormation = FORMATIONS[state.formation];
             let lineup = gameLogic.getLineup();
@@ -1752,89 +1752,9 @@ window.selectTeamAndStart = function(teamName, division) {
                     lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
                 }
             }
-        };*/
+        };
 
         
-// Render horizontal (columnas) sin perder slots ni funcionalidades
-window.renderLineupPageUI = function() {
-    const state = gameLogic.getGameState();
-    const currentFormation = FORMATIONS[state.formation];
-    let lineup = gameLogic.getLineup();
-    let reserves = gameLogic.getReservePlayers();
-
-    const pitchContainer = document.getElementById('pitchContainer');
-    const reservesList = document.getElementById('reservesList');
-
-    pitchContainer.innerHTML = '';
-    reservesList.innerHTML = '';
-
-    const slotWidth = 18;
-    const slotHeight = 10;
-
-    currentFormation.layout.forEach((posData, index) => {
-        const slot = document.createElement('div');
-        slot.classList.add('pitch-position-placeholder');
-        slot.id = `pitch-slot-${index}`;
-
-        // ¡Solo intercambiamos x e y para columnas!
-        const leftOffset = posData.y * (100) + '%'; // horizontal
-        const topOffset = posData.x * (100) + '%';  // vertical
-
-        slot.style.left = leftOffset;
-        slot.style.top = topOffset;
-        slot.style.width = `${slotWidth}%`;
-        slot.style.height = `${slotHeight}%`;
-
-        slot.textContent = posData.pos;
-        slot.ondragover = window.allowDrop;
-        slot.ondragleave = window.dragleave;
-        slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
-
-        const playerInSlot = lineup[index];
-        if (playerInSlot) {
-            const playerDiv = document.createElement('div');
-            playerDiv.classList.add('pitch-player');
-            if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-            playerDiv.draggable = true;
-            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-            playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
-            playerDiv.dataset.playername = playerInSlot.name;
-            slot.appendChild(playerDiv);
-        }
-
-        pitchContainer.appendChild(slot);
-    });
-
-    // Renderizamos suplentes igual que antes
-    reserves.forEach(player => {
-        const playerDiv = document.createElement('div');
-        playerDiv.classList.add('draggable-player');
-        if (player.isInjured) playerDiv.classList.add('injured');
-        playerDiv.draggable = true;
-        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-        playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
-        playerDiv.dataset.playername = player.name;
-        reservesList.appendChild(playerDiv);
-    });
-
-    reservesList.ondragover = window.allowDrop;
-    reservesList.ondragleave = window.dragleave;
-    reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
-
-    // Mensaje de alineación
-    const lineupMessageElem = document.getElementById('lineupMessage');
-    if (lineupMessageElem) {
-        const validation = gameLogic.validateLineup(lineup);
-        if (!validation.success) {
-            lineupMessageElem.className = 'alert alert-warning';
-            lineupMessageElem.innerHTML = `⚠️ Advertencia: ${validation.message}`;
-        } else {
-            lineupMessageElem.className = 'alert alert-info';
-            lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
-        }
-    }
-};
-
         
 
         window.saveLineup = function() {
