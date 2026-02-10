@@ -1272,6 +1272,7 @@ Salida
 
 
 /* DECORACIÓN tactica  */
+/* Contenedor principal: campo + banquillo */
 #tactic-container {
     display: flex;
     gap: 20px;
@@ -1280,18 +1281,22 @@ Salida
     align-items: flex-start;
 }
 
+/* Campo de juego */
 #tactic-field {
     position: relative;
-    width: 800px;   /* ancho del campo */
-    height: 500px;  /* alto del campo */
+    width: 100%;               /* ocupa todo el ancho del contenedor */
+    max-width: 800px;           /* límite máximo para pantallas grandes */
+    aspect-ratio: 16/9;         /* campo horizontal */
     background-image: url('assets/imagenes/campodefutbol.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    border: 2px solid #333; /* opcional para ver los bordes */
-    border-radius: 10px;     /* opcional */
+    border: 2px solid #333;
+    border-radius: 10px;
+    overflow: hidden;           /* evita que los jugadores se salgan del campo */
 }
 
+/* Jugadores en el campo */
 .player {
     position: absolute;
     width: 50px;
@@ -1305,18 +1310,21 @@ Salida
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s;
+    transform: translate(-50%, -50%); /* centrado exacto */
 }
 
 .player.training-focus {
     box-shadow: 0 0 15px 5px yellow;
 }
 
+/* Banquillo */
 #tactic-bench {
     width: 200px;
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
 }
+
 #tactic-bench h3 {
     width: 100%;
     text-align: center;
@@ -1324,8 +1332,8 @@ Salida
 
 .bench-player {
     padding: 5px 10px;
-    margin: 5px 0;
     background-color: #eee;
     border-radius: 4px;
     text-align: center;
+    flex: 1 1 40px; /* ajusta el tamaño de los suplentes */
 }
