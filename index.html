@@ -1678,7 +1678,7 @@ window.selectTeamAndStart = function(teamName, division) {
         }
         window.updateCommercialDisplay = updateCommercialDisplay;
 
-        /*// Alineación
+        // Alineación
         window.renderLineupPageUI = function() {
             const state = gameLogic.getGameState();
             const currentFormation = FORMATIONS[state.formation];
@@ -1752,100 +1752,9 @@ window.selectTeamAndStart = function(teamName, division) {
                     lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
                 }
             }
-        };*/
+        };
 
-        // Alineación (horizontal en columnas)
-window.renderLineupPageUI = function() {
-    const state = gameLogic.getGameState();
-    const currentFormation = FORMATIONS[state.formation];
-    let lineup = gameLogic.getLineup();
-    let reserves = gameLogic.getReservePlayers();
-
-    const pitchContainer = document.getElementById('pitchContainer');
-    const reservesList = document.getElementById('reservesList');
-
-    pitchContainer.innerHTML = '';
-    reservesList.innerHTML = '';
-
-    const slotWidth = 18;
-    const slotHeight = 10;
-
-    // --- Agrupar jugadores por columna según formación ---
-    // Portero | Defensas | Medios | Delanteros
-    const playersByColumn = [
-        lineup.slice(0,1),             // portero
-        lineup.slice(1, currentFormation.layout[1]?.count + 1), // defensas
-        lineup.slice(currentFormation.layout[1]?.count + 1, currentFormation.layout[1]?.count + currentFormation.layout[2]?.count + 1), // medios
-        lineup.slice(currentFormation.layout[1]?.count + currentFormation.layout[2]?.count + 1) // delanteros
-    ];
-
-    const totalColumns = playersByColumn.length;
-
-    playersByColumn.forEach((columnPlayers, colIndex) => {
-        const xPercent = (colIndex + 1) * (100 / (totalColumns + 1)); // posición horizontal de columna
-        const yStep = 100 / (columnPlayers.length + 1);               // espacio vertical por jugador en columna
-
-        columnPlayers.forEach((player, rowIndex) => {
-            const yPercent = (rowIndex + 1) * yStep;
-
-            const slot = document.createElement('div');
-            slot.classList.add('pitch-position-placeholder');
-            slot.id = `pitch-slot-${state.lineup.indexOf(player)}`;
-
-            slot.style.left = `${xPercent}%`;
-            slot.style.top = `${yPercent}%`;
-            slot.style.width = `${slotWidth}%`;
-            slot.style.height = `${slotHeight}%`;
-            slot.textContent = player.position;
-
-            slot.ondragover = window.allowDrop;
-            slot.ondragleave = window.dragleave;
-            slot.ondrop = (ev) => window.drop(ev, slot.id);
-
-            // --- Render jugador ---
-            const playerDiv = document.createElement('div');
-            playerDiv.classList.add('pitch-player');
-            if (player.isInjured) playerDiv.classList.add('injured');
-            playerDiv.draggable = true;
-            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-            playerDiv.innerHTML = `<span>${player.name}</span><span>(${player.position}, ${player.overall})</span>`;
-            playerDiv.dataset.playername = player.name;
-
-            slot.appendChild(playerDiv);
-            pitchContainer.appendChild(slot);
-        });
-    });
-
-    // --- Render suplentes ---
-    reserves.forEach(player => {
-        const playerDiv = document.createElement('div');
-        playerDiv.classList.add('draggable-player');
-        if (player.isInjured) playerDiv.classList.add('injured');
-        playerDiv.draggable = true;
-        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-        playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
-        playerDiv.dataset.playername = player.name;
-        reservesList.appendChild(playerDiv);
-    });
-
-    reservesList.ondragover = window.allowDrop;
-    reservesList.ondragleave = window.dragleave;
-    reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
-
-    // --- Mensaje de alineación ---
-    const lineupMessageElem = document.getElementById('lineupMessage');
-    if (lineupMessageElem) {
-        const validation = gameLogic.validateLineup(lineup);
-        if (!validation.success) {
-            lineupMessageElem.className = 'alert alert-warning';
-            lineupMessageElem.innerHTML = `⚠️ Advertencia: ${validation.message}`;
-        } else {
-            lineupMessageElem.className = 'alert alert-info';
-            lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
-        }
-    }
-};
-
+        
         
 
         window.saveLineup = function() {
