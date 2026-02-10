@@ -1754,7 +1754,8 @@ window.selectTeamAndStart = function(teamName, division) {
             }
         };*/
 
-        // Alineación - renderizado horizontal con slots visibles
+        
+// Render horizontal (columnas) sin perder slots ni funcionalidades
 window.renderLineupPageUI = function() {
     const state = gameLogic.getGameState();
     const currentFormation = FORMATIONS[state.formation];
@@ -1770,26 +1771,17 @@ window.renderLineupPageUI = function() {
     const slotWidth = 18;
     const slotHeight = 10;
 
-    // Definimos número máximo de filas y columnas de la formación
-    const totalColumns = currentFormation.columns || 4; // columnas: portero + defensa + medio + delantero
-    const maxRowsPerColumn = currentFormation.maxRows || 5; // filas por columna
-
-    // Recorremos los jugadores según la formación
     currentFormation.layout.forEach((posData, index) => {
         const slot = document.createElement('div');
         slot.classList.add('pitch-position-placeholder');
         slot.id = `pitch-slot-${index}`;
 
-        // Obtenemos columna y fila del jugador
-        const columnIndex = posData.column; // 0..totalColumns-1
-        const rowIndex = posData.row;       // 0..maxRowsPerColumn-1
+        // ¡Solo intercambiamos x e y para columnas!
+        const leftOffset = posData.y * (100) + '%'; // horizontal
+        const topOffset = posData.x * (100) + '%';  // vertical
 
-        // Calculamos posición horizontal (left) y vertical (top) en %
-        const leftOffset = (columnIndex + 1) * (100 / (totalColumns + 1)) - slotWidth / 2;
-        const topOffset = (rowIndex + 1) * (100 / (maxRowsPerColumn + 1)) - slotHeight / 2;
-
-        slot.style.left = `${leftOffset}%`;
-        slot.style.top = `${topOffset}%`;
+        slot.style.left = leftOffset;
+        slot.style.top = topOffset;
         slot.style.width = `${slotWidth}%`;
         slot.style.height = `${slotHeight}%`;
 
@@ -1798,7 +1790,6 @@ window.renderLineupPageUI = function() {
         slot.ondragleave = window.dragleave;
         slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
-        // Renderizamos el jugador si existe
         const playerInSlot = lineup[index];
         if (playerInSlot) {
             const playerDiv = document.createElement('div');
@@ -1814,7 +1805,7 @@ window.renderLineupPageUI = function() {
         pitchContainer.appendChild(slot);
     });
 
-    // Renderizamos suplentes
+    // Renderizamos suplentes igual que antes
     reserves.forEach(player => {
         const playerDiv = document.createElement('div');
         playerDiv.classList.add('draggable-player');
