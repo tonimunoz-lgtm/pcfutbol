@@ -789,6 +789,17 @@
         </div>
     </div>
 
+    <!-- Modal de jugador -->
+<div id="playerModal" class="player-modal">
+    <div class="player-modal-content">
+        <span class="player-modal-close" onclick="closePlayerModal()">&times;</span>
+        <h2 id="modalPlayerName"></h2>
+        <p id="modalPlayerPosition"></p>
+        <p id="modalPlayerOverall"></p>
+        <p id="modalPlayerOther"></p> <!-- aquí puedes añadir más stats si quieres -->
+    </div>
+</div>
+
     <!-- SCRIPTS DEL JUEGO -->
     <script type="module">
         import * as gameLogic from './gameLogic.js';
@@ -2117,16 +2128,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renewalHouse) renewalHouse.addEventListener('change', window.updateRenewalProbability);
 });
 
-// modal con datos del jugador --------------------------------------------------
-<div id="playerModal" class="player-modal">
-    <div class="player-modal-content">
-        <span class="player-modal-close" onclick="closePlayerModal()">&times;</span>
-        <h2 id="modalPlayerName"></h2>
-        <p id="modalPlayerPosition"></p>
-        <p id="modalPlayerOverall"></p>
-        <p id="modalPlayerOther"></p> <!-- aquí puedes añadir más stats si quieres -->
-    </div>
-</div>
 
    // Abrir modal con datos del jugador --------------------------------------------------
 function openPlayerModal(player) {
