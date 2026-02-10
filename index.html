@@ -2148,33 +2148,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
    // Abrir modal con datos del jugador --------------------------------------------------
-function openPlayerModal(player) {
-    document.getElementById('modalPlayerName').innerText = player.name;
-    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position}`;
-    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall}`;
-    
-    // Si quieres mostrar más stats:
-    document.getElementById('modalPlayerOther').innerHTML = `
-        Edad: ${player.age || 'N/A'}<br>
-        Nacionalidad: ${player.nationality || 'N/A'}<br>
-        Lesionado: ${player.isInjured ? 'Sí' : 'No'}
-    `;
-    
+// Abrir modal con todos los datos
+window.openPlayerModal = function(player) {
+    // Personal
+    const personal = player.personal || {};
+    document.getElementById('modalPlayerName').textContent = personal.name || "Desconocido";
+    document.getElementById('modalPlayerPosition').textContent = `Posición: ${personal.position || '-'}`;
+    document.getElementById('modalPlayerAge').textContent = `Edad: ${personal.age || '-'}`;
+    document.getElementById('modalPlayerNationality').textContent = `Nacionalidad: ${personal.nationality || '-'}`;
+    document.getElementById('modalPlayerFoot').textContent = `Pie dominante: ${personal.foot || '-'}`;
+
+    // Attributes
+    const attributes = player.attributes || {};
+    const attrContainer = document.getElementById('modalPlayerAttributes');
+    attrContainer.innerHTML = "";
+    for (const key in attributes) {
+        const p = document.createElement('p');
+        p.textContent = `${key}: ${attributes[key]}`;
+        attrContainer.appendChild(p);
+    }
+
+    // Contract
+    const contract = player.contract || {};
+    const contractContainer = document.getElementById('modalPlayerContract');
+    contractContainer.innerHTML = "";
+    for (const key in contract) {
+        const p = document.createElement('p');
+        p.textContent = `${key}: ${contract[key]}`;
+        contractContainer.appendChild(p);
+    }
+
+    // Status
+    const status = player.status || {};
+    const statusContainer = document.getElementById('modalPlayerStatus');
+    statusContainer.innerHTML = "";
+    for (const key in status) {
+        const p = document.createElement('p');
+        p.textContent = `${key}: ${status[key]}`;
+        statusContainer.appendChild(p);
+    }
+
+    // Stats
+    const stats = player.stats || {};
+    const statsContainer = document.getElementById('modalPlayerStats');
+    statsContainer.innerHTML = "";
+    for (const key in stats) {
+        const p = document.createElement('p');
+        p.textContent = `${key}: ${stats[key]}`;
+        statsContainer.appendChild(p);
+    }
+
+    // History
+    const history = player.history || [];
+    const historyContainer = document.getElementById('modalPlayerHistory');
+    historyContainer.innerHTML = "";
+    if (history.length === 0) {
+        historyContainer.textContent = "Sin historial";
+    } else {
+        const ul = document.createElement('ul');
+        history.forEach(event => {
+            const li = document.createElement('li');
+            li.textContent = event;
+            ul.appendChild(li);
+        });
+        historyContainer.appendChild(ul);
+    }
+
+    // Mostrar modal
     document.getElementById('playerModal').style.display = 'block';
 }
 
 // Cerrar modal
-function closePlayerModal() {
+window.closePlayerModal = function() {
     document.getElementById('playerModal').style.display = 'none';
 }
 
-// Cerrar al hacer clic fuera del contenido
-window.onclick = function(event) {
-    const modal = document.getElementById('playerModal');
-    if (event.target == modal) {
-        closePlayerModal();
-    }
-};
      // final modal con datos del jugador -------------------------------------------------- 
         
         // Exponer globalmente
