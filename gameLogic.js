@@ -2501,7 +2501,6 @@ window.addEventListener("DOMContentLoaded", () => {
 // ---------------------------------------------------
 // campo de tactica
 // ---------------------------------------------------
-import { FORMATIONS } from './config.js';
 
 // ---------------------------------------------------
 // TÁCTICAS (VISUAL)
