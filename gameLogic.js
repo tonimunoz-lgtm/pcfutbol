@@ -2526,14 +2526,14 @@ function renderTactic() {
     formationArr.forEach((count, rowIndex) => {
         for (let i = 0; i < count; i++) {
             const x = (i + 1) * (100 / (count + 1));
-            const y = 100 - ((rowIndex + 1) * (100 / (formationArr.length + 1)));
+            const y = ((rowIndex + 1) * (100 / (formationArr.length + 1))); // 🔹 fila arriba a abajo
             positions.push({ x, y });
         }
     });
 
-    // Asegurar que haya al menos tantas posiciones como jugadores
+    // Asegurar que haya posiciones para todos los jugadores
     while (positions.length < gameState.lineup.length) {
-        positions.push({ x: 50, y: 10 }); // fallback para el último jugador
+        positions.push({ x: 50, y: 10 });
     }
 
     // Renderizar titulares
