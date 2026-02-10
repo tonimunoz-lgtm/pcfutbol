@@ -1754,6 +1754,7 @@ window.selectTeamAndStart = function(teamName, division) {
             }
         };*/
 
+
 window.renderLineupPageUI = function() {
     const state = gameLogic.getGameState();
     const currentFormation = FORMATIONS[state.formation];
@@ -1769,49 +1770,54 @@ window.renderLineupPageUI = function() {
     const slotWidth = 18;
     const slotHeight = 10;
 
-    // Ajuste mínimo: invertir cálculo para columnas horizontales
     currentFormation.layout.forEach((posData, index) => {
+        // --- Contenedor del slot ---
         const slot = document.createElement('div');
         slot.classList.add('pitch-position-placeholder');
         slot.id = `pitch-slot-${index}`;
 
-        // CAMBIO AQUÍ:
-        // Antes: left = horizontal, top = vertical
-        // Ahora: left = columna (según posData.y), top = fila dentro de la columna (posData.x)
-        const leftOffset = posData.y * (100 / 8) + ( (100 / 8) - slotWidth ) / 2; // x anterior -> top
-        const topOffset = posData.x * (100 / 5) + ( (100 / 5) - slotHeight ) / 2;   // y anterior -> left
+        // --- Cálculo horizontal mínimo ---
+        const leftOffset = posData.y * (100 / 8) + ((100 / 8) - slotWidth) / 2;
+        const topOffset = posData.x * (100 / 5) + ((100 / 5) - slotHeight) / 2;
 
         slot.style.left = `${leftOffset}%`;
         slot.style.top = `${topOffset}%`;
         slot.style.width = `${slotWidth}%`;
         slot.style.height = `${slotHeight}%`;
 
+        // --- Mostrar posición dentro del slot ---
         slot.textContent = posData.pos;
+
+        // --- Drag & drop ---
         slot.ondragover = window.allowDrop;
         slot.ondragleave = window.dragleave;
         slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
+        // --- Renderizar jugador en el slot si está alineado ---
         const playerInSlot = lineup[index];
         if (playerInSlot) {
             const playerDiv = document.createElement('div');
             playerDiv.classList.add('pitch-player');
             if (playerInSlot.isInjured) playerDiv.classList.add('injured');
             playerDiv.draggable = true;
-            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+            playerDiv.ondragstart = (ev) =>
+                window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
             playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
             playerDiv.dataset.playername = playerInSlot.name;
             slot.appendChild(playerDiv);
         }
+
         pitchContainer.appendChild(slot);
     });
 
-    // Suplentes (sin cambios)
+    // --- Suplentes ---
     reserves.forEach(player => {
         const playerDiv = document.createElement('div');
         playerDiv.classList.add('draggable-player');
         if (player.isInjured) playerDiv.classList.add('injured');
         playerDiv.draggable = true;
-        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+        playerDiv.ondragstart = (ev) =>
+            window.drag(ev, encodeURIComponent(JSON.stringify(player)));
         playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
         playerDiv.dataset.playername = player.name;
         reservesList.appendChild(playerDiv);
@@ -1821,7 +1827,7 @@ window.renderLineupPageUI = function() {
     reservesList.ondragleave = window.dragleave;
     reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
 
-    // Mensaje de alineación
+    // --- Mensaje de alineación ---
     const lineupMessageElem = document.getElementById('lineupMessage');
     if (lineupMessageElem) {
         const validation = gameLogic.validateLineup(lineup);
