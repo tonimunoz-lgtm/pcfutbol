@@ -1776,7 +1776,7 @@ window.selectTeamAndStart = function(teamName, division) {
                 playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
                 playerDiv.dataset.playername = player.name;
                 // ✅ Aquí añadimos el onclick para abrir modal
-                playerDiv.onclick = () => openPlayerModal(playerInSlot);
+                playerDiv.onclick = () => openPlayerModal(player);
                 reservesList.appendChild(playerDiv);
             });
 
