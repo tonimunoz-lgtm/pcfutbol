@@ -2502,105 +2502,80 @@ window.addEventListener("DOMContentLoaded", () => {
 // campo de tactica
 // ---------------------------------------------------
 
-// ---------------------------------------------------
-// TÁCTICAS (VISUAL)
-// ---------------------------------------------------
+function getFormationPositions(formation) {
+    // Define posiciones en el campo (porcentaje del campo)
+    const formations = {
+        "433": [
+            { x: 50, y: 90 },  // POR
+            { x: 20, y: 70 }, { x: 50, y: 70 }, { x: 80, y: 70 }, // DEF
+            { x: 20, y: 50 }, { x: 50, y: 50 }, { x: 80, y: 50 }, // MED
+            { x: 30, y: 30 }, { x: 50, y: 30 }, { x: 70, y: 30 }, // DEL
+        ],
+        // Agrega más formaciones...
+    };
+    return formations[formation] || formations["433"];
+}
+
+function splitLineup() {
+    const lineup = gameState.lineup || [];
+    gameState.bench = gameState.squad.filter(p => !lineup.includes(p));
+}
+
 function renderTactic() {
-    const field = document.getElementById('tactic-field');
-    const bench = document.getElementById('tactic-bench');
+    const fieldDiv = document.getElementById('tactic-field');
+    fieldDiv.innerHTML = ''; // limpia
 
-    if (!gameState.lineup || gameState.lineup.length === 0) return;
+    const positions = getFormationPositions(gameState.formation);
+    splitLineup();
 
-    field.innerHTML = '';
-    bench.innerHTML = '<h3>Suplentes</h3>';
-
-    const formationKey = gameState.formation;
-    const formationLayout = FORMATIONS[formationKey];
-
-    if (!formationLayout) {
-        console.warn('Formación no encontrada:', formationKey);
-        return;
-    }
-
-    // -----------------------
-    // PORTERO
-    // -----------------------
-    const gk = gameState.lineup.find(p => p.position === 'GK' || p.position === 'POR');
-    if (gk) {
-        const gkDiv = createPlayerDiv(gk);
-        gkDiv.style.left = '50%';
-        gkDiv.style.top = '92%';
-        field.appendChild(gkDiv);
-    }
-
-    // -----------------------
-    // JUGADORES DE CAMPO
-    // -----------------------
-    const outfield = gameState.lineup.filter(
-        p => p !== gk
-    );
-
-    // Agrupar por líneas según FORMATIONS
-    const lines = {};
-    formationLayout.forEach(pos => {
-        if (pos === 'GK' || pos === 'POR') return;
-        if (!lines[pos]) lines[pos] = [];
-        lines[pos].push(pos);
+    // Titulares
+    gameState.lineup.forEach((player, index) => {
+        const pos = positions[index] || { x: 50, y: 50 }; // fallback
+        const playerEl = document.createElement('div');
+        playerEl.className = 'player';
+        playerEl.textContent = player.name;
+        playerEl.style.position = 'absolute';
+        playerEl.style.left = pos.x + '%';
+        playerEl.style.top = pos.y + '%';
+        playerEl.style.transform = 'translate(-50%, -50%)';
+        playerEl.style.padding = '5px';
+        playerEl.style.backgroundColor = '#4CAF50';
+        playerEl.style.borderRadius = '50%';
+        playerEl.style.color = 'white';
+        playerEl.style.textAlign = 'center';
+        playerEl.style.fontSize = '12px';
+        fieldDiv.appendChild(playerEl);
     });
 
-    const rows = Object.values(lines);
-    let playerIndex = 0;
+    renderBench();
+}
 
-    rows.forEach((row, rowIndex) => {
-        const y = 85 - ((rowIndex + 1) * (65 / rows.length));
-        const count = row.length;
+function renderBench() {
+    const benchDiv = document.getElementById('tactic-bench');
+    benchDiv.innerHTML = '<h3>Suplentes</h3>';
 
-        for (let i = 0; i < count; i++) {
-            if (!outfield[playerIndex]) return;
-
-            const x = (i + 1) * (100 / (count + 1));
-            const player = outfield[playerIndex];
-
-            const div = createPlayerDiv(player);
-            div.style.left = `calc(${x}% - 25px)`;
-            div.style.top = `calc(${y}% - 25px)`;
-
-            field.appendChild(div);
-            playerIndex++;
-        }
-    });
-
-    // -----------------------
-    // SUPLENTES
-    // -----------------------
-    const benchPlayers = gameState.squad.filter(
-        p => !gameState.lineup.includes(p)
-    );
-
-    benchPlayers.forEach(player => {
-        const div = document.createElement('div');
-        div.className = 'bench-player';
-        div.textContent = `${player.position} · ${player.name}`;
-        div.title = `OVR ${player.overall}`;
-        bench.appendChild(div);
+    gameState.bench.forEach(player => {
+        const playerEl = document.createElement('div');
+        playerEl.className = 'bench-player';
+        playerEl.textContent = player.name;
+        playerEl.style.padding = '5px';
+        playerEl.style.margin = '5px 0';
+        playerEl.style.backgroundColor = '#eee';
+        playerEl.style.borderRadius = '4px';
+        benchDiv.appendChild(playerEl);
     });
 }
 
-// ---------------------------------------------------
-// PLAYER UI
-// ---------------------------------------------------
-function createPlayerDiv(player) {
-    const div = document.createElement('div');
-    div.className = 'player';
-    div.innerText = player.position;
-    div.title = `${player.name} (OVR ${player.overall})`;
+window.updateFormation = () => {
+    const sel = document.getElementById('formationSelect');
+    gameState.formation = sel.value;
+    renderTactic();
+};
 
-    if (
-        gameState.trainingFocus?.playerIndex >= 0 &&
-        gameState.lineup[gameState.trainingFocus.playerIndex] === player
-    ) {
-        div.classList.add('training-focus');
-    }
+window.updateMentality = () => {
+    const sel = document.getElementById('mentalitySelect');
+    gameState.mentality = sel.value;
+    // Opcional: cambiar color de jugadores según mentalidad
+};
 
-    return div;
-}
+
