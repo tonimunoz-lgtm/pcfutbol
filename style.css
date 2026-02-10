@@ -1270,16 +1270,26 @@ Salida
     z-index: 10;
 }
 
+
+/* DECORACIÓN tactica  */
+#tactic-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    justify-content: center; /* centra el campo y banquillo */
+    align-items: flex-start;
+}
+
 #tactic-field {
-    position: relative; /* ya necesario para posicionar a los .player */
-    width: 800px;       /* ajusta al tamaño que quieras */
-    height: 500px;      /* ajusta al tamaño que quieras */
-    margin: auto;
-    background-image: url('assets/imagenes/campodefutbol.png'); /* ruta a tu imagen */
-    background-size: cover;        /* ajusta la imagen al div */
-    background-position: center;   /* centra la imagen */
-    background-repeat: no-repeat;  /* que no se repita */
-    border: 2px solid #333;        /* opcional: para ver los bordes del campo */
+    position: relative;
+    width: 800px;   /* ancho del campo */
+    height: 500px;  /* alto del campo */
+    background-image: url('assets/imagenes/campodefutbol.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 2px solid #333; /* opcional para ver los bordes */
+    border-radius: 10px;     /* opcional */
 }
 
 .player {
@@ -1319,4 +1329,3 @@ Salida
     border-radius: 4px;
     text-align: center;
 }
-
