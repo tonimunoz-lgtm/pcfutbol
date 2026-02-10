@@ -2512,32 +2512,34 @@ function renderTactic() {
 
     const formation = gameState.formation || '433';
     const formationMap = {
-        '433': [4,3,3],
+        '433': [4,4,3],
         '442': [4,4,2],
         '352': [3,5,2],
         '541': [5,4,1],
         '451': [4,5,1]
     };
 
-    const formationArr = formationMap[formation] || [4,3,3];
+    const formationArr = formationMap[formation] || [4,4,3];
 
-    // Calcular posiciones
+    // Calcular posiciones de campo
     const positions = [];
     formationArr.forEach((count, rowIndex) => {
         for (let i = 0; i < count; i++) {
             const x = (i + 1) * (100 / (count + 1));
-            const y = ((rowIndex + 1) * (100 / (formationArr.length + 1))); // 🔹 fila arriba a abajo
+            const y = ((rowIndex + 1) * (100 / (formationArr.length + 1))); // arriba a abajo
             positions.push({ x, y });
         }
     });
 
-    // Asegurar que haya posiciones para todos los jugadores
-    while (positions.length < gameState.lineup.length) {
-        positions.push({ x: 50, y: 10 });
-    }
+    // Ordenar titulares por posición
+    const positionOrder = ['POR', 'DEF', 'MED', 'DEL'];
+    const sortedLineup = [];
+    positionOrder.forEach(posType => {
+        sortedLineup.push(...gameState.lineup.filter(p => p.position.startsWith(posType)));
+    });
 
     // Renderizar titulares
-    gameState.lineup.forEach((player, index) => {
+    sortedLineup.forEach((player, index) => {
         const div = document.createElement('div');
         div.classList.add('player');
         if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
@@ -2550,8 +2552,10 @@ function renderTactic() {
         field.appendChild(div);
     });
 
-    // Renderizar suplentes
-    const benchPlayers = gameState.squad.filter(p => !gameState.lineup.includes(p));
+    // Renderizar suplentes correctamente
+    const benchPlayers = gameState.squad.filter(
+        p => !gameState.lineup.some(lp => lp.name === p.name)
+    );
     benchPlayers.forEach(player => {
         const div = document.createElement('div');
         div.classList.add('player');
@@ -2563,6 +2567,7 @@ function renderTactic() {
         bench.appendChild(div);
     });
 }
+
 
 
 // Llamar cuando abras la página de tácticas
