@@ -2148,9 +2148,8 @@ function openPlayerModal(player) {
 }
 
 // Cerrar modal
-function closePlayerModal() {
+window.closePlayerModal = function() {
     document.getElementById('playerModal').style.display = 'none';
-}
 
 // Cerrar al hacer clic fuera del contenido
 window.onclick = function(event) {
