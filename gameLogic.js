@@ -2575,4 +2575,24 @@ window.updateMentality = () => {
     // Opcional: actualizar colores de jugadores según mentalidad
 };
 
+function renderBench() {
+    const benchDiv = document.getElementById('tactic-bench');
 
+    // Limpia el contenido anterior (menos el título)
+    benchDiv.innerHTML = '<h3>Suplentes</h3>';
+
+    // Itera sobre los suplentes
+    gameState.bench.forEach(player => {
+        const playerEl = document.createElement('div');
+        playerEl.className = 'bench-player';
+        playerEl.textContent = player.name; // o icono / número
+        benchDiv.appendChild(playerEl);
+    });
+}
+
+window.updateFormation = () => {
+    const sel = document.getElementById('formationSelect');
+    gameState.formation = sel.value;
+    renderTactic();
+    renderBench(); // ✅ actualiza suplentes
+};
