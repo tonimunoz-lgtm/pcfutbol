@@ -1374,3 +1374,42 @@ Salida
     text-align: center;
     flex: 1 1 40px; /* ajusta el tamaño de los suplentes */
 }
+
+/* Modal ficha jugadores */
+.player-modal {
+    display: none; /* oculto por defecto */
+    position: fixed;
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6); /* fondo semitransparente */
+}
+
+/* Contenido del modal */
+.player-modal-content {
+    background-color: #1a1a2e;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    max-width: 90%;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+/* Botón de cerrar */
+.player-modal-close {
+    color: #fff;
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.player-modal-close:hover {
+    color: #ff5555;
+}
+
+
