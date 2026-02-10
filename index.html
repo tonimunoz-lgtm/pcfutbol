@@ -1769,44 +1769,43 @@ window.renderLineupPageUI = function() {
     const slotWidth = 18;
     const slotHeight = 10;
 
-    // MAPEO HORIZONTAL (columnas)
-    const formationMap = {
-        '433': [1,4,4,3],
-        '442': [1,4,4,2],
-        '352': [1,3,5,2],
-        '541': [1,5,4,1],
-        '451': [1,4,5,1]
-    };
-    const columns = formationMap[state.formation] || [1,4,4,3];
+    // Ajuste mínimo: invertir cálculo para columnas horizontales
+    currentFormation.layout.forEach((posData, index) => {
+        const slot = document.createElement('div');
+        slot.classList.add('pitch-position-placeholder');
+        slot.id = `pitch-slot-${index}`;
 
-    let idx = 0;
-    columns.forEach((count, colIndex) => {
-        const xPercent = (colIndex + 1) * (100 / (columns.length + 1));
-        const yStep = 100 / (count + 1);
+        // CAMBIO AQUÍ:
+        // Antes: left = horizontal, top = vertical
+        // Ahora: left = columna (según posData.y), top = fila dentro de la columna (posData.x)
+        const leftOffset = posData.y * (100 / 8) + ( (100 / 8) - slotWidth ) / 2; // x anterior -> top
+        const topOffset = posData.x * (100 / 5) + ( (100 / 5) - slotHeight ) / 2;   // y anterior -> left
 
-        for (let i = 0; i < count; i++) {
-            const player = lineup[idx];
-            if (!player) continue;
+        slot.style.left = `${leftOffset}%`;
+        slot.style.top = `${topOffset}%`;
+        slot.style.width = `${slotWidth}%`;
+        slot.style.height = `${slotHeight}%`;
 
-            const yPercent = (i + 1) * yStep;
+        slot.textContent = posData.pos;
+        slot.ondragover = window.allowDrop;
+        slot.ondragleave = window.dragleave;
+        slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
+        const playerInSlot = lineup[index];
+        if (playerInSlot) {
             const playerDiv = document.createElement('div');
             playerDiv.classList.add('pitch-player');
-            if (player.isInjured) playerDiv.classList.add('injured');
+            if (playerInSlot.isInjured) playerDiv.classList.add('injured');
             playerDiv.draggable = true;
-            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-            playerDiv.innerHTML = `<span>${player.name}</span><span>(${player.position}, ${player.overall})</span>`;
-            playerDiv.dataset.playername = player.name;
-
-            playerDiv.style.left = `calc(${xPercent}% - 25px)`; // columna
-            playerDiv.style.top = `calc(${yPercent}% - 25px)`;  // fila dentro de la columna
-
-            pitchContainer.appendChild(playerDiv);
-            idx++;
+            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+            playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
+            playerDiv.dataset.playername = playerInSlot.name;
+            slot.appendChild(playerDiv);
         }
+        pitchContainer.appendChild(slot);
     });
 
-    // Suplentes
+    // Suplentes (sin cambios)
     reserves.forEach(player => {
         const playerDiv = document.createElement('div');
         playerDiv.classList.add('draggable-player');
@@ -1822,7 +1821,7 @@ window.renderLineupPageUI = function() {
     reservesList.ondragleave = window.dragleave;
     reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
 
-    // Mensaje
+    // Mensaje de alineación
     const lineupMessageElem = document.getElementById('lineupMessage');
     if (lineupMessageElem) {
         const validation = gameLogic.validateLineup(lineup);
@@ -1835,6 +1834,7 @@ window.renderLineupPageUI = function() {
         }
     }
 };
+
 
         
 
