@@ -2531,11 +2531,19 @@ function renderTactic() {
         }
     });
 
-    // Ordenar titulares por posición
-    const positionOrder = ['POR', 'DEF', 'MED', 'DEL'];
+    // Función para mapear posición real a tipo de fila
+    function getPositionType(player) {
+        if (player.position === 'POR') return 'POR';
+        if (player.position.startsWith('DEF')) return 'DEF';
+        if (player.position.startsWith('MED')) return 'MED';
+        if (player.position.startsWith('DEL')) return 'DEL';
+        return 'MED'; // fallback
+    }
+
+    // Ordenar titulares según posición
     const sortedLineup = [];
-    positionOrder.forEach(posType => {
-        sortedLineup.push(...gameState.lineup.filter(p => p.position.startsWith(posType)));
+    ['POR','DEF','MED','DEL'].forEach(type => {
+        sortedLineup.push(...gameState.lineup.filter(p => getPositionType(p) === type));
     });
 
     // Renderizar titulares
@@ -2567,6 +2575,7 @@ function renderTactic() {
         bench.appendChild(div);
     });
 }
+
 
 
 
