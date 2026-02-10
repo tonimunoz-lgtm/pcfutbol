@@ -790,23 +790,16 @@
     </div>
 
     <!-- Modal de jugador -->
+<!-- Modal de jugador -->
 <div id="playerModal" class="player-modal">
     <div class="player-modal-content">
         <span class="player-modal-close" onclick="closePlayerModal()">&times;</span>
         <h2 id="modalPlayerName"></h2>
         <p id="modalPlayerPosition"></p>
-        <p id="modalPlayerAge"></p>
-        <p id="modalPlayerNationality"></p>
-        <p id="modalPlayerFoot"></p>
-        <div id="modalPlayerAttributes"></div>
-        <div id="modalPlayerContract"></div>
-        <div id="modalPlayerStatus"></div>
-        <div id="modalPlayerStats"></div>
-        <div id="modalPlayerHistory"></div>
+        <p id="modalPlayerOverall"></p>
+        <p id="modalPlayerOther"></p> <!-- aquí puedes añadir más stats si quieres -->
     </div>
 </div>
-
-
 
     <!-- SCRIPTS DEL JUEGO -->
     <script type="module">
@@ -2138,83 +2131,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
    // Abrir modal con datos del jugador --------------------------------------------------
-async function openPlayerModal(player) {
-    const modal = document.getElementById('playerModal');
-    const nameElem = document.getElementById('modalPlayerName');
-    const positionElem = document.getElementById('modalPlayerPosition');
-    const ageElem = document.getElementById('modalPlayerAge');
-    const nationalityElem = document.getElementById('modalPlayerNationality');
-    const footElem = document.getElementById('modalPlayerFoot');
-    const attributesElem = document.getElementById('modalPlayerAttributes');
-    const contractElem = document.getElementById('modalPlayerContract');
-    const statusElem = document.getElementById('modalPlayerStatus');
-    const statsElem = document.getElementById('modalPlayerStats');
-    const historyElem = document.getElementById('modalPlayerHistory');
-
-    // 🔹 Traemos datos completos de la base de datos
-    let fullPlayer = player;
-    if (player.id) {
-        const res = await window.PlayersDatabase.get(player.id);
-        if (res.success) fullPlayer = res.player;
-    }
-
-    // Rellenar modal
-    nameElem.textContent = fullPlayer.personal?.name || "Desconocido";
-    positionElem.textContent = "Posición: " + (fullPlayer.personal?.position || "-");
-    ageElem.textContent = "Edad: " + (fullPlayer.personal?.age || "-");
-    nationalityElem.textContent = "Nacionalidad: " + (fullPlayer.personal?.nationality || "-");
-    footElem.textContent = "Pie dominante: " + (fullPlayer.personal?.foot || "-");
-
-    // Attributes
-    const a = fullPlayer.attributes || {};
-    attributesElem.innerHTML = `
-        EN: ${a.EN || "-"} | VE: ${a.VE || "-"} | RE: ${a.RE || "-"} | AG: ${a.AG || "-"}<br>
-        CA: ${a.CA || "-"} | EF: ${a.EF || "-"} | MO: ${a.MO || "-"} | AT: ${a.AT || "-"} | DF: ${a.DF || "-"}
+// Abrir modal con datos del jugador
+function openPlayerModal(player) {
+    document.getElementById('modalPlayerName').innerText = player.name;
+    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position}`;
+    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall}`;
+    
+    // Si quieres mostrar más stats:
+    document.getElementById('modalPlayerOther').innerHTML = `
+        Edad: ${player.age || 'N/A'}<br>
+        Nacionalidad: ${player.nationality || 'N/A'}<br>
+        Lesionado: ${player.isInjured ? 'Sí' : 'No'}
     `;
-
-    // Contract
-    const c = fullPlayer.contract || {};
-    contractElem.innerHTML = `
-        Equipo: ${c.team || "-"}<br>
-        Salario: ${c.salary || "-"}<br>
-        Tipo: ${c.type || "-"}<br>
-        Años: ${c.years || "-"}<br>
-        Release clause: ${c.releaseClause || "-"}
-    `;
-
-    // Status
-    const s = fullPlayer.status || {};
-    statusElem.innerHTML = `
-        Lesionado: ${s.isInjured ? "Sí" : "No"} (${s.injuryType || "-"})<br>
-        Semanas fuera: ${s.weeksOut || 0}<br>
-        Suspendido: ${s.isSuspended ? "Sí" : "No"}<br>
-        Tarjetas amarillas: ${s.yellowCards || 0}<br>
-        Tarjeta roja: ${s.redCards || 0}
-    `;
-
-    // Stats
-    const st = fullPlayer.stats || {};
-    statsElem.innerHTML = `
-        Overall: ${st.overall || "-"}<br>
-        Potential: ${st.potential || "-"}<br>
-        Minutos jugados: ${st.minutesPlayed || 0}<br>
-        Goles: ${st.goals || 0}<br>
-        Asistencias: ${st.assists || 0}
-    `;
-
-    // History
-    const h = fullPlayer.history || [];
-    historyElem.innerHTML = h.length ? h.join("<br>") : "Sin historial";
-
-    // Mostrar modal
-    modal.style.display = "block";
+    
+    document.getElementById('playerModal').style.display = 'block';
 }
 
+// Cerrar modal
 function closePlayerModal() {
-    const modal = document.getElementById('playerModal');
-    modal.style.display = "none";
+    document.getElementById('playerModal').style.display = 'none';
 }
 
+// Cerrar al hacer clic fuera del contenido
+window.onclick = function(event) {
+    const modal = document.getElementById('playerModal');
+    if (event.target == modal) {
+        closePlayerModal();
+    }
+};
 
      // final modal con datos del jugador -------------------------------------------------- 
         
