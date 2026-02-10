@@ -557,8 +557,8 @@ input:focus, select:focus {
 
 /* Campo de fútbol horizontal y responsivo */
 .pitch-container {
-    width: 70%;              /* ocupa 70% del ancho disponible */
-    max-width: 800px;        /* límite máximo */
+    width: 80%;              /* ocupa 70% del ancho disponible */
+    max-width: 1000px;        /* límite máximo */
     aspect-ratio: 16/9;      /* mantiene proporción horizontal */
     position: relative;
     background-image: url('assets/imagenes/campodefutbol.png');
@@ -573,7 +573,7 @@ input:focus, select:focus {
 
 /* Sección de suplentes a la derecha */
 .reserves-container {
-    width: 30%;             /* ocupa el resto del espacio */
+    width: 20%;             /* ocupa el resto del espacio */
     min-width: 200px;       /* evita que quede demasiado estrecho en pantallas pequeñas */
     border-left: 2px solid #5588FF;
     padding-left: 15px;
