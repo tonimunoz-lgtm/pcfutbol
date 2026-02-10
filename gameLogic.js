@@ -2512,69 +2512,66 @@ function renderTactic() {
 
     const formation = gameState.formation || '433';
     const formationMap = {
-        '433': [4,4,3],
-        '442': [4,4,2],
-        '352': [3,5,2],
-        '541': [5,4,1],
-        '451': [4,5,1]
+        '433': [1,4,4,3], // fila 0 = POR
+        '442': [1,4,4,2],
+        '352': [1,3,5,2],
+        '541': [1,5,4,1],
+        '451': [1,4,5,1]
     };
 
-    const formationArr = formationMap[formation] || [4,4,3];
+    const formationArr = formationMap[formation] || [1,4,4,3];
+    const totalRows = formationArr.length;
 
-    // Calcular posiciones de campo
+    // Generar posiciones exactas para cada fila
     const positions = [];
     formationArr.forEach((count, rowIndex) => {
+        const y = (rowIndex / (totalRows - 1)) * 100; // 0% arriba, 100% abajo
         for (let i = 0; i < count; i++) {
-            const x = (i + 1) * (100 / (count + 1));
-            const y = ((rowIndex + 1) * (100 / (formationArr.length + 1))); // arriba a abajo
+            const x = ((i + 1) / (count + 1)) * 100;
             positions.push({ x, y });
         }
     });
 
-    // Función para mapear posición real a tipo de fila
-    function getPositionType(player) {
-        if (player.position === 'POR') return 'POR';
-        if (player.position.startsWith('DEF')) return 'DEF';
-        if (player.position.startsWith('MED')) return 'MED';
-        if (player.position.startsWith('DEL')) return 'DEL';
-        return 'MED'; // fallback
-    }
-
-    // Ordenar titulares según posición
-    const sortedLineup = [];
-    ['POR','DEF','MED','DEL'].forEach(type => {
-        sortedLineup.push(...gameState.lineup.filter(p => getPositionType(p) === type));
-    });
-
-    // Renderizar titulares
-    sortedLineup.forEach((player, index) => {
+    // Renderizar titulares según el orden de gameState.lineup
+    gameState.lineup.forEach((player, index) => {
+        const pos = positions[index] || { x: 50, y: 50 };
         const div = document.createElement('div');
         div.classList.add('player');
         if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
 
-        const pos = positions[index] || { x: 50, y: 50 };
+        div.style.position = 'absolute';
         div.style.left = `calc(${pos.x}% - 25px)`;
         div.style.top = `calc(${pos.y}% - 25px)`;
-        div.innerText = player.position;
+        div.style.width = '50px';
+        div.style.height = '50px';
+        div.style.lineHeight = '50px';
+        div.style.borderRadius = '50%';
+        div.style.backgroundColor = '#4CAF50';
+        div.style.color = 'white';
+        div.style.textAlign = 'center';
+        div.style.fontSize = '12px';
         div.title = `${player.name} (OVR: ${player.overall})`;
+        div.innerText = player.position;
         field.appendChild(div);
     });
 
-    // Renderizar suplentes correctamente
+    // Renderizar suplentes
     const benchPlayers = gameState.squad.filter(
         p => !gameState.lineup.some(lp => lp.name === p.name)
     );
     benchPlayers.forEach(player => {
         const div = document.createElement('div');
-        div.classList.add('player');
-        div.style.width = '40px';
-        div.style.height = '40px';
-        div.style.fontSize = '12px';
-        div.innerText = player.position;
+        div.classList.add('bench-player');
+        div.textContent = player.position; 
         div.title = `${player.name} (OVR: ${player.overall})`;
+        div.style.padding = '5px';
+        div.style.margin = '3px 0';
+        div.style.backgroundColor = '#eee';
+        div.style.borderRadius = '4px';
         bench.appendChild(div);
     });
 }
+
 
 
 
