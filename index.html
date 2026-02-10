@@ -1699,8 +1699,12 @@ window.selectTeamAndStart = function(teamName, division) {
                 slot.classList.add('pitch-position-placeholder');
                 slot.id = `pitch-slot-${index}`;
 
-                const leftOffset = posData.x * (100 / 5) + ( (100 / 5) - slotWidth ) / 2;
-                const topOffset = posData.y * (100 / 8) + ( (100 / 8) - slotHeight ) / 2;
+              /*  const leftOffset = posData.x * (100 / 5) + ( (100 / 5) - slotWidth ) / 2;
+                const topOffset = posData.y * (100 / 8) + ( (100 / 8) - slotHeight ) / 2; */
+
+                const leftOffset = posData.y * (100 / 8) + ((100 / 8) - slotWidth) / 2;
+                const topOffset  = posData.x * (100 / 5) + ((100 / 5) - slotHeight) / 2;
+
 
                 slot.style.left = `${leftOffset}%`;
                 slot.style.top = `${topOffset}%`;
