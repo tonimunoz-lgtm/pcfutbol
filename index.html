@@ -1731,6 +1731,8 @@ window.selectTeamAndStart = function(teamName, division) {
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
                     playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
+                    // ✅ Aquí añadimos el onclick para abrir modal
+                    playerDiv.onclick = () => openPlayerModal(playerInSlot);
                     slot.appendChild(playerDiv);
                 }
                 pitchContainer.appendChild(slot);
@@ -1744,6 +1746,8 @@ window.selectTeamAndStart = function(teamName, division) {
                 playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
                 playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
                 playerDiv.dataset.playername = player.name;
+                // ✅ Aquí añadimos el onclick para abrir modal
+                playerDiv.onclick = () => openPlayerModal(playerInSlot);
                 reservesList.appendChild(playerDiv);
             });
 
