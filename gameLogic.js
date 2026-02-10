@@ -2497,3 +2497,69 @@ window.addEventListener("DOMContentLoaded", () => {
     window.updateNextMatchInfo();
 });
 
+
+// ---------------------------------------------------
+// campo de tactica
+// ---------------------------------------------------
+function renderTactic() {
+    const field = document.getElementById('tactic-field');
+    const bench = document.getElementById('tactic-bench');
+
+    if (!gameState.lineup || gameState.lineup.length === 0) return;
+
+    field.innerHTML = '';
+    bench.innerHTML = '<h3>Suplentes</h3>';
+
+    const formation = gameState.formation || '433';
+    const formationMap = {
+        '433': [4,3,3],
+        '442': [4,4,2],
+        '352': [3,5,2],
+        '541': [5,4,1],
+        '451': [4,5,1]
+    };
+
+    const formationArr = formationMap[formation] || [4,3,3];
+
+    // Calcular posiciones en el campo
+    const positions = [];
+    formationArr.forEach((count, rowIndex) => {
+        for (let i = 0; i < count; i++) {
+            const x = (i + 1) * (100 / (count + 1));
+            const y = 100 - ((rowIndex + 1) * (100 / (formationArr.length + 1)));
+            positions.push({ x, y });
+        }
+    });
+
+    // Renderizar titulares
+    gameState.lineup.forEach((player, index) => {
+        const div = document.createElement('div');
+        div.classList.add('player');
+        if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
+        div.style.left = `calc(${positions[index].x}% - 25px)`;
+        div.style.top = `calc(${positions[index].y}% - 25px)`;
+        div.innerText = player.position;
+        div.title = `${player.name} (OVR: ${player.overall})`;
+        field.appendChild(div);
+    });
+
+    // Renderizar suplentes
+    const benchPlayers = gameState.squad.filter(p => !gameState.lineup.includes(p));
+    benchPlayers.forEach(player => {
+        const div = document.createElement('div');
+        div.classList.add('player');
+        div.style.width = '40px';
+        div.style.height = '40px';
+        div.style.fontSize = '12px';
+        div.innerText = player.position;
+        div.title = `${player.name} (OVR: ${player.overall})`;
+        bench.appendChild(div);
+    });
+}
+
+// Llamar cuando abras la página de tácticas
+document.getElementById('formationSelect').addEventListener('change', () => {
+    renderTactic();
+});
+
+
