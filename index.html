@@ -1679,7 +1679,7 @@ window.selectTeamAndStart = function(teamName, division) {
         window.updateCommercialDisplay = updateCommercialDisplay;
 
         // Alineación
-        window.renderLineupPageUI = function() {
+       /* window.renderLineupPageUI = function() {
             const state = gameLogic.getGameState();
             const currentFormation = FORMATIONS[state.formation];
             let lineup = gameLogic.getLineup();
@@ -1752,7 +1752,91 @@ window.selectTeamAndStart = function(teamName, division) {
                     lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
                 }
             }
-        };
+        };*/
+
+window.renderLineupPageUI = function() {
+    const state = gameLogic.getGameState();
+    const currentFormation = FORMATIONS[state.formation];
+    let lineup = gameLogic.getLineup();
+    let reserves = gameLogic.getReservePlayers();
+
+    const pitchContainer = document.getElementById('pitchContainer');
+    const reservesList = document.getElementById('reservesList');
+
+    pitchContainer.innerHTML = '';
+    reservesList.innerHTML = '';
+
+    const slotWidth = 18;
+    const slotHeight = 10;
+
+    // MAPEO HORIZONTAL (columnas)
+    const formationMap = {
+        '433': [1,4,4,3],
+        '442': [1,4,4,2],
+        '352': [1,3,5,2],
+        '541': [1,5,4,1],
+        '451': [1,4,5,1]
+    };
+    const columns = formationMap[state.formation] || [1,4,4,3];
+
+    let idx = 0;
+    columns.forEach((count, colIndex) => {
+        const xPercent = (colIndex + 1) * (100 / (columns.length + 1));
+        const yStep = 100 / (count + 1);
+
+        for (let i = 0; i < count; i++) {
+            const player = lineup[idx];
+            if (!player) continue;
+
+            const yPercent = (i + 1) * yStep;
+
+            const playerDiv = document.createElement('div');
+            playerDiv.classList.add('pitch-player');
+            if (player.isInjured) playerDiv.classList.add('injured');
+            playerDiv.draggable = true;
+            playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+            playerDiv.innerHTML = `<span>${player.name}</span><span>(${player.position}, ${player.overall})</span>`;
+            playerDiv.dataset.playername = player.name;
+
+            playerDiv.style.left = `calc(${xPercent}% - 25px)`; // columna
+            playerDiv.style.top = `calc(${yPercent}% - 25px)`;  // fila dentro de la columna
+
+            pitchContainer.appendChild(playerDiv);
+            idx++;
+        }
+    });
+
+    // Suplentes
+    reserves.forEach(player => {
+        const playerDiv = document.createElement('div');
+        playerDiv.classList.add('draggable-player');
+        if (player.isInjured) playerDiv.classList.add('injured');
+        playerDiv.draggable = true;
+        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+        playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
+        playerDiv.dataset.playername = player.name;
+        reservesList.appendChild(playerDiv);
+    });
+
+    reservesList.ondragover = window.allowDrop;
+    reservesList.ondragleave = window.dragleave;
+    reservesList.ondrop = (ev) => window.drop(ev, 'reservesList');
+
+    // Mensaje
+    const lineupMessageElem = document.getElementById('lineupMessage');
+    if (lineupMessageElem) {
+        const validation = gameLogic.validateLineup(lineup);
+        if (!validation.success) {
+            lineupMessageElem.className = 'alert alert-warning';
+            lineupMessageElem.innerHTML = `⚠️ Advertencia: ${validation.message}`;
+        } else {
+            lineupMessageElem.className = 'alert alert-info';
+            lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
+        }
+    }
+};
+
+        
 
         window.saveLineup = function() {
             const state = gameLogic.getGameState();
