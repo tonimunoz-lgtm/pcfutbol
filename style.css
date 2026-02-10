@@ -543,7 +543,7 @@ input:focus, select:focus {
 
 .pitch-container {
     position: relative;
-    width: 00px;        /* ancho fijo más pequeño */
+    width: 800px;        /* ancho fijo más pequeño */
     height: 450px;       /* 600 / 16*9 ≈ 337px para mantener horizontal */
     background-image: url('assets/imagenes/campodefutbol.png');
     background-size: cover;
