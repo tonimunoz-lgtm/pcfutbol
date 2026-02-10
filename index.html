@@ -794,12 +794,38 @@
 <div id="playerModal" class="player-modal">
     <div class="player-modal-content">
         <span class="player-modal-close" onclick="closePlayerModal()">&times;</span>
-        <h2 id="modalPlayerName"></h2>
-        <p id="modalPlayerPosition"></p>
-        <p id="modalPlayerOverall"></p>
-        <p id="modalPlayerOther"></p> <!-- aquí puedes añadir más stats si quieres -->
+        
+        <div class="modal-header">
+            <img id="modalPlayerPhoto" src="https://via.placeholder.com/120x150?text=Foto" alt="Foto jugador">
+            <div class="modal-header-info">
+                <h2 id="modalPlayerName">Nombre</h2>
+                <p id="modalPlayerPosition">Posición: -</p>
+                <p id="modalPlayerOverall">OVR: -</p>
+            </div>
+        </div>
+        
+        <div class="modal-body">
+            <h3>Personal</h3>
+            <p id="modalPlayerPersonal"></p>
+
+            <h3>Atributos</h3>
+            <p id="modalPlayerAttributes"></p>
+
+            <h3>Contrato</h3>
+            <p id="modalPlayerContract"></p>
+
+            <h3>Status</h3>
+            <p id="modalPlayerStatus"></p>
+
+            <h3>Stats</h3>
+            <p id="modalPlayerStats"></p>
+
+            <h3>Historial</h3>
+            <p id="modalPlayerHistory"></p>
+        </div>
     </div>
 </div>
+
 
     <!-- SCRIPTS DEL JUEGO -->
     <script type="module">
@@ -2131,37 +2157,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
    // Abrir modal con datos del jugador --------------------------------------------------
-// Abrir modal con datos del jugador
+
 /*function openPlayerModal(player) {
-    document.getElementById('modalPlayerName').innerText = player.name;
-    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position}`;
-    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall}`;
-    
-    // Si quieres mostrar más stats:
-    document.getElementById('modalPlayerOther').innerHTML = `
-        Edad: ${player.age || 'N/A'}<br>
-        Nacionalidad: ${player.nationality || 'N/A'}<br>
-        Lesionado: ${player.isInjured ? 'Sí' : 'No'}
-    `;
-    
-    document.getElementById('playerModal').style.display = 'block';
-}
-
-// Cerrar modal
-window.closePlayerModal = function() {
-    document.getElementById('playerModal').style.display = 'none';
-}
-
-// Cerrar al hacer clic fuera del contenido
-window.onclick = function(event) {
-    const modal = document.getElementById('playerModal');
-    if (event.target == modal) {
-        closePlayerModal();
-    }
-};*/
-
-// Abrir modal con datos del jugador
-function openPlayerModal(player) {
     document.getElementById('modalPlayerName').innerText = player.name || 'Desconocido';
     document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position || '-'}`;
     document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall || '-'}`;
@@ -2205,8 +2202,61 @@ function openPlayerModal(player) {
 
     // Mostrar modal
     document.getElementById('playerModal').style.display = 'block';
+}*/
+
+function openPlayerModal(player) {
+    // Foto (puedes reemplazar por una URL real si tienes fotos de jugadores)
+    document.getElementById('modalPlayerPhoto').src = player.photo || "https://via.placeholder.com/120x150?text=Foto";
+
+    document.getElementById('modalPlayerName').innerText = player.name || 'Desconocido';
+    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position || '-'}`;
+    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall || '-'}`;
+
+    document.getElementById('modalPlayerPersonal').innerHTML = `
+        Edad: ${player.age || '-'}<br>
+        Nacionalidad: ${player.nationality || '-'}<br>
+        Pie dominante: ${player.foot || '-'}
+    `;
+
+    document.getElementById('modalPlayerAttributes').innerHTML = `
+        EN: ${player.EN || 0} | VE: ${player.VE || 0} | RE: ${player.RE || 0} | AG: ${player.AG || 0}<br>
+        CA: ${player.CA || 0} | EF: ${player.EF || 0} | MO: ${player.MO || 0} | AT: ${player.AT || 0} | DF: ${player.DF || 0}
+    `;
+
+    document.getElementById('modalPlayerContract').innerHTML = `
+        Tipo: ${player.contractType || '-'}<br>
+        Años: ${player.contractYears || 0}<br>
+        Release Clause: ${player.releaseClause || 0}<br>
+        Salario: ${player.salary || 0}<br>
+        Club: ${player.club || '-'}
+    `;
+
+    document.getElementById('modalPlayerStatus').innerHTML = `
+        Lesionado: ${player.isInjured ? 'Sí' : 'No'}<br>
+        Semanas fuera: ${player.weeksOut || 0}<br>
+        Suspendido: ${player.isSuspended ? 'Sí' : 'No'}<br>
+        Tarjetas amarillas: ${player.yellowCards || 0}<br>
+        Tarjeta roja: ${player.redCards || 0}
+    `;
+
+    document.getElementById('modalPlayerStats').innerHTML = `
+        Partidos: ${player.matches || 0}<br>
+        Form: ${player.form || 0}<br>
+        Minutos: ${player.minutesPlayed || 0}<br>
+        Goles: ${player.goals || 0}<br>
+        Asistencias: ${player.assists || 0}<br>
+        Potential: ${player.potential || 0}
+    `;
+
+    document.getElementById('modalPlayerHistory').innerHTML = `
+        ${player.history && player.history.length ? player.history.join('<br>') : 'Sin historial'}
+    `;
+
+    document.getElementById('playerModal').style.display = 'block';
 }
 
+
+        
 // Cerrar modal
 window.closePlayerModal = function() {
     document.getElementById('playerModal').style.display = 'none';
