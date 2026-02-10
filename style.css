@@ -545,7 +545,7 @@ input:focus, select:focus {
     position: relative;
     width: 60%;
     max-width: 900px;   /* 🔥 AJUSTA ESTE VALOR */
-    padding-bottom: 75%; /* proporción campo */
+    padding-bottom: 56.25%;   /* 🔥 16:9 = horizontal */
     background-image: url('assets/imagenes/campodefutbol.png');
     background-size: cover;
     background-position: center;
