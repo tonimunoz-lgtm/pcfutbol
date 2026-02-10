@@ -577,7 +577,7 @@ input:focus, select:focus {
     background: rgba(85, 136, 255, 0.4);
 }
 
-.pitch-player {
+/*.pitch-player {
     background: #0F2040;
     border: 2px solid #5588FF;
     padding: 2px 5px;
@@ -603,7 +603,30 @@ input:focus, select:focus {
     border-color: red;
     cursor: not-allowed;
     opacity: 0.7;
+}*/
+
+.pitch-player {
+    position: absolute; /* fundamental para colocar en columnas */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #3498db;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    cursor: grab;
+    transition: transform 0.2s;
 }
+
+.pitch-player.injured {
+    background-color: #C70000;
+    border-color: red;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 
 .reserves-container {
     margin-top: 20px;
