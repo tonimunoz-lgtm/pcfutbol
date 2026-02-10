@@ -2521,7 +2521,7 @@ function renderTactic() {
 
     const formationArr = formationMap[formation] || [4,3,3];
 
-    // Calcular posiciones en el campo
+    // Calcular posiciones
     const positions = [];
     formationArr.forEach((count, rowIndex) => {
         for (let i = 0; i < count; i++) {
@@ -2531,13 +2531,20 @@ function renderTactic() {
         }
     });
 
+    // Asegurar que haya al menos tantas posiciones como jugadores
+    while (positions.length < gameState.lineup.length) {
+        positions.push({ x: 50, y: 10 }); // fallback para el último jugador
+    }
+
     // Renderizar titulares
     gameState.lineup.forEach((player, index) => {
         const div = document.createElement('div');
         div.classList.add('player');
         if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
-        div.style.left = `calc(${positions[index].x}% - 25px)`;
-        div.style.top = `calc(${positions[index].y}% - 25px)`;
+
+        const pos = positions[index] || { x: 50, y: 50 };
+        div.style.left = `calc(${pos.x}% - 25px)`;
+        div.style.top = `calc(${pos.y}% - 25px)`;
         div.innerText = player.position;
         div.title = `${player.name} (OVR: ${player.overall})`;
         field.appendChild(div);
@@ -2556,6 +2563,7 @@ function renderTactic() {
         bench.appendChild(div);
     });
 }
+
 
 // Llamar cuando abras la página de tácticas
 document.getElementById('formationSelect').addEventListener('change', () => {
