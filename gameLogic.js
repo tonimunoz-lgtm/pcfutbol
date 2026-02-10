@@ -2501,109 +2501,98 @@ window.addEventListener("DOMContentLoaded", () => {
 // ---------------------------------------------------
 // campo de tactica
 // ---------------------------------------------------
-
-function splitLineup() {
-    // Separar titulares y suplentes correctamente por nombre
-    const lineupNames = new Set(gameState.lineup.map(p => p.name));
-    gameState.bench = gameState.squad.filter(p => !lineupNames.has(p.name));
-}
-
-function getPositionColor(position) {
-    switch(position) {
-        case 'POR': return '#1E88E5';   // Azul portero
-        case 'DEF': return '#4CAF50';   // Verde defensa
-        case 'MED': return '#FFC107';   // Amarillo mediocampo
-        case 'DEL': return '#E53935';   // Rojo delantero
-        default: return '#9E9E9E';      // Gris para desconocido
-    }
-}
-
 function renderTactic() {
-    const fieldDiv = document.getElementById('tactic-field');
-    const benchDiv = document.getElementById('tactic-bench');
-    if (!fieldDiv || !benchDiv) return;
+    const field = document.getElementById('tactic-field');
+    const bench = document.getElementById('tactic-bench');
 
-    // Limpiar contenido
-    fieldDiv.innerHTML = '';
-    benchDiv.innerHTML = '<h3>Suplentes</h3>';
+    if (!gameState.lineup || gameState.lineup.length === 0) return;
 
-    // Asegurarse de que hay 11 titulares
-    if (!gameState.lineup || gameState.lineup.length < 11) {
-        setLineup(gameState.lineup || []);
-    }
+    field.innerHTML = '';
+    bench.innerHTML = '<h3>Suplentes</h3>';
 
-    splitLineup(); // calcular bench
+    const formation = gameState.formation || '433';
+    const formationMap = {
+        '433': [4,3,3],
+        '442': [4,4,2],
+        '352': [3,5,2],
+        '541': [5,4,1],
+        '451': [4,5,1]
+    };
 
-    const positions = getFormationPositions(gameState.formation);
+    const formationArr = formationMap[formation] || [4,3,3];
 
-    // --------------------
-    // Titulares
-    // --------------------
-    gameState.lineup.forEach((player, index) => {
-        const pos = positions[index] || { x: 50, y: 50 };
-
-        const playerEl = document.createElement('div');
-        playerEl.className = 'player';
-        playerEl.textContent = player.name;
-
-        playerEl.style.position = 'absolute';
-        playerEl.style.left = pos.x + '%';
-        playerEl.style.top = pos.y + '%';
-        playerEl.style.transform = 'translate(-50%, -50%)';
-        playerEl.style.padding = '5px 8px';
-        playerEl.style.backgroundColor = getPositionColor(player.position);
-        playerEl.style.borderRadius = '50%';
-        playerEl.style.color = 'white';
-        playerEl.style.textAlign = 'center';
-        playerEl.style.fontSize = '12px';
-        playerEl.style.cursor = 'default';
-        playerEl.title = `${player.name} (${player.position}, OVR ${player.overall})`;
-
-        // Si está lesionado o cedido, marcar visualmente
-        if (player.isInjured) {
-            playerEl.style.opacity = '0.5';
-            playerEl.title += ' - Lesionado';
-        } else if (player.contractType === 'loaned_out') {
-            playerEl.style.opacity = '0.6';
-            playerEl.title += ` - Cedido a ${player.loanedTo}`;
+    // Calcular posiciones en el campo
+    const positions = [];
+    formationArr.forEach((count, rowIndex) => {
+        for (let i = 0; i < count; i++) {
+            const x = (i + 1) * (100 / (count + 1));
+            const y = 100 - ((rowIndex + 1) * (100 / (formationArr.length + 1)));
+            positions.push({ x, y });
         }
-
-        fieldDiv.appendChild(playerEl);
     });
 
-    // --------------------
-    // Suplentes
-    // --------------------
-    gameState.bench.forEach(player => {
-        const benchEl = document.createElement('div');
-        benchEl.className = 'bench-player';
-        benchEl.textContent = player.name;
+    // Renderizar titulares
+    gameState.lineup.forEach((player, index) => {
+        const div = document.createElement('div');
+        div.classList.add('player');
+        if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
+        div.style.left = `calc(${positions[index].x}% - 25px)`;
+        div.style.top = `calc(${positions[index].y}% - 25px)`;
+        div.innerText = player.position;
+        div.title = `${player.name} (OVR: ${player.overall})`;
+        field.appendChild(div);
+    });
 
-        benchEl.style.padding = '5px 8px';
-        benchEl.style.margin = '5px 0';
-        benchEl.style.backgroundColor = getPositionColor(player.position);
-        benchEl.style.borderRadius = '4px';
-        benchEl.style.color = 'white';
-        benchEl.style.fontSize = '12px';
-        benchEl.title = `${player.name} (${player.position}, OVR ${player.overall})`;
-
-        if (player.isInjured) {
-            benchEl.style.opacity = '0.5';
-            benchEl.title += ' - Lesionado';
-        } else if (player.contractType === 'loaned_out') {
-            benchEl.style.opacity = '0.6';
-            benchEl.title += ` - Cedido a ${player.loanedTo}`;
-        }
-
-        benchDiv.appendChild(benchEl);
+    // Renderizar suplentes
+    const benchPlayers = gameState.squad.filter(p => !gameState.lineup.includes(p));
+    benchPlayers.forEach(player => {
+        const div = document.createElement('div');
+        div.classList.add('player');
+        div.style.width = '40px';
+        div.style.height = '40px';
+        div.style.fontSize = '12px';
+        div.innerText = player.position;
+        div.title = `${player.name} (OVR: ${player.overall})`;
+        bench.appendChild(div);
     });
 }
 
-// ---------------------------------------------------
-// Actualizar táctica al cambiar formación
-// ---------------------------------------------------
+// Llamar cuando abras la página de tácticas
+document.getElementById('formationSelect').addEventListener('change', () => {
+    renderTactic();
+});
+
+// Conexión de selects de formación y mentalidad
 window.updateFormation = () => {
     const sel = document.getElementById('formationSelect');
     gameState.formation = sel.value;
     renderTactic();
+};
+
+window.updateMentality = () => {
+    const sel = document.getElementById('mentalitySelect');
+    gameState.mentality = sel.value;
+    // Opcional: actualizar colores de jugadores según mentalidad
+};
+
+function renderBench() {
+    const benchDiv = document.getElementById('tactic-bench');
+
+    // Limpia el contenido anterior (menos el título)
+    benchDiv.innerHTML = '<h3>Suplentes</h3>';
+
+    // Itera sobre los suplentes
+    gameState.bench.forEach(player => {
+        const playerEl = document.createElement('div');
+        playerEl.className = 'bench-player';
+        playerEl.textContent = player.name; // o icono / número
+        benchDiv.appendChild(playerEl);
+    });
+}
+
+window.updateFormation = () => {
+    const sel = document.getElementById('formationSelect');
+    gameState.formation = sel.value;
+    renderTactic();
+    renderBench(); // ✅ actualiza suplentes
 };
