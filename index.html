@@ -2124,7 +2124,35 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 
-        
+   // Abrir modal con datos del jugador --------------------------------------------------
+function openPlayerModal(player) {
+    document.getElementById('modalPlayerName').innerText = player.name;
+    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position}`;
+    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall}`;
+    
+    // Si quieres mostrar más stats:
+    document.getElementById('modalPlayerOther').innerHTML = `
+        Edad: ${player.age || 'N/A'}<br>
+        Nacionalidad: ${player.nationality || 'N/A'}<br>
+        Lesionado: ${player.isInjured ? 'Sí' : 'No'}
+    `;
+    
+    document.getElementById('playerModal').style.display = 'block';
+}
+
+// Cerrar modal
+function closePlayerModal() {
+    document.getElementById('playerModal').style.display = 'none';
+}
+
+// Cerrar al hacer clic fuera del contenido
+window.onclick = function(event) {
+    const modal = document.getElementById('playerModal');
+    if (event.target == modal) {
+        closePlayerModal();
+    }
+};
+     // final modal con datos del jugador -------------------------------------------------- 
         
         // Exponer globalmente
         window.gameLogic = gameLogic;
