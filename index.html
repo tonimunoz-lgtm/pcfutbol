@@ -204,15 +204,19 @@
         </div>
     </div>
 
-    <!-- ALINEACIÓN -->
-    <div id="lineup" class="page">
-        <div class="page-header">
-            <h1>⚽ Alineación</h1>
-            <button class="page-close-btn" onclick="closePage('lineup')">✖ CERRAR</button>
-        </div>
-        
-        <p class="alert alert-info" id="lineupMessage">Arrastra y suelta jugadores para configurar tu alineación. Los jugadores lesionados no pueden ser alineados.</p>
-        
+  <!-- ALINEACIÓN -->
+<div id="lineup" class="page">
+    <div class="page-header">
+        <h1>⚽ Alineación</h1>
+        <button class="page-close-btn" onclick="closePage('lineup')">✖ CERRAR</button>
+    </div>
+    
+    <p class="alert alert-info" id="lineupMessage">
+        Arrastra y suelta jugadores para configurar tu alineación. Los jugadores lesionados no pueden ser alineados.
+    </p>
+    
+    <!-- Contenedor horizontal: campo + suplentes -->
+    <div class="lineup-main-container">
         <div class="pitch-container" id="pitchContainer">
             <!-- Aquí se renderizarán los 11 titulares -->
         </div>
@@ -223,9 +227,11 @@
                 <!-- Aquí se renderizarán los suplentes -->
             </div>
         </div>
-        
-        <button class="btn" style="margin-top: 20px;" onclick="window.saveLineup()">Guardar Alineación</button>
     </div>
+    
+    <button class="btn" style="margin-top: 20px;" onclick="window.saveLineup()">Guardar Alineación</button>
+</div>
+
 
     <!-- TÁCTICAS -->
 <div id="tactics" class="page">
