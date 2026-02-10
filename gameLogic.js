@@ -2562,4 +2562,17 @@ document.getElementById('formationSelect').addEventListener('change', () => {
     renderTactic();
 });
 
+// Conexión de selects de formación y mentalidad
+window.updateFormation = () => {
+    const sel = document.getElementById('formationSelect');
+    gameState.formation = sel.value;
+    renderTactic();
+};
+
+window.updateMentality = () => {
+    const sel = document.getElementById('mentalitySelect');
+    gameState.mentality = sel.value;
+    // Opcional: actualizar colores de jugadores según mentalidad
+};
+
 
