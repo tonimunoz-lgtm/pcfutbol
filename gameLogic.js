@@ -2541,6 +2541,7 @@ function renderTactic() {
 
             const div = document.createElement('div');
             div.classList.add('player');
+            // Destacar jugador en foco de entrenamiento
             if (gameState.trainingFocus.playerIndex === gameState.lineup.indexOf(player)) {
                 div.classList.add('training-focus');
             }
@@ -2552,8 +2553,13 @@ function renderTactic() {
         });
     });
 
-    // Renderizar suplentes
-    const benchPlayers = gameState.squad.filter(p => !gameState.lineup.includes(p));
+    // ------------------------------
+    // Renderizar suplentes correctamente
+    // ------------------------------
+    const benchPlayers = gameState.squad.filter(
+        p => !gameState.lineup.some(lp => lp.name === p.name) // filtra por nombre
+    );
+
     benchPlayers.forEach(player => {
         const div = document.createElement('div');
         div.classList.add('bench-player');
@@ -2562,6 +2568,7 @@ function renderTactic() {
         bench.appendChild(div);
     });
 }
+
 
 
 // Llamar cuando abras la página de tácticas
