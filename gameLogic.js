@@ -2512,68 +2512,56 @@ function renderTactic() {
 
     const formation = gameState.formation || '433';
     const formationMap = {
-        '433': [1,4,4,3], // fila 0 = POR
-        '442': [1,4,4,2],
-        '352': [1,3,5,2],
-        '541': [1,5,4,1],
-        '451': [1,4,5,1]
+        '433': [1, 4, 4, 3], // portero + defensa + medio + delantero
+        '442': [1, 4, 4, 2],
+        '352': [1, 3, 5, 2],
+        '541': [1, 5, 4, 1],
+        '451': [1, 4, 5, 1]
     };
 
-    const formationArr = formationMap[formation] || [1,4,4,3];
-    const totalRows = formationArr.length;
+    const columns = formationMap[formation] || [1, 4, 4, 3];
 
-    // Generar posiciones exactas para cada fila
-    const positions = [];
-    formationArr.forEach((count, rowIndex) => {
-        const y = (rowIndex / (totalRows - 1)) * 100; // 0% arriba, 100% abajo
-        for (let i = 0; i < count; i++) {
-            const x = ((i + 1) / (count + 1)) * 100;
-            positions.push({ x, y });
-        }
+    // Construir array de jugadores por columna
+    const playersByColumn = [];
+    let lineupIndex = 0;
+    columns.forEach(count => {
+        playersByColumn.push(gameState.lineup.slice(lineupIndex, lineupIndex + count));
+        lineupIndex += count;
     });
 
-    // Renderizar titulares según el orden de gameState.lineup
-    gameState.lineup.forEach((player, index) => {
-        const pos = positions[index] || { x: 50, y: 50 };
-        const div = document.createElement('div');
-        div.classList.add('player');
-        if (gameState.trainingFocus.playerIndex === index) div.classList.add('training-focus');
+    const totalColumns = columns.length;
 
-        div.style.position = 'absolute';
-        div.style.left = `calc(${pos.x}% - 25px)`;
-        div.style.top = `calc(${pos.y}% - 25px)`;
-        div.style.width = '50px';
-        div.style.height = '50px';
-        div.style.lineHeight = '50px';
-        div.style.borderRadius = '50%';
-        div.style.backgroundColor = '#4CAF50';
-        div.style.color = 'white';
-        div.style.textAlign = 'center';
-        div.style.fontSize = '12px';
-        div.title = `${player.name} (OVR: ${player.overall})`;
-        div.innerText = player.position;
-        field.appendChild(div);
+    // Dibujar jugadores por columna
+    playersByColumn.forEach((columnPlayers, colIndex) => {
+        const xPercent = (colIndex + 1) * (100 / (totalColumns + 1));
+        const yStep = 100 / (columnPlayers.length + 1);
+
+        columnPlayers.forEach((player, rowIndex) => {
+            const yPercent = (rowIndex + 1) * yStep;
+
+            const div = document.createElement('div');
+            div.classList.add('player');
+            if (gameState.trainingFocus.playerIndex === gameState.lineup.indexOf(player)) {
+                div.classList.add('training-focus');
+            }
+            div.style.left = `calc(${xPercent}% )`;
+            div.style.top = `calc(${yPercent}% )`;
+            div.innerText = player.position;
+            div.title = `${player.name} (OVR: ${player.overall})`;
+            field.appendChild(div);
+        });
     });
 
     // Renderizar suplentes
-    const benchPlayers = gameState.squad.filter(
-        p => !gameState.lineup.some(lp => lp.name === p.name)
-    );
+    const benchPlayers = gameState.squad.filter(p => !gameState.lineup.includes(p));
     benchPlayers.forEach(player => {
         const div = document.createElement('div');
         div.classList.add('bench-player');
-        div.textContent = player.position; 
+        div.textContent = player.position;
         div.title = `${player.name} (OVR: ${player.overall})`;
-        div.style.padding = '5px';
-        div.style.margin = '3px 0';
-        div.style.backgroundColor = '#eee';
-        div.style.borderRadius = '4px';
         bench.appendChild(div);
     });
 }
-
-
-
 
 
 // Llamar cuando abras la página de tácticas
