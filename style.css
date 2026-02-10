@@ -544,6 +544,8 @@ input:focus, select:focus {
 .pitch-container {
     position: relative;
     width: 100%;
+    max-width: 900px;   /* 🔥 AJUSTA ESTE VALOR */
+    margin: 0 auto;     /* centra el campo */
     padding-bottom: 75%; /* proporción campo */
     background-image: url('assets/imagenes/campodefutbol.png');
     background-size: cover;
