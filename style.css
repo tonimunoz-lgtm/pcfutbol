@@ -539,12 +539,26 @@ input:focus, select:focus {
     overflow: hidden;
     border: 2px solid #8BC34A;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
+}
+
+/*.pitch-container {
+    position: relative;
+    width: 800px;       
+    height: 450px;       
+    background-image: url('assets/imagenes/campodefutbol.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #8BC34A;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
 }*/
 
 .pitch-container {
-    position: relative;
-    width: 800px;        /* ancho fijo más pequeño */
-    height: 450px;       /* 600 / 16*9 ≈ 337px para mantener horizontal */
+    width: 600px; /* ancho máximo */
+    max-width: 100%; /* nunca se pasa del ancho del contenedor padre */
+    padding-bottom: 56.25%; /* 16:9 -> 9/16 = 0.5625 -> 56.25% */
     background-image: url('assets/imagenes/campodefutbol.png');
     background-size: cover;
     background-position: center;
@@ -554,7 +568,6 @@ input:focus, select:focus {
     border: 2px solid #8BC34A;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
 }
-
 
 
 
