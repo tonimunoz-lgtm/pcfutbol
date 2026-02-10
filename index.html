@@ -794,28 +794,18 @@
     <div class="player-modal-content">
         <span class="player-modal-close" onclick="closePlayerModal()">&times;</span>
         <h2 id="modalPlayerName"></h2>
-        <h3>Personal</h3>
         <p id="modalPlayerPosition"></p>
         <p id="modalPlayerAge"></p>
         <p id="modalPlayerNationality"></p>
         <p id="modalPlayerFoot"></p>
-
-        <h3>Attributes</h3>
         <div id="modalPlayerAttributes"></div>
-
-        <h3>Contract</h3>
         <div id="modalPlayerContract"></div>
-
-        <h3>Status</h3>
         <div id="modalPlayerStatus"></div>
-
-        <h3>Stats</h3>
         <div id="modalPlayerStats"></div>
-
-        <h3>History</h3>
         <div id="modalPlayerHistory"></div>
     </div>
 </div>
+
 
 
     <!-- SCRIPTS DEL JUEGO -->
@@ -2148,80 +2138,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
    // Abrir modal con datos del jugador --------------------------------------------------
-// Abrir modal con todos los datos
-window.openPlayerModal = function(player) {
-    // Personal
-    const personal = player.personal || {};
-    document.getElementById('modalPlayerName').textContent = personal.name || "Desconocido";
-    document.getElementById('modalPlayerPosition').textContent = `Posición: ${personal.position || '-'}`;
-    document.getElementById('modalPlayerAge').textContent = `Edad: ${personal.age || '-'}`;
-    document.getElementById('modalPlayerNationality').textContent = `Nacionalidad: ${personal.nationality || '-'}`;
-    document.getElementById('modalPlayerFoot').textContent = `Pie dominante: ${personal.foot || '-'}`;
+async function openPlayerModal(player) {
+    const modal = document.getElementById('playerModal');
+    const nameElem = document.getElementById('modalPlayerName');
+    const positionElem = document.getElementById('modalPlayerPosition');
+    const ageElem = document.getElementById('modalPlayerAge');
+    const nationalityElem = document.getElementById('modalPlayerNationality');
+    const footElem = document.getElementById('modalPlayerFoot');
+    const attributesElem = document.getElementById('modalPlayerAttributes');
+    const contractElem = document.getElementById('modalPlayerContract');
+    const statusElem = document.getElementById('modalPlayerStatus');
+    const statsElem = document.getElementById('modalPlayerStats');
+    const historyElem = document.getElementById('modalPlayerHistory');
+
+    // 🔹 Traemos datos completos de la base de datos
+    let fullPlayer = player;
+    if (player.id) {
+        const res = await window.PlayersDatabase.get(player.id);
+        if (res.success) fullPlayer = res.player;
+    }
+
+    // Rellenar modal
+    nameElem.textContent = fullPlayer.personal?.name || "Desconocido";
+    positionElem.textContent = "Posición: " + (fullPlayer.personal?.position || "-");
+    ageElem.textContent = "Edad: " + (fullPlayer.personal?.age || "-");
+    nationalityElem.textContent = "Nacionalidad: " + (fullPlayer.personal?.nationality || "-");
+    footElem.textContent = "Pie dominante: " + (fullPlayer.personal?.foot || "-");
 
     // Attributes
-    const attributes = player.attributes || {};
-    const attrContainer = document.getElementById('modalPlayerAttributes');
-    attrContainer.innerHTML = "";
-    for (const key in attributes) {
-        const p = document.createElement('p');
-        p.textContent = `${key}: ${attributes[key]}`;
-        attrContainer.appendChild(p);
-    }
+    const a = fullPlayer.attributes || {};
+    attributesElem.innerHTML = `
+        EN: ${a.EN || "-"} | VE: ${a.VE || "-"} | RE: ${a.RE || "-"} | AG: ${a.AG || "-"}<br>
+        CA: ${a.CA || "-"} | EF: ${a.EF || "-"} | MO: ${a.MO || "-"} | AT: ${a.AT || "-"} | DF: ${a.DF || "-"}
+    `;
 
     // Contract
-    const contract = player.contract || {};
-    const contractContainer = document.getElementById('modalPlayerContract');
-    contractContainer.innerHTML = "";
-    for (const key in contract) {
-        const p = document.createElement('p');
-        p.textContent = `${key}: ${contract[key]}`;
-        contractContainer.appendChild(p);
-    }
+    const c = fullPlayer.contract || {};
+    contractElem.innerHTML = `
+        Equipo: ${c.team || "-"}<br>
+        Salario: ${c.salary || "-"}<br>
+        Tipo: ${c.type || "-"}<br>
+        Años: ${c.years || "-"}<br>
+        Release clause: ${c.releaseClause || "-"}
+    `;
 
     // Status
-    const status = player.status || {};
-    const statusContainer = document.getElementById('modalPlayerStatus');
-    statusContainer.innerHTML = "";
-    for (const key in status) {
-        const p = document.createElement('p');
-        p.textContent = `${key}: ${status[key]}`;
-        statusContainer.appendChild(p);
-    }
+    const s = fullPlayer.status || {};
+    statusElem.innerHTML = `
+        Lesionado: ${s.isInjured ? "Sí" : "No"} (${s.injuryType || "-"})<br>
+        Semanas fuera: ${s.weeksOut || 0}<br>
+        Suspendido: ${s.isSuspended ? "Sí" : "No"}<br>
+        Tarjetas amarillas: ${s.yellowCards || 0}<br>
+        Tarjeta roja: ${s.redCards || 0}
+    `;
 
     // Stats
-    const stats = player.stats || {};
-    const statsContainer = document.getElementById('modalPlayerStats');
-    statsContainer.innerHTML = "";
-    for (const key in stats) {
-        const p = document.createElement('p');
-        p.textContent = `${key}: ${stats[key]}`;
-        statsContainer.appendChild(p);
-    }
+    const st = fullPlayer.stats || {};
+    statsElem.innerHTML = `
+        Overall: ${st.overall || "-"}<br>
+        Potential: ${st.potential || "-"}<br>
+        Minutos jugados: ${st.minutesPlayed || 0}<br>
+        Goles: ${st.goals || 0}<br>
+        Asistencias: ${st.assists || 0}
+    `;
 
     // History
-    const history = player.history || [];
-    const historyContainer = document.getElementById('modalPlayerHistory');
-    historyContainer.innerHTML = "";
-    if (history.length === 0) {
-        historyContainer.textContent = "Sin historial";
-    } else {
-        const ul = document.createElement('ul');
-        history.forEach(event => {
-            const li = document.createElement('li');
-            li.textContent = event;
-            ul.appendChild(li);
-        });
-        historyContainer.appendChild(ul);
-    }
+    const h = fullPlayer.history || [];
+    historyElem.innerHTML = h.length ? h.join("<br>") : "Sin historial";
 
     // Mostrar modal
-    document.getElementById('playerModal').style.display = 'block';
+    modal.style.display = "block";
 }
 
-// Cerrar modal
-window.closePlayerModal = function() {
-    document.getElementById('playerModal').style.display = 'none';
+function closePlayerModal() {
+    const modal = document.getElementById('playerModal');
+    modal.style.display = "none";
 }
+
 
      // final modal con datos del jugador -------------------------------------------------- 
         
