@@ -1309,4 +1309,11 @@ Salida
     text-align: center;
 }
 
+.bench-player {
+    padding: 5px 10px;
+    margin: 5px 0;
+    background-color: #eee;
+    border-radius: 4px;
+    text-align: center;
+}
 
