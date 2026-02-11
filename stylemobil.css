@@ -1,205 +1,303 @@
-/* ============================================
-   MOBILE OPTIMIZED STYLES
-   ============================================ */
+/* ==============================
+   stylemobile.css
+   ============================== */
 
-/* Base general para móviles */
+/* RESET BÁSICO */
 * {
-    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    overflow-y: auto;
-    min-height: 100vh;
-    flex-direction: column;
-    padding: 0 5px;
+    background: #121212;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
 }
 
-/* ============================================
-   HEADER ADAPTADO
-   ============================================ */
+/* ==============================
+   HEADER
+   ============================== */
 .header {
-    height: 50px;
-    padding: 5px 10px;
-    font-size: 0.8em;
-}
-
-.header-title {
-    font-size: 1.4em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #1f1f1f;
+    padding: 10px;
+    border-bottom: 2px solid #333;
 }
 
 .header-info {
-    gap: 5px;
-}
-
-.info-box {
-    font-size: 0.65em;
-    padding: 3px 5px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 5px;
 }
 
 .team-logo-header {
-    width: 30px;
-    height: 30px;
+    width: 50px;
+    height: 50px;
 }
 
-/* ============================================
-   MAIN LAYOUT - COLUMNAS PARA MÓVILES
-   ============================================ */
+.header-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    margin: 5px 0;
+}
+
+/* INFO BOX */
+.info-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.85em;
+}
+
+/* ==============================
+   MAIN LAYOUT
+   ============================== */
 .main-layout {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: auto;
+    padding: 10px;
     gap: 10px;
+}
+
+/* CUADRANTES */
+.quadrant {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.quadrant .section-title {
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+/* BOTONES */
+.menu-button, .center-option, .btn {
+    width: 100%;
+    padding: 8px 0;
+    margin-bottom: 5px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.menu-button:hover, .center-option:hover, .btn:hover {
+    opacity: 0.9;
+}
+
+.blue-button {
+    background-color: #2196F3;
+    color: #fff;
+}
+
+.green-button {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.orange-button {
+    background-color: #FF9800;
+    color: #fff;
+}
+
+.red-button {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.btn-sm {
+    font-size: 0.75em;
+    padding: 5px 0;
+}
+
+/* ==============================
+   FILA CENTRAL
+   ============================== */
+.main-center-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
     margin: 10px 0;
 }
 
-.quadrant {
-    width: 100%;
-    min-height: 150px;
-    padding: 15px;
-}
-
-.quadrant-content .menu-button {
-    width: 100%;
-    font-size: 0.85em;
-    margin-top: 8px;
-}
-
-.section-title {
-    font-size: 1em;
-    padding: 4px 8px;
-}
-
-/* ============================================
-   BOTONES DE MENÚ ADAPTADOS
-   ============================================ */
-.menu-button {
-    font-size: 0.85em;
-    padding: 6px 10px;
-    width: 100%;
-    line-height: 20px;
-    padding-left: 40px;
-}
-
-.menu-button::before {
-    width: 20px;
-    height: 20px;
-    left: 10px;
-}
-
-/* ============================================
-   CAMPOS Y ALINEACIÓN
-   ============================================ */
-.lineup-main-container {
+.center-buttons {
+    display: flex;
     flex-direction: column;
-    gap: 15px;
+    width: 100%;
+    gap: 5px;
+}
+
+.main-center-circle {
+    width: 150px;
+    height: 150px;
+    border: 3px solid #2196F3;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 10px 0;
+    background: #1e1e1e;
 }
 
-.pitch-container {
-    width: 100%;
-    max-width: 100%;
-    aspect-ratio: 16/9;
-    border-width: 2px;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+.next-match-title {
+    font-weight: bold;
+    font-size: 0.9em;
+    margin: 5px 0 0 0;
 }
 
-.reserves-container {
-    width: 100%;
-    min-width: unset;
-    border-left: none;
-    border-top: 2px solid #5588FF;
-    padding-left: 0;
-    padding-top: 15px;
-}
-
-/* Ajuste jugadores */
-.pitch-position-placeholder {
-    width: 20%;
-    height: 12%;
-    font-size: 0.6em;
-}
-
-.pitch-player {
-    font-size: 0.7em;
-}
-
-.draggable-player {
-    font-size: 0.7em;
-    padding: 4px 8px;
-}
-
-/* ============================================
-   TABLAS Y GRID
-   ============================================ */
-.data-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-}
-
-table, th, td {
-    font-size: 0.75em;
-    padding: 6px;
-}
-
-/* ============================================
-   MODALES
-   ============================================ */
-.modal-content {
-    max-width: 95%;
-    padding: 20px;
-}
-
-/* ============================================
-   BOTONES GENERALES
-   ============================================ */
-.btn {
-    padding: 8px 15px;
-    font-size: 0.85em;
-}
-
-/* ============================================
-   INPUTS
-   ============================================ */
-input, select {
-    max-width: 100%;
-    padding: 8px;
-}
-
-/* ============================================
-   ALERTAS
-   ============================================ */
-.alert {
+/* ==============================
+   PÁGINAS / MODALES
+   ============================== */
+.page {
+    display: none;
     padding: 10px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1f1f1f;
+    padding: 5px 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.page-header h1 {
+    font-size: 1em;
+}
+
+.page-close-btn {
+    background: #c73446;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.85em;
+    padding: 2px 6px;
+}
+
+/* TABLAS */
+table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.8em;
 }
 
-/* ============================================
-   TARJETAS Y SANCIONES
-   ============================================ */
-.player-card {
-    font-size: 0.8em;
+table th, table td {
+    padding: 5px;
+    text-align: left;
 }
 
-.player-status-indicator {
-    font-size: 0.7em;
+table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05);
 }
 
-.yellow-card-badge,
-.red-card-badge,
-.suspended-badge,
-.injured-badge,
-.warning-badge {
-    font-size: 0.65em;
-    padding: 2px 4px;
+/* ALERTAS */
+.alert {
+    background: rgba(255,255,255,0.05);
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 5px;
 }
 
-/* ============================================
-   RESPONSIVE MEDIA QUERY (opcional)
-   ============================================ */
-@media screen and (max-width: 480px) {
-    .header-title { font-size: 1.2em; }
-    .menu-button { font-size: 0.8em; padding-left: 35px; }
-    .section-title { font-size: 0.9em; }
-    .pitch-position-placeholder { width: 25%; height: 14%; font-size: 0.55em; }
-    .pitch-player { font-size: 0.65em; }
+.alert-info {
+    background: rgba(33, 150, 243, 0.2);
+    color: #fff;
+}
+
+.alert-success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #fff;
+}
+
+.alert-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #fff;
+}
+
+/* MODALES */
+.modal, .player-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    display: none;
+    padding: 10px;
+}
+
+.modal-content, .player-modal-content {
+    background: #1f1f1f;
+    padding: 15px;
+    border-radius: 12px;
+    width: 100%;
+}
+
+/* MODAL HEADER JUGADOR */
+.modal-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.modal-header img {
+    width: 80px;
+    height: 100px;
+    border-radius: 6px;
+}
+
+.modal-header-info h2 {
+    font-size: 1em;
+}
+
+/* ==============================
+   LINEUP / TÁCTICAS
+   ============================== */
+.lineup-main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pitch-container, .reserves-container, #tactic-field, #tactic-bench {
+    width: 100%;
+    background: #1e1e1e;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+/* ==============================
+   RESPONSIVE ADICIONAL
+   ============================== */
+@media (max-width: 480px) {
+    .main-center-circle {
+        width: 120px;
+        height: 120px;
+    }
+
+    .menu-button, .center-option, .btn {
+        font-size: 0.8em;
+        padding: 6px 0;
+    }
+
+    .page-header h1 {
+        font-size: 0.9em;
+    }
 }
