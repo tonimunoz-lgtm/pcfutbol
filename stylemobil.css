@@ -1,17 +1,21 @@
 /* =========================================================
    stylemobil.css
-   Versión espectacular para móvil
+   Versión completa para móvil
    ========================================================= */
 
 /* -------------------------------------------
    GLOBAL
-   ------------------------------------------- */
+------------------------------------------- */
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
     font-family: 'Arial', sans-serif;
     font-size: 14px;
-    background: #0b1a2b; /* Fondo oscuro tipo cancha */
+    background: #0b1a2b;
     color: #fff;
     display: flex;
     flex-direction: column;
@@ -19,13 +23,23 @@ body {
     overflow-x: hidden;
 }
 
-* {
-    box-sizing: border-box;
+/* Scroll personalizado */
+.main-content::-webkit-scrollbar,
+.list-container::-webkit-scrollbar,
+.modal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.main-content::-webkit-scrollbar-thumb,
+.list-container::-webkit-scrollbar-thumb,
+.modal::-webkit-scrollbar-thumb {
+    background: #3366aa;
+    border-radius: 3px;
 }
 
 /* -------------------------------------------
    HEADER
-   ------------------------------------------- */
+------------------------------------------- */
 .header {
     height: 50px;
     width: 100%;
@@ -60,7 +74,7 @@ body {
 
 /* -------------------------------------------
    NAVEGACIÓN / PESTAÑAS
-   ------------------------------------------- */
+------------------------------------------- */
 .nav-tabs {
     display: flex;
     justify-content: space-around;
@@ -95,9 +109,13 @@ body {
     border-radius: 2px;
 }
 
+.nav-tab:hover:not(.active) {
+    color: #fff;
+}
+
 /* -------------------------------------------
    MAIN CONTENT AREA
-   ------------------------------------------- */
+------------------------------------------- */
 .main-content {
     flex: 1;
     overflow-y: auto;
@@ -108,8 +126,8 @@ body {
 }
 
 /* -------------------------------------------
-   BOTONES PRINCIPALES
-   ------------------------------------------- */
+   BOTONES
+------------------------------------------- */
 .button {
     width: 100%;
     padding: 12px 0;
@@ -121,7 +139,12 @@ body {
     border-radius: 12px;
     text-align: center;
     margin: 6px 0;
-    transition: transform 0.1s, box-shadow 0.2s;
+    transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+}
+
+.button:hover {
+    background: linear-gradient(45deg,#224488,#3366aa);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .button:active {
@@ -130,8 +153,8 @@ body {
 }
 
 /* -------------------------------------------
-   CÍRCULO CENTRAL (JUGADA / BOTÓN FLOTANTE)
-   ------------------------------------------- */
+   CÍRCULO CENTRAL
+------------------------------------------- */
 .main-circle {
     width: 180px;
     height: 180px;
@@ -154,7 +177,7 @@ body {
 
 /* -------------------------------------------
    CANCHA / POSICIONES
-   ------------------------------------------- */
+------------------------------------------- */
 .pitch-container {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -185,9 +208,26 @@ body {
     box-shadow: 0 0 8px #ffcc00;
 }
 
+/* Líneas de la cancha */
+.pitch-center-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #3366aa;
+    transform: translateY(-50%);
+}
+
+.pitch-goal-area {
+    position: absolute;
+    border: 2px solid #ffaa00;
+    border-radius: 6px;
+}
+
 /* -------------------------------------------
-   LISTAS DE RESERVAS / JUGADORES
-   ------------------------------------------- */
+   LISTAS / JUGADORES
+------------------------------------------- */
 .list-container {
     display: flex;
     flex-direction: column;
@@ -216,7 +256,7 @@ body {
 
 /* -------------------------------------------
    BADGES / ALERTAS
-   ------------------------------------------- */
+------------------------------------------- */
 .badge {
     font-size: 0.65em;
     padding: 2px 6px;
@@ -231,8 +271,8 @@ body {
 .badge.suspended { background: #aa2222; color: #fff; }
 
 /* -------------------------------------------
-   TABLA / ESTADÍSTICAS
-   ------------------------------------------- */
+   TABLAS / ESTADÍSTICAS
+------------------------------------------- */
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -248,7 +288,17 @@ body {
 
 /* -------------------------------------------
    MODALES
-   ------------------------------------------- */
+------------------------------------------- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+}
+
 .modal {
     position: fixed;
     top: 50%;
@@ -266,8 +316,41 @@ body {
 }
 
 /* -------------------------------------------
+   INPUTS / FORMULARIOS
+------------------------------------------- */
+.input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #3366aa;
+    background: #112233;
+    color: #fff;
+    font-size: 0.9em;
+}
+
+.input:focus {
+    border-color: #ffcc00;
+    outline: none;
+}
+
+/* -------------------------------------------
+   TIPOGRAFÍA
+------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    color: #fff;
+    font-weight: bold;
+}
+
+p {
+    margin: 0;
+    color: #ccc;
+    font-size: 0.85em;
+}
+
+/* -------------------------------------------
    ANIMACIONES SUTILES
-   ------------------------------------------- */
+------------------------------------------- */
 @keyframes pop {
     0% { transform: scale(0.8); opacity: 0.5; }
     50% { transform: scale(1.1); opacity: 1; }
@@ -276,4 +359,15 @@ body {
 
 .button, .main-circle, .list-item {
     animation: pop 0.3s ease;
+}
+
+/* -------------------------------------------
+   RESPONSIVE EXTRA
+------------------------------------------- */
+@media (min-width: 480px) {
+    .main-circle {
+        width: 200px;
+        height: 200px;
+        font-size: 1.3em;
+    }
 }
