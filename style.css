@@ -1621,22 +1621,22 @@ Salida
 }
 
 /* =====================================
-   REUBICACIÓN DE INFO-BOX EN EL LAYOUT
-   SIN IMPORTAR SU CONTENEDOR
+   REUBICACIÓN DE INFO-BOX ALREDEDOR DEL CÍRCULO
 ===================================== */
 @media (max-width: 1100px) {
 
+    /* Referencia para los posicionamientos */
     .main-layout {
-        position: relative; /* referencia para posicionar los info-box */
+        position: relative; /* necesario para los absolute hijos */
     }
 
     /* Info-box izquierda (dinero) */
     .info-box:first-of-type {
         position: absolute;
         top: 50%;
-        left: 0;
-        transform: translate(-10%, -50%);
-        max-width: 45%;
+        left: calc(50% - 180px); /* 180px a la izquierda del centro del layout */
+        transform: translateY(-50%);
+        max-width: 160px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1647,19 +1647,19 @@ Salida
     .info-box:last-of-type {
         position: absolute;
         top: 50%;
-        right: 0;
-        transform: translate(10%, -50%);
-        max-width: 45%;
+        right: calc(50% - 180px); /* 180px a la derecha del centro */
+        transform: translateY(-50%);
+        max-width: 160px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         z-index: 2;
     }
 
-    /* Mantener círculo centrado */
+    /* Mantener el círculo centrado */
     #nextMatchCircle {
         margin: 0 auto;
+        position: relative;
         z-index: 1;
     }
 }
-
