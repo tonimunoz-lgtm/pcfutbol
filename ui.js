@@ -145,7 +145,7 @@ function renderSquadList(squad, currentTeam) {
                         <th>DURACIÓN</th>
                         <th>CLÁUSULA</th>c
                         <th>SALARIO</th>
-                        <th>VALOR</th>
+                   <!-- <th>VALOR</th> -->
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
@@ -201,7 +201,7 @@ function renderSquadList(squad, currentTeam) {
                 <td>${contractYears} ${contractYears === 1 ? 'año' : 'años'}</td>
                 <td>${releaseClause.toLocaleString('es-ES')}€</td>
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td>
+            // <td>${p.value.toLocaleString('es-ES')}€</td>
                 
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
@@ -269,7 +269,7 @@ function renderAcademyList(academy) {
                         <th>ESTADO</th>  
                         <th>PART.</th>  
                         <th>SALARIO</th>  
-                        <th>VALOR</th>  
+                   <!-- <th>VALOR</th> -->
                         <th>ACCIONES</th>  
                     </tr>  
                 </thead>  
@@ -293,7 +293,7 @@ function renderAcademyList(academy) {
                 <td>${statusText}</td>  
                 <td>${p.matches || 0}</td>  
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td>  
+             // <td>${p.value.toLocaleString('es-ES')}€</td>  
                 <td>  
                     <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
                 </td>  
