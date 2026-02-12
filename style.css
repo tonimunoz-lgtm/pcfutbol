@@ -1625,7 +1625,7 @@ Salida
    (SIN TOCAR HTML NI JS)
 ===================================== */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
 
     /* Reset general por seguridad */
     .header .info-box {
@@ -1637,13 +1637,21 @@ Salida
     .header .info-box:nth-child(3) {
         position: fixed;
         top: 50%;
-        left: calc(50% - 240px);
+        left: calc(50% - 240px); /* Ajusta según el tamaño del círculo */
         transform: translateY(-50%);
         z-index: 40;
         max-width: 160px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        /* Solo mostrar cuando los botones centrales cambian a vertical */
+        display: none; 
     }
 
+    /* Mostrar equipo solo cuando ancho ≤ 900px (cuando los botones centrales ya están verticales) */
+    @media (max-width: 900px) {
+        .header .info-box:nth-child(3) {
+            display: block;
+        }
+    }
 }
