@@ -1417,7 +1417,7 @@ function simulateFullWeek() {
 
     // ─── INJECTOR: mostrar modal con resumen completo ───
     injectMatchSummary(myMatchResult);  // <--- aquí
-}
+
 
     // ===== SIMULAR RESTO DE PARTIDOS =====
     currentWeekMatches
