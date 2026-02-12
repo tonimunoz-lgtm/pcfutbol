@@ -1621,31 +1621,41 @@ Salida
 }
 
 /* =====================================
-   REUBICAR DINERO Y JORNADA JUNTO AL CÍRCULO
-   SOLO EN PANTALLAS PEQUEÑAS
+   MOVER SOLO JORNADA Y DINERO AL LAYOUT
+   (SIN TOCAR HTML NI JS)
 ===================================== */
 
 @media (max-width: 1100px) {
 
-    /* Sacamos visualmente del header */
-    .info-box {
+    /* Reset general por seguridad */
+    .header .info-box {
+        position: static;
+        transform: none;
+    }
+
+    /* JORNADA (3º elemento) */
+    .header .info-box:nth-child(3) {
         position: fixed;
         top: 50%;
+        left: calc(50% - 240px);
         transform: translateY(-50%);
-        z-index: 40; /* encima del layout */
+        z-index: 40;
         max-width: 160px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Dinero (primera info-box) */
-    .info-box:first-of-type {
-        left: calc(50% - 260px); /* izquierda del círculo */
-    }
-
-    /* Jornada (segunda info-box) */
-    .info-box:last-of-type {
-        right: calc(50% - 260px); /* derecha del círculo */
+    /* DINERO (4º elemento) */
+    .header .info-box:nth-child(4) {
+        position: fixed;
+        top: 50%;
+        right: calc(50% - 240px);
+        transform: translateY(-50%);
+        z-index: 40;
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
