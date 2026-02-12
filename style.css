@@ -198,7 +198,7 @@ body {
     margin: 5px 0;
     width: 80%;
     text-align: left;
-    /*font-size: 0.95em;*/
+    font-size: 0.95em;*/
     font-size: clamp(0.65rem, 1vw, 0.95rem);
     font-weight: bold;
     text-transform: uppercase;
@@ -209,11 +209,6 @@ body {
     position: relative;
     padding-left: 50px;
     line-height: 24px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
 }
 
 .menu-button:hover {
@@ -1544,5 +1539,36 @@ Salida
         height: 140px;
     }
 }
+
+/* =====================================
+   AJUSTE SOLO DE TEXTO EN PANTALLAS PEQUEÑAS
+===================================== */
+
+@media (max-width: 1100px) {
+
+    /* Botones de cuadrantes */
+    .menu-button {
+        font-size: 0.8em;
+    }
+
+    /* Botones centrales */
+    .center-option {
+        font-size: 0.8em;
+    }
+
+    /* Texto dentro del círculo */
+    #nextMatchTeams {
+        font-size: 0.85em;
+    }
+
+    .next-match-title {
+        font-size: 0.9em;
+    }
+
+    #nextMatchDate {
+        font-size: 0.75em;
+    }
+}
+
 
 
