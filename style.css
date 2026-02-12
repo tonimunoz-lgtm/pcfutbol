@@ -1625,36 +1625,35 @@ Salida
 ===================================== */
 @media (max-width: 1100px) {
 
-    /* Contenedor padre del área central (cuadrantes + círculo) */
     .main-layout {
         position: relative; /* referencia para posicionar info-box */
     }
 
-    /* info-box izquierda (dinero, por ejemplo) */
-    .info-box.money {
+    /* Primera info-box (ej. dinero) */
+    .header .info-box:first-of-type {
         position: absolute;
         top: 50%;           /* centrado vertical */
         left: 10px;         /* separación del borde izquierdo */
         transform: translateY(-50%);
-        max-width: 45%;     /* para no sobresalir del contenedor */
+        max-width: 45%;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* info-box derecha (jornada, por ejemplo) */
-    .info-box.matchday {
+    /* Segunda info-box (ej. jornada) */
+    .header .info-box:last-of-type {
         position: absolute;
-        top: 50%;           /* centrado vertical */
+        top: 50%;           
         right: 10px;        /* separación del borde derecho */
         transform: translateY(-50%);
-        max-width: 45%;     
+        max-width: 45%;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Asegurar que el círculo quede centrado */
+    /* Mantener círculo centrado */
     #nextMatchCircle {
         margin: 0 auto;
         z-index: 1;
