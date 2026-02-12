@@ -1620,3 +1620,32 @@ Salida
     }
 }
 
+/* =====================================
+   REUBICAR DINERO Y JORNADA JUNTO AL CÍRCULO
+   SOLO EN PANTALLAS PEQUEÑAS
+===================================== */
+
+@media (max-width: 1100px) {
+
+    /* Sacamos visualmente del header */
+    .info-box {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40; /* encima del layout */
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Dinero (primera info-box) */
+    .info-box:first-of-type {
+        left: calc(50% - 260px); /* izquierda del círculo */
+    }
+
+    /* Jornada (segunda info-box) */
+    .info-box:last-of-type {
+        right: calc(50% - 260px); /* derecha del círculo */
+    }
+}
