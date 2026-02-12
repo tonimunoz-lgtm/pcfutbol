@@ -1622,7 +1622,7 @@ Salida
 
 /* =====================================
    REUBICACIÓN DE INFO-BOX EN EL LAYOUT
-   PARA PANTALLAS PEQUEÑAS
+   SIN IMPORTAR SU CONTENEDOR
 ===================================== */
 @media (max-width: 1100px) {
 
@@ -1630,24 +1630,24 @@ Salida
         position: relative; /* referencia para posicionar los info-box */
     }
 
-    /* Info-box izquierda (ej. dinero) */
-    .main-layout .info-box:first-of-type {
+    /* Info-box izquierda (dinero) */
+    .info-box:first-of-type {
         position: absolute;
-        top: 50%;           /* centrado vertical del layout */
-        left: 0;            /* pegado al borde izquierdo del layout */
+        top: 50%;
+        left: 0;
         transform: translate(-10%, -50%);
         max-width: 45%;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        z-index: 2;          /* encima de cuadrantes */
+        z-index: 2;
     }
 
-    /* Info-box derecha (ej. jornada) */
-    .main-layout .info-box:last-of-type {
+    /* Info-box derecha (jornada) */
+    .info-box:last-of-type {
         position: absolute;
         top: 50%;
-        right: 0;           /* pegado al borde derecho del layout */
+        right: 0;
         transform: translate(10%, -50%);
         max-width: 45%;
         white-space: nowrap;
@@ -1659,7 +1659,7 @@ Salida
     /* Mantener círculo centrado */
     #nextMatchCircle {
         margin: 0 auto;
-        z-index: 1;          /* debajo de info-box */
+        z-index: 1;
     }
 }
 
