@@ -18,31 +18,33 @@ window.firebaseConfigData = firebaseConfigData;
 console.log(firebaseConfigData.enabled ? '✅ Firebase HABILITADO' : '⚠️ Firebase DESHABILITADO');
   
 const TEAMS_DATA = {  
-    primera: [ // Primera División (20 equipos) - Basado en 23/24  
-        'Real Madrid', 'FC Barcelona', 'Atlético Madrid', 'Girona FC', 'Athletic Club',  
-        'Real Sociedad', 'Real Betis', 'Valencia CF', 'Villarreal CF', 'Getafe CF',  
-        'CA Osasuna', 'Rayo Vallecano', 'Sevilla FC', 'RCD Mallorca', 'UD Las Palmas',  
-        'Celta de Vigo', 'Deportivo Alavés', 'Cádiz CF', 'Granada CF', 'UD Almería'  
-    ],  
-    segunda: [ // Segunda División (22 equipos) - Basado en 23/24  
-        'SD Eibar', 'RCD Espanyol', 'Real Oviedo', 'Sporting Gijón', 'Levante UD',  
-        'Burgos CF', 'Racing Santander', 'CD Leganés', 'Real Valladolid', 'Real Zaragoza',  
-        'CD Tenerife', 'FC Cartagena', 'Albacete Balompié', 'SD Huesca', 'CD Mirandés',  
-        'Villarreal B', 'AD Alcorcón', 'SD Amorebieta', 'FC Andorra', 'CD Eldense',  
-        'Racing de Ferrol', 'Elche CF'  
-    ],  
-    rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 23/24  
-        'RC Deportivo', 'FC Barcelona Atlètic', 'Real Madrid Castilla', 'Cultural Leonesa', 'Unionistas Salamanca CF',  
-        'Celta Fortuna', 'Rayo Majadahonda', 'SD Logroñés', 'Osasuna Promesas', 'Real Sociedad B',  
-        'Gimnàstic Tarragona', 'CE Sabadell FC', 'CD Lugo', 'UE Cornellà', 'Teruel',  
-        'Fuenlabrada', 'Sestao River', 'Tarazona', 'Arenteiro', 'Logroñés'  
-    ],  
-    rfef_grupo2: [ // Primera RFEF Grupo 2 (20 equipos) - Basado en 23/24  
-        'Málaga CF', 'Recreativo Huelva', 'Córdoba CF', 'AD Ceuta FC', 'CD Castellón',  
-        'Antequera CF', 'Atlético Baleares', 'Linares Deportivo', 'UD Ibiza', 'CF Intercity',  
-        'Real Murcia CF', 'Atlético Sanluqueño', 'Melilla', 'Algeciras CF', 'San Fernando CD',  
-        'Recreativo Granada', 'UD Melilla', 'CP Cacereño', 'Yeclano Deportivo', 'Granada B'  
-    ]  
+    primera: [ // Primera División (20 equipos) - Basado en 25/26
+        'Real Madrid CF', 'FC Barcelona', 'Atlético de Madrid', 'Athletic Club', 'Villarreal CF',
+        'Real Sociedad', 'Real Betis Balompié', 'Valencia CF', 'Girona FC', 'Celta de Vigo',
+        'Sevilla FC', 'RCD Espanyol', 'Elche CF', 'Levante UD', 'Real Oviedo',
+        'Deportivo Alavés', 'Getafe CF', 'RCD Mallorca', 'CA Osasuna', 'Rayo Vallecano'
+],
+    segunda: [ // Segunda División (22 equipos) - Basado en 25/26
+        'UD Almería', 'UD Las Palmas', 'CD Leganés', 'Real Valladolid', 'Real Zaragoza',
+        'Albacete Balompié', 'Burgos CF', 'Cádiz CF', 'SD Huesca', 'SD Eibar',
+        'FC Andorra', 'CD Mirandés', 'Racing de Santander', 'Deportivo de La Coruña', 'Málaga CF',
+        'Córdoba CF', 'CD Castellón', 'Cultural y Deportiva Leonesa', 'AD Ceuta FC', 'Real Sociedad B',
+        'Sporting de Gijón', 'Levante UD'
+], 
+    
+    rfef_grupo1: [ // Primera RFEF Grupo 1 (20 equipos) - Basado en 25/26 
+        'AD Mérida', 'Arenas Club', 'Athletic Club B', 'Barakaldo CF', 'CA Osasuna B',
+        'CD Arenteiro', 'CD Guadalajara', 'CD Lugo', 'CD Tenerife', 'CF Talavera de la Reina',
+        'CP Cacereño', 'Ourense CF', 'Pontevedra CF', 'Racing Club de Ferrol', 'RC Celta Fortuna',
+        'Real Avilés Industrial', 'Real Madrid Castilla', 'SD Ponferradina', 'Unionistas de Salamanca CF', 'Zamora CF'
+],
+    
+    rfef_grupo2: [ // Primera RFEF Grupo 2 (20 equipos) - Basado en 25/26  
+        'AD Alcorcón', 'Algeciras CF', 'Atlético Sanluqueño CF', 'Antequera CF', 'Betis Deportivo Balompié',
+        'Atlético de Madrid B', 'CD Eldense', 'CD Teruel', 'CE Europa', 'CE Sabadell FC',        
+        'FC Cartagena', 'Gimnàstic de Tarragona', 'Hércules CF', 'Juventud Torremolinos CF', 'Marbella FC',
+        'Real Murcia CF', 'SD Tarazona', 'Sevilla Atlético', 'UD Ibiza', 'Villarreal CF B'
+], 
 };  
   
 const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
