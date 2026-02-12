@@ -1625,7 +1625,7 @@ Salida
    (SIN TOCAR HTML NI JS)
 ===================================== */
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
 
     /* Reset general por seguridad */
     .header .info-box {
@@ -1633,7 +1633,7 @@ Salida
         transform: none;
     }
 
-    /* JORNADA (3º elemento) */
+    /* EQUIPO (3º elemento) */
     .header .info-box:nth-child(3) {
         position: fixed;
         top: 50%;
@@ -1646,16 +1646,4 @@ Salida
         text-overflow: ellipsis;
     }
 
-    /* DINERO (4º elemento) 
-    .header .info-box:nth-child(4) {
-        position: fixed;
-        top: 50%;
-        right: calc(50% - 240px);
-        transform: translateY(-50%);
-        z-index: 40;
-        max-width: 160px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }*/
 }
