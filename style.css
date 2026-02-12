@@ -1472,6 +1472,18 @@ Salida
         height: 180px;
     }
 
+    /* ==========================================
+   EVITAR BLOQUEO DE CLICK EN CUADRANTES
+========================================== */
+
+.main-center-row {
+    pointer-events: none;
+}
+
+.center-option {
+    pointer-events: auto;
+}
+
     #nextMatchTeams {
         font-size: 14px;
     }
