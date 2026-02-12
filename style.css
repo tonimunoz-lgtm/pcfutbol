@@ -198,7 +198,8 @@ body {
     margin: 5px 0;
     width: 80%;
     text-align: left;
-    font-size: 0.95em;
+    /*font-size: 0.95em;*/
+    font-size: clamp(0.65rem, 1vw, 0.95rem);
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
@@ -208,6 +209,11 @@ body {
     position: relative;
     padding-left: 50px;
     line-height: 24px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
 }
 
 .menu-button:hover {
