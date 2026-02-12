@@ -1621,47 +1621,43 @@ Salida
 }
 
 /* =====================================
-   REUBICACIÓN DE INFO EN PANTALLAS PEQUEÑAS
+   REUBICACIÓN DE INFO-BOX EN PANTALLAS PEQUEÑAS
 ===================================== */
 @media (max-width: 1100px) {
 
-    /* Contenedor principal centrado (si no lo tiene ya) */
-    .main-center-container {
-        position: relative; /* referencia para los elementos absolutos */
+    /* Contenedor padre del área central (cuadrantes + círculo) */
+    .main-layout {
+        position: relative; /* referencia para posicionar info-box */
     }
 
-    /* Información de dinero (izquierda del círculo) */
-    #userMoney {
+    /* info-box izquierda (dinero, por ejemplo) */
+    .info-box.money {
         position: absolute;
-        top: 50%;           /* centra verticalmente */
-        left: 0;            /* al borde izquierdo del contenedor */
-        transform: translateY(-50%); /* corrección vertical */
-        width: auto;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        text-align: left;
-        font-size: 0.9em;  /* ajustar tamaño si es necesario */
-    }
-
-    /* Información de jornada (derecha del círculo) */
-    #nextMatchInfo {
-        position: absolute;
-        top: 50%;           /* centra verticalmente */
-        right: 0;           /* al borde derecho del contenedor */
+        top: 50%;           /* centrado vertical */
+        left: 10px;         /* separación del borde izquierdo */
         transform: translateY(-50%);
-        width: auto;
+        max-width: 45%;     /* para no sobresalir del contenedor */
         white-space: nowrap;
-        text-overflow: ellipsis;
         overflow: hidden;
-        text-align: right;
-        font-size: 0.9em;
+        text-overflow: ellipsis;
     }
 
-    /* Círculo central */
+    /* info-box derecha (jornada, por ejemplo) */
+    .info-box.matchday {
+        position: absolute;
+        top: 50%;           /* centrado vertical */
+        right: 10px;        /* separación del borde derecho */
+        transform: translateY(-50%);
+        max-width: 45%;     
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Asegurar que el círculo quede centrado */
     #nextMatchCircle {
-        margin: 0 auto;     /* centrado horizontal */
-        z-index: 1;         /* asegurarse que esté por encima de fondo si hace falta */
+        margin: 0 auto;
+        z-index: 1;
     }
 }
 
