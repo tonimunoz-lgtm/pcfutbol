@@ -16,7 +16,7 @@ function getTeamLogo(teamName, size = '25px') {
     return ''; // Sin logo
 }
 
-function renderStandingsTable(state) {
+/*function renderStandingsTable(state) {
     const standingsDiv = document.getElementById('standingsTable');
     if (!standingsDiv) return;
 
@@ -54,7 +54,7 @@ function renderStandingsTable(state) {
         return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
-    /*// Generar HTML de la tabla
+    // Generar HTML de la tabla
     let html = `
         <table class="standings-table">
             <thead>
@@ -72,9 +72,7 @@ function renderStandingsTable(state) {
                 </tr>
             </thead>
             <tbody>
-    `;*/
-
-  let rowsHtml = '';
+    `;
 
     sorted.forEach(([team, stats], index) => {
         const isMyTeam = team === state.team;
@@ -112,8 +110,69 @@ function renderStandingsTable(state) {
     `;
 
     standingsDiv.innerHTML = html;
-}
+}*/
 
+function renderStandingsTable(state) {
+    const standingsDiv = document.getElementById('standingsTable');
+    if (!standingsDiv) return;
+
+    if (!state.standings || Object.keys(state.standings).length === 0) {
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
+        return;
+    }
+
+    const validStandings = Object.entries(state.standings)
+        .filter(([team, stats]) => stats && stats.pts !== undefined);
+
+    if (validStandings.length === 0) {
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
+        return;
+    }
+
+    const sorted = validStandings.sort((a, b) => {
+        const ptsDiff = (b[1].pts || 0) - (a[1].pts || 0);
+        if (ptsDiff !== 0) return ptsDiff;
+
+        const gdB = (b[1].gf || 0) - (b[1].gc || 0);
+        const gdA = (a[1].gf || 0) - (a[1].gc || 0);
+        if (gdB !== gdA) return gdB - gdA;
+
+        return (b[1].gf || 0) - (a[1].gf || 0);
+    });
+
+    // Solo generar las filas <tr>
+    let rowsHtml = '';
+    sorted.forEach(([team, stats], index) => {
+        const isMyTeam = team === state.team;
+        const rowClass = isMyTeam ? 'my-team-row' : '';
+
+        let teamLogo = '';
+        const storedData = localStorage.getItem(`team_data_${team}`);
+        if (storedData) {
+            const teamData = JSON.parse(storedData);
+            if (teamData.logo) {
+                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
+            }
+        }
+
+        rowsHtml += `
+            <tr class="${rowClass}">
+                <td>${index + 1}</td>
+                <td class="team-name">${teamLogo}${team}</td>
+                <td>${stats.pj || 0}</td>
+                <td>${stats.g || 0}</td>
+                <td>${stats.e || 0}</td>
+                <td>${stats.p || 0}</td>
+                <td>${stats.gf || 0}</td>
+                <td>${stats.gc || 0}</td>
+                <td>${(stats.gf || 0) - (stats.gc || 0)}</td>
+                <td><strong>${stats.pts || 0}</strong></td>
+            </tr>
+        `;
+    });
+
+    standingsDiv.innerHTML = rowsHtml;
+}
 
 
   
