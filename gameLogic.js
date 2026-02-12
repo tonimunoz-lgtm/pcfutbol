@@ -1494,6 +1494,10 @@ function simulateFullWeek() {
         }  
     }  
 
+    //---------------------------------------------------------------------------------------
+    injectMatchSummary(myMatchResult);
+//-------------------------------------------------------------------------------------
+    
     // ===== SIMULAR RESTO DE PARTIDOS =====
     currentWeekMatches
         .filter(match => match !== myTeamMatch)
