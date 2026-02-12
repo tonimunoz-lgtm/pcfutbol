@@ -998,6 +998,59 @@ function playMatch(homeTeamName, awayTeamName) {
         opponentForm: awayForm
     });
 
+    // Generar timeline de goles basado en los jugadores reales
+    const generateGoalTimeline = (team, goals) => {
+        const squad = (team === gameState.team) 
+            ? gameState.lineup.filter(p => p.isStarting)
+            : getOpponentSquad(team);
+        const timeline = [];
+        for (let i = 0; i < goals; i++) {
+            const scorer = randomItem(squad).name;
+            const minute = randomInt(1, 90);
+            timeline.push({ team, scorer, minute });
+        }
+        return timeline;
+    };
+    const goalTimeline = [
+        ...generateGoalTimeline(homeTeamName, homeGoals),
+        ...generateGoalTimeline(awayTeamName, awayGoals)
+    ].sort((a, b) => a.minute - b.minute);
+
+    // Substituciones
+    const generateSubstitutions = (team) => {
+        const subs = [];
+        const squad = (team === gameState.team) ? gameState.squad : getOpponentSquad(team);
+        const starters = squad.filter(p => p.isStarting);
+        for (let i = 0; i < 3; i++) { // max 3 cambios
+            const outPlayer = randomItem(starters).name;
+            const inPlayer = randomItem(squad.filter(p => !p.isStarting)).name;
+            const minute = randomInt(60, 90);
+            subs.push({ team, out: outPlayer, in: inPlayer, minute });
+        }
+        return subs;
+    };
+    const substitutions = [
+        ...generateSubstitutions(homeTeamName),
+        ...generateSubstitutions(awayTeamName)
+    ];
+
+    // Estadísticas simuladas
+    const stats = {
+        possession: [randomInt(40, 60), randomInt(40, 60)],
+        shots: [randomInt(5, 20), randomInt(5, 20)],
+        shotsOnTarget: [randomInt(1, 10), randomInt(1, 10)],
+        corners: [randomInt(2, 10), randomInt(2, 10)],
+        offsides: [randomInt(0, 5), randomInt(0, 5)],
+        passes: [randomInt(200, 600), randomInt(200, 600)],
+        fouls: [randomInt(5, 20), randomInt(5, 20)],
+        yellowCards: [randomInt(0, 3), randomInt(0, 3)],
+        redCards: [randomInt(0, 1), randomInt(0, 1)],
+        tackles: [randomInt(30, 60), randomInt(30, 60)],
+        ballRecovered: [randomInt(30, 60), randomInt(30, 60)],
+        goalkeeperSaves: [randomInt(1, 8), randomInt(1, 8)],
+        substitutions
+    };
+
     // Actualizar standings
     const updateStats = (team, gf, gc) => {
         const s = gameState.standings[team];
@@ -1018,7 +1071,16 @@ function playMatch(homeTeamName, awayTeamName) {
         addNews(`Partido: ${homeTeamName} ${homeGoals} - ${awayGoals} ${awayTeamName}`, 'info');
     }
 
-    return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };
+    return {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        homeGoals,
+        awayGoals,
+        score: `${homeGoals}-${awayGoals}`,
+        goals: goalTimeline,
+        stats,
+        substitutions
+    };
 }
 
 
