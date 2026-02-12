@@ -1544,7 +1544,7 @@ Salida
    AJUSTE SOLO DE TEXTO EN PANTALLAS PEQUEÑAS
 ===================================== */
 
-/*@media (max-width: 1100px) {
+@media (max-width: 1100px) {
 
     /* Botones de cuadrantes */
     .menu-button {
@@ -1568,48 +1568,8 @@ Salida
     #nextMatchDate {
         font-size: 0.75em;
     }
-}*/
-
-/* =====================================
-   AJUSTE SOLO DE TEXTO EN PANTALLAS PEQUEÑAS
-===================================== */
-
-@media (max-width: 1100px) {
-
-    /* Botones de cuadrantes */
-    .menu-button {
-        font-size: 0.8em;
-    }
-
-    /* Texto dentro del botón */
-    .menu-button span {
-        display: block;         /* necesario para text-overflow */
-        overflow: hidden;       /* oculta lo que se desborda */
-        text-overflow: ellipsis; /* pone "..." si se corta */
-        white-space: nowrap;    /* evita salto de línea */
-    }
-
-    /* Botones centrales */
-    .center-option {
-        font-size: 0.8em;
-    }
-    .center-option span {
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* Texto dentro del círculo */
-    #nextMatchTeams,
-    .next-match-title,
-    #nextMatchDate {
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
 }
+
 
 
 
