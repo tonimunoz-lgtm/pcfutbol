@@ -1570,5 +1570,28 @@ Salida
     }
 }
 
+/* =====================================
+   TEXTO CON PUNTITOS SI SOBRESALE DEL BOTÓN
+===================================== */
+
+.menu-button {
+    white-space: nowrap;        /* evita que el texto haga salto de línea */
+    overflow: hidden;           /* oculta lo que no cabe */
+    text-overflow: ellipsis;    /* muestra "..." si se corta */
+}
+
+.center-option {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Opcional: ajustar tamaño del texto en pantallas pequeñas */
+@media (max-width: 1100px) {
+    .menu-button,
+    .center-option {
+        font-size: 0.8em;        /* tu ajuste anterior */
+    }
+}
 
 
