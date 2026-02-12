@@ -1495,7 +1495,19 @@ function simulateFullWeek() {
     }  
 
     //---------------------------------------------------------------------------------------
-    injectMatchSummary(myMatchResult);
+    // Dentro de simulateFullWeek()
+const myMatchResult = {
+    home: myTeamMatch.home,
+    away: myTeamMatch.away,
+    homeGoals: result.homeGoals,
+    awayGoals: result.awayGoals,
+    goals: result.goalTimeline,        // array de goles reales
+    substitutions: result.substitutions, // cambios reales
+    stats: result.stats                // estadísticas reales
+};
+
+window.injectMatchSummary(myMatchResult);
+
 //-------------------------------------------------------------------------------------
     
     // ===== SIMULAR RESTO DE PARTIDOS =====
