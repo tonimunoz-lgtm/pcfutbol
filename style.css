@@ -1453,5 +1453,78 @@ Salida
     color: #ddd;
 }
 
+/* ==========================================
+   AJUSTE RESPONSIVE - PORTÁTIL / TABLET GRANDE
+========================================== */
+@media (max-width: 1200px) {
+
+    .main-center-row {
+        padding: 0 40px; /* menos margen lateral */
+    }
+
+    .center-option {
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
+
+    .main-center-circle {
+        width: 180px;
+        height: 180px;
+    }
+
+    #nextMatchTeams {
+        font-size: 14px;
+    }
+
+    .next-match-title {
+        font-size: 16px;
+    }
+}
+
+/* ==========================================
+   AJUSTE RESPONSIVE - TABLET
+========================================== */
+@media (max-width: 1000px) {
+
+    .main-center-row {
+        padding: 0 20px;
+    }
+
+    .center-buttons {
+        gap: 8px;
+    }
+
+    .center-option {
+        font-size: 0.75em;
+        padding: 5px 8px;
+    }
+
+    .main-center-circle {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* ==========================================
+   AJUSTE RESPONSIVE - PANTALLAS PEQUEÑAS
+========================================== */
+@media (max-width: 850px) {
+
+    .main-center-row {
+        flex-direction: column;
+        gap: 15px;
+        padding: 0;
+    }
+
+    .center-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .main-center-circle {
+        width: 140px;
+        height: 140px;
+    }
+}
 
 
