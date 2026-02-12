@@ -1646,7 +1646,7 @@ Salida
         text-overflow: ellipsis;
     }
 
-    /* DINERO (4º elemento) */
+    /* DINERO (4º elemento) 
     .header .info-box:nth-child(4) {
         position: fixed;
         top: 50%;
@@ -1657,5 +1657,5 @@ Salida
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
+    }*/
 }
