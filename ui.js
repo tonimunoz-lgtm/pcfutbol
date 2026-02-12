@@ -54,7 +54,7 @@ function renderStandingsTable(state) {
         return (b[1].gf || 0) - (a[1].gf || 0);
     });
 
-    // Generar HTML de la tabla
+    /*// Generar HTML de la tabla
     let html = `
         <table class="standings-table">
             <thead>
@@ -72,7 +72,9 @@ function renderStandingsTable(state) {
                 </tr>
             </thead>
             <tbody>
-    `;
+    `;*/
+
+  let rowsHtml = '';
 
     sorted.forEach(([team, stats], index) => {
         const isMyTeam = team === state.team;
