@@ -1,5 +1,10 @@
 // injector-admin-complete.js
 (function() {
+    // ⚙️ CONFIGURACIÓN DE ADMINISTRADORES
+    const ADMIN_EMAILS = [
+        'tonaco92@gmail.com'
+    ];
+
     const DIVISIONS = {
         'primera': 'Primera División',
         'segunda': 'Segunda División',
@@ -7,7 +12,24 @@
         'rfef_grupo2': 'Primera RFEF Grupo 2'
     };
 
+    // Función para verificar si el usuario actual es administrador
+    function isUserAdmin() {
+        const auth = window.firebaseAuth;
+        if (!auth || !auth.currentUser) {
+            return false;
+        }
+        
+        const userEmail = auth.currentUser.email;
+        return ADMIN_EMAILS.includes(userEmail);
+    }
+
     window.openAdminPanel = function() {
+        // Verificar permisos antes de abrir el panel
+        if (!isUserAdmin()) {
+            alert('❌ No tienes permisos de administrador');
+            return;
+        }
+
         if (!window.gameLogic) {
             alert('El juego aún no está cargado completamente');
             return;
@@ -251,21 +273,34 @@
             // Reset input
             event.target.value = '';
         }
-    }; // ← ESTA ES LA LLAVE QUE FALTABA
+    };
 
-    // Auto-activar panel de admin al cargar
+    // Auto-activar panel de admin al cargar - SOLO PARA ADMINISTRADORES
     window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            const headerInfo = document.querySelector('.header-info');
-            if (headerInfo && !document.getElementById('adminButton')) {
-                const adminBtn = document.createElement('button');
-                adminBtn.id = 'adminButton';
-                adminBtn.className = 'btn btn-sm';
-                adminBtn.innerHTML = '⚙️ Admin';
-                adminBtn.onclick = () => window.openAdminPanel();
-                adminBtn.style.background = '#ff9500';
-                headerInfo.appendChild(adminBtn);
-            }
-        }, 1000);
+        // Esperar a que Firebase Auth esté listo
+        if (window.authReadyPromise) {
+            window.authReadyPromise.then(() => {
+                setTimeout(() => {
+                    // Verificar si el usuario es administrador
+                    if (isUserAdmin()) {
+                        const headerInfo = document.querySelector('.header-info');
+                        if (headerInfo && !document.getElementById('adminButton')) {
+                            const adminBtn = document.createElement('button');
+                            adminBtn.id = 'adminButton';
+                            adminBtn.className = 'btn btn-sm';
+                            adminBtn.innerHTML = '⚙️ Admin';
+                            adminBtn.onclick = () => window.openAdminPanel();
+                            adminBtn.style.background = '#ff9500';
+                            headerInfo.appendChild(adminBtn);
+                            console.log('✅ Botón de administrador añadido');
+                        }
+                    } else {
+                        console.log('ℹ️ Usuario no es administrador - botón no mostrado');
+                    }
+                }, 1000);
+            }).catch(error => {
+                console.error('Error esperando autenticación:', error);
+            });
+        }
     });
 })();
