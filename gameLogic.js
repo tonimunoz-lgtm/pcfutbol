@@ -1280,6 +1280,72 @@ if (typeof window !== 'undefined') {
 console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
 
   
+
+// ========================================
+// ✅ FUNCIÓN WRAPPER: Procesar partido completo
+// ========================================
+async function processMatch(homeTeam, awayTeam, gameState) {
+    // 1️⃣ Simular partido con motor mejorado
+    const result = await playMatchImproved(homeTeam, awayTeam, gameState);
+    
+    // 2️⃣ Actualizar clasificación
+    const updateStandings = (team, gf, gc) => {
+        const stats = gameState.standings[team];
+        if (!stats) return;
+        
+        stats.pj++;
+        stats.gf += gf;
+        stats.gc += gc;
+        
+        if (gf > gc) {
+            stats.g++;
+            stats.pts += 3;
+        } else if (gf === gc) {
+            stats.e++;
+            stats.pts += 1;
+        } else {
+            stats.p++;
+        }
+    };
+    
+    updateStandings(result.homeTeam, result.homeGoals, result.awayGoals);
+    updateStandings(result.awayTeam, result.awayGoals, result.homeGoals);
+    
+    // 3️⃣ Procesar lesiones y forma (solo para nuestro equipo)
+    if (homeTeam === gameState.team || awayTeam === gameState.team) {
+        const ourSquad = (homeTeam === gameState.team) ? result.homeSquad : result.awaySquad;
+        const ourGoals = (homeTeam === gameState.team) ? result.homeGoals : result.awayGoals;
+        const rivalGoals = (homeTeam === gameState.team) ? result.awayGoals : result.homeGoals;
+        
+        gameState.lineup.forEach(player => {
+            // Incrementar partidos jugados
+            player.matches++;
+            
+            // Actualizar forma según resultado
+            if (ourGoals > rivalGoals) {
+                player.form = Math.min(99, player.form + Math.floor(Math.random() * 3));
+            } else if (ourGoals < rivalGoals) {
+                player.form = Math.max(40, player.form - Math.floor(Math.random() * 3));
+            }
+            
+            // Generar posibles lesiones
+            generateInjury(player);
+        });
+        
+        // Actualizar popularidad
+        if (ourGoals > rivalGoals) {
+            gameState.popularity = Math.min(100, gameState.popularity + 2);
+            gameState.fanbase = Math.floor(gameState.fanbase * 1.01);
+        } else if (ourGoals < rivalGoals) {
+            gameState.popularity = Math.max(0, gameState.popularity - 1);
+        }
+    }
+    
+    return result;
+}
+
+
+
 function secondCoachAdvice() {  
     if (!gameState.staff.segundoEntrenador) return;  
   
@@ -1745,7 +1811,7 @@ async function simulateFullWeek() {
             myMatchResult = { home: myTeamMatch.home, away: myTeamMatch.away, homeGoals, awayGoals, score: `${homeGoals}-${awayGoals}` };  
             forcedLoss = true;  
         } else {
-            const result = await playMatchImproved(myTeamMatch.home, myTeamMatch.away, gameState);
+            const result = await processMatch(myTeamMatch.home, myTeamMatch.away, gameState);
             myMatchResult = { home: result.homeTeam, away: result.awayTeam, homeGoals: result.homeGoals, awayGoals: result.awayGoals, score: `${result.homeGoals}-${result.awayGoals}` };
             gameState.matchHistory.push({ week: gameState.week, home: result.homeTeam, away: result.awayTeam, score: `${result.homeGoals}-${result.awayGoals}` });
         }  
@@ -1760,7 +1826,8 @@ for (const match of currentWeekMatches.filter(m => m !== myTeamMatch)) {
     
     if (!alreadyPlayed) {
         // ✅ USAR playMatchImproved con await
-        const result = await playMatchImproved(match.home, match.away, gameState);
+       
+        const result = await processMatch(match.home, match.away, gameState);
         
         gameState.matchHistory.push({
             week: gameState.week,
@@ -2574,7 +2641,8 @@ export {
     updateGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
-    playMatchImproved,  
+    playMatchImproved, 
+    processMatch,
     signPlayer,  
     signYoungster,  
     promoteYoungster,  
