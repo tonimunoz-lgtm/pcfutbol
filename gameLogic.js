@@ -968,24 +968,21 @@ function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'bala
 
 
   
-function playMatch(homeTeamName, awayTeamName) {
-    // Overalls iniciales
-    let homeTeamOverall = 70 + Math.floor(Math.random() * 20);
-    let awayTeamOverall = 70 + Math.floor(Math.random() * 20);
-
-    let homeForm = 75;
-    let awayForm = 75;
-    let homeMentality = 'balanced';
-    let awayMentality = 'balanced';
-
-    // Si mi equipo está jugando, usar su squad y mentalidad
-    if (homeTeamName === gameState.team) {
-        homeTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
-        homeMentality = gameState.mentality;
-    }
-    if (awayTeamName === gameState.team) {
-        awayTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
-        awayMentality = gameState.mentality;
+async function playMatch(homeTeamName, awayTeamName) {
+    // Usar motor mejorado si está disponible
+    if (window.playMatchImproved) {
+        const result = await window.playMatchImproved(homeTeamName, awayTeamName, gameState);
+        
+        // Actualizar standings
+        updateStats(result.homeTeam, result.homeGoals, result.awayGoals);
+        updateStats(result.awayTeam, result.awayGoals, result.homeGoals);
+        
+        // Añadir noticia
+        if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
+            addNews(`Partido: ${result.homeTeam} ${result.homeGoals} - ${result.awayGoals} ${result.awayTeam}`, 'info');
+        }
+        
+        return result;
     }
 
     // Calcular goles
