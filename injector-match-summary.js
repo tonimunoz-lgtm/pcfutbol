@@ -244,14 +244,14 @@ const allCards = generateRealCards(matchResult);
             <div class="cards-section">
                 <h3>🟨🟥 Tarjetas</h3>
                 <div class="cards-list">
-                    ${allCards.map(c => `
-                        <div class="card-item ${c.team === homeTeam ? 'home' : 'away'}">
-                            <span class="card-icon">${c.type === 'yellow' ? '🟨' : '🟥'}</span>
-                            <span class="card-minute">${c.minute}'</span>
-                            <span class="card-player">${c.player}</span>
-                            <span class="card-team">(${c.team})</span>
-                        </div>
-                    `).join('')}
+                   ${allCards.map(c => `
+    <div class="card-item ${c.team === homeTeam ? 'home' : 'away'}">
+        <span class="card-icon">${c.type === 'yellow' ? '🟨' : '🟥'}</span>
+        <span class="card-minute">${c.minute}'</span>
+        <span class="card-player">${c.player}</span>
+        ${c.suspension > 0 ? `<span class="card-suspension">⛔ ${c.suspension} partido${c.suspension > 1 ? 's' : ''}</span>` : ''}
+    </div>
+`).join('')}
                 </div>
             </div>
             ` : ''}
