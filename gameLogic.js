@@ -1753,16 +1753,25 @@ async function simulateFullWeek() {
 
     
     // ===== SIMULAR RESTO DE PARTIDOS =====
-    currentWeekMatches
-        .filter(match => match !== myTeamMatch)
-        .forEach(match => {  
-            const alreadyPlayed = gameState.matchHistory.some(mh => mh.week === gameState.week && mh.home === match.home && mh.away === match.away);
-            if (!alreadyPlayed) {
-                const result = playMatch(match.home, match.away);
-                gameState.matchHistory.push({ week: gameState.week, home: result.homeTeam, away: result.awayTeam, score: `${result.homeGoals}-${result.awayGoals}` });
-                console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
-            }  
+for (const match of currentWeekMatches.filter(m => m !== myTeamMatch)) {
+    const alreadyPlayed = gameState.matchHistory.some(
+        mh => mh.week === gameState.week && mh.home === match.home && mh.away === match.away
+    );
+    
+    if (!alreadyPlayed) {
+        // ✅ USAR playMatchImproved con await
+        const result = await playMatchImproved(match.home, match.away, gameState);
+        
+        gameState.matchHistory.push({
+            week: gameState.week,
+            home: result.homeTeam,
+            away: result.awayTeam,
+            score: `${result.homeGoals}-${result.awayGoals}`
         });
+        
+        console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
+    }
+}
 
     // ===== ACTUALIZAR EL CÍRCULO CENTRAL CON EL PRÓXIMO PARTIDO =====
     gameState.week++;  // incrementamos la semana para que next match sea la siguiente
