@@ -1,5 +1,6 @@
 // players.js - Base de datos de jugadores profesionales y cantera  
 // ✅ CORREGIDO: Campos contractType, contractYears y releaseClause
+// ✅ NUEVO: Soporte para plantillas reales desde Firestore
 
 import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS, TEAMS_DATA } from './config.js';  
   
@@ -112,6 +113,79 @@ function generateRandomFoot() {
     const feet = ['Diestro', 'Zurdo', 'Ambidiestro'];  
     return feet[Math.floor(Math.random() * feet.length)];  
 }  
+
+// ✅ NUEVO: Función para cargar plantilla real de un equipo desde Firestore
+async function loadTeamSquad(teamName) {
+    if (window.getTeamData) {
+        try {
+            const teamData = await window.getTeamData(teamName);
+            if (teamData && teamData.squad && Array.isArray(teamData.squad) && teamData.squad.length > 0) {
+                console.log(`✅ Cargando plantilla real de ${teamName}: ${teamData.squad.length} jugadores`);
+                
+                // Convertir jugadores básicos a jugadores completos con todos los campos necesarios
+                return teamData.squad.map(player => {
+                    const completedPlayer = {
+                        ...player,
+                        club: teamName,
+                        currentTeam: teamName,
+                        matches: player.matches || 0,
+                        form: player.form || (75 + Math.floor(Math.random() * 15)),
+                        isInjured: player.isInjured || false,
+                        weeksOut: player.weeksOut || 0,
+                        isSuspended: player.isSuspended || false,
+                        yellowCards: player.yellowCards || 0,
+                        redCards: player.redCards || 0,
+                        minutesPlayed: player.minutesPlayed || 0,
+                        goals: player.goals || 0,
+                        assists: player.assists || 0,
+                        history: player.history || []
+                    };
+                    
+                    // Calcular overall si no existe
+                    if (!completedPlayer.overall) {
+                        completedPlayer.overall = calculateOverall(completedPlayer);
+                    }
+                    
+                    // Calcular potential si no existe
+                    if (!completedPlayer.potential) {
+                        completedPlayer.potential = Math.min(99, completedPlayer.overall + Math.floor(Math.random() * 10));
+                    }
+                    
+                    // Calcular salario si no existe
+                    if (!completedPlayer.salary) {
+                        completedPlayer.salary = Math.floor(completedPlayer.overall * 100 + completedPlayer.age * 50);
+                    }
+                    
+                    // Calcular valor si no existe
+                    if (!completedPlayer.value) {
+                        completedPlayer.value = Math.floor(completedPlayer.overall * 2000 + completedPlayer.potential * 500);
+                    }
+                    
+                    // Asignar pie si no existe
+                    if (!completedPlayer.foot) {
+                        completedPlayer.foot = generateRandomFoot();
+                    }
+                    
+                    // Campos de contrato
+                    if (!completedPlayer.contractType) {
+                        completedPlayer.contractType = assignContractType();
+                    }
+                    if (!completedPlayer.contractYears) {
+                        completedPlayer.contractYears = assignContractYears(completedPlayer.contractType, completedPlayer.age);
+                    }
+                    if (!completedPlayer.releaseClause) {
+                        completedPlayer.releaseClause = calculateReleaseClause(completedPlayer);
+                    }
+                    
+                    return completedPlayer;
+                });
+            }
+        } catch (error) {
+            console.warn(`⚠️ No se pudo cargar plantilla real de ${teamName}:`, error);
+        }
+    }
+    return null;
+}
 
 // Base de jugadores de élite
 const ELITE_PLAYERS_BASE = [  
@@ -296,8 +370,18 @@ const DIVISION_QUALITY = {
     }
 };
 
-// ✅ CORREGIDO: generateRealisticSquad
-export function generateRealisticSquad(teamName, division) {
+// ✅ MODIFICADO: generateRealisticSquad con soporte para plantillas reales
+export async function generateRealisticSquad(teamName, division) {
+    // 🔥 PRIMERO: Intentar cargar plantilla real desde Firestore
+    const realSquad = await loadTeamSquad(teamName);
+    if (realSquad && realSquad.length > 0) {
+        console.log(`✅ Usando plantilla real de ${teamName} (${realSquad.length} jugadores)`);
+        return realSquad;
+    }
+    
+    // 🔄 FALLBACK: Si no hay plantilla real, generar aleatoriamente
+    console.log(`⚙️ Generando plantilla aleatoria para ${teamName}`);
+    
     const config = DIVISION_QUALITY[division];
     const squad = [];
     const squadSize = config.squad_size.min + Math.floor(Math.random() * (config.squad_size.max - config.squad_size.min + 1));
@@ -442,5 +526,6 @@ export {
     generateRandomName,
     calculateReleaseClause,
     assignContractType,
-    assignContractYears
+    assignContractYears,
+    loadTeamSquad  // ✅ EXPORTAR nueva función
 };
