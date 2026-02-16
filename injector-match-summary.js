@@ -99,12 +99,13 @@ window.injectMatchSummary = function(matchResult) {
    // ========================================
 // GENERAR TARJETAS DE JUGADORES REALES
 // ========================================
-const generateRealCards = (matchResult) => {
-    const allCards = [];
+const generateRealCards = () => {
+    const cards = [];
     
-    if (matchResult && matchResult.cardsAndInjuries && matchResult.cardsAndInjuries.cards) {
+    // Si el resultado tiene tarjetas reales, usarlas
+    if (matchResult.cardsAndInjuries && matchResult.cardsAndInjuries.cards) {
         matchResult.cardsAndInjuries.cards.forEach(card => {
-            allCards.push({
+            cards.push({
                 type: card.red ? 'red' : 'yellow',
                 player: card.player,
                 minute: Math.floor(Math.random() * 90) + 1,
@@ -112,26 +113,74 @@ const generateRealCards = (matchResult) => {
                 suspension: card.suspension || 0
             });
         });
+    } else {
+        // Fallback: generar tarjetas aleatorias
+        const players = ['Rodri', 'Savic', 'Hermoso', 'De Paul', 'Kondogbia', 'Lodi', 'Felipe'];
+        
+        for (let i = 0; i < stats.yellowCards[0]; i++) {
+            cards.push({
+                type: 'yellow',
+                player: players[Math.floor(Math.random() * players.length)],
+                minute: Math.floor(Math.random() * 90) + 1,
+                team: homeTeam,
+                suspension: 0
+            });
+        }
+        
+        for (let i = 0; i < stats.redCards[0]; i++) {
+            cards.push({
+                type: 'red',
+                player: players[Math.floor(Math.random() * players.length)],
+                minute: Math.floor(Math.random() * 90) + 1,
+                team: homeTeam,
+                suspension: 1
+            });
+        }
     }
     
-    return allCards.sort((a, b) => a.minute - b.minute);
+    return cards.sort((a, b) => a.minute - b.minute);
 };
 
-const allCards = generateRealCards(matchResult);
+const allCards = generateRealCards();
 
-    // ========================================
-    // LESIONES (opcional, con baja probabilidad)
-    // ========================================
+// ========================================
+// GENERAR LESIONES REALES
+// ========================================
+const generateRealInjuries = () => {
     const injuries = [];
-    if (Math.random() < 0.2) {
-        const injuredPlayer = ['Savic', 'Hermoso', 'Llorente', 'Correa'][Math.floor(Math.random() * 4)];
-        injuries.push({
-            player: injuredPlayer,
-            minute: Math.floor(Math.random() * 90) + 1,
-            team: Math.random() < 0.5 ? homeTeam : awayTeam
+    
+    if (matchResult.cardsAndInjuries && matchResult.cardsAndInjuries.injuries) {
+        matchResult.cardsAndInjuries.injuries.forEach(injury => {
+            injuries.push({
+                player: injury.player,
+                type: injury.type,
+                severity: injury.severity,
+                icon: injury.icon,
+                weeks: injury.weeks,
+                minute: Math.floor(Math.random() * 90) + 1,
+                team: homeTeam
+            });
         });
+    } else {
+        // Fallback
+        if (Math.random() < 0.15) {
+            const injuredPlayer = ['Savic', 'Hermoso', 'Llorente', 'Correa'][Math.floor(Math.random() * 4)];
+            injuries.push({
+                player: injuredPlayer,
+                type: 'Lesión muscular',
+                severity: 'Moderada',
+                icon: '🟠',
+                weeks: 3,
+                minute: Math.floor(Math.random() * 90) + 1,
+                team: homeTeam
+            });
+        }
     }
+    
+    return injuries;
+};
 
+const injuries = generateRealInjuries();
     // ========================================
     // CREAR MODAL HTML
     // ========================================
@@ -159,11 +208,12 @@ const allCards = generateRealCards(matchResult);
                 <h3>⚽ Goles</h3>
                 <div class="goals-list">
                     ${allGoals.map(g => `
-                        <div class="goal-item ${g.team === homeTeam ? 'home' : 'away'}">
-                            <span class="goal-minute">${g.minute}'</span>
-                            <span class="goal-scorer">${g.name}</span>
-                            <span class="goal-team">(${g.team})</span>
-                        </div>
+                       <div class="card-item ${c.team === homeTeam ? 'home' : 'away'}">
+    <span class="card-icon">${c.type === 'yellow' ? '🟨' : '🟥'}</span>
+    <span class="card-minute">${c.minute}'</span>
+    <span class="card-player">${c.player}</span>
+    ${c.suspension > 0 ? `<span class="card-suspension" style="color: #FF4500; font-weight: bold;">⛔ ${c.suspension} partido${c.suspension > 1 ? 's' : ''}</span>` : ''}
+</div>
                     `).join('')}
                 </div>
             </div>
@@ -261,11 +311,13 @@ const allCards = generateRealCards(matchResult);
                 <h3>🚑 Lesiones</h3>
                 <div class="injuries-list">
                     ${injuries.map(inj => `
-                        <div class="injury-item">
-                            <span class="injury-minute">${inj.minute}'</span>
-                            <span class="injury-player">${inj.player}</span>
-                            <span class="injury-team">(${inj.team})</span>
-                        </div>
+                       <div class="injury-item">
+    <span class="injury-icon">${inj.icon || '🟠'}</span>
+    <span class="injury-minute">${inj.minute}'</span>
+    <span class="injury-player">${inj.player}</span>
+    <span class="injury-type">${inj.type || 'Lesión'}</span>
+    <span class="injury-severity">(${inj.severity}, ${inj.weeks} sem)</span>
+</div>
                     `).join('')}
                 </div>
             </div>
