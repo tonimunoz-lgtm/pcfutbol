@@ -302,7 +302,21 @@ async function generateInitialSquad() {
         elitePlayersNames.forEach(name => {  
             const p = allAvailablePlayers.find(ep => ep.name === name);  
             if (p && !squad.some(s => s.name === p.name)) {
-                squad.push({ ...p, club: gameState.team, isInjured: false, weeksOut: 0, matches: 0, form: 70 + Math.floor(Math.random() * 20) });  
+                squad.push({ 
+    ...p, 
+    club: gameState.team, 
+    isInjured: false, 
+    weeksOut: 0, 
+    matches: 0, 
+    form: 70 + Math.floor(Math.random() * 20),
+    // NUEVO: Sistema de tarjetas
+    cards: {
+        yellow: 0,
+        red: 0,
+        isSuspended: false,
+        suspensionWeeks: 0
+    }
+});  
             }  
         });  
     }  
