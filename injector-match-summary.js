@@ -96,37 +96,28 @@ window.injectMatchSummary = function(matchResult) {
         ]
     };
 
-    // ========================================
-    // GENERAR TARJETAS CON JUGADORES
-    // ========================================
-    const generateCards = (team, numYellow, numRed) => {
-        const cards = [];
-        const players = ['Rodri', 'Savic', 'Hermoso', 'De Paul', 'Kondogbia', 'Lodi', 'Felipe'];
-        
-        for (let i = 0; i < numYellow; i++) {
-            cards.push({
-                type: 'yellow',
-                player: players[Math.floor(Math.random() * players.length)],
-                minute: Math.floor(Math.random() * 90) + 1,
-                team: team
-            });
-        }
-        
-        for (let i = 0; i < numRed; i++) {
-            cards.push({
-                type: 'red',
-                player: players[Math.floor(Math.random() * players.length)],
-                minute: Math.floor(Math.random() * 90) + 1,
-                team: team
-            });
-        }
-        
-        return cards;
-    };
+   // ========================================
+// GENERAR TARJETAS DE JUGADORES REALES
+// ========================================
+const generateRealCards = (matchResult) => {
+    const allCards = [];
     
-    const homeCards = generateCards(homeTeam, stats.yellowCards[0], stats.redCards[0]);
-    const awayCards = generateCards(awayTeam, stats.yellowCards[1], stats.redCards[1]);
-    const allCards = [...homeCards, ...awayCards].sort((a, b) => a.minute - b.minute);
+    if (matchResult && matchResult.cardsAndInjuries && matchResult.cardsAndInjuries.cards) {
+        matchResult.cardsAndInjuries.cards.forEach(card => {
+            allCards.push({
+                type: card.red ? 'red' : 'yellow',
+                player: card.player,
+                minute: Math.floor(Math.random() * 90) + 1,
+                team: homeTeam,
+                suspension: card.suspension || 0
+            });
+        });
+    }
+    
+    return allCards.sort((a, b) => a.minute - b.minute);
+};
+
+const allCards = generateRealCards(matchResult);
 
     // ========================================
     // LESIONES (opcional, con baja probabilidad)
