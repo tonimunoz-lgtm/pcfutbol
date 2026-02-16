@@ -8,8 +8,6 @@ import {
 } from './config.js';  
 import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
 import { getTeamData, saveTeamData } from './teamData.js';
-import * as InjurySystem from './injuries-system.js';
-import * as CardsSystem from './cards-sanctions-system.js';
 
 
 // Estado global del juego  
@@ -302,21 +300,7 @@ async function generateInitialSquad() {
         elitePlayersNames.forEach(name => {  
             const p = allAvailablePlayers.find(ep => ep.name === name);  
             if (p && !squad.some(s => s.name === p.name)) {
-                squad.push({ 
-    ...p, 
-    club: gameState.team, 
-    isInjured: false, 
-    weeksOut: 0, 
-    matches: 0, 
-    form: 70 + Math.floor(Math.random() * 20),
-    // NUEVO: Sistema de tarjetas
-    cards: {
-        yellow: 0,
-        red: 0,
-        isSuspended: false,
-        suspensionWeeks: 0
-    }
-});  
+                squad.push({ ...p, club: gameState.team, isInjured: false, weeksOut: 0, matches: 0, form: 70 + Math.floor(Math.random() * 20) });  
             }  
         });  
     }  
@@ -1139,8 +1123,34 @@ function calculateTeamEffectiveOverall(lineup, formation = '433') {
 }
   
 function generateInjury(player) {  
-    return InjurySystem.generateInjury(player, gameState.staff, addNews);
-}
+    let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
+    let recoveryMin = BASE_RECOVERY_TIME_WEEKS.min;  
+    let recoveryMax = BASE_RECOVERY_TIME_WEEKS.max;  
+  
+    if (gameState.staff.fisio) {  
+        const fisioLevel = gameState.staff.fisio.level;  
+        const fisioEffect = STAFF_LEVEL_EFFECTS[fisioLevel]?.injuryProb || 1;  
+        injuryProb /= fisioEffect;  
+    }  
+  
+    if (player.form < 60) injuryProb *= 1.5;  
+    if (player.AG > 85) injuryProb *= 1.2;  
+  
+    if (Math.random() < injuryProb) {  
+        player.isInjured = true;  
+        if (gameState.staff.medico) {  
+            const medicoLevel = gameState.staff.medico.level;  
+            const medicoEffect = STAFF_LEVEL_EFFECTS[medicoLevel]?.recoveryTime || 1;  
+            recoveryMin = Math.max(1, Math.round(recoveryMin / medicoEffect));  
+            recoveryMax = Math.max(1, Math.round(recoveryMax / medicoEffect));  
+        }  
+        player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin));  
+  
+        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`, 'warning');  
+        return true;  
+    }  
+    return false;  
+}  
   
 function calculateMatchOutcomeImproved({
     teamOverall,
@@ -1247,71 +1257,16 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
     
     console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
     
-   // ============================================
-// NUEVO: Sistema de tarjetas y sanciones
-// ============================================
-let homeCards = { yellowCards: [], redCards: [] };
-let awayCards = { yellowCards: [], redCards: [] };
-
-if (homeTeamName === gameState.team) {  // ✅ CORREGIDO
-    homeCards = CardsSystem.generateMatchCards(
-        gameState.lineup, 
-        gameState.mentality
-    );
-    
-    // Detectar suspensiones por 5 amarillas
-    const suspendedPlayers = [];
-    gameState.lineup.forEach(player => {
-        CardsSystem.initializePlayerCards(player);
-        if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
-            player.cards.isSuspended && 
-            player.cards.red === 0) {
-            suspendedPlayers.push(player.name);
-        }
-    });
-    
-    // Generar noticias de tarjetas
-    CardsSystem.generateCardsNews({
-        ...homeCards,
-        suspendedPlayers
-    }, addNews);
-}
-
-if (awayTeamName === gameState.team) {  // ✅ CORREGIDO
-    awayCards = CardsSystem.generateMatchCards(
-        gameState.lineup, 
-        gameState.mentality
-    );
-    
-    const suspendedPlayers = [];
-    gameState.lineup.forEach(player => {
-        CardsSystem.initializePlayerCards(player);
-        if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
-            player.cards.isSuspended && 
-            player.cards.red === 0) {
-            suspendedPlayers.push(player.name);
-        }
-    });
-    
-    CardsSystem.generateCardsNews({
-        ...awayCards,
-        suspendedPlayers
-    }, addNews);
-}
-
-return {
-    homeTeam: homeTeamName,  // ✅ CORREGIDO
-    awayTeam: awayTeamName,  // ✅ CORREGIDO
-    homeGoals,
-    awayGoals,
-    homeOverall,
-    awayOverall,
-    homeFormation,
-    awayFormation,
-    // NUEVO: Datos de tarjetas
-    homeCards: homeTeamName === gameState.team ? homeCards : null,  // ✅ CORREGIDO
-    awayCards: awayTeamName === gameState.team ? awayCards : null   // ✅ CORREGIDO
-};
+    return {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        homeGoals,
+        awayGoals,
+        homeOverall,
+        awayOverall,
+        homeFormation,
+        awayFormation
+    };
 }
 
 // ✅ Exportar funciones
@@ -1790,9 +1745,28 @@ async function simulateFullWeek() {
     const preSimLineupValidation = validateLineup(gameState.lineup);  
     applyWeeklyTraining();  
 
-   // Actualizar lesiones y sanciones
-    InjurySystem.updateWeeklyInjuries(gameState.squad, gameState.academy, addNews);
-    CardsSystem.updateWeeklySuspensions(gameState.squad, addNews);
+    // Reducir lesiones
+    gameState.squad.forEach(p => {  
+        if (p.isInjured) {  
+            p.weeksOut--;  
+            if (p.weeksOut <= 0) {  
+                p.isInjured = false;  
+                p.weeksOut = 0;  
+                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
+            }  
+        }  
+    });
+    
+    gameState.academy.forEach(y => {  
+        if (y.isInjured) {  
+            y.weeksOut--;  
+            if (y.weeksOut <= 0) {  
+                y.isInjured = false;  
+                y.weeksOut = 0;  
+                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
+            }  
+        }  
+    });  
 
     secondCoachAdvice();
     if (gameState.week % 4 === 0) boardMessages();
@@ -2190,25 +2164,10 @@ function validateLineup(lineupToCheck) {
     if (numNonGkPlayers !== 10) {  
         return { success: false, message: '¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
     }  
-
-    // ✅ NUEVO: Validar que no haya jugadores sancionados (DENTRO de la función)
-    const suspendedPlayers = lineupToCheck.filter(p => {
-        const status = CardsSystem.canPlayerPlay(p);
-        return !status.canPlay;
-    });
-    
-    if (suspendedPlayers.length > 0) {
-        return {
-            success: false,
-            message: `❌ Hay jugadores sancionados en la alineación: ${
-                suspendedPlayers.map(p => p.name).join(', ')
-            }`
-        };
-    }
   
     return { success: true, message: 'Alineación válida.' };  
-}
-
+} 
+  
 function saveToLocalStorage() {  
     localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
     return { success: true, message: 'Partida guardada en el dispositivo.' };  
@@ -2715,51 +2674,6 @@ function checkMarketRecommendations() {
         }
     });
 }
-
-// ============================================
-// NUEVAS FUNCIONES DE ESTADO DE JUGADORES
-// ============================================
-
-export function getFullPlayerStatus(player) {
-    InjurySystem.initializePlayerInjury(player);
-    const cardsStatus = CardsSystem.getPlayerStatus(player);
-    
-    return {
-        name: player.name,
-        position: player.position,
-        overall: player.overall,
-        isAvailable: !player.isInjured && !player.cards?.isSuspended,
-        injury: player.isInjured ? {
-            type: player.injuryType,
-            weeksOut: player.weeksOut
-        } : null,
-        suspension: player.cards?.isSuspended ? {
-            type: player.cards.red > 0 ? 'red' : 'yellow',
-            weeksOut: player.cards.suspensionWeeks
-        } : null,
-        cards: {
-            yellow: player.cards?.yellow || 0,
-            red: player.cards?.red || 0
-        },
-        displayStatus: cardsStatus.description
-    };
-}
-
-export function getTeamHealthReport() {
-    const injuryStats = InjurySystem.getTeamInjuryStats(gameState.squad);
-    const cardsStats = CardsSystem.getTeamCardsStats(gameState.squad);
-    
-    return {
-        injuries: injuryStats,
-        cards: cardsStats,
-        availablePlayers: gameState.squad.filter(p => {
-            const status = CardsSystem.canPlayerPlay(p);
-            return !p.isInjured && status.canPlay;
-        }).length,
-        totalPlayers: gameState.squad.length
-    };
-}
-
 
 export {  
     getGameState,  
