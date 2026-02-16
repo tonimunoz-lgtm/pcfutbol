@@ -1841,6 +1841,19 @@ async function simulateFullWeek() {
             });
         }
     } // ✅ FIN de if (myTeamMatch)
+
+    // ✅ NUEVO: DISPARAR MODAL INMEDIATAMENTE
+    if (myMatchResult) {
+        // Esperar un momento para que se actualice la UI
+        setTimeout(() => {
+            if (window.injectMatchSummary) {
+                console.log('🎯 Abriendo modal de resultado:', myMatchResult);
+                window.injectMatchSummary(myMatchResult);
+            } else {
+                console.warn('⚠️ injectMatchSummary no está disponible');
+            }
+        }, 500);
+    }
     
     // ===== SIMULAR RESTO DE PARTIDOS =====
     for (const match of currentWeekMatches.filter(m => m !== myTeamMatch)) {
