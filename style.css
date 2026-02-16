@@ -1035,6 +1035,26 @@ Salida
     animation: pulse-warning 1s ease-in-out infinite;
 }
 
+/* Fila de jugador lesionado en plantilla */
+.player-injured-row {
+    background: rgba(199, 0, 0, 0.08) !important;
+    border-left: 3px solid #C70000;
+}
+
+/* Fila de jugador sancionado en plantilla */
+.player-suspended-row {
+    background: rgba(255, 69, 0, 0.08) !important;
+    border-left: 3px solid #FF4500;
+}
+
+/* Espacio para los badges en la celda de estado */
+.player-status-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+}
+
 @keyframes pulse-warning {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.05); }
