@@ -2186,12 +2186,9 @@ function validateLineup(lineupToCheck) {
     if (numNonGkPlayers !== 10) {  
         return { success: false, message: '¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
     }  
-  
-    return { success: true, message: 'Alineación válida.' };  
-} 
 
-// NUEVO: Validar que no haya jugadores sancionados
-    const suspendedPlayers = lineup.filter(p => {
+    // ✅ NUEVO: Validar que no haya jugadores sancionados (DENTRO de la función)
+    const suspendedPlayers = lineupToCheck.filter(p => {
         const status = CardsSystem.canPlayerPlay(p);
         return !status.canPlay;
     });
@@ -2204,6 +2201,9 @@ function validateLineup(lineupToCheck) {
             }`
         };
     }
+  
+    return { success: true, message: 'Alineación válida.' };  
+}
 
 function saveToLocalStorage() {  
     localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
