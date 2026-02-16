@@ -2568,7 +2568,7 @@ export {
     updateGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
-    playMatch,  
+    playMatchImproved,  
     signPlayer,  
     signYoungster,  
     promoteYoungster,  
