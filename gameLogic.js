@@ -1658,7 +1658,8 @@ function endSeason() {
     return { myMatch: myMatchResult, forcedLoss: forcedLoss };  
 }*/
 
-function simulateFullWeek() {  
+
+    async function simulateFullWeek() {  
     let myMatchResult = null;
     let forcedLoss = false;  
 
@@ -1748,7 +1749,7 @@ function simulateFullWeek() {
             myMatchResult = { home: myTeamMatch.home, away: myTeamMatch.away, homeGoals, awayGoals, score: `${homeGoals}-${awayGoals}` };  
             forcedLoss = true;  
         } else {
-            const result = playMatch(myTeamMatch.home, myTeamMatch.away);
+            const result = await playMatchImproved(myTeamMatch.home, myTeamMatch.away, gameState);
             myMatchResult = { home: result.homeTeam, away: result.awayTeam, homeGoals: result.homeGoals, awayGoals: result.awayGoals, score: `${result.homeGoals}-${result.awayGoals}` };
             gameState.matchHistory.push({ week: gameState.week, home: result.homeTeam, away: result.awayTeam, score: `${result.homeGoals}-${result.awayGoals}` });
         }  
