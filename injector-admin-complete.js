@@ -341,6 +341,8 @@
                         <strong style="color: #e94560;">#${index + 1} - OVR: ${player.overall || calculateOverall(player)}</strong>
                         <button class="btn" style="background: #c73446; padding: 5px 10px;" onclick="window.adminBackend.removePlayer(${index})">🗑️ Eliminar</button>
                     </div>
+                    
+                    <!-- Datos básicos -->
                     <div class="player-inputs">
                         <input type="text" placeholder="Nombre" value="${player.name || ''}" onchange="window.adminBackend.updatePlayer(${index}, 'name', this.value)">
                         <select onchange="window.adminBackend.updatePlayer(${index}, 'position', this.value)">
@@ -348,8 +350,36 @@
                         </select>
                         <input type="number" placeholder="Edad" value="${player.age || 25}" min="16" max="40" onchange="window.adminBackend.updatePlayer(${index}, 'age', parseInt(this.value))">
                     </div>
+                    
+                    <!-- Datos de contrato -->
+                    <div style="margin: 10px 0; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 5px;">
+                        <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+                            <div>
+                                <small style="color: #e94560;">Tipo</small>
+                                <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
+                                    <option value="owned" ${(player.contractType || 'owned') === 'owned' ? 'selected' : ''}>Propiedad</option>
+                                    <option value="loaned" ${player.contractType === 'loaned' ? 'selected' : ''}>Cedido</option>
+                                </select>
+                            </div>
+                            <div>
+                                <small style="color: #e94560;">Años</small>
+                                <input type="number" style="width: 100%; padding: 5px;" min="0" max="10" value="${player.contractYears || 3}" onchange="window.adminBackend.updatePlayer(${index}, 'contractYears', parseInt(this.value))">
+                            </div>
+                            <div>
+                                <small style="color: #e94560;">Salario/sem</small>
+                                <input type="number" style="width: 100%; padding: 5px;" min="0" step="100" value="${player.salary || 1000}" onchange="window.adminBackend.updatePlayer(${index}, 'salary', parseInt(this.value))">
+                            </div>
+                            <div>
+                                <small style="color: #e94560;">Cláusula</small>
+                                <input type="number" style="width: 100%; padding: 5px;" min="0" step="10000" value="${player.releaseClause || 0}" onchange="window.adminBackend.updatePlayer(${index}, 'releaseClause', parseInt(this.value))">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Atributos -->
                     <div style="margin-bottom: 10px;">
-                        <small style="color: #999;">Atributos (1-99):</small>
+                        <small style="color: #999;">⚽ Atributos (1-99):</small>
                     </div>
                     <div class="player-attributes">
                         ${ATTRIBUTES.map(attr => `
@@ -368,7 +398,11 @@
                 name: 'Nuevo Jugador',
                 position: 'MC',
                 age: 25,
-                EN: 50, VE: 50, RE: 50, AG: 50, CA: 50, EF: 50, MO: 50, AT: 50, DF: 50
+                EN: 50, VE: 50, RE: 50, AG: 50, CA: 50, EF: 50, MO: 50, AT: 50, DF: 50,
+                contractType: 'owned',
+                contractYears: 3,
+                salary: 1000,
+                releaseClause: 100000
             };
             this.squadPlayers.push(newPlayer);
             this.renderSquadList();
