@@ -1817,6 +1817,11 @@ async function simulateFullWeek() {
         }  
     }  
 
+    // ✅ AÑADIR AQUÍ: Disparar modal de resultado
+    if (myMatchResult && window.displayMatchResultModal) {
+        window.displayMatchResultModal(myMatchResult);
+    }
+}
     
     // ===== SIMULAR RESTO DE PARTIDOS =====
 for (const match of currentWeekMatches.filter(m => m !== myTeamMatch)) {
