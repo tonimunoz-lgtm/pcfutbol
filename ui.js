@@ -2,7 +2,9 @@
   
 import * as gameLogic from './gameLogic.js';  
 import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
-  
+import * as SquadStatusUI from './ui-squad-status.js';
+import * as MatchSummaryUI from './match-summary-enhanced.js';
+
 // ui.js - Añadir al principio del archivo
 
 function getTeamLogo(teamName, size = '25px') {
@@ -15,102 +17,6 @@ function getTeamLogo(teamName, size = '25px') {
     }
     return ''; // Sin logo
 }
-
-/*function renderStandingsTable(state) {
-    const standingsDiv = document.getElementById('standingsTable');
-    if (!standingsDiv) return;
-
-    // ✅ Validación: verificar que standings exista
-    if (!state.standings || Object.keys(state.standings).length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
-        return;
-    }
-
-    // ✅ Filtrar equipos con datos inválidos
-    const validStandings = Object.entries(state.standings)
-        .filter(([team, stats]) => {
-            if (!stats || stats.pts === undefined) {
-                console.warn(`⚠️ Equipo ${team} tiene datos inválidos en standings:`, stats);
-                return false;
-            }
-            return true;
-        });
-
-    if (validStandings.length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
-        return;
-    }
-
-    // Ordenar por puntos, diferencia de goles, goles a favor
-    const sorted = validStandings.sort((a, b) => {
-        const ptsA = a[1].pts || 0;
-        const ptsB = b[1].pts || 0;
-        if (ptsB !== ptsA) return ptsB - ptsA;
-
-        const gdA = (a[1].gf || 0) - (a[1].gc || 0);
-        const gdB = (b[1].gf || 0) - (b[1].gc || 0);
-        if (gdB !== gdA) return gdB - gdA;
-
-        return (b[1].gf || 0) - (a[1].gf || 0);
-    });
-
-    // Generar HTML de la tabla
-    let html = `
-        <table class="standings-table">
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Equipo</th>
-                    <th>PJ</th>
-                    <th>G</th>
-                    <th>E</th>
-                    <th>P</th>
-                    <th>GF</th>
-                    <th>GC</th>
-                    <th>DG</th>
-                    <th>Pts</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    sorted.forEach(([team, stats], index) => {
-        const isMyTeam = team === state.team;
-        const rowClass = isMyTeam ? 'my-team-row' : '';
-
-        // Obtener logo del equipo
-        let teamLogo = '';
-        const storedData = localStorage.getItem(`team_data_${team}`);
-        if (storedData) {
-            const teamData = JSON.parse(storedData);
-            if (teamData.logo) {
-                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
-            }
-        }
-
-        html += `
-            <tr class="${rowClass}">
-                <td>${index + 1}</td>
-                <td class="team-name">${teamLogo}${team}</td>
-                <td>${stats.pj || 0}</td>
-                <td>${stats.g || 0}</td>
-                <td>${stats.e || 0}</td>
-                <td>${stats.p || 0}</td>
-                <td>${stats.gf || 0}</td>
-                <td>${stats.gc || 0}</td>
-                <td>${(stats.gf || 0) - (stats.gc || 0)}</td>
-                <td><strong>${stats.pts || 0}</strong></td>
-            </tr>
-        `;
-    });
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-    standingsDiv.innerHTML = html;
-}*/
 
 function renderStandingsTable(state) {
     const standingsDiv = document.getElementById('standingsTable');
@@ -178,14 +84,21 @@ function renderStandingsTable(state) {
   
 // ✅ FUNCIÓN renderSquadList CORREGIDA - REEMPLAZAR COMPLETA en ui.js
 
-function renderSquadList(squad, currentTeam) {  
-    const list = document.getElementById('squadList');  
-    if (!list) return;  
-  
-    if (!squad || squad.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';  
-        return;  
-    }  
+function renderSquad() {
+    const state = gameLogic.getGameState();
+    const squadDiv = document.getElementById('squadList');
+    if (!squadDiv) return;
+    
+    // Usar el nuevo componente UI
+    const summaryHTML = SquadStatusUI.renderTeamStatusSummary(state.squad);
+    const tableHTML = SquadStatusUI.renderSquadTable(state.squad, {
+        showCards: true,
+        showInjuries: true,
+        sortBy: 'position'
+    });
+    
+    squadDiv.innerHTML = summaryHTML + tableHTML;
+}
   
     let headerHtml = `
         <div style="overflow-x: auto;">
