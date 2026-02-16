@@ -1,4 +1,4 @@
-// injector-admin-complete.js
+// injector-admin-complete.js (con Base64 en Firestore - SIN Storage)
 (function() {
     // ⚙️ CONFIGURACIÓN DE ADMINISTRADORES
     const ADMIN_EMAILS = [
@@ -26,6 +26,16 @@
         }
         
         return false;
+    }
+
+    // Función para convertir imagen a Base64
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     window.openAdminPanel = function() {
@@ -81,8 +91,9 @@
                                 <input id="adminStadiumCapacity" type="number" step="1000" min="1000">
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <label>Foto del estadio (.png):</label>
+                                <label>Foto del estadio (.png/.jpg - máx 500KB):</label>
                                 <input id="adminStadiumImage" type="file" accept="image/png,image/jpeg">
+                                <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
                                 <div id="adminStadiumPreview" style="margin-top: 10px;"></div>
                             </div>
                         </div>
@@ -90,8 +101,9 @@
                         <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                             <h3>🛡️ Escudo</h3>
                             <div style="margin-bottom: 10px;">
-                                <label>Escudo del equipo (.png):</label>
+                                <label>Escudo del equipo (.png/.jpg - máx 200KB):</label>
                                 <input id="adminTeamLogo" type="file" accept="image/png,image/jpeg">
+                                <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
                                 <div id="adminLogoPreview" style="margin-top: 10px;"></div>
                             </div>
                         </div>
@@ -156,7 +168,7 @@
             document.getElementById('adminCurrentTeamName').textContent = teamName;
             document.getElementById('adminTeamDataContainer').style.display = 'block';
 
-            // Cargar datos usando la nueva función que busca en Firebase
+            // Cargar datos usando la función que busca en Firebase
             const teamData = await window.getTeamData(teamName);
 
             // Rellenar formulario
@@ -164,7 +176,7 @@
             document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
             document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
 
-            // Mostrar previews si existen
+            // Mostrar previews si existen (ahora son Base64)
             if (teamData.logo) {
                 document.getElementById('adminLogoPreview').innerHTML = 
                     `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
@@ -192,42 +204,52 @@
             const teamData = {
                 stadiumName: document.getElementById('adminStadiumName').value || 'Estadio Municipal',
                 stadiumCapacity: parseInt(document.getElementById('adminStadiumCapacity').value) || 10000,
-                initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000,
-                logoUrl: null,
-                stadiumImageUrl: null
+                initialBudget: parseInt(document.getElementById('adminInitialBudget').value) || 5000000
             };
 
-            // Cargar datos existentes
+            // Cargar datos existentes para mantener las imágenes si no se suben nuevas
             const existingData = await window.getTeamData(this.currentTeam);
-            teamData.logoUrl = existingData.logoUrl;
-            teamData.stadiumImageUrl = existingData.stadiumImageUrl;
+            teamData.logo = existingData.logo || null;
+            teamData.stadiumImage = existingData.stadiumImage || null;
 
-            // SUBIR A FIREBASE STORAGE (NO BASE64)
-            if (logoFile) {
-                const uploadResult = await window.uploadImageToFirebase(
-                    logoFile, 
-                    `teams/${this.currentTeam}/logo.png`
-                );
-                if (uploadResult.success) {
-                    teamData.logoUrl = uploadResult.url;
+            // Convertir imágenes a Base64 y guardar en Firestore directamente
+            try {
+                if (logoFile) {
+                    // Validar tamaño (máx 200KB para escudo)
+                    if (logoFile.size > 200 * 1024) {
+                        alert('⚠️ El escudo es demasiado grande. Máximo 200KB. Actual: ' + Math.round(logoFile.size / 1024) + 'KB');
+                        return;
+                    }
+                    console.log('📤 Convirtiendo escudo a Base64...');
+                    teamData.logo = await fileToBase64(logoFile);
+                    console.log('✅ Escudo convertido a Base64');
                 }
-            }
 
-            if (stadiumFile) {
-                const uploadResult = await window.uploadImageToFirebase(
-                    stadiumFile, 
-                    `teams/${this.currentTeam}/stadium.png`
-                );
-                if (uploadResult.success) {
-                    teamData.stadiumImageUrl = uploadResult.url;
+                if (stadiumFile) {
+                    // Validar tamaño (máx 500KB para estadio)
+                    if (stadiumFile.size > 500 * 1024) {
+                        alert('⚠️ La imagen del estadio es demasiado grande. Máximo 500KB. Actual: ' + Math.round(stadiumFile.size / 1024) + 'KB');
+                        return;
+                    }
+                    console.log('📤 Convirtiendo imagen de estadio a Base64...');
+                    teamData.stadiumImage = await fileToBase64(stadiumFile);
+                    console.log('✅ Imagen de estadio convertida a Base64');
                 }
-            }
 
-            // Guardar solo URLs en Firestore (NO base64)
-            const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
-            
-            if (saveResult.success) {
-                alert(`✅ Datos guardados correctamente en Firebase`);
+                // Guardar directamente en Firestore (Base64)
+                console.log('💾 Guardando datos en Firestore...');
+                const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
+                
+                if (saveResult.success) {
+                    alert(`✅ Datos guardados correctamente en Firestore`);
+                    // Recargar datos para actualizar previews
+                    await this.loadTeamData();
+                } else {
+                    alert(`❌ Error guardando datos: ${saveResult.error || 'Error desconocido'}`);
+                }
+            } catch (error) {
+                console.error('❌ Error procesando imágenes:', error);
+                alert('❌ Error al procesar las imágenes: ' + error.message);
             }
         },
 
@@ -258,7 +280,7 @@
                     
                     // Guardar todos los datos en Firebase
                     const promises = Object.keys(data).map(teamName => 
-                        window.saveTeamData(teamName, data[teamName])
+                        window.saveTeamDataToFirebase(teamName, data[teamName])
                     );
                     
                     await Promise.all(promises);
