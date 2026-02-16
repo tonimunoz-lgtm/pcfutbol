@@ -211,7 +211,88 @@ function generateLeagueCalendar(teams) {
 }
 
   
-function generateInitialSquad() {  
+// ✅ NUEVO: Función que carga plantilla real o genera aleatoria
+async function generateInitialSquad() {
+    console.log(`🔄 Generando plantilla inicial para ${gameState.team}...`);
+    
+    // 🔥 INTENTAR CARGAR PLANTILLA REAL DESDE FIRESTORE
+    if (window.getTeamData) {
+        try {
+            const teamData = await window.getTeamData(gameState.team);
+            
+            if (teamData && teamData.squad && Array.isArray(teamData.squad) && teamData.squad.length > 0) {
+                console.log(`✅ Cargando plantilla real de ${gameState.team}: ${teamData.squad.length} jugadores`);
+                
+                // Convertir jugadores básicos a jugadores completos
+                const realSquad = teamData.squad.map(player => {
+                    const completedPlayer = {
+                        ...player,
+                        club: gameState.team,
+                        currentTeam: gameState.team,
+                        matches: player.matches || 0,
+                        form: player.form || (75 + Math.floor(Math.random() * 15)),
+                        isInjured: player.isInjured || false,
+                        weeksOut: player.weeksOut || 0,
+                        isSuspended: player.isSuspended || false,
+                        yellowCards: player.yellowCards || 0,
+                        redCards: player.redCards || 0,
+                        minutesPlayed: player.minutesPlayed || 0,
+                        goals: player.goals || 0,
+                        assists: player.assists || 0,
+                        history: player.history || []
+                    };
+                    
+                    // Calcular campos derivados
+                    if (!completedPlayer.overall) {
+                        completedPlayer.overall = calculatePlayerOverall(completedPlayer);
+                    }
+                    if (!completedPlayer.potential) {
+                        completedPlayer.potential = Math.min(99, completedPlayer.overall + Math.floor(Math.random() * 10));
+                    }
+                    if (!completedPlayer.salary) {
+                        completedPlayer.salary = Math.floor(completedPlayer.overall * 100 + completedPlayer.age * 50);
+                    }
+                    if (!completedPlayer.value) {
+                        completedPlayer.value = Math.floor(completedPlayer.overall * 2000 + completedPlayer.potential * 500);
+                    }
+                    if (!completedPlayer.foot) {
+                        completedPlayer.foot = Math.random() < 0.7 ? 'Diestro' : 'Zurdo';
+                    }
+                    
+                    // Campos de contrato
+                    if (!completedPlayer.contractType) {
+                        completedPlayer.contractType = Math.random() < 0.8 ? 'owned' : 'loaned';
+                    }
+                    if (!completedPlayer.contractYears) {
+                        const age = completedPlayer.age;
+                        completedPlayer.contractYears = completedPlayer.contractType === 'loaned' ? 1 :
+                            age < 23 ? 3 + Math.floor(Math.random() * 3) :
+                            age < 30 ? 2 + Math.floor(Math.random() * 3) :
+                            1 + Math.floor(Math.random() * 2);
+                    }
+                    if (!completedPlayer.releaseClause) {
+                        let multiplier = 2.0;
+                        if (completedPlayer.age < 25) multiplier += 0.5;
+                        if (completedPlayer.potential > 80) multiplier += 1.0;
+                        if (completedPlayer.overall > 80) multiplier += 1.0;
+                        const baseClause = Math.round(completedPlayer.value * multiplier);
+                        completedPlayer.releaseClause = Math.round(baseClause / 10000) * 10000;
+                    }
+                    
+                    return completedPlayer;
+                });
+                
+                console.log(`✅ Plantilla real cargada: ${realSquad.length} jugadores`);
+                return realSquad;
+            }
+        } catch (error) {
+            console.warn(`⚠️ No se pudo cargar plantilla real de ${gameState.team}:`, error);
+        }
+    }
+    
+    // 🔄 FALLBACK: GENERAR PLANTILLA ALEATORIA (código original)
+    console.log(`⚙️ Generando plantilla aleatoria para ${gameState.team}`);
+    
     const squad = [];  
     const allAvailablePlayers = initPlayerDatabase();
   
@@ -250,27 +331,25 @@ function generateInitialSquad() {
         player.salary = Math.floor(player.overall * 100 + player.age * 50 + Math.random() * 1000);  
         player.value = Math.floor(player.overall * 2000 + player.potential * 500 + player.salary * 5);
         
-        // ✅ AÑADIR CAMPOS DE CONTRATO (80% owned, 20% loaned)
-player.contractType = Math.random() < 0.8 ? 'owned' : 'loaned';
-player.contractYears = player.contractType === 'loaned' ? 1 : 
-                       age < 23 ? 3 + Math.floor(Math.random() * 3) : 
-                       age < 30 ? 2 + Math.floor(Math.random() * 3) : 
-                       1 + Math.floor(Math.random() * 2);
+        // Campos de contrato
+        player.contractType = Math.random() < 0.8 ? 'owned' : 'loaned';
+        player.contractYears = player.contractType === 'loaned' ? 1 : 
+                               age < 23 ? 3 + Math.floor(Math.random() * 3) : 
+                               age < 30 ? 2 + Math.floor(Math.random() * 3) : 
+                               1 + Math.floor(Math.random() * 2);
         
         // Calcular cláusula de rescisión
         let multiplier = 2.0;
-        if (age < 25) multiplier += 0.5;
+        if (player.age < 25) multiplier += 0.5;
         if (player.potential > 80) multiplier += 1.0;
         if (player.overall > 80) multiplier += 1.0;
-        const clause = Math.floor(player.value * multiplier);
-        player.releaseClause = Math.round(clause / 10000) * 10000;
+        const baseClause = Math.round(player.value * multiplier);
+        player.releaseClause = Math.round(baseClause / 10000) * 10000;
         
-        squad.push({ ...player, club: gameState.team });  
+        squad.push(player);  
     }  
   
-    squad.sort((a,b) => b.overall - a.overall);  
-    gameState.lineup = squad.slice(0, 11);
-    return squad;  
+    return squad;
 }
   
 function generateInitialAcademy() {  
@@ -451,8 +530,9 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
 }
  
   
+// ✅ MODIFICAR selectTeamWithInitialSquad para usar await (línea 454-498)
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    // 🔄 RESET COMPLETO DEL ESTADO
+    // 📄 RESET COMPLETO DEL ESTADO
     Object.assign(gameState, {
         team: teamName,
         division: divisionType,
@@ -471,7 +551,8 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         seasonCalendar: []
     });
 
-    gameState.squad = generateInitialSquad();
+    // ⚠️ CAMBIO IMPORTANTE: Ahora con await
+    gameState.squad = await generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
     // Cargar datos personalizados si existen
@@ -495,8 +576,6 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
 
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
-}
-
   
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
