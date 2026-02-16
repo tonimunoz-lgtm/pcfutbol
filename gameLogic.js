@@ -2175,7 +2175,22 @@ function validateLineup(lineupToCheck) {
   
     return { success: true, message: 'Alineación válida.' };  
 } 
-  
+
+// NUEVO: Validar que no haya jugadores sancionados
+    const suspendedPlayers = lineup.filter(p => {
+        const status = CardsSystem.canPlayerPlay(p);
+        return !status.canPlay;
+    });
+    
+    if (suspendedPlayers.length > 0) {
+        return {
+            success: false,
+            message: `❌ Hay jugadores sancionados en la alineación: ${
+                suspendedPlayers.map(p => p.name).join(', ')
+            }`
+        };
+    }
+
 function saveToLocalStorage() {  
     localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
     return { success: true, message: 'Partida guardada en el dispositivo.' };  
@@ -2682,6 +2697,51 @@ function checkMarketRecommendations() {
         }
     });
 }
+
+// ============================================
+// NUEVAS FUNCIONES DE ESTADO DE JUGADORES
+// ============================================
+
+export function getFullPlayerStatus(player) {
+    InjurySystem.initializePlayerInjury(player);
+    const cardsStatus = CardsSystem.getPlayerStatus(player);
+    
+    return {
+        name: player.name,
+        position: player.position,
+        overall: player.overall,
+        isAvailable: !player.isInjured && !player.cards?.isSuspended,
+        injury: player.isInjured ? {
+            type: player.injuryType,
+            weeksOut: player.weeksOut
+        } : null,
+        suspension: player.cards?.isSuspended ? {
+            type: player.cards.red > 0 ? 'red' : 'yellow',
+            weeksOut: player.cards.suspensionWeeks
+        } : null,
+        cards: {
+            yellow: player.cards?.yellow || 0,
+            red: player.cards?.red || 0
+        },
+        displayStatus: cardsStatus.description
+    };
+}
+
+export function getTeamHealthReport() {
+    const injuryStats = InjurySystem.getTeamInjuryStats(gameState.squad);
+    const cardsStats = CardsSystem.getTeamCardsStats(gameState.squad);
+    
+    return {
+        injuries: injuryStats,
+        cards: cardsStats,
+        availablePlayers: gameState.squad.filter(p => {
+            const status = CardsSystem.canPlayerPlay(p);
+            return !p.isInjured && status.canPlay;
+        }).length,
+        totalPlayers: gameState.squad.length
+    };
+}
+
 
 export {  
     getGameState,  
