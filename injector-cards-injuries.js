@@ -1,16 +1,38 @@
 // injector-cards-injuries.js
 // Sistema completo de tarjetas, sanciones y lesiones mejoradas
-// Se inyecta automáticamente sin modificar archivos existentes
+// Versión 2: Compatible con módulos ES6
 
 console.log('🎴 Cargando sistema de tarjetas y lesiones mejorado...');
+
+// Esperar a que gameLogic esté disponible
+let initAttempts = 0;
+const maxAttempts = 50;
+
+const initInterval = setInterval(() => {
+    initAttempts++;
+    
+    if (window.gameLogic || initAttempts >= maxAttempts) {
+        clearInterval(initInterval);
+        
+        if (!window.gameLogic) {
+            console.error('❌ gameLogic no disponible después de esperar');
+            return;
+        }
+        
+        initializeCardsAndInjuries();
+    }
+}, 100);
+
+function initializeCardsAndInjuries() {
+    console.log('✅ gameLogic detectado, inicializando sistema...');
 
 // ============================================
 // CONFIGURACIÓN
 // ============================================
 
 const CARDS_CONFIG = {
-    BASE_YELLOW_CARD_PROB: 0.15,  // 15% por jugador por partido
-    BASE_RED_CARD_PROB: 0.01,     // 1% por jugador por partido
+    BASE_YELLOW_CARD_PROB: 0.15,
+    BASE_RED_CARD_PROB: 0.01,
     YELLOW_CARDS_FOR_SUSPENSION: 5,
     RED_CARD_SUSPENSION_WEEKS: 2,
     
@@ -45,7 +67,7 @@ const INJURY_CONFIG = {
         { name: "Fractura menor", minWeeks: 6, maxWeeks: 10, probability: 0.03 },
         { name: "Lesión de ligamentos", minWeeks: 8, maxWeeks: 16, probability: 0.02 }
     ],
-    BASE_INJURY_PROB: 0.005  // 0.5% por jugador por partido
+    BASE_INJURY_PROB: 0.005
 };
 
 // ============================================
@@ -74,21 +96,18 @@ function generateMatchCards(lineup, mentality = 'balanced') {
         
         const posMod = CARDS_CONFIG.POSITION_MODIFIERS[player.position] || { yellow: 1.0, red: 1.0 };
         
-        // Probabilidad de amarilla
         const yellowProb = CARDS_CONFIG.BASE_YELLOW_CARD_PROB * mentalityMod.yellow * posMod.yellow;
         if (Math.random() < yellowProb) {
             const minute = 1 + Math.floor(Math.random() * 90);
             yellowCards.push({ player: player.name, position: player.position, minute });
             player.cards.yellow++;
             
-            // Verificar suspensión por 5 amarillas
             if (player.cards.yellow >= CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION) {
                 player.cards.isSuspended = true;
                 player.cards.suspensionWeeks = 1;
             }
         }
         
-        // Probabilidad de roja
         const redProb = CARDS_CONFIG.BASE_RED_CARD_PROB * mentalityMod.red * posMod.red;
         if (Math.random() < redProb) {
             const minute = 1 + Math.floor(Math.random() * 90);
@@ -112,7 +131,6 @@ function updateWeeklySuspensions(squad, addNewsCallback) {
             if (player.cards.suspensionWeeks === 0) {
                 player.cards.isSuspended = false;
                 
-                // Resetear tarjetas amarillas al cumplir sanción
                 if (player.cards.yellow >= CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && player.cards.red === 0) {
                     player.cards.yellow = 0;
                 }
@@ -185,19 +203,16 @@ function getPlayerStatus(player) {
 function calculateInjuryProbability(player, staff) {
     let probability = INJURY_CONFIG.BASE_INJURY_PROB;
     
-    // Efecto del fisioterapeuta (reduce probabilidad)
     if (staff?.fisio) {
-        const fisioEffect = 1.5 - (staff.fisio.level * 0.1); // Nivel 5 = 0.5x
+        const fisioEffect = 1.5 - (staff.fisio.level * 0.1);
         probability /= fisioEffect;
     }
     
-    // Efecto del preparador físico
     if (staff?.entrenador) {
-        const trainerEffect = 1.2 - (staff.entrenador.level * 0.04); // Nivel 5 = 0.8x
+        const trainerEffect = 1.2 - (staff.entrenador.level * 0.04);
         probability /= trainerEffect;
     }
     
-    // Modificadores del jugador
     if (player.form < 60) probability *= 1.5;
     if (player.age > 32) probability *= 1.3;
     if (player.AG && player.AG > 85) probability *= 1.2;
@@ -223,9 +238,8 @@ function calculateRecoveryTime(injuryType, staff) {
     let minWeeks = injuryType.minWeeks;
     let maxWeeks = injuryType.maxWeeks;
     
-    // Efecto del médico (reduce tiempo de recuperación)
     if (staff?.medico) {
-        const doctorEffect = 1.0 - (staff.medico.level * 0.1); // Nivel 5 = 50% reducción
+        const doctorEffect = 1.0 - (staff.medico.level * 0.1);
         minWeeks = Math.max(1, Math.round(minWeeks * doctorEffect));
         maxWeeks = Math.max(minWeeks, Math.round(maxWeeks * doctorEffect));
     }
@@ -275,169 +289,166 @@ function updateWeeklyInjuries(squad, academy, addNewsCallback) {
 }
 
 // ============================================
-// INTERCEPTAR FUNCIONES DE gameLogic
+// HOOK EN SIMULACIÓN DE SEMANA
 // ============================================
 
-// Guardar referencia a la función original
-const originalSimulateFullWeek = window.gameLogic?.simulateFullWeek;
+// Guardar referencia original
+const originalSimulateFullWeek = window.gameLogic.simulateFullWeek;
 
-if (originalSimulateFullWeek) {
-    // Sobrescribir simulateFullWeek
-    window.gameLogic.simulateFullWeek = async function() {
-        const state = window.gameLogic.getGameState();
-        
-        // Actualizar sanciones al inicio de la semana
-        updateWeeklySuspensions(state.squad, window.gameLogic.addNews);
-        
-        // Actualizar lesiones
-        updateWeeklyInjuries(state.squad, state.academy, window.gameLogic.addNews);
-        
-        // Llamar a la función original
-        const result = await originalSimulateFullWeek.call(this);
-        
-        // Generar tarjetas si jugamos partido
-        if (result.myMatch && !result.forcedLoss) {
-            const cards = generateMatchCards(state.lineup, state.mentality);
-            
-            // Aplicar tarjetas
-            if (cards.yellowCards.length > 0) {
-                window.gameLogic.addNews(
-                    `🟨 Tarjetas amarillas: ${cards.yellowCards.map(c => c.player).join(', ')}`,
-                    'warning'
-                );
-            }
-            
-            if (cards.redCards.length > 0) {
-                window.gameLogic.addNews(
-                    `🟥 Tarjetas rojas: ${cards.redCards.map(c => c.player).join(', ')}`,
-                    'error'
-                );
-            }
-            
-            // Generar lesiones durante el partido
-            state.lineup.forEach(player => {
-                generateInjury(player, state.staff, window.gameLogic.addNews);
-            });
-            
-            // Actualizar estado
-            window.gameLogic.updateGameState(state);
-        }
-        
-        return result;
-    };
+// Crear wrapper
+window.gameLogic.simulateFullWeek = async function(...args) {
+    const state = window.gameLogic.getGameState();
     
-    console.log('✅ simulateFullWeek interceptado');
-}
-
-// Interceptar validateLineup
-const originalValidateLineup = window.gameLogic?.validateLineup;
-
-if (originalValidateLineup) {
-    window.gameLogic.validateLineup = function(lineup) {
-        // Validación original
-        const originalResult = originalValidateLineup.call(this, lineup);
+    // PRE-SIMULACIÓN: Actualizar sanciones y lesiones
+    updateWeeklySuspensions(state.squad, window.gameLogic.addNews);
+    updateWeeklyInjuries(state.squad, state.academy, window.gameLogic.addNews);
+    window.gameLogic.updateGameState(state);
+    
+    // Ejecutar simulación original
+    const result = await originalSimulateFullWeek.apply(this, args);
+    
+    // POST-SIMULACIÓN: Generar tarjetas y lesiones del partido
+    if (result.myMatch && !result.forcedLoss) {
+        const currentState = window.gameLogic.getGameState();
+        const cards = generateMatchCards(currentState.lineup, currentState.mentality);
         
-        if (!originalResult.success) {
-            return originalResult;
+        if (cards.yellowCards.length > 0) {
+            window.gameLogic.addNews(
+                `🟨 Tarjetas amarillas: ${cards.yellowCards.map(c => c.player).join(', ')}`,
+                'warning'
+            );
         }
         
-        // Validar sanciones
-        const suspendedPlayers = lineup.filter(p => {
-            const status = canPlayerPlay(p);
-            return !status.canPlay;
+        if (cards.redCards.length > 0) {
+            window.gameLogic.addNews(
+                `🟥 Tarjetas rojas: ${cards.redCards.map(c => c.player).join(', ')}`,
+                'error'
+            );
+        }
+        
+        // Generar lesiones
+        currentState.lineup.forEach(player => {
+            generateInjury(player, currentState.staff, window.gameLogic.addNews);
         });
         
-        if (suspendedPlayers.length > 0) {
-            return {
-                success: false,
-                message: `❌ Jugadores sancionados en alineación: ${suspendedPlayers.map(p => p.name).join(', ')}`
-            };
-        }
-        
-        return { success: true, message: 'Alineación válida' };
-    };
+        window.gameLogic.updateGameState(currentState);
+    }
     
-    console.log('✅ validateLineup interceptado');
-}
+    return result;
+};
 
-// Interceptar initSquad para inicializar tarjetas
-const originalSelectTeam = window.gameLogic?.selectTeamWithInitialSquad;
-
-if (originalSelectTeam) {
-    window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
-        const result = await originalSelectTeam.apply(this, args);
-        
-        // Inicializar tarjetas en todos los jugadores
-        const state = window.gameLogic.getGameState();
-        state.squad.forEach(initializePlayerCards);
-        state.academy.forEach(initializePlayerCards);
-        window.gameLogic.updateGameState(state);
-        
-        return result;
-    };
-    
-    console.log('✅ selectTeamWithInitialSquad interceptado');
-}
+console.log('✅ simulateFullWeek interceptado');
 
 // ============================================
-// INYECTAR EN UI
+// HOOK EN VALIDACIÓN
 // ============================================
 
-// Añadir indicadores visuales a la tabla de plantilla
+const originalValidateLineup = window.gameLogic.validateLineup;
+
+window.gameLogic.validateLineup = function(lineup) {
+    const originalResult = originalValidateLineup.call(this, lineup);
+    
+    if (!originalResult.success) {
+        return originalResult;
+    }
+    
+    // Validar sanciones
+    const suspendedPlayers = lineup.filter(p => {
+        const status = canPlayerPlay(p);
+        return !status.canPlay;
+    });
+    
+    if (suspendedPlayers.length > 0) {
+        return {
+            success: false,
+            message: `❌ Jugadores sancionados: ${suspendedPlayers.map(p => p.name).join(', ')}`
+        };
+    }
+    
+    return { success: true, message: 'Alineación válida' };
+};
+
+console.log('✅ validateLineup interceptado');
+
+// ============================================
+// HOOK EN INICIALIZACIÓN
+// ============================================
+
+const originalSelectTeam = window.gameLogic.selectTeamWithInitialSquad;
+
+window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
+    const result = await originalSelectTeam.apply(this, args);
+    
+    const state = window.gameLogic.getGameState();
+    state.squad.forEach(initializePlayerCards);
+    state.academy.forEach(initializePlayerCards);
+    window.gameLogic.updateGameState(state);
+    
+    return result;
+};
+
+console.log('✅ selectTeamWithInitialSquad interceptado');
+
+// ============================================
+// MEJORAS DE UI
+// ============================================
+
 function enhanceSquadTable() {
-    const interval = setInterval(() => {
-        const squadTable = document.querySelector('#squadList table');
-        
-        if (squadTable) {
-            clearInterval(interval);
+    const squadTable = document.querySelector('#squadList table');
+    if (!squadTable) return;
+    
+    const state = window.gameLogic?.getGameState();
+    if (!state) return;
+    
+    // Añadir columna de estado
+    const headerRow = squadTable.querySelector('thead tr');
+    if (headerRow && !headerRow.querySelector('th.cards-status')) {
+        const statusHeader = document.createElement('th');
+        statusHeader.className = 'cards-status';
+        statusHeader.textContent = 'ESTADO';
+        headerRow.appendChild(statusHeader);
+    }
+    
+    // Añadir estado a cada fila
+    const rows = squadTable.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+        if (state.squad[index]) {
+            const player = state.squad[index];
+            const status = getPlayerStatus(player);
             
-            const state = window.gameLogic?.getGameState();
-            if (!state) return;
-            
-            // Añadir columna de estado si no existe
-            const headerRow = squadTable.querySelector('thead tr');
-            if (headerRow && !headerRow.querySelector('th.cards-status')) {
-                const statusHeader = document.createElement('th');
-                statusHeader.className = 'cards-status';
-                statusHeader.textContent = 'ESTADO';
-                headerRow.insertBefore(statusHeader, headerRow.children[9]);
+            if (!row.querySelector('td.cards-status')) {
+                const statusCell = document.createElement('td');
+                statusCell.className = 'cards-status';
+                
+                const cardsInfo = player.cards ? 
+                    `${player.cards.yellow > 0 ? `🟨×${player.cards.yellow}` : ''} ${player.cards.red > 0 ? `🟥×${player.cards.red}` : ''}` : '';
+                
+                statusCell.innerHTML = `
+                    <span title="${status.description}">
+                        ${status.icon} ${status.weeks > 0 ? `(${status.weeks})` : ''}
+                    </span>
+                    <br>
+                    <small>${cardsInfo}</small>
+                `;
+                row.appendChild(statusCell);
             }
-            
-            // Añadir estado a cada fila
-            const rows = squadTable.querySelectorAll('tbody tr');
-            rows.forEach((row, index) => {
-                if (state.squad[index]) {
-                    const player = state.squad[index];
-                    const status = getPlayerStatus(player);
-                    
-                    if (!row.querySelector('td.cards-status')) {
-                        const statusCell = document.createElement('td');
-                        statusCell.className = 'cards-status';
-                        statusCell.innerHTML = `
-                            <span title="${status.description}">
-                                ${status.icon} ${status.weeks > 0 ? `(${status.weeks})` : ''}
-                            </span>
-                        `;
-                        row.insertBefore(statusCell, row.children[9]);
-                    }
-                    
-                    // Mostrar tarjetas
-                    const cardsInfo = player.cards ? 
-                        `${player.cards.yellow > 0 ? `🟨×${player.cards.yellow}` : ''} ${player.cards.red > 0 ? `🟥×${player.cards.red}` : ''}` : '';
-                    
-                    if (cardsInfo && !row.querySelector('td.player-cards')) {
-                        const cardsCell = document.createElement('td');
-                        cardsCell.className = 'player-cards';
-                        cardsCell.innerHTML = cardsInfo;
-                        row.appendChild(cardsCell);
-                    }
-                }
-            });
         }
-    }, 1000);
+    });
 }
 
-// Ejecutar mejoras de UI cuando se abra la página de plantilla
+// Observer para detectar cambios en la UI
+const observer = new MutationObserver(() => {
+    if (document.querySelector('#squadList table')) {
+        enhanceSquadTable();
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+// También ejecutar cuando se haga clic en "Plantilla"
 document.addEventListener('click', (e) => {
     if (e.target.textContent?.includes('Plantilla')) {
         setTimeout(enhanceSquadTable, 500);
@@ -445,87 +456,44 @@ document.addEventListener('click', (e) => {
 });
 
 // ============================================
-// CSS INYECTADO
+// CSS
 // ============================================
 
 const style = document.createElement('style');
 style.textContent = `
 .cards-status {
-    font-size: 1.2em;
+    font-size: 1em;
+    text-align: center;
 }
 
-.player-cards {
-    font-size: 0.9em;
-    white-space: nowrap;
-}
-
-.lineup-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    z-index: 100;
-}
-
-.injury-badge {
-    border: 2px solid #ef4444;
-}
-
-.suspension-badge {
-    border: 2px solid #f59e0b;
-}
-
-.risk-badge {
-    border: 2px solid #eab308;
+.cards-status small {
+    font-size: 0.85em;
+    color: #999;
 }
 
 .player-unavailable {
     opacity: 0.5;
-    position: relative;
-}
-
-.player-unavailable::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    pointer-events: none;
 }
 `;
 document.head.appendChild(style);
 
 // ============================================
-// EXPONER FUNCIONES GLOBALMENTE
+// EXPONER GLOBALMENTE
 // ============================================
 
 window.CardsInjuriesSystem = {
-    // Tarjetas
     initializePlayerCards,
     generateMatchCards,
     updateWeeklySuspensions,
     canPlayerPlay,
     getPlayerStatus,
-    
-    // Lesiones
     generateInjury,
     updateWeeklyInjuries,
-    calculateInjuryProbability,
-    
-    // Config
     CARDS_CONFIG,
     INJURY_CONFIG
 };
 
 console.log('✅ Sistema de tarjetas y lesiones cargado completamente');
 console.log('💡 Accesible vía window.CardsInjuriesSystem');
+
+} // Fin de initializeCardsAndInjuries
