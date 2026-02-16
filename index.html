@@ -837,6 +837,9 @@
         import * as ui from './ui.js';
         import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS } from './config.js';
         import { getPlayerMarket, getYoungsterMarket } from './players.js';
+        import * as SquadStatusUI from './ui-squad-status.js';
+    import * as CardsSystem from './cards-sanctions-system.js';
+    
 
         // ============================================
         // FUNCIONES PARA NAVEGACIÓN DE PÁGINAS
@@ -1765,33 +1768,72 @@ window.selectTeamAndStart = function(teamName, division) {
                 slot.ondrop = (ev) => window.drop(ev, `pitch-slot-${index}`);
 
                 const playerInSlot = lineup[index];
-                if (playerInSlot) {
-                    const playerDiv = document.createElement('div');
-                    playerDiv.classList.add('pitch-player');
-                    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
-                    playerDiv.draggable = true;
-                    playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
-                    playerDiv.dataset.playername = playerInSlot.name;
-                    // ✅ Aquí añadimos el onclick para abrir modal
-                    playerDiv.onclick = () => openPlayerModal(playerInSlot);
-                    slot.appendChild(playerDiv);
-                }
+if (playerInSlot) {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('pitch-player');
+    
+    // Mantener clase injured para compatibilidad
+    if (playerInSlot.isInjured) playerDiv.classList.add('injured');
+    
+    // ✅ NUEVO: Verificar si puede jugar (lesión o sanción)
+    const canPlay = CardsSystem.canPlayerPlay(playerInSlot);
+    if (!canPlay.canPlay) {
+        playerDiv.classList.add('player-unavailable');
+        playerDiv.draggable = false; // No se puede arrastrar
+        playerDiv.title = canPlay.reason; // Tooltip explicativo
+    } else {
+        playerDiv.draggable = true;
+        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
+    }
+    
+    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
+    playerDiv.dataset.playername = playerInSlot.name;
+    playerDiv.onclick = () => openPlayerModal(playerInSlot);
+    
+    // ✅ NUEVO: Añadir indicadores visuales de estado
+    SquadStatusUI.addLineupStatusIndicators(playerInSlot, playerDiv);
+    
+    slot.appendChild(playerDiv);
+}
                 pitchContainer.appendChild(slot);
             });
 
-            reserves.forEach(player => {
-                const playerDiv = document.createElement('div');
-                playerDiv.classList.add('draggable-player');
-                if (player.isInjured) playerDiv.classList.add('injured');
-                playerDiv.draggable = true;
-                playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
-                playerDiv.dataset.playername = player.name;
-                // ✅ Aquí añadimos el onclick para abrir modal
-                playerDiv.onclick = () => openPlayerModal(player);
-                reservesList.appendChild(playerDiv);
-            });
+           reserves.forEach(player => {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('draggable-player');
+    
+    // Mantener clase injured para compatibilidad
+    if (player.isInjured) playerDiv.classList.add('injured');
+    
+    // ✅ NUEVO: Verificar disponibilidad
+    const canPlay = CardsSystem.canPlayerPlay(player);
+    const status = CardsSystem.getPlayerStatus(player);
+    
+    if (!canPlay.canPlay) {
+        playerDiv.classList.add('player-unavailable');
+        playerDiv.draggable = false;
+        playerDiv.title = canPlay.reason;
+    } else {
+        playerDiv.draggable = true;
+        playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
+    }
+    
+    // ✅ NUEVO: Mostrar estado en el texto
+    let statusIcon = '';
+    if (player.isInjured) {
+        statusIcon = ' 🏥';
+    } else if (player.cards?.isSuspended) {
+        statusIcon = ' 🚫';
+    } else if (player.cards?.yellow === 4) {
+        statusIcon = ' ⚠️';
+    }
+    
+    playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}${statusIcon}`;
+    playerDiv.dataset.playername = player.name;
+    playerDiv.onclick = () => openPlayerModal(player);
+    
+    reservesList.appendChild(playerDiv);
+});
 
             reservesList.ondragover = window.allowDrop;
             reservesList.ondragleave = window.dragleave;
