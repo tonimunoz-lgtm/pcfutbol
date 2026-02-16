@@ -965,11 +965,48 @@ function getYoungsterMarket(filters = {}) {
 }  
   
   
-const calculateTeamEffectiveOverall = (teamSquad) => {  
-    const availablePlayers = teamSquad.filter(p => !p.isInjured);  
-    if (availablePlayers.length === 0) return 40;  
-    return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;  
-};  
+// ✅ MEJORA 2: Cálculo mejorado del overall del equipo
+function calculateTeamEffectiveOverall(lineup, formation = '433') {
+    if (!lineup || lineup.length === 0) return 40;
+    
+    const formationLayout = window.FORMATIONS?.[formation]?.layout || [];
+    if (formationLayout.length === 0) {
+        // Fallback: cálculo simple si no hay formación
+        const availablePlayers = lineup.filter(p => !p.isInjured);
+        if (availablePlayers.length === 0) return 40;
+        return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;
+    }
+    
+    let totalOverall = 0;
+    let playerCount = 0;
+    
+    lineup.forEach((player, index) => {
+        if (!player || player.isInjured) return;
+        
+        const tacticalPosition = formationLayout[index]?.pos;
+        if (!tacticalPosition) return;
+        
+        // ⚠️ PENALIZACIÓN POR POSICIÓN INCORRECTA
+        let positionPenalty = 1.0;
+        
+        if (player.position === tacticalPosition) {
+            // ✅ Posición perfecta
+            positionPenalty = 1.0;
+        } else if (POSITION_COMPATIBILITY[tacticalPosition]?.includes(player.position)) {
+            // ⚠️ Posición compatible (ej: DFC de LI)
+            positionPenalty = 0.85; // -15%
+        } else {
+            // ❌ Posición totalmente incorrecta (ej: POR de DC)
+            positionPenalty = 0.50; // -50%
+        }
+        
+        const effectiveOverall = player.overall * positionPenalty;
+        totalOverall += effectiveOverall;
+        playerCount++;
+    });
+    
+    return playerCount > 0 ? totalOverall / playerCount : 40;
+}
   
 function generateInjury(player) {  
     let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
@@ -1001,103 +1038,132 @@ function generateInjury(player) {
     return false;  
 }  
   
-function calculateMatchOutcome({ teamOverall, opponentOverall, mentality = 'balanced', isHome = true, teamForm = 75, opponentForm = 75 }) {
-    // Base de goles según nivel global y forma
-    let teamFactor = teamOverall / 100 * (teamForm / 100);
-    let opponentFactor = opponentOverall / 100 * (opponentForm / 100);
-
+function calculateMatchOutcomeImproved({
+    teamOverall,
+    opponentOverall,
+    teamFormation = '433',
+    opponentFormation = '433',
+    teamMentality = 'balanced',
+    opponentMentality = 'balanced',
+    isHome = true,
+    teamForm = 75,
+    opponentForm = 75
+}) {
+    // Factores base
+    let teamFactor = (teamOverall / 100) * (teamForm / 100);
+    let opponentFactor = (opponentOverall / 100) * (opponentForm / 100);
+    
     // Ventaja de local
-    if (isHome) teamFactor *= 1.1;
-    else opponentFactor *= 1.1;
-
-    // Ajuste por mentalidad
-    switch (mentality) {
-        case 'offensive':
-            teamFactor *= 1.15;
-            opponentFactor *= 0.9;
-            break;
-        case 'defensive':
-            teamFactor *= 0.9;
-            opponentFactor *= 1.1;
-            break;
-        case 'balanced':
-        default:
-            // no hace nada
-            break;
+    if (isHome) {
+        teamFactor *= 1.12; // +12%
+    } else {
+        opponentFactor *= 1.12;
     }
-
-    // Aleatoriedad estilo PC Fútbol
-    const randomModTeam = (Math.random() - 0.5) * 0.2; // ±10%
-    const randomModOpp = (Math.random() - 0.5) * 0.2;
-
-    teamFactor += randomModTeam;
-    opponentFactor += randomModOpp;
-
-    teamFactor = Math.max(0.1, teamFactor);
-    opponentFactor = Math.max(0.1, opponentFactor);
-
-    // Cálculo de goles aproximado
-    const teamGoals = Math.round(teamFactor * (Math.random() * 4 + 1)); // 1 a 5 goles base multiplicado
-    const opponentGoals = Math.round(opponentFactor * (Math.random() * 4 + 1));
-
+    
+    // Modificadores de formación
+    const teamMods = getFormationModifiers(teamFormation, teamMentality);
+    const oppMods = getFormationModifiers(opponentFormation, opponentMentality);
+    
+    // Aplicar bonus tácticos
+    const teamAttack = teamFactor * teamMods.attackBonus;
+    const teamDefense = teamFactor * teamMods.defenseBonus;
+    const oppAttack = opponentFactor * oppMods.attackBonus;
+    const oppDefense = opponentFactor * oppMods.defenseBonus;
+    
+    // Cálculo de goles (ataque propio vs defensa rival)
+    let teamGoalChance = teamAttack / oppDefense;
+    let oppGoalChance = oppAttack / teamDefense;
+    
+    // Aleatoriedad controlada (±15%)
+    teamGoalChance *= (0.85 + Math.random() * 0.3);
+    oppGoalChance *= (0.85 + Math.random() * 0.3);
+    
+    // Convertir a goles (más realista: 0-5 goles típicamente)
+    const teamGoals = Math.min(7, Math.max(0, Math.round(teamGoalChance * 3)));
+    const oppGoals = Math.min(7, Math.max(0, Math.round(oppGoalChance * 3)));
+    
     return {
-        teamGoals: Math.max(0, teamGoals),
-        opponentGoals: Math.max(0, opponentGoals)
+        teamGoals,
+        opponentGoals: oppGoals
     };
 }
 
 
   
-async function playMatch(homeTeamName, awayTeamName) {
-    // Usar motor mejorado si está disponible
-    if (window.playMatchImproved) {
-        const result = await window.playMatchImproved(homeTeamName, awayTeamName, gameState);
-        
-        // Actualizar standings
-        updateStats(result.homeTeam, result.homeGoals, result.awayGoals);
-        updateStats(result.awayTeam, result.awayGoals, result.homeGoals);
-        
-        // Añadir noticia
-        if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
-            addNews(`Partido: ${result.homeTeam} ${result.homeGoals} - ${result.awayGoals} ${result.awayTeam}`, 'info');
-        }
-        
-        return result;
+// ✅ MEJORA 6: Función playMatch mejorada
+async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
+    let homeSquad, awaySquad;
+    let homeFormation = '433', awayFormation = '433';
+    let homeMentality = 'balanced', awayMentality = 'balanced';
+    
+    // EQUIPO LOCAL
+    if (homeTeamName === gameState.team) {
+        homeSquad = gameState.lineup;
+        homeFormation = gameState.formation || '433';
+        homeMentality = gameState.mentality || 'balanced';
+    } else {
+        // ✅ Generar plantilla IA realista
+        homeSquad = await generateAISquad(homeTeamName, gameState.division);
+        homeFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
+        homeMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
     }
-
-    // Calcular goles
-    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome({
-        teamOverall: homeTeamOverall,
-        opponentOverall: awayTeamOverall,
-        mentality: homeMentality,
+    
+    // EQUIPO VISITANTE
+    if (awayTeamName === gameState.team) {
+        awaySquad = gameState.lineup;
+        awayFormation = gameState.formation || '433';
+        awayMentality = gameState.mentality || 'balanced';
+    } else {
+        // ✅ Generar plantilla IA realista
+        awaySquad = await generateAISquad(awayTeamName, gameState.division);
+        awayFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
+        awayMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
+    }
+    
+    // ✅ Calcular overall REAL de cada equipo
+    const homeOverall = calculateTeamEffectiveOverall(homeSquad, homeFormation);
+    const awayOverall = calculateTeamEffectiveOverall(awaySquad, awayFormation);
+    
+    // Forma promedio de los jugadores
+    const homeForm = homeSquad.reduce((sum, p) => sum + (p.form || 75), 0) / homeSquad.length;
+    const awayForm = awaySquad.reduce((sum, p) => sum + (p.form || 75), 0) / awaySquad.length;
+    
+    // ✅ Calcular resultado con el motor mejorado
+    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcomeImproved({
+        teamOverall: homeOverall,
+        opponentOverall: awayOverall,
+        teamFormation: homeFormation,
+        opponentFormation: awayFormation,
+        teamMentality: homeMentality,
+        opponentMentality: awayMentality,
         isHome: true,
         teamForm: homeForm,
         opponentForm: awayForm
     });
-
-    // Actualizar standings
-    const updateStats = (team, gf, gc) => {
-        const s = gameState.standings[team];
-        if (s) {
-            s.pj++;
-            s.gf += gf;
-            s.gc += gc;
-            if (gf > gc) { s.g++; s.pts += 3; }
-            else if (gf === gc) { s.e++; s.pts += 1; }
-            else s.p++;
-        }
+    
+    console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
+    
+    return {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        homeGoals,
+        awayGoals,
+        homeOverall,
+        awayOverall,
+        homeFormation,
+        awayFormation
     };
-    updateStats(homeTeamName, homeGoals, awayGoals);
-    updateStats(awayTeamName, awayGoals, homeGoals);
-
-    // Añadir noticia si mi equipo jugó
-    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
-        addNews(`Partido: ${homeTeamName} ${homeGoals} - ${awayGoals} ${awayTeamName}`, 'info');
-    }
-
-    return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };
 }
 
+// ✅ Exportar funciones
+if (typeof window !== 'undefined') {
+    window.calculateTeamEffectiveOverallImproved = calculateTeamEffectiveOverall;
+    window.playMatchImproved = playMatchImproved;
+    window.calculateMatchOutcomeImproved = calculateMatchOutcomeImproved;
+    window.generateAISquad = generateAISquad;
+}
+
+console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
 
   
 function secondCoachAdvice() {  
