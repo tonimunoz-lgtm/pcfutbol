@@ -1080,6 +1080,59 @@ async function generateAISquad(teamName, division) {
     return squad;
 }
 
+// ========================================
+// ✅ MEJORA 4: Cálculo de resultado mejorado
+// ========================================
+function calculateMatchOutcomeImproved({
+    teamOverall,
+    opponentOverall,
+    teamFormation = '433',
+    opponentFormation = '433',
+    teamMentality = 'balanced',
+    opponentMentality = 'balanced',
+    isHome = true,
+    teamForm = 75,
+    opponentForm = 75
+}) {
+    // Factores base
+    let teamFactor = (teamOverall / 100) * (teamForm / 100);
+    let opponentFactor = (opponentOverall / 100) * (opponentForm / 100);
+    
+    // Ventaja de local
+    if (isHome) {
+        teamFactor *= 1.12; // +12%
+    } else {
+        opponentFactor *= 1.12;
+    }
+    
+    // Modificadores de formación
+    const teamMods = getFormationModifiers(teamFormation, teamMentality);
+    const oppMods = getFormationModifiers(opponentFormation, opponentMentality);
+    
+    // Aplicar bonus tácticos
+    const teamAttack = teamFactor * teamMods.attackBonus;
+    const teamDefense = teamFactor * teamMods.defenseBonus;
+    const oppAttack = opponentFactor * oppMods.attackBonus;
+    const oppDefense = opponentFactor * oppMods.defenseBonus;
+    
+    // Cálculo de goles (ataque propio vs defensa rival)
+    let teamGoalChance = teamAttack / oppDefense;
+    let oppGoalChance = oppAttack / teamDefense;
+    
+    // Aleatoriedad controlada (±15%)
+    teamGoalChance *= (0.85 + Math.random() * 0.3);
+    oppGoalChance *= (0.85 + Math.random() * 0.3);
+    
+    // Convertir a goles (más realista: 0-5 goles típicamente)
+    const teamGoals = Math.min(7, Math.max(0, Math.round(teamGoalChance * 3)));
+    const oppGoals = Math.min(7, Math.max(0, Math.round(oppGoalChance * 3)));
+    
+    return {
+        teamGoals,
+        opponentGoals: oppGoals
+    };
+}
+
 function calculateTeamEffectiveOverall(lineup, formation = '433') {
     if (!lineup || lineup.length === 0) return 40;
     
