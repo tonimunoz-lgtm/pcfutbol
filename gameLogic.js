@@ -1111,59 +1111,79 @@ function calculateMatchOutcomeImproved({
 
 
   
-function playMatch(homeTeamName, awayTeamName) {
-    // Overalls iniciales
-    let homeTeamOverall = 70 + Math.floor(Math.random() * 20);
-    let awayTeamOverall = 70 + Math.floor(Math.random() * 20);
-
-    let homeForm = 75;
-    let awayForm = 75;
-    let homeMentality = 'balanced';
-    let awayMentality = 'balanced';
-
-    // Si mi equipo está jugando, usar su squad y mentalidad
+async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
+    let homeSquad, awaySquad;
+    let homeFormation = '433', awayFormation = '433';
+    let homeMentality = 'balanced', awayMentality = 'balanced';
+    
+    // EQUIPO LOCAL
     if (homeTeamName === gameState.team) {
-        homeTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
-        homeMentality = gameState.mentality;
+        homeSquad = gameState.lineup;
+        homeFormation = gameState.formation || '433';
+        homeMentality = gameState.mentality || 'balanced';
+    } else {
+        // ✅ Generar plantilla IA realista
+        homeSquad = await generateAISquad(homeTeamName, gameState.division);
+        homeFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
+        homeMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
     }
+    
+    // EQUIPO VISITANTE
     if (awayTeamName === gameState.team) {
-        awayTeamOverall = calculateTeamEffectiveOverall(gameState.lineup);
-        awayMentality = gameState.mentality;
+        awaySquad = gameState.lineup;
+        awayFormation = gameState.formation || '433';
+        awayMentality = gameState.mentality || 'balanced';
+    } else {
+        // ✅ Generar plantilla IA realista
+        awaySquad = await generateAISquad(awayTeamName, gameState.division);
+        awayFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
+        awayMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
     }
-
-    // Calcular goles
-    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcome({
-        teamOverall: homeTeamOverall,
-        opponentOverall: awayTeamOverall,
-        mentality: homeMentality,
+    
+    // ✅ Calcular overall REAL de cada equipo
+    const homeOverall = calculateTeamEffectiveOverall(homeSquad, homeFormation);
+    const awayOverall = calculateTeamEffectiveOverall(awaySquad, awayFormation);
+    
+    // Forma promedio de los jugadores
+    const homeForm = homeSquad.reduce((sum, p) => sum + (p.form || 75), 0) / homeSquad.length;
+    const awayForm = awaySquad.reduce((sum, p) => sum + (p.form || 75), 0) / awaySquad.length;
+    
+    // ✅ Calcular resultado con el motor mejorado
+    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcomeImproved({
+        teamOverall: homeOverall,
+        opponentOverall: awayOverall,
+        teamFormation: homeFormation,
+        opponentFormation: awayFormation,
+        teamMentality: homeMentality,
+        opponentMentality: awayMentality,
         isHome: true,
         teamForm: homeForm,
         opponentForm: awayForm
     });
-
-    // Actualizar standings
-    const updateStats = (team, gf, gc) => {
-        const s = gameState.standings[team];
-        if (s) {
-            s.pj++;
-            s.gf += gf;
-            s.gc += gc;
-            if (gf > gc) { s.g++; s.pts += 3; }
-            else if (gf === gc) { s.e++; s.pts += 1; }
-            else s.p++;
-        }
+    
+    console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
+    
+    return {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        homeGoals,
+        awayGoals,
+        homeOverall,
+        awayOverall,
+        homeFormation,
+        awayFormation
     };
-    updateStats(homeTeamName, homeGoals, awayGoals);
-    updateStats(awayTeamName, awayGoals, homeGoals);
-
-    // Añadir noticia si mi equipo jugó
-    if (homeTeamName === gameState.team || awayTeamName === gameState.team) {
-        addNews(`Partido: ${homeTeamName} ${homeGoals} - ${awayGoals} ${awayTeamName}`, 'info');
-    }
-
-    return { homeTeam: homeTeamName, awayTeam: awayTeamName, homeGoals, awayGoals };
 }
 
+// ✅ Exportar funciones
+if (typeof window !== 'undefined') {
+    window.calculateTeamEffectiveOverallImproved = calculateTeamEffectiveOverall;
+    window.playMatchImproved = playMatchImproved;
+    window.calculateMatchOutcomeImproved = calculateMatchOutcomeImproved;
+    window.generateAISquad = generateAISquad;
+}
+
+console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
 
   
 function secondCoachAdvice() {  
