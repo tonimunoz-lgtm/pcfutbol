@@ -14,13 +14,18 @@
 
     // Función para verificar si el usuario actual es administrador
     function isUserAdmin() {
-        const auth = window.firebaseAuth;
-        if (!auth || !auth.currentUser) {
-            return false;
+        // Verificar primero si hay un usuario en window.currentUser
+        if (window.currentUser && window.currentUser.email) {
+            return ADMIN_EMAILS.includes(window.currentUser.email);
         }
         
-        const userEmail = auth.currentUser.email;
-        return ADMIN_EMAILS.includes(userEmail);
+        // Si no, verificar en Firebase Auth
+        const auth = window.firebaseAuth;
+        if (auth && auth.currentUser && auth.currentUser.email) {
+            return ADMIN_EMAILS.includes(auth.currentUser.email);
+        }
+        
+        return false;
     }
 
     window.openAdminPanel = function() {
