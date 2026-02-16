@@ -74,23 +74,15 @@ window.getTeamData = async function(teamName) {
     // 🔥 Inicializar campos de lesiones, sanciones y tarjetas
     if (teamData.squad && Array.isArray(teamData.squad)) {
         teamData.squad.forEach(p => {
-    // Lesiones (ya existente)
-    p.isInjured = p.isInjured ?? false;
-    p.weeksOut = p.weeksOut ?? 0;
-    p.injuryType = p.injuryType ?? null;
-    p.injurySeverity = p.injurySeverity ?? null;
+            p.isInjured = p.isInjured ?? false;
+            p.weeksOut = p.weeksOut ?? 0;
 
-    // Sanciones (ya existente)
-    p.isSuspended = p.isSuspended ?? false;
-    p.suspensionWeeks = p.suspensionWeeks ?? 0;
+            p.isSuspended = p.isSuspended ?? false;
+            p.suspensionWeeks = p.suspensionWeeks ?? 0;
 
-    // Tarjetas (ya existente)
-    p.yellowCards = p.yellowCards ?? 0;
-    p.redCards = p.redCards ?? 0;
-    
-    // NUEVO: Minutos jugados para fatiga
-    p.minutesPlayed = p.minutesPlayed ?? 0;
-});
+            p.yellowCards = p.yellowCards ?? 0;
+            p.redCards = p.redCards ?? 0;
+        });
     }
 
     // Guardar en localStorage y opcionalmente Firebase
