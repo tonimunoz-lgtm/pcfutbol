@@ -966,11 +966,48 @@ function getYoungsterMarket(filters = {}) {
 }  
   
   
-const calculateTeamEffectiveOverall = (teamSquad) => {  
-    const availablePlayers = teamSquad.filter(p => !p.isInjured);  
-    if (availablePlayers.length === 0) return 40;  
-    return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;  
-};  
+function calculateTeamEffectiveOverall(lineup, formation = '433') {
+    if (!lineup || lineup.length === 0) return 40;
+    
+    const formationLayout = window.FORMATIONS?.[formation]?.layout || [];
+    if (formationLayout.length === 0) {
+        // Fallback: cálculo simple si no hay formación
+        const availablePlayers = lineup.filter(p => !p.isInjured);
+        if (availablePlayers.length === 0) return 40;
+        return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;
+    }
+    
+    let totalOverall = 0;
+    let playerCount = 0;
+    
+    lineup.forEach((player, index) => {
+        if (!player || player.isInjured) return;
+        
+        const tacticalPosition = formationLayout[index]?.pos;
+        if (!tacticalPosition) return;
+        
+        // ⚠️ PENALIZACIÓN POR POSICIÓN INCORRECTA
+        let positionPenalty = 1.0;
+        
+        if (player.position === tacticalPosition) {
+            // ✅ Posición perfecta
+            positionPenalty = 1.0;
+        } else if (POSITION_COMPATIBILITY[tacticalPosition]?.includes(player.position)) {
+            // ⚠️ Posición compatible (ej: DFC de LI)
+            positionPenalty = 0.85; // -15%
+        } else {
+            // ❌ Posición totalmente incorrecta (ej: POR de DC)
+            positionPenalty = 0.50; // -50%
+        }
+        
+        const effectiveOverall = player.overall * positionPenalty;
+        totalOverall += effectiveOverall;
+        playerCount++;
+    });
+    
+    return playerCount > 0 ? totalOverall / playerCount : 40;
+}
+
   
 function generateInjury(player) {  
     let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
