@@ -2210,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function openPlayerModal(player) {
     // Foto (puedes reemplazar por una URL real si tienes fotos de jugadores)
-    document.getElementById('modalPlayerPhoto').src = player.photo || "https://via.placeholder.com/120x150?text=Foto";
+    document.getElementById('modalPlayerPhoto').src = player.photo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='150'%3E%3Crect fill='%23ddd' width='120' height='150'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial' font-size='14'%3EFoto%3C/text%3E%3C/svg%3E";
 
     document.getElementById('modalPlayerName').innerText = player.name || 'Desconocido';
     document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position || '-'}`;
