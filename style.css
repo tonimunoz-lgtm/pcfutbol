@@ -1716,3 +1716,74 @@ Salida
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
 }
+
+/* ============================================
+   INDICADORES DE ESTADO EN ALINEACIÓN
+   ============================================ */
+
+.player-unavailable {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+.player-unavailable::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* Indicadores visuales (badges) */
+.status-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: flex;
+    gap: 2px;
+    z-index: 100;
+}
+
+.lineup-badge {
+    background: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.injury-badge {
+    border: 2px solid #ef4444;
+}
+
+.suspension-badge {
+    border: 2px solid #f59e0b;
+}
+
+.risk-badge {
+    border: 2px solid #eab308;
+}
+
+/* Jugadores en el campo */
+.pitch-player {
+    position: relative;
+}
+
+.pitch-player.player-unavailable {
+    background-color: rgba(200, 0, 0, 0.3) !important;
+}
+
+/* Suplentes */
+.draggable-player.player-unavailable {
+    background-color: rgba(200, 0, 0, 0.2) !important;
+    text-decoration: line-through;
+}
