@@ -964,7 +964,121 @@ function getYoungsterMarket(filters = {}) {
     return getYoungsterMarketData(filters, scoutLevel);  
 }  
   
-  
+// ========================================
+// ✅ MEJORA 1: Mapeo de posiciones compatibles
+// ========================================
+const POSITION_COMPATIBILITY = {
+    'POR': ['POR'],
+    'DFC': ['DFC', 'LD', 'LI'],
+    'LI': ['LI', 'DFC', 'MI'],
+    'LD': ['LD', 'DFC', 'MD'],
+    'MC': ['MC', 'MCO', 'MCD', 'MD', 'MI'],
+    'MCO': ['MCO', 'MC', 'EXT', 'DC'],
+    'MCD': ['MCD', 'MC', 'DFC'],
+    'MD': ['MD', 'LD', 'MC', 'EXT'],
+    'MI': ['MI', 'LI', 'MC', 'EXT'],
+    'EXT': ['EXT', 'MD', 'MI', 'MCO', 'DC'],
+    'DC': ['DC', 'EXT', 'MCO']
+};
+
+// ========================================
+// ✅ MEJORA 2: Bonus/penalización según formación
+// ========================================
+function getFormationModifiers(formation, mentality) {
+    const modifiers = {
+        attackBonus: 1.0,
+        defenseBonus: 1.0,
+        midfieldBonus: 1.0
+    };
+    
+    // Ajustes por formación
+    switch(formation) {
+        case '433':
+            modifiers.attackBonus = 1.05;
+            modifiers.defenseBonus = 0.98;
+            break;
+        case '442':
+            modifiers.attackBonus = 1.0;
+            modifiers.defenseBonus = 1.0;
+            modifiers.midfieldBonus = 1.05;
+            break;
+        case '352':
+            modifiers.midfieldBonus = 1.1;
+            modifiers.defenseBonus = 0.95;
+            break;
+        case '541':
+            modifiers.defenseBonus = 1.15;
+            modifiers.attackBonus = 0.85;
+            break;
+        case '451':
+            modifiers.defenseBonus = 1.08;
+            modifiers.attackBonus = 0.92;
+            modifiers.midfieldBonus = 1.05;
+            break;
+    }
+    
+    // Ajustes por mentalidad
+    switch(mentality) {
+        case 'offensive':
+            modifiers.attackBonus *= 1.15;
+            modifiers.defenseBonus *= 0.90;
+            break;
+        case 'defensive':
+            modifiers.defenseBonus *= 1.15;
+            modifiers.attackBonus *= 0.85;
+            break;
+    }
+    
+    return modifiers;
+}
+
+// ========================================
+// ✅ MEJORA 3: Generar plantilla IA realista
+// ========================================
+async function generateAISquad(teamName, division) {
+    // Intentar cargar plantilla real desde Firestore
+    if (window.getTeamData) {
+        try {
+            const teamData = await window.getTeamData(teamName);
+            if (teamData && teamData.squad && teamData.squad.length > 0) {
+                return teamData.squad.map(p => ({
+                    ...p,
+                    overall: p.overall || calculatePlayerOverall(p),
+                    form: p.form || 75,
+                    isInjured: p.isInjured || false
+                }));
+            }
+        } catch (error) {
+            console.warn(`No se pudo cargar plantilla de ${teamName}:`, error);
+        }
+    }
+    
+    // Fallback: generar según división
+    const divisionQuality = {
+        primera: { min: 70, max: 88 },
+        segunda: { min: 60, max: 75 },
+        rfef_grupo1: { min: 50, max: 65 },
+        rfef_grupo2: { min: 50, max: 65 }
+    };
+    
+    const quality = divisionQuality[division] || { min: 55, max: 70 };
+    const squad = [];
+    
+    for (let i = 0; i < 11; i++) {
+        const overall = quality.min + Math.random() * (quality.max - quality.min);
+        squad.push({
+            name: `Jugador ${i+1}`,
+            overall: Math.round(overall),
+            form: 70 + Math.random() * 15,
+            isInjured: false,
+            position: ['POR', 'DFC', 'DFC', 'LI', 'LD', 'MC', 'MC', 'EXT', 'EXT', 'DC', 'MC'][i] || 'MC'
+        });
+    }
+    
+    return squad;
+}
+
+
 // ✅ MEJORA 2: Cálculo mejorado del overall del equipo
 function calculateTeamEffectiveOverall(lineup, formation = '433') {
     if (!lineup || lineup.length === 0) return 40;
