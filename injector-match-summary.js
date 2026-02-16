@@ -562,7 +562,7 @@ window.injectMatchSummary = function(matchResult) {
             existingModal.remove();
             console.log('⏱️ Modal cerrado automáticamente');
         }
-    }, 15000);
+    }, 30000);
 };
 
 console.log('✅ injector-match-summary.js PROFESIONAL cargado');
