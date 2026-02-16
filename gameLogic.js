@@ -1762,7 +1762,8 @@ function endSeason() {
         .forEach(match => {  
             const alreadyPlayed = gameState.matchHistory.some(mh => mh.week === gameState.week && mh.home === match.home && mh.away === match.away);
             if (!alreadyPlayed) {
-                const result = playMatch(match.home, match.away);
+            
+                const result = await playMatchImproved(myTeamMatch.home, myTeamMatch.away, gameState);
                 gameState.matchHistory.push({ week: gameState.week, home: result.homeTeam, away: result.awayTeam, score: `${result.homeGoals}-${result.awayGoals}` });
                 console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
             }  
