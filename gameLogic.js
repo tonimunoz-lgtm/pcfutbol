@@ -1247,67 +1247,71 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
     
     console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
     
-    // ============================================
-    // NUEVO: Sistema de tarjetas y sanciones
-    // ============================================
-    let homeCards = { yellowCards: [], redCards: [] };
-    let awayCards = { yellowCards: [], redCards: [] };
+   // ============================================
+// NUEVO: Sistema de tarjetas y sanciones
+// ============================================
+let homeCards = { yellowCards: [], redCards: [] };
+let awayCards = { yellowCards: [], redCards: [] };
+
+if (homeTeamName === gameState.team) {  // ✅ CORREGIDO
+    homeCards = CardsSystem.generateMatchCards(
+        gameState.lineup, 
+        gameState.mentality
+    );
     
-    if (homeTeam === gameState.team) {
-        homeCards = CardsSystem.generateMatchCards(
-            gameState.lineup, 
-            gameState.mentality
-        );
-        
-        // Detectar suspensiones por 5 amarillas
-        const suspendedPlayers = [];
-        gameState.lineup.forEach(player => {
-            CardsSystem.initializePlayerCards(player);
-            if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
-                player.cards.isSuspended && 
-                player.cards.red === 0) {
-                suspendedPlayers.push(player.name);
-            }
-        });
-        
-        // Generar noticias de tarjetas
-        CardsSystem.generateCardsNews({
-            ...homeCards,
-            suspendedPlayers
-        }, addNews);
-    }
+    // Detectar suspensiones por 5 amarillas
+    const suspendedPlayers = [];
+    gameState.lineup.forEach(player => {
+        CardsSystem.initializePlayerCards(player);
+        if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
+            player.cards.isSuspended && 
+            player.cards.red === 0) {
+            suspendedPlayers.push(player.name);
+        }
+    });
     
-    if (awayTeam === gameState.team) {
-        awayCards = CardsSystem.generateMatchCards(
-            gameState.lineup, 
-            gameState.mentality
-        );
-        
-        const suspendedPlayers = [];
-        gameState.lineup.forEach(player => {
-            CardsSystem.initializePlayerCards(player);
-            if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
-                player.cards.isSuspended && 
-                player.cards.red === 0) {
-                suspendedPlayers.push(player.name);
-            }
-        });
-        
-        CardsSystem.generateCardsNews({
-            ...awayCards,
-            suspendedPlayers
-        }, addNews);
-    }
+    // Generar noticias de tarjetas
+    CardsSystem.generateCardsNews({
+        ...homeCards,
+        suspendedPlayers
+    }, addNews);
+}
+
+if (awayTeamName === gameState.team) {  // ✅ CORREGIDO
+    awayCards = CardsSystem.generateMatchCards(
+        gameState.lineup, 
+        gameState.mentality
+    );
     
-    return {
-        homeTeam,
-        awayTeam,
-        homeGoals: result.teamGoals,
-        awayGoals: result.oppGoals,
-        // NUEVO: Datos de tarjetas
-        homeCards: homeTeam === gameState.team ? homeCards : null,
-        awayCards: awayTeam === gameState.team ? awayCards : null
-    };
+    const suspendedPlayers = [];
+    gameState.lineup.forEach(player => {
+        CardsSystem.initializePlayerCards(player);
+        if (player.cards.yellow >= CardsSystem.CARDS_CONFIG.YELLOW_CARDS_FOR_SUSPENSION && 
+            player.cards.isSuspended && 
+            player.cards.red === 0) {
+            suspendedPlayers.push(player.name);
+        }
+    });
+    
+    CardsSystem.generateCardsNews({
+        ...awayCards,
+        suspendedPlayers
+    }, addNews);
+}
+
+return {
+    homeTeam: homeTeamName,  // ✅ CORREGIDO
+    awayTeam: awayTeamName,  // ✅ CORREGIDO
+    homeGoals,
+    awayGoals,
+    homeOverall,
+    awayOverall,
+    homeFormation,
+    awayFormation,
+    // NUEVO: Datos de tarjetas
+    homeCards: homeTeamName === gameState.team ? homeCards : null,  // ✅ CORREGIDO
+    awayCards: awayTeamName === gameState.team ? awayCards : null   // ✅ CORREGIDO
+};
 }
 
 // ✅ Exportar funciones
