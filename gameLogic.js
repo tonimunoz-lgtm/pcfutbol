@@ -576,6 +576,8 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
 
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
+
+    }
   
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
