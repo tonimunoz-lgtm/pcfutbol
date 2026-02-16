@@ -215,7 +215,36 @@ function renderSquadList(squad, currentTeam) {
   
     const sorted = squad.sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {  
-        const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
+       const generateStatusHTML = (player) => {
+    const statusParts = [];
+    
+    if (player.isInjured && player.weeksOut > 0) {
+        const weeks = Math.ceil(player.weeksOut);
+        const icons = { leve: '🟡', moderada: '🟠', grave: '🔴', muy_grave: '⚫' };
+        const icon = icons[player.injurySeverity] || '🟠';
+        statusParts.push(`<span class="injured-badge">${icon} ${player.injuryType || 'Lesión'} (${weeks} sem)</span>`);
+    }
+    
+    if (player.isSuspended && player.suspensionWeeks > 0) {
+        statusParts.push(`<span class="suspended-badge">⛔ SANCIÓN (${player.suspensionWeeks} partido${player.suspensionWeeks > 1 ? 's' : ''})</span>`);
+    }
+    
+    if (player.yellowCards > 0) {
+        const warning = player.yellowCards >= 4 ? ' ⚠️' : '';
+        const badgeClass = player.yellowCards >= 4 ? 'warning-badge' : 'yellow-card-badge';
+        statusParts.push(`<span class="${badgeClass}">🟨 ${player.yellowCards}${warning}</span>`);
+    }
+    
+    if (player.redCards > 0) {
+        statusParts.push(`<span class="red-card-badge">🟥 ${player.redCards}</span>`);
+    }
+    
+    return statusParts.length > 0 
+        ? `<div class="player-status-indicator">${statusParts.join(' ')}</div>` 
+        : '<span style="color: #4CAF50;">✅ Apto</span>';
+};
+
+const statusText = generateStatusHTML(p);
         
         // ✅ VALORES CON DEFAULTS
         const contractType = p.contractType || 'owned';
