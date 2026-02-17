@@ -265,6 +265,17 @@ function hookSimulateWeek() {
             window.gameLogic.updateGameState(newState);
             window.gameLogic.saveToLocalStorage();
             
+            // FORZAR ACTUALIZACIÓN DEL FEED DE NOTICIAS
+            const newsFeedElem = document.getElementById('newsFeed');
+            if (newsFeedElem && newState.newsFeed) {
+                newsFeedElem.innerHTML = newState.newsFeed.slice(0, 20).map(news => `
+                    <div class="alert ${news.type === 'error' ? 'alert-error' : news.type === 'warning' ? 'alert-warning' : news.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">
+                        <strong>Semana ${news.week}:</strong> ${news.message}
+                    </div>
+                `).join('');
+                console.log('✅ Feed de noticias actualizado en DOM');
+            }
+            
             console.log(`✅ Aplicado: ${matchCards.length} tarjetas, ${matchInjuries.length} lesiones`);
         }
     };
@@ -347,23 +358,35 @@ setTimeout(() => {
     if (originalSaveLineup) {
         window.saveLineup = function() {
             const state = window.gameLogic?.getGameState();
-            if (!state) return originalSaveLineup();
+            if (!state || !state.lineup) return originalSaveLineup();
             
+            // Validar lesionados
+            const injuredPlayers = state.lineup.filter(p => p && p.isInjured);
+            
+            if (injuredPlayers.length > 0) {
+                alert(`❌ No puedes alinear jugadores lesionados:\n\n${injuredPlayers.map(p => 
+                    `${p.name} (${p.injuryType || 'Lesionado'} - ${p.weeksOut} semanas)`
+                ).join('\n')}`);
+                return false; // Bloquear guardado
+            }
+            
+            // Validar sancionados
             const suspendedPlayers = state.lineup.filter(p => {
+                if (!p) return false;
                 initializePlayerCards(p);
                 return p.isSuspended;
             });
             
             if (suspendedPlayers.length > 0) {
-                alert(`❌ Jugadores sancionados en alineación:\n\n${suspendedPlayers.map(p => 
+                alert(`❌ No puedes alinear jugadores sancionados:\n\n${suspendedPlayers.map(p => 
                     `${p.name} (${p.redCards > 0 ? 'Roja' : '5 amarillas'} - ${p.suspensionWeeks} partidos)`
                 ).join('\n')}`);
-                return;
+                return false; // Bloquear guardado
             }
             
             return originalSaveLineup();
         };
-        console.log('✅ Validación de alineación activada');
+        console.log('✅ Validación de alineación activada (bloquea lesionados y sancionados)');
     }
 }, 2000);
 
@@ -417,3 +440,110 @@ window.CardsInjuriesSystem = {
 
 console.log('✅ Sistema cargado (versión híbrida)');
 console.log('💡 Ver estado: CardsInjuriesSystem.showStatus()');
+
+// ============================================
+// UI: MEJORAR TABLA DE PLANTILLA
+// ============================================
+
+function enhanceSquadTable() {
+    const squadTable = document.querySelector('#squadList table');
+    if (!squadTable) return;
+    
+    const state = window.gameLogic?.getGameState();
+    if (!state || !state.squad) return;
+    
+    console.log('🎨 Mejorando tabla de plantilla...');
+    
+    // Añadir columna TARJETAS en el header (solo si no existe)
+    const headerRow = squadTable.querySelector('thead tr');
+    if (headerRow && !document.querySelector('th.tarjetas-header')) {
+        const headers = Array.from(headerRow.querySelectorAll('th'));
+        const estadoHeader = headers.find(h => h.textContent.includes('ESTADO'));
+        
+        if (estadoHeader) {
+            const tarjetasHeader = document.createElement('th');
+            tarjetasHeader.className = 'tarjetas-header';
+            tarjetasHeader.textContent = 'TARJETAS';
+            estadoHeader.insertAdjacentElement('afterend', tarjetasHeader);
+            console.log('✅ Columna TARJETAS añadida');
+        }
+    }
+    
+    // Actualizar cada fila
+    const rows = squadTable.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+        if (!state.squad[index]) return;
+        
+        const player = state.squad[index];
+        initializePlayerCards(player);
+        
+        const cells = Array.from(row.querySelectorAll('td'));
+        
+        // Buscar celda de ESTADO (contiene "Apto" o "Les.")
+        let estadoCell = null;
+        let estadoCellIndex = -1;
+        
+        cells.forEach((cell, i) => {
+            if (cell.textContent.includes('Apto') || cell.textContent.includes('Les.')) {
+                estadoCell = cell;
+                estadoCellIndex = i;
+            }
+        });
+        
+        if (estadoCell) {
+            // Actualizar ESTADO
+            if (player.isSuspended) {
+                const type = player.redCards > 0 ? 'Roja' : '5 amarillas';
+                estadoCell.innerHTML = `<span style="color: #FF9800;">🚫 Sancionado (${type}, ${player.suspensionWeeks} partidos)</span>`;
+            } else if (player.isInjured) {
+                estadoCell.innerHTML = `<span style="color: #ff3333;">🏥 Les. (${player.weeksOut} sem)</span>`;
+            } else {
+                estadoCell.innerHTML = '<span style="color: #4CAF50;">✅ Apto</span>';
+            }
+            
+            // Añadir/actualizar celda de TARJETAS
+            let tarjetasCell = cells[estadoCellIndex + 1];
+            
+            // Verificar si la siguiente celda es de tarjetas o hay que crearla
+            if (!tarjetasCell || !tarjetasCell.classList.contains('tarjetas-cell')) {
+                // Crear nueva celda
+                tarjetasCell = document.createElement('td');
+                tarjetasCell.className = 'tarjetas-cell';
+                tarjetasCell.style.textAlign = 'center';
+                estadoCell.insertAdjacentElement('afterend', tarjetasCell);
+            }
+            
+            // Contenido de tarjetas
+            const tarjetas = [];
+            if (player.yellowCards > 0) {
+                tarjetas.push(`<span style="font-size: 1.2em;" title="${player.yellowCards} amarillas">🟨 ×${player.yellowCards}</span>`);
+            }
+            if (player.redCards > 0) {
+                tarjetas.push(`<span style="font-size: 1.2em;" title="${player.redCards} rojas">🟥 ×${player.redCards}</span>`);
+            }
+            
+            tarjetasCell.innerHTML = tarjetas.length > 0 ? tarjetas.join(' ') : '-';
+        }
+    });
+}
+
+// Ejecutar cuando se abra la página de Plantilla
+document.addEventListener('click', (e) => {
+    if (e.target.textContent?.includes('Plantilla')) {
+        setTimeout(enhanceSquadTable, 600);
+    }
+});
+
+// Observer para actualizar automáticamente
+const squadObserver = new MutationObserver(() => {
+    if (document.querySelector('#squadList table')) {
+        enhanceSquadTable();
+    }
+});
+
+squadObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+console.log('✅ Sistema de UI de plantilla activado');
