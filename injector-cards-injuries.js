@@ -1,7 +1,7 @@
 // injector-cards-injuries.js
-// VERSIÓN DEFINITIVA - Arregla todos los problemas de sincronización
+// VERSIÓN FINAL - Arregla TODOS los problemas
 
-console.log('🎴 Sistema de tarjetas y lesiones (DEFINITIVO)...');
+console.log('🎴 Sistema de tarjetas y lesiones (FINAL)...');
 
 // ============================================
 // CONFIGURACIÓN
@@ -36,34 +36,9 @@ const INJURIES_CONFIG = {
     ]
 };
 
-let lastProcessedWeek = -1;
-
-// ============================================
-// FUNCIONES DE SINCRONIZACIÓN
-// ============================================
-
-// CRÍTICO: Sincronizar lineup con squad
-function syncLineupWithSquad(state) {
-    if (!state.lineup || !state.squad) return;
-    
-    state.lineup.forEach((lineupPlayer, index) => {
-        if (!lineupPlayer) return;
-        
-        // Buscar el jugador en squad por nombre
-        const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
-        
-        if (squadPlayer) {
-            // Copiar estado de squad a lineup
-            lineupPlayer.yellowCards = squadPlayer.yellowCards || 0;
-            lineupPlayer.redCards = squadPlayer.redCards || 0;
-            lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
-            lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
-            lineupPlayer.isInjured = squadPlayer.isInjured || false;
-            lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
-            lineupPlayer.injuryType = squadPlayer.injuryType || null;
-        }
-    });
-}
+// Contador GLOBAL de semanas (nunca se resetea)
+let globalWeekCounter = 0;
+let lastProcessedGlobalWeek = -1;
 
 // ============================================
 // FUNCIONES PRINCIPALES
@@ -200,27 +175,29 @@ function hookSimulateWeek() {
     console.log('✅ Hook aplicado');
     
     window.simulateWeek = async function() {
-        const state = window.gameLogic?.getGameState();
+        // Incrementar contador global
+        globalWeekCounter++;
         
-        // SINCRONIZAR ANTES DE EMPEZAR
-        syncLineupWithSquad(state);
+        const state = window.gameLogic?.getGameState();
+        const isPreseason = globalWeekCounter <= 4;
+        
+        console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
         
         // PRE-SIMULACIÓN
-        if (state && state.week !== lastProcessedWeek) {
-            console.log(`🎴 Semana ${state.week}`);
-            
+        if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
             const recoveredSuspensions = processWeeklySuspensions(state.squad);
             recoveredSuspensions.forEach(name => {
-                window.gameLogic.addNews(`✅ ${name} cumplió su sanción`, 'info');
+                const news = `✅ ${name} cumplió su sanción`;
+                window.gameLogic.addNews(news, 'info');
+                console.log('📰', news);
             });
             
             const recoveredInjuries = processWeeklyRecoveries(state.squad);
             recoveredInjuries.forEach(name => {
-                window.gameLogic.addNews(`💚 ${name} se recuperó`, 'success');
+                const news = `💚 ${name} se recuperó de su lesión`;
+                window.gameLogic.addNews(news, 'success');
+                console.log('📰', news);
             });
-            
-            // SINCRONIZAR DESPUÉS DE RECUPERACIONES
-            syncLineupWithSquad(state);
             
             window.gameLogic.updateGameState(state);
             window.gameLogic.saveToLocalStorage();
@@ -229,27 +206,22 @@ function hookSimulateWeek() {
         // SIMULAR
         await originalSimulate();
         
-        // POST-SIMULACIÓN: Solo si NO es pretemporada y es nueva semana
+        // POST-SIMULACIÓN: Solo si NO es pretemporada
         const newState = window.gameLogic?.getGameState();
         
-        // Pretemporada = primeras 4 semanas SIEMPRE
-        const isPreseason = newState.week <= 4;
-        
-        console.log(`📅 Semana ${newState.week}, Es pretemporada: ${isPreseason} (primeras 4 semanas)`);
-        
-        if (newState && newState.week !== lastProcessedWeek && !isPreseason) {
-            lastProcessedWeek = newState.week;
+        if (newState && globalWeekCounter !== lastProcessedGlobalWeek && !isPreseason) {
+            lastProcessedGlobalWeek = globalWeekCounter;
             
             console.log(`🎴 Generando tarjetas/lesiones`);
             
             const matchCards = [];
             const matchInjuries = [];
             
-            // Procesar SOLO jugadores de squad que están en lineup
+            // Procesar jugadores del SQUAD que están en LINEUP
             newState.squad.forEach(player => {
                 if (!player) return;
                 
-                const isInLineup = newState.lineup.some(lp => lp && lp.name === player.name);
+                const isInLineup = newState.lineup && newState.lineup.some(lp => lp && lp.name === player.name);
                 if (!isInLineup) return;
                 
                 // Tarjetas
@@ -257,53 +229,40 @@ function hookSimulateWeek() {
                 if (cardResult) {
                     matchCards.push(cardResult);
                     
+                    let newsText;
                     if (cardResult.red) {
-                        window.gameLogic.addNews(
-                            `🟥 ${player.name} vio roja - ${cardResult.suspension} partidos`,
-                            'error'
-                        );
-                    } else if (cardResult.yellow) {
-                        if (cardResult.suspension > 0) {
-                            window.gameLogic.addNews(
-                                `⚠️ ${player.name} 5 amarillas - 1 partido`,
-                                'warning'
-                            );
-                        } else {
-                            window.gameLogic.addNews(
-                                `🟨 ${player.name} amarilla`,
-                                'warning'
-                            );
-                        }
+                        newsText = `🟥 ${player.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
+                    } else if (cardResult.suspension > 0) {
+                        newsText = `⚠️ ${player.name} acumula 5 amarillas - Sancionado 1 partido`;
+                    } else {
+                        newsText = `🟨 ${player.name} vio tarjeta amarilla`;
                     }
+                    
+                    window.gameLogic.addNews(newsText, cardResult.red ? 'error' : 'warning');
+                    console.log('📰', newsText);
                 }
                 
                 // Lesiones
                 const injuryResult = simulateMatchInjuries(player, newState.staff);
                 if (injuryResult) {
                     matchInjuries.push(injuryResult);
-                    window.gameLogic.addNews(
-                        `🏥 ${player.name} lesión (${injuryResult.type}) - ${injuryResult.weeks} sem`,
-                        'warning'
-                    );
+                    const newsText = `🏥 ${player.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
+                    window.gameLogic.addNews(newsText, 'warning');
+                    console.log('📰', newsText);
                 }
             });
             
-            // Guardar para modal ANTES de cualquier cosa
+            // Guardar para modal
             window.lastMatchCardsAndInjuries = {
                 cards: matchCards,
                 injuries: matchInjuries,
                 week: newState.week
             };
             
-            console.log('📦 Datos guardados para modal:', window.lastMatchCardsAndInjuries);
-            
-            // SINCRONIZAR DESPUÉS DE APLICAR TARJETAS/LESIONES
-            syncLineupWithSquad(newState);
-            
             window.gameLogic.updateGameState(newState);
             window.gameLogic.saveToLocalStorage();
             
-            // Actualizar feed
+            // FORZAR ACTUALIZACIÓN DEL FEED
             setTimeout(() => {
                 const feed = document.getElementById('newsFeed');
                 if (feed && newState.newsFeed) {
@@ -312,6 +271,7 @@ function hookSimulateWeek() {
                             <strong>S${n.week}:</strong> ${n.message}
                         </div>
                     `).join('');
+                    console.log('✅ Feed actualizado en DOM');
                 }
             }, 500);
             
@@ -324,7 +284,7 @@ setTimeout(hookSimulateWeek, 1000);
 setTimeout(hookSimulateWeek, 2000);
 
 // ============================================
-// HOOK EN SAVE LINEUP (para sincronizar)
+// VALIDACIÓN DE ALINEACIÓN
 // ============================================
 
 setTimeout(() => {
@@ -334,13 +294,12 @@ setTimeout(() => {
             const state = window.gameLogic?.getGameState();
             if (!state || !state.lineup) return originalSaveLineup();
             
-            // SINCRONIZAR PRIMERO
-            syncLineupWithSquad(state);
-            
             // Validar lesionados
             const injured = state.lineup.filter(p => p && p.isInjured);
             if (injured.length > 0) {
-                alert(`❌ Lesionados:\n\n${injured.map(p => `${p.name} (${p.weeksOut} sem)`).join('\n')}`);
+                alert(`❌ Jugadores lesionados:\n\n${injured.map(p => 
+                    `${p.name} (${p.injuryType || 'Lesión'} - ${p.weeksOut} sem)`
+                ).join('\n')}`);
                 return false;
             }
             
@@ -352,7 +311,9 @@ setTimeout(() => {
             });
             
             if (suspended.length > 0) {
-                alert(`❌ Sancionados:\n\n${suspended.map(p => `${p.name} (${p.suspensionWeeks} partidos)`).join('\n')}`);
+                alert(`❌ Jugadores sancionados:\n\n${suspended.map(p => 
+                    `${p.name} (${p.suspensionWeeks} partidos)`
+                ).join('\n')}`);
                 return false;
             }
             
@@ -371,12 +332,10 @@ setTimeout(() => {
         const originalInject = window.injectMatchSummary;
         
         window.injectMatchSummary = function(matchResult) {
-            console.log('🎬 Modal llamado, datos disponibles:', window.lastMatchCardsAndInjuries);
+            console.log('🎬 Modal llamado');
             
-            // Llamar al original
             originalInject(matchResult);
             
-            // Esperar a que el DOM se cree
             setTimeout(() => {
                 if (window.lastMatchCardsAndInjuries) {
                     const modal = document.getElementById('matchSummaryModal');
@@ -404,46 +363,37 @@ setTimeout(() => {
                                 </div>
                             `;
                             console.log('✅ Tarjetas reemplazadas');
-                        } else {
-                            cardsSection.innerHTML = `
-                                <h3>🟨🟥 Tarjetas</h3>
-                                <p>Sin tarjetas en este partido</p>
-                            `;
                         }
                     }
                     
-                    if (data.injuries.length > 0) {
-                        const cardsSection = modal.querySelector('.cards-section');
-                        if (cardsSection) {
-                            const injuriesHTML = `
-                                <div class="injuries-section">
-                                    <h3>🚑 Lesiones (TU EQUIPO)</h3>
-                                    <div class="injuries-list">
-                                        ${data.injuries.map(inj => `
-                                            <div class="injury-item">
-                                                <span class="injury-player">${inj.player}</span>
-                                                <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                    if (data.injuries.length > 0 && cardsSection) {
+                        const injuriesHTML = `
+                            <div class="injuries-section">
+                                <h3>🚑 Lesiones (TU EQUIPO)</h3>
+                                <div class="injuries-list">
+                                    ${data.injuries.map(inj => `
+                                        <div class="injury-item">
+                                            <span class="injury-player">${inj.player}</span>
+                                            <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
+                                        </div>
+                                    `).join('')}
                                 </div>
-                            `;
-                            
-                            cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
-                            console.log('✅ Lesiones añadidas');
-                        }
+                            </div>
+                        `;
+                        
+                        cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
+                        console.log('✅ Lesiones añadidas');
                     }
                     
-                    // Limpiar datos DESPUÉS de usarlos
                     delete window.lastMatchCardsAndInjuries;
                     console.log('🗑️ Datos limpiados');
                 } else {
-                    console.warn('⚠️ No hay datos de tarjetas/lesiones guardados');
+                    console.warn('⚠️ No hay datos guardados');
                 }
             }, 100);
         };
         
-        console.log('✅ Modal integrado con logs detallados');
+        console.log('✅ Modal integrado');
     }
 }, 3000);
 
@@ -534,9 +484,7 @@ setTimeout(() => {
     if (state?.squad) {
         state.squad.forEach(initializePlayerCards);
         state.academy?.forEach(initializePlayerCards);
-        syncLineupWithSquad(state);
         window.gameLogic.updateGameState(state);
-        lastProcessedWeek = state.week - 1;
         console.log('✅ Inicializado');
     }
 }, 2000);
@@ -550,7 +498,7 @@ window.CardsInjuriesSystem = {
         const state = window.gameLogic?.getGameState();
         if (!state?.squad) return console.error('❌ No hay datos');
         
-        console.log(`=== SEMANA ${state.week} ===`);
+        console.log(`=== SEMANA GLOBAL ${globalWeekCounter} (Semana ${state.week}) ===`);
         let found = 0;
         
         state.squad.forEach(p => {
@@ -571,14 +519,11 @@ window.CardsInjuriesSystem = {
         console.log(found === 0 ? '✅ Sin incidencias' : `Total: ${found}`);
     },
     
-    sync: function() {
-        const state = window.gameLogic?.getGameState();
-        if (state) {
-            syncLineupWithSquad(state);
-            window.gameLogic.updateGameState(state);
-            console.log('✅ Sincronizado');
-        }
+    resetCounter: function() {
+        globalWeekCounter = 0;
+        lastProcessedGlobalWeek = -1;
+        console.log('🔄 Contador reseteado');
     }
 };
 
-console.log('✅ Sistema cargado (DEFINITIVO con sync)');
+console.log('✅ Sistema cargado (FINAL con contador global)');
