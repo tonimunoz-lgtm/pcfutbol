@@ -190,6 +190,12 @@ function hookSimulateWeek() {
             window.gameLogic.updateGameState(newState);
             window.gameLogic.saveToLocalStorage();
             
+            // ✅ REFRESCAR UI PARA MOSTRAR CAMBIOS
+            if (window.ui?.refreshUI) {
+                window.ui.refreshUI(newState);
+                console.log('✅ UI refrescada');
+            }
+            
             console.log('✅ Tarjetas y lesiones aplicadas correctamente');
         }
     };
