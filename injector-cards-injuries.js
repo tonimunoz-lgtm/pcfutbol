@@ -480,8 +480,8 @@ function enhanceSquadTable() {
     rows.forEach((row) => {
         const cells = Array.from(row.querySelectorAll('td'));
         
-        // Buscar el nombre del jugador en la primera celda
-        const nameCell = cells[0];
+        // El nombre está en la celda 1 (celda 0 es el número)
+        const nameCell = cells[1];
         if (!nameCell) return;
         
         const playerName = nameCell.textContent.trim();
@@ -489,7 +489,7 @@ function enhanceSquadTable() {
         // Buscar el jugador en squad por nombre
         const player = state.squad.find(p => p.name === playerName);
         if (!player) {
-            console.warn(`⚠️ ${playerName} no encontrado en squad`);
+            console.warn(`⚠️ Plantilla: "${playerName}" no encontrado en squad`);
             return;
         }
         
@@ -523,6 +523,8 @@ function enhanceSquadTable() {
             if (player.redCards > 0) badges.push(`🟥×${player.redCards}`);
             
             tarjetasCell.innerHTML = badges.length > 0 ? badges.join(' ') : '-';
+            
+            console.log(`✓ ${playerName}: YC=${player.yellowCards}, RC=${player.redCards}, INJ=${player.isInjured}, SUS=${player.isSuspended}`);
         }
     });
 }
