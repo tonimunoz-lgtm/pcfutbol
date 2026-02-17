@@ -528,22 +528,17 @@ function enhanceSquadTable() {
 }
 
 // Ejecutar cuando se abra la página de Plantilla
+let lastSquadUpdate = 0;
+
 document.addEventListener('click', (e) => {
     if (e.target.textContent?.includes('Plantilla')) {
+        // Evitar ejecuciones múltiples
+        const now = Date.now();
+        if (now - lastSquadUpdate < 1000) return;
+        lastSquadUpdate = now;
+        
         setTimeout(enhanceSquadTable, 600);
     }
 });
 
-// Observer para actualizar automáticamente
-const squadObserver = new MutationObserver(() => {
-    if (document.querySelector('#squadList table')) {
-        enhanceSquadTable();
-    }
-});
-
-squadObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-});
-
-console.log('✅ Sistema de UI de plantilla activado');
+console.log('✅ Sistema de UI de plantilla activado (solo al hacer clic)');
