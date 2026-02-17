@@ -232,7 +232,11 @@ function hookSimulateWeek() {
         // POST-SIMULACIÓN: Solo si NO es pretemporada y es nueva semana
         const newState = window.gameLogic?.getGameState();
         
-        const isPreseason = newState.week <= 4; // Ajusta según tu juego
+        // Obtener semanas de pretemporada desde config
+        const preseasonWeeks = window.PRESEASON_WEEKS || 4;
+        const isPreseason = newState.week <= preseasonWeeks;
+        
+        console.log(`📅 Semana ${newState.week}, Pretemporada: ${isPreseason} (hasta semana ${preseasonWeeks})`);
         
         if (newState && newState.week !== lastProcessedWeek && !isPreseason) {
             lastProcessedWeek = newState.week;
@@ -285,11 +289,14 @@ function hookSimulateWeek() {
                 }
             });
             
-            // Guardar para modal
+            // Guardar para modal ANTES de cualquier cosa
             window.lastMatchCardsAndInjuries = {
                 cards: matchCards,
-                injuries: matchInjuries
+                injuries: matchInjuries,
+                week: newState.week
             };
+            
+            console.log('📦 Datos guardados para modal:', window.lastMatchCardsAndInjuries);
             
             // SINCRONIZAR DESPUÉS DE APLICAR TARJETAS/LESIONES
             syncLineupWithSquad(newState);
@@ -365,53 +372,76 @@ setTimeout(() => {
         const originalInject = window.injectMatchSummary;
         
         window.injectMatchSummary = function(matchResult) {
+            console.log('🎬 Modal llamado, datos disponibles:', window.lastMatchCardsAndInjuries);
+            
+            // Llamar al original
             originalInject(matchResult);
             
-            if (window.lastMatchCardsAndInjuries) {
-                const modal = document.getElementById('matchSummaryModal');
-                if (!modal) return;
-                
-                const data = window.lastMatchCardsAndInjuries;
-                
-                const cardsSection = modal.querySelector('.cards-section');
-                if (cardsSection && data.cards.length > 0) {
-                    cardsSection.innerHTML = `
-                        <h3>🟨🟥 Tarjetas</h3>
-                        <div class="cards-list">
-                            ${data.cards.map(card => `
-                                <div class="card-item home">
-                                    <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
-                                    <span class="card-player">${card.player}</span>
-                                    ${card.suspension > 0 ? `<span class="card-team">(${card.suspension} partidos)</span>` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-                
-                if (data.injuries.length > 0) {
-                    const injuriesHTML = `
-                        <div class="injuries-section">
-                            <h3>🚑 Lesiones</h3>
-                            <div class="injuries-list">
-                                ${data.injuries.map(inj => `
-                                    <div class="injury-item">
-                                        <span class="injury-player">${inj.player}</span>
-                                        <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
+            // Esperar a que el DOM se cree
+            setTimeout(() => {
+                if (window.lastMatchCardsAndInjuries) {
+                    const modal = document.getElementById('matchSummaryModal');
+                    if (!modal) {
+                        console.warn('⚠️ Modal no encontrado');
+                        return;
+                    }
                     
-                    cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
+                    const data = window.lastMatchCardsAndInjuries;
+                    console.log('✏️ Reemplazando con datos reales:', data);
+                    
+                    const cardsSection = modal.querySelector('.cards-section');
+                    if (cardsSection) {
+                        if (data.cards.length > 0) {
+                            cardsSection.innerHTML = `
+                                <h3>🟨🟥 Tarjetas (TU EQUIPO)</h3>
+                                <div class="cards-list">
+                                    ${data.cards.map(card => `
+                                        <div class="card-item home">
+                                            <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
+                                            <span class="card-player">${card.player}</span>
+                                            ${card.suspension > 0 ? `<span class="card-team">(${card.suspension} partidos)</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                            console.log('✅ Tarjetas reemplazadas');
+                        } else {
+                            cardsSection.innerHTML = `
+                                <h3>🟨🟥 Tarjetas</h3>
+                                <p>Sin tarjetas en este partido</p>
+                            `;
+                        }
+                    }
+                    
+                    if (data.injuries.length > 0) {
+                        const injuriesHTML = `
+                            <div class="injuries-section">
+                                <h3>🚑 Lesiones (TU EQUIPO)</h3>
+                                <div class="injuries-list">
+                                    ${data.injuries.map(inj => `
+                                        <div class="injury-item">
+                                            <span class="injury-player">${inj.player}</span>
+                                            <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                        
+                        cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
+                        console.log('✅ Lesiones añadidas');
+                    }
+                    
+                    // Limpiar datos DESPUÉS de usarlos
+                    delete window.lastMatchCardsAndInjuries;
+                    console.log('🗑️ Datos limpiados');
+                } else {
+                    console.warn('⚠️ No hay datos de tarjetas/lesiones guardados');
                 }
-                
-                delete window.lastMatchCardsAndInjuries;
-            }
+            }, 100);
         };
         
-        console.log('✅ Modal integrado');
+        console.log('✅ Modal integrado con logs detallados');
     }
 }, 3000);
 
