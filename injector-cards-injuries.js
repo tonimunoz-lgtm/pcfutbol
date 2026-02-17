@@ -241,6 +241,15 @@ function hookSimulateWeek() {
                             'warning'
                         );
                     }
+                    
+                    // CRÍTICO: Aplicar también al jugador en el squad principal
+                    const playerInSquad = newState.squad.find(p => p.name === player.name);
+                    if (playerInSquad) {
+                        playerInSquad.yellowCards = player.yellowCards;
+                        playerInSquad.redCards = player.redCards;
+                        playerInSquad.isSuspended = player.isSuspended;
+                        playerInSquad.suspensionWeeks = player.suspensionWeeks;
+                    }
                 }
                 
                 // Lesiones
@@ -251,6 +260,14 @@ function hookSimulateWeek() {
                         `🏥 ${player.name} lesionado (${injuryResult.type}) - ${injuryResult.weeks} semanas`,
                         'warning'
                     );
+                    
+                    // CRÍTICO: Aplicar también al jugador en el squad principal
+                    const playerInSquad = newState.squad.find(p => p.name === player.name);
+                    if (playerInSquad) {
+                        playerInSquad.isInjured = player.isInjured;
+                        playerInSquad.weeksOut = player.weeksOut;
+                        playerInSquad.injuryType = player.injuryType;
+                    }
                 }
             });
             
