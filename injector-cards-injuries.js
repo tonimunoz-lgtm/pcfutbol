@@ -89,12 +89,49 @@ function simulateMatchInjuries(player, staff) {
     
     let probability = INJURIES_CONFIG.BASE_PROBABILITY;
     
-    if (staff?.fisio) probability /= (1.5 - (staff.fisio.level * 0.1));
-    if (player.age > 30) probability *= (1 + ((player.age - 30) * 0.02));
-    if (player.form < 60) probability *= 1.5;
+    // PREPARADOR FÍSICO: Reduce probabilidad de lesión
+    if (staff?.preparadorFisico) {
+        const level = staff.preparadorFisico.level || 1;
+        // Sin preparador = 100% probabilidad base
+        // Nivel 1 = 90% probabilidad
+        // Nivel 5 = 50% probabilidad
+        const reduction = 1 - (level * 0.1);
+        probability *= reduction;
+        console.log(`💪 Prep.Físico nivel ${level}: ${(reduction * 100).toFixed(0)}% probabilidad`);
+    } else {
+        // Sin preparador físico = +50% probabilidad
+        probability *= 1.5;
+        console.log('⚠️ Sin preparador físico: +50% probabilidad lesión');
+    }
+    
+    // Factores adicionales
+    if (player.age > 30) {
+        const ageMultiplier = 1 + ((player.age - 30) * 0.02);
+        probability *= ageMultiplier;
+    }
+    
+    if (player.form < 60) {
+        probability *= 1.3;
+    }
     
     if (Math.random() < probability) {
-        const weeks = 1 + Math.floor(Math.random() * 3);
+        // Determinar semanas base (1-4)
+        let weeks = 1 + Math.floor(Math.random() * 4);
+        
+        // MÉDICO: Reduce semanas de recuperación
+        if (staff?.medico) {
+            const level = staff.medico.level || 1;
+            // Sin médico = semanas completas
+            // Nivel 1 = -10% semanas
+            // Nivel 5 = -50% semanas (máximo)
+            const reduction = level * 0.1;
+            const oldWeeks = weeks;
+            weeks = Math.max(1, Math.ceil(weeks * (1 - reduction)));
+            console.log(`🏥 Médico nivel ${level}: ${oldWeeks} → ${weeks} semanas (-${(reduction * 100).toFixed(0)}%)`);
+        } else {
+            console.log('⚠️ Sin médico: semanas sin reducción');
+        }
+        
         const injuryType = INJURIES_CONFIG.TYPES[Math.floor(Math.random() * INJURIES_CONFIG.TYPES.length)];
         
         player.isInjured = true;
@@ -223,7 +260,10 @@ function hookSimulateWeek() {
                 return;
             }
             
-            console.log('👥 Procesando alineación:', newState.lineup.map(p => p?.name).filter(Boolean));
+            console.log(`👥 Procesando alineación:`, newState.lineup.map(p => p?.name).filter(Boolean));
+            
+            // CRÍTICO: Guardar estado actual de newsFeed
+            const newsBeforeProcessing = newState.newsFeed.length;
             
             // Procesar cada jugador de la LINEUP
             newState.lineup.forEach((lineupPlayer, idx) => {
@@ -286,18 +326,29 @@ function hookSimulateWeek() {
             window.gameLogic.updateGameState(newState);
             window.gameLogic.saveToLocalStorage();
             
+            // Verificar que las noticias se guardaron
+            const newsAfterProcessing = newState.newsFeed.length;
+            const newsAdded = newsAfterProcessing - newsBeforeProcessing;
+            console.log(`📰 Noticias añadidas: ${newsAdded} (antes: ${newsBeforeProcessing}, después: ${newsAfterProcessing})`);
+            
             // FORZAR ACTUALIZACIÓN DEL FEED
             setTimeout(() => {
                 const feed = document.getElementById('newsFeed');
-                if (feed && newState.newsFeed) {
-                    feed.innerHTML = newState.newsFeed.slice(0, 20).map(n => `
+                const currentState = window.gameLogic.getGameState();
+                
+                if (feed && currentState.newsFeed && currentState.newsFeed.length > 0) {
+                    console.log(`🔄 Actualizando feed con ${currentState.newsFeed.length} noticias`);
+                    
+                    feed.innerHTML = currentState.newsFeed.slice(0, 20).map(n => `
                         <div class="alert ${n.type === 'error' ? 'alert-error' : n.type === 'warning' ? 'alert-warning' : n.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">
                             <strong>S${n.week}:</strong> ${n.message}
                         </div>
                     `).join('');
                     console.log('✅ Feed actualizado en DOM');
+                } else {
+                    console.warn('⚠️ Feed no encontrado o sin noticias');
                 }
-            }, 500);
+            }, 800);
             
             console.log(`✅ ${matchCards.length} tarjetas, ${matchInjuries.length} lesiones`);
         }
