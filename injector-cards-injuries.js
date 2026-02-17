@@ -232,15 +232,12 @@ function hookSimulateWeek() {
         // POST-SIMULACIÓN: Solo si NO es pretemporada y es nueva semana
         const newState = window.gameLogic?.getGameState();
         
-        // Las primeras PRESEASON_WEEKS son pretemporada, LUEGO se resetea a semana 1 para la liga
-        // Detectar: si seasonCalendar está vacío O week > 4, es pretemporada
-        const preseasonWeeks = window.PRESEASON_WEEKS || 4;
-        const hasCalendar = newState.seasonCalendar && newState.seasonCalendar.length > 0;
-        const isInPreseasonWeeks = newState.week <= preseasonWeeks && !hasCalendar;
+        // Pretemporada = primeras 4 semanas SIEMPRE
+        const isPreseason = newState.week <= 4;
         
-        console.log(`📅 Semana ${newState.week}, Calendario generado: ${hasCalendar}, Es pretemporada: ${isInPreseasonWeeks}`);
+        console.log(`📅 Semana ${newState.week}, Es pretemporada: ${isPreseason} (primeras 4 semanas)`);
         
-        if (newState && newState.week !== lastProcessedWeek && !isInPreseasonWeeks) {
+        if (newState && newState.week !== lastProcessedWeek && !isPreseason) {
             lastProcessedWeek = newState.week;
             
             console.log(`🎴 Generando tarjetas/lesiones`);
@@ -416,22 +413,25 @@ setTimeout(() => {
                     }
                     
                     if (data.injuries.length > 0) {
-                        const injuriesHTML = `
-                            <div class="injuries-section">
-                                <h3>🚑 Lesiones (TU EQUIPO)</h3>
-                                <div class="injuries-list">
-                                    ${data.injuries.map(inj => `
-                                        <div class="injury-item">
-                                            <span class="injury-player">${inj.player}</span>
-                                            <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
-                                        </div>
-                                    `).join('')}
+                        const cardsSection = modal.querySelector('.cards-section');
+                        if (cardsSection) {
+                            const injuriesHTML = `
+                                <div class="injuries-section">
+                                    <h3>🚑 Lesiones (TU EQUIPO)</h3>
+                                    <div class="injuries-list">
+                                        ${data.injuries.map(inj => `
+                                            <div class="injury-item">
+                                                <span class="injury-player">${inj.player}</span>
+                                                <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        
-                        cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
-                        console.log('✅ Lesiones añadidas');
+                            `;
+                            
+                            cardsSection.insertAdjacentHTML('afterend', injuriesHTML);
+                            console.log('✅ Lesiones añadidas');
+                        }
                     }
                     
                     // Limpiar datos DESPUÉS de usarlos
