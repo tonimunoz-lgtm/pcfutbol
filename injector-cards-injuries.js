@@ -232,11 +232,12 @@ function hookSimulateWeek() {
         // POST-SIMULACIÓN: Solo si NO es pretemporada y es nueva semana
         const newState = window.gameLogic?.getGameState();
         
-        // Obtener semanas de pretemporada desde config
-        const preseasonWeeks = window.PRESEASON_WEEKS || 4;
-        const isPreseason = newState.week <= preseasonWeeks;
+        // Detectar pretemporada: si HAY partidos en el calendario, NO es pretemporada
+        const hasOfficialMatches = newState.seasonCalendar && 
+                                   newState.seasonCalendar.some(m => m.week === newState.week);
+        const isPreseason = !hasOfficialMatches;
         
-        console.log(`📅 Semana ${newState.week}, Pretemporada: ${isPreseason} (hasta semana ${preseasonWeeks})`);
+        console.log(`📅 Semana ${newState.week}, Partidos oficiales: ${hasOfficialMatches}, Es pretemporada: ${isPreseason}`);
         
         if (newState && newState.week !== lastProcessedWeek && !isPreseason) {
             lastProcessedWeek = newState.week;
