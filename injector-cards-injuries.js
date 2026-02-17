@@ -225,14 +225,22 @@ function hookSimulateWeek() {
             const recoveredSuspensions = processWeeklySuspensions(state.squad);
             recoveredSuspensions.forEach(name => {
                 const news = `✅ ${name} cumplió su sanción`;
-                window.gameLogic.addNews(news, 'info');
+                if (typeof addNews === 'function') {
+                    addNews(news, 'info');
+                } else if (window.addNews) {
+                    window.addNews(news, 'info');
+                }
                 console.log('📰', news);
             });
             
             const recoveredInjuries = processWeeklyRecoveries(state.squad);
             recoveredInjuries.forEach(name => {
                 const news = `💚 ${name} se recuperó de su lesión`;
-                window.gameLogic.addNews(news, 'success');
+                if (typeof addNews === 'function') {
+                    addNews(news, 'success');
+                } else if (window.addNews) {
+                    window.addNews(news, 'success');
+                }
                 console.log('📰', news);
             });
             
@@ -293,7 +301,12 @@ function hookSimulateWeek() {
                         newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
                     
-                    window.gameLogic.addNews(newsText, cardResult.red ? 'error' : 'warning');
+                    // Usar addNews global (no window.gameLogic.addNews)
+                    if (typeof addNews === 'function') {
+                        addNews(newsText, cardResult.red ? 'error' : 'warning');
+                    } else if (window.addNews) {
+                        window.addNews(newsText, cardResult.red ? 'error' : 'warning');
+                    }
                     console.log('📰 TARJETA:', newsText);
                 }
                 
@@ -302,7 +315,13 @@ function hookSimulateWeek() {
                 if (injuryResult) {
                     matchInjuries.push(injuryResult);
                     const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
-                    window.gameLogic.addNews(newsText, 'warning');
+                    
+                    // Usar addNews global
+                    if (typeof addNews === 'function') {
+                        addNews(newsText, 'warning');
+                    } else if (window.addNews) {
+                        window.addNews(newsText, 'warning');
+                    }
                     console.log('📰 LESIÓN:', newsText);
                 }
                 
@@ -381,14 +400,17 @@ setTimeout(() => {
                 const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
                 
                 if (squadPlayer) {
+                    // PRIMERO inicializar
+                    initializePlayerCards(squadPlayer);
+                    
                     // Copiar estado actual del squad al lineup
-                    lineupPlayer.isInjured = squadPlayer.isInjured;
-                    lineupPlayer.weeksOut = squadPlayer.weeksOut;
-                    lineupPlayer.injuryType = squadPlayer.injuryType;
-                    lineupPlayer.isSuspended = squadPlayer.isSuspended;
-                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks;
-                    lineupPlayer.yellowCards = squadPlayer.yellowCards;
-                    lineupPlayer.redCards = squadPlayer.redCards;
+                    lineupPlayer.isInjured = squadPlayer.isInjured || false;
+                    lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
+                    lineupPlayer.injuryType = squadPlayer.injuryType || null;
+                    lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
+                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
+                    lineupPlayer.yellowCards = squadPlayer.yellowCards || 0;
+                    lineupPlayer.redCards = squadPlayer.redCards || 0;
                     
                     // Validar
                     if (squadPlayer.isInjured) {
