@@ -1,3 +1,4 @@
+
 // injector-cards-injuries.js
 // VERSIÓN FINAL - Arregla TODOS los problemas
 
@@ -217,39 +218,63 @@ function hookSimulateWeek() {
             const matchCards = [];
             const matchInjuries = [];
             
-            // Procesar jugadores del SQUAD que están en LINEUP
-            newState.squad.forEach(player => {
-                if (!player) return;
+            // CRÍTICO: Procesar SOLO la alineación actual
+            if (!newState.lineup || newState.lineup.length === 0) {
+                console.warn('⚠️ No hay alineación guardada');
+                return;
+            }
+            
+            console.log('👥 Procesando alineación:', newState.lineup.map(p => p?.name).filter(Boolean));
+            
+            // Procesar cada jugador de la LINEUP
+            newState.lineup.forEach((lineupPlayer, idx) => {
+                if (!lineupPlayer) return;
                 
-                const isInLineup = newState.lineup && newState.lineup.some(lp => lp && lp.name === player.name);
-                if (!isInLineup) return;
+                // Buscar el MISMO jugador en squad por nombre
+                const squadPlayer = newState.squad.find(sp => sp.name === lineupPlayer.name);
+                
+                if (!squadPlayer) {
+                    console.warn(`⚠️ ${lineupPlayer.name} no encontrado en squad`);
+                    return;
+                }
+                
+                // Trabajar SOLO con squadPlayer (fuente de verdad)
                 
                 // Tarjetas
-                const cardResult = simulateMatchCards(player);
+                const cardResult = simulateMatchCards(squadPlayer);
                 if (cardResult) {
                     matchCards.push(cardResult);
                     
                     let newsText;
                     if (cardResult.red) {
-                        newsText = `🟥 ${player.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
+                        newsText = `🟥 ${squadPlayer.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
                     } else if (cardResult.suspension > 0) {
-                        newsText = `⚠️ ${player.name} acumula 5 amarillas - Sancionado 1 partido`;
+                        newsText = `⚠️ ${squadPlayer.name} acumula 5 amarillas - Sancionado 1 partido`;
                     } else {
-                        newsText = `🟨 ${player.name} vio tarjeta amarilla`;
+                        newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
                     
                     window.gameLogic.addNews(newsText, cardResult.red ? 'error' : 'warning');
-                    console.log('📰', newsText);
+                    console.log('📰 TARJETA:', newsText);
                 }
                 
                 // Lesiones
-                const injuryResult = simulateMatchInjuries(player, newState.staff);
+                const injuryResult = simulateMatchInjuries(squadPlayer, newState.staff);
                 if (injuryResult) {
                     matchInjuries.push(injuryResult);
-                    const newsText = `🏥 ${player.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
+                    const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
                     window.gameLogic.addNews(newsText, 'warning');
-                    console.log('📰', newsText);
+                    console.log('📰 LESIÓN:', newsText);
                 }
+                
+                // CRÍTICO: Copiar cambios a lineup
+                lineupPlayer.yellowCards = squadPlayer.yellowCards;
+                lineupPlayer.redCards = squadPlayer.redCards;
+                lineupPlayer.isSuspended = squadPlayer.isSuspended;
+                lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks;
+                lineupPlayer.isInjured = squadPlayer.isInjured;
+                lineupPlayer.weeksOut = squadPlayer.weeksOut;
+                lineupPlayer.injuryType = squadPlayer.injuryType;
             });
             
             // Guardar para modal
@@ -294,29 +319,45 @@ setTimeout(() => {
             const state = window.gameLogic?.getGameState();
             if (!state || !state.lineup) return originalSaveLineup();
             
-            // Validar lesionados
-            const injured = state.lineup.filter(p => p && p.isInjured);
-            if (injured.length > 0) {
-                alert(`❌ Jugadores lesionados:\n\n${injured.map(p => 
-                    `${p.name} (${p.injuryType || 'Lesión'} - ${p.weeksOut} sem)`
-                ).join('\n')}`);
-                return false;
-            }
+            console.log('🔍 Validando alineación...');
             
-            // Validar sancionados
-            const suspended = state.lineup.filter(p => {
-                if (!p) return false;
-                initializePlayerCards(p);
-                return p.isSuspended;
+            // SINCRONIZAR lineup con squad ANTES de validar
+            const errors = [];
+            
+            state.lineup.forEach((lineupPlayer, idx) => {
+                if (!lineupPlayer) return;
+                
+                // Buscar en squad
+                const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
+                
+                if (squadPlayer) {
+                    // Copiar estado actual del squad al lineup
+                    lineupPlayer.isInjured = squadPlayer.isInjured;
+                    lineupPlayer.weeksOut = squadPlayer.weeksOut;
+                    lineupPlayer.injuryType = squadPlayer.injuryType;
+                    lineupPlayer.isSuspended = squadPlayer.isSuspended;
+                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks;
+                    lineupPlayer.yellowCards = squadPlayer.yellowCards;
+                    lineupPlayer.redCards = squadPlayer.redCards;
+                    
+                    // Validar
+                    if (squadPlayer.isInjured) {
+                        errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} sem)`);
+                    }
+                    
+                    if (squadPlayer.isSuspended) {
+                        errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
+                    }
+                }
             });
             
-            if (suspended.length > 0) {
-                alert(`❌ Jugadores sancionados:\n\n${suspended.map(p => 
-                    `${p.name} (${p.suspensionWeeks} partidos)`
-                ).join('\n')}`);
-                return false;
+            if (errors.length > 0) {
+                alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
+                console.error('❌ Validación fallida:', errors);
+                return false; // BLOQUEAR
             }
             
+            console.log('✅ Validación OK');
             return originalSaveLineup();
         };
         console.log('✅ Validación activada');
