@@ -477,13 +477,24 @@ function enhanceSquadTable() {
     
     // Rows
     const rows = table.querySelectorAll('tbody tr');
-    rows.forEach((row, i) => {
-        const player = state.squad[i];
-        if (!player) return;
+    rows.forEach((row) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        
+        // Buscar el nombre del jugador en la primera celda
+        const nameCell = cells[0];
+        if (!nameCell) return;
+        
+        const playerName = nameCell.textContent.trim();
+        
+        // Buscar el jugador en squad por nombre
+        const player = state.squad.find(p => p.name === playerName);
+        if (!player) {
+            console.warn(`⚠️ ${playerName} no encontrado en squad`);
+            return;
+        }
         
         initializePlayerCards(player);
         
-        const cells = Array.from(row.querySelectorAll('td'));
         let estadoCell = cells.find(c => c.textContent.includes('Apto') || c.textContent.includes('Les.'));
         
         if (estadoCell) {
