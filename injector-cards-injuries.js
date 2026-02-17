@@ -419,22 +419,75 @@ window.CardsInjuriesSystem = {
     // Ver estado
     showStatus: function() {
         const state = window.gameLogic?.getGameState();
-        if (!state) return;
+        if (!state) {
+            console.error('❌ gameLogic no disponible');
+            return;
+        }
         
-        console.log('=== ESTADO ===');
+        if (!state.squad) {
+            console.error('❌ No hay squad');
+            return;
+        }
+        
+        console.log('=== ESTADO DE PLANTILLA ===');
+        console.log(`Total jugadores: ${state.squad.length}`);
+        
+        let found = 0;
         state.squad.forEach(p => {
             initializePlayerCards(p);
-            if (p.yellowCards > 0 || p.redCards > 0 || p.isInjured || p.isSuspended) {
+            
+            const hasCards = p.yellowCards > 0 || p.redCards > 0;
+            const isInjured = p.isInjured === true;
+            const isSuspended = p.isSuspended === true;
+            
+            if (hasCards || isInjured || isSuspended) {
                 console.log(`${p.name}:`, {
-                    amarillas: p.yellowCards,
-                    rojas: p.redCards,
-                    sancionado: p.isSuspended,
-                    semanasSancion: p.suspensionWeeks,
-                    lesionado: p.isInjured,
-                    semanasLesion: p.weeksOut
+                    amarillas: p.yellowCards || 0,
+                    rojas: p.redCards || 0,
+                    sancionado: isSuspended,
+                    semanasSancion: p.suspensionWeeks || 0,
+                    lesionado: isInjured,
+                    semanasLesion: p.weeksOut || 0
                 });
+                found++;
             }
         });
+        
+        if (found === 0) {
+            console.log('✅ No hay jugadores con tarjetas, lesiones o sanciones');
+        } else {
+            console.log(`Total con incidencias: ${found}`);
+        }
+    },
+    
+    // Nueva función: Aplicar tarjetas manualmente para test
+    testCards: function() {
+        const state = window.gameLogic?.getGameState();
+        if (!state || !state.squad || state.squad.length === 0) {
+            console.error('❌ No hay squad');
+            return;
+        }
+        
+        // Dar tarjetas al primer jugador
+        const player = state.squad[0];
+        initializePlayerCards(player);
+        player.yellowCards = 3;
+        player.redCards = 0;
+        
+        console.log(`✅ ${player.name} ahora tiene 3 amarillas (test)`);
+        
+        // Dar lesión al segundo jugador
+        if (state.squad[1]) {
+            state.squad[1].isInjured = true;
+            state.squad[1].weeksOut = 2;
+            state.squad[1].injuryType = 'Test';
+            console.log(`✅ ${state.squad[1].name} ahora está lesionado 2 semanas (test)`);
+        }
+        
+        window.gameLogic.updateGameState(state);
+        window.gameLogic.saveToLocalStorage();
+        
+        console.log('✅ Estado de test aplicado. Ahora abre Plantilla para ver los cambios.');
     }
 };
 
