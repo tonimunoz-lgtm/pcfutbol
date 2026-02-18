@@ -1904,18 +1904,9 @@ window.selectTeamAndStart = function(teamName, division) {
                 formationSelect.appendChild(option);
             });
 
-            // Intentar cargar partida guardada
-            const savedStateResult = gameLogic.loadFromLocalStorage();
-            if (savedStateResult.success) {
-                console.log('✓ Partida cargada desde localStorage');
-                ui.refreshUI(gameLogic.getGameState());
-            } else {
-                console.log('⚠️ No hay partida guardada, abriendo modal de selección');
-                // Pequeño delay para asegurar que el DOM está completamente cargado
-                setTimeout(() => {
-                    window.openModal('gameMode');
-                }, 100);
-            }
+          // NO cargar automáticamente - esperar a que el usuario elija
+console.log('⏸️ Esperando selección del usuario (Nueva/Cargar desde nube)');
+// No hacer nada aquí - el modal de login se encargará
         });
 
 
@@ -2162,52 +2153,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
    // Abrir modal con datos del jugador --------------------------------------------------
 
-/*function openPlayerModal(player) {
-    document.getElementById('modalPlayerName').innerText = player.name || 'Desconocido';
-    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position || '-'}`;
-    document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall || '-'}`;
-
-    // Mostrar todas las características en un solo bloque
-    document.getElementById('modalPlayerOther').innerHTML = `
-        <strong>Personal</strong><br>
-        Edad: ${player.age || '-'}<br>
-        Nacionalidad: ${player.nationality || '-'}<br>
-        Pie dominante: ${player.foot || '-'}<br>
-        <br>
-        <strong>Atributos</strong><br>
-        EN: ${player.EN || 0} | VE: ${player.VE || 0} | RE: ${player.RE || 0} | AG: ${player.AG || 0}<br>
-        CA: ${player.CA || 0} | EF: ${player.EF || 0} | MO: ${player.MO || 0} | AT: ${player.AT || 0} | DF: ${player.DF || 0}<br>
-        <br>
-        <strong>Contrato</strong><br>
-        Tipo: ${player.contractType || '-'}<br>
-        Años: ${player.contractYears || 0}<br>
-        Release Clause: ${player.releaseClause || 0}<br>
-        Salario: ${player.salary || 0}<br>
-        Club: ${player.club || '-'}<br>
-        <br>
-        <strong>Status</strong><br>
-        Lesionado: ${player.isInjured ? 'Sí' : 'No'}<br>
-        Semanas fuera: ${player.weeksOut || 0}<br>
-        Suspendido: ${player.isSuspended ? 'Sí' : 'No'}<br>
-        Tarjetas amarillas: ${player.yellowCards || 0}<br>
-        Tarjeta roja: ${player.redCards || 0}<br>
-        <br>
-        <strong>Stats</strong><br>
-        Partidos: ${player.matches || 0}<br>
-        Form: ${player.form || 0}<br>
-        Minutos: ${player.minutesPlayed || 0}<br>
-        Goles: ${player.goals || 0}<br>
-        Asistencias: ${player.assists || 0}<br>
-        Potential: ${player.potential || 0}<br>
-        <br>
-        <strong>Historial</strong><br>
-        ${player.history && player.history.length ? player.history.join('<br>') : 'Sin historial'}
-    `;
-
-    // Mostrar modal
-    document.getElementById('playerModal').style.display = 'block';
-}*/
-
 function openPlayerModal(player) {
     // Foto (puedes reemplazar por una URL real si tienes fotos de jugadores)
     document.getElementById('modalPlayerPhoto').src = player.photo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='150'%3E%3Crect fill='%23ddd' width='120' height='150'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial' font-size='14'%3EFoto%3C/text%3E%3C/svg%3E";
@@ -2315,6 +2260,20 @@ window.onclick = function(event) {
         </div>
     </div>
 </div>
+
+<script>
+// Limpiar localStorage de partidas al cargar la página
+(function() {
+    const gameKeys = Object.keys(localStorage).filter(k => 
+        k.includes('pcfutbol') || k.includes('game') || k === 'pcfutbol-save'
+    );
+    
+    if (gameKeys.length > 0) {
+        console.log('🗑️ Limpiando localStorage:', gameKeys);
+        gameKeys.forEach(k => localStorage.removeItem(k));
+    }
+})();
+</script>
     
 </body>
 </html>
