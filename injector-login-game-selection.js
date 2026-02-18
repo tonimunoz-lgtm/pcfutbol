@@ -1,5 +1,4 @@
 // injector-login-game-selection.js
-
 // Muestra un modal de selección después del login
 
 console.log('🎮 Game Selection Modal Injector cargando...');
@@ -331,6 +330,58 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         }, 2500); // Aumentar timeout para asegurar que Firebase esté listo
     }
     
+    // VIGILANTE CONTINUO - Detecta si se queda en layout vacío
+    function startGameMonitor() {
+        // Verificar cada 2 segundos si hay partida activa
+        setInterval(() => {
+            // Solo verificar si hay usuario logueado
+            if (!window.currentUser) return;
+            
+            // Verificar si hay partida
+            const state = window.gameLogic?.getGameState();
+            const hasGame = state && state.teamName;
+            
+            // Verificar si algún modal del flujo está activo
+            const gameModal = document.getElementById('gameMode');
+            const teamModal = document.getElementById('selectTeam');
+            const cloudModal = document.getElementById('savedGamesModal');
+            const selectionModal = document.getElementById('gameSelectionModal');
+            
+            const anyFlowModalActive = 
+                (gameModal && gameModal.classList.contains('active')) ||
+                (teamModal && teamModal.classList.contains('active')) ||
+                (cloudModal && cloudModal.classList.contains('active')) ||
+                (selectionModal && selectionModal.classList.contains('active'));
+            
+            // Si NO hay partida Y NO hay ningún modal activo Y el layout está visible
+            if (!hasGame && !anyFlowModalActive) {
+                const layoutVisible = !document.getElementById('game-selection-hide-style');
+                
+                if (layoutVisible) {
+                    console.warn('🚨 Layout vacío detectado sin partida ni modal activo');
+                    console.log('🔄 Redirigiendo a modal de selección...');
+                    
+                    // Ocultar layout
+                    hideGameLayout();
+                    
+                    // Cerrar cualquier modal que pueda estar medio abierto
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        if (modal.id !== 'gameSelectionModal') {
+                            modal.classList.remove('active');
+                        }
+                    });
+                    
+                    // Mostrar modal de selección
+                    setTimeout(() => {
+                        window.showGameSelectionModal();
+                    }, 300);
+                }
+            }
+        }, 2000); // Cada 2 segundos
+        
+        console.log('👁️ Vigilante de partida activo');
+    }
+    
     // Interceptar el cierre del modal de login O sesión restaurada
     function interceptLoginSuccess() {
         let loginSuccessDetected = false;
@@ -414,6 +465,7 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         interceptLoginSuccess();
         preventModalClose();
         checkExistingGame();
+        startGameMonitor(); // NUEVO: Vigilante continuo
     }, 1000);
     
     console.log('✅ Game Selection Modal Injector cargado');
