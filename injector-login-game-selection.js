@@ -6,6 +6,15 @@ console.log('🎮 Game Selection Modal Injector cargando...');
 (function() {
     'use strict';
     
+    // OPCIONAL: Descomentar para forzar login en cada recarga
+    // setTimeout(() => {
+    //     if (window.firebase && window.firebase.auth) {
+    //         window.firebase.auth().signOut();
+    //         localStorage.removeItem('currentUser');
+    //         console.log('🔄 Sesión limpiada - requiere login');
+    //     }
+    // }, 100);
+    
     // OCULTAR TODO EL JUEGO INMEDIATAMENTE
     function hideGameLayout() {
         const style = document.createElement('style');
@@ -16,13 +25,30 @@ console.log('🎮 Game Selection Modal Injector cargando...');
                 background: #0a0e27 !important;
             }
             
-            body > *:not(script):not(style) {
+            /* Ocultar elementos específicos del juego */
+            #dashboard,
+            #menuLeft,
+            .main-header,
+            .center-options,
+            .menu-items {
                 display: none !important;
             }
             
-            /* Mostrar solo modales */
+            /* Asegurar que los modales se vean correctamente */
             .modal {
-                display: block !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 9999 !important;
+            }
+            
+            .modal:not(.active) {
+                display: none !important;
             }
             
             .modal.active {
@@ -308,19 +334,46 @@ console.log('🎮 Game Selection Modal Injector cargando...');
     function interceptLoginSuccess() {
         let loginSuccessDetected = false;
         
-        // MÉTODO 1: Observar cambios en el modal de login
+        // MÉTODO 1: Observar el objeto currentUser
+        const checkUserInterval = setInterval(() => {
+            if (window.currentUser && !loginSuccessDetected) {
+                const state = window.gameLogic?.getGameState();
+                
+                // Si hay usuario pero NO hay partida, mostrar modal de selección
+                if (!state || !state.teamName) {
+                    loginSuccessDetected = true;
+                    console.log('✅ Usuario detectado sin partida, mostrando selección');
+                    clearInterval(checkUserInterval);
+                    
+                    setTimeout(() => {
+                        const loginModal = document.getElementById('loginModal');
+                        if (loginModal) {
+                            loginModal.classList.remove('active');
+                        }
+                        window.showGameSelectionModal();
+                    }, 1500);
+                }
+            }
+        }, 500);
+        
+        // MÉTODO 2: Observar cambios en el modal de login
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     const loginModal = document.getElementById('loginModal');
                     if (loginModal && !loginModal.classList.contains('active') && !loginSuccessDetected) {
-                        // El modal de login se cerró
                         loginSuccessDetected = true;
-                        console.log('✅ Login completado (modal cerrado), mostrando selección');
+                        console.log('✅ Login completado (modal cerrado)');
+                        clearInterval(checkUserInterval);
                         
                         setTimeout(() => {
-                            window.showGameSelectionModal();
-                        }, 1200);
+                            if (window.currentUser) {
+                                const state = window.gameLogic?.getGameState();
+                                if (!state || !state.teamName) {
+                                    window.showGameSelectionModal();
+                                }
+                            }
+                        }, 500);
                         
                         observer.disconnect();
                     }
@@ -342,24 +395,16 @@ console.log('🎮 Game Selection Modal Injector cargando...');
                 console.log('👀 Observando modal de login');
                 clearInterval(checkLoginModal);
             } else if (checkAttempts > 20) {
-                // Después de 10 segundos (20 x 500ms), si no hay modal de login
-                // es porque la sesión se restauró automáticamente
                 console.log('ℹ️ Modal de login no encontrado - sesión restaurada');
                 clearInterval(checkLoginModal);
-                
-                // Si hay usuario pero no hay partida, mostrar modal de selección
-                if (window.currentUser && !loginSuccessDetected) {
-                    const state = window.gameLogic?.getGameState();
-                    if (!state || !state.teamName) {
-                        console.log('👤 Sesión restaurada sin partida, mostrando selección');
-                        loginSuccessDetected = true;
-                        setTimeout(() => {
-                            window.showGameSelectionModal();
-                        }, 500);
-                    }
-                }
             }
         }, 500);
+        
+        // Timeout de seguridad: detener después de 30 segundos
+        setTimeout(() => {
+            clearInterval(checkUserInterval);
+            clearInterval(checkLoginModal);
+        }, 30000);
     }
     
     // Inicializar
