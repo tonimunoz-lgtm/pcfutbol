@@ -332,6 +332,10 @@ function hookSimulateWeek() {
                 console.log('📰', news);
             });
             
+            // CRÍTICO: Marcar esta semana como procesada
+            lastProcessedGlobalWeek = globalWeekCounter;
+            console.log(`✅ Semana ${globalWeekCounter} marcada como procesada`);
+            
             window.gameLogic.updateGameState(state);
             // NO guardar en localStorage - solo actualizar estado en memoria
         } else {
@@ -344,10 +348,9 @@ function hookSimulateWeek() {
         // POST-SIMULACIÓN: Solo si NO es pretemporada
         const newState = window.gameLogic?.getGameState();
         
-        if (newState && globalWeekCounter !== lastProcessedGlobalWeek && !isPreseason) {
-            lastProcessedGlobalWeek = globalWeekCounter;
-            
-            console.log(`🎴 Generando tarjetas/lesiones`);
+        if (newState && !isPreseason && globalWeekCounter === lastProcessedGlobalWeek) {
+            // Solo generar tarjetas/lesiones si ya procesamos recuperaciones (misma semana)
+            console.log(`🎴 Generando tarjetas/lesiones para semana ${globalWeekCounter}`);
             
             const matchCards = [];
             const matchInjuries = [];
