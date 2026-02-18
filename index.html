@@ -1072,15 +1072,7 @@ window.selectTeamAndStart = function(teamName, division) {
     console.log('Seleccionando equipo:', teamName, 'Division:', division);
 
     gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
-    
-    // Inicializar el UI ahora que hay partida
-    if (typeof window.initializeGameUI === 'function') {
-        window.initializeGameUI();
-    } else {
-        // Fallback si la función no existe
-        ui.refreshUI(gameLogic.getGameState());
-    }
-    
+    ui.refreshUI(gameLogic.getGameState());
     window.closeModal('selectTeam');
 
     // Abrir dashboard automáticamente
@@ -1917,18 +1909,7 @@ console.log('⏸️ Esperando selección del usuario (Nueva/Cargar desde nube)')
 // No hacer nada aquí - el modal de login se encargará
         });
 
-// Función global para inicializar el UI cuando haya partida activa
-            window.initializeGameUI = function() {
-                console.log('🎮 Inicializando UI del juego con partida activa');
-                
-                // El injector ya mostrará el layout con showGameLayout()
-                // Solo refrescamos el UI
-                if (window.ui && window.gameLogic) {
-                    window.ui.refreshUI(window.gameLogic.getGameState());
-                }
-            };
 
-        
         // ============================================
 // SISTEMA DE RENOVACIONES DE CONTRATOS
 // ============================================
@@ -2299,8 +2280,8 @@ window.onclick = function(event) {
 
     <!-- Injectors -->
     <script src="./injector-login-ui.js"></script>
-    <script src="./injector-cloud-load.js"></script>
     <script src="injector-login-game-selection.js"></script>
+    <script src="./injector-cloud-load.js"></script>
     <script src="./injector-budget.js"></script>
     <script src="./injector-player-arrows.js"></script>
     <script src="./injector-admin-complete.js"></script>
