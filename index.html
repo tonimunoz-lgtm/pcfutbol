@@ -1904,18 +1904,9 @@ window.selectTeamAndStart = function(teamName, division) {
                 formationSelect.appendChild(option);
             });
 
-            // Intentar cargar partida guardada
-            const savedStateResult = gameLogic.loadFromLocalStorage();
-            if (savedStateResult.success) {
-                console.log('✓ Partida cargada desde localStorage');
-                ui.refreshUI(gameLogic.getGameState());
-            } else {
-                console.log('⚠️ No hay partida guardada, abriendo modal de selección');
-                // Pequeño delay para asegurar que el DOM está completamente cargado
-                setTimeout(() => {
-                    window.openModal('gameMode');
-                }, 100);
-            }
+           // NO cargar automáticamente - esperar a que el usuario elija
+console.log('⏸️ Esperando selección del usuario (Nueva/Cargar desde nube)');
+// No hacer nada aquí - el modal de login se encargará
         });
 
 
@@ -2269,6 +2260,20 @@ window.onclick = function(event) {
         </div>
     </div>
 </div>
+
+<script>
+// Limpiar localStorage de partidas al cargar la página
+(function() {
+    const gameKeys = Object.keys(localStorage).filter(k => 
+        k.includes('pcfutbol') || k.includes('game') || k === 'pcfutbol-save'
+    );
+    
+    if (gameKeys.length > 0) {
+        console.log('🗑️ Limpiando localStorage:', gameKeys);
+        gameKeys.forEach(k => localStorage.removeItem(k));
+    }
+})();
+</script>
     
 </body>
 </html>
