@@ -6,45 +6,6 @@ console.log('🎮 Game Selection Modal Injector cargando...');
 (function() {
     'use strict';
     
-    // Bandera para evitar carga automática
-    window.skipAutoLoad = false;
-    
-    // Interceptar la carga automática del localStorage
-    function preventAutoLoad() {
-        // Buscar la inicialización del juego
-        const originalInit = window.addEventListener;
-        let initIntercepted = false;
-        
-        window.addEventListener = function(type, listener, options) {
-            if (type === 'DOMContentLoaded' && !initIntercepted) {
-                initIntercepted = true;
-                
-                // Envolver el listener original
-                const wrappedListener = function(event) {
-                    console.log('🚫 Previniendo carga automática del localStorage');
-                    
-                    // Marcar que queremos saltarnos la carga automática
-                    window.skipAutoLoad = true;
-                    
-                    // Ejecutar el listener original
-                    listener.call(this, event);
-                    
-                    // Después de un momento, mostrar el modal de selección
-                    setTimeout(() => {
-                        if (window.currentUser) {
-                            console.log('✅ Usuario logueado, mostrando selección');
-                            window.showGameSelectionModal();
-                        }
-                    }, 1500);
-                };
-                
-                return originalInit.call(this, type, wrappedListener, options);
-            }
-            
-            return originalInit.call(this, type, listener, options);
-        };
-    }
-    
     // Crear el HTML del modal
     function createGameSelectionModal() {
         if (document.getElementById('gameSelectionModal')) return;
@@ -205,34 +166,11 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         }, 500);
     }
     
-    // Interceptar la función loadFromLocalStorage
-    function interceptLoadFromLocalStorage() {
-        setTimeout(() => {
-            if (window.gameLogic && window.gameLogic.loadFromLocalStorage) {
-                const originalLoad = window.gameLogic.loadFromLocalStorage;
-                
-                window.gameLogic.loadFromLocalStorage = function() {
-                    // Si está marcada la bandera de saltar carga, retornar false
-                    if (window.skipAutoLoad) {
-                        console.log('🚫 Carga automática omitida');
-                        window.skipAutoLoad = false; // Resetear la bandera
-                        return { success: false };
-                    }
-                    
-                    // De lo contrario, ejecutar la carga normal
-                    return originalLoad.call(this);
-                };
-                
-                console.log('✅ loadFromLocalStorage interceptado');
-            }
-        }, 1000);
-    }
-    
     // Inicializar
     setTimeout(() => {
         createGameSelectionModal();
         interceptLoginSuccess();
-        interceptLoadFromLocalStorage();
+        // Ya NO necesitamos interceptar localStorage porque está desactivado en gameLogic.js
     }, 1000);
     
     console.log('✅ Game Selection Modal Injector cargado');
