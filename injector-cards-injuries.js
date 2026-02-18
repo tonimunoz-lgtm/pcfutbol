@@ -384,15 +384,17 @@ function hookSimulateWeek() {
                     return 0;
                 });
                 
-                // Asignar goles
+                // Asignar goles - GENERAR TODOS los goles
                 for (let i = 0; i < myGoals; i++) {
+                    if (scorers.length === 0) break;
                     const scorer = scorers[Math.floor(Math.random() * Math.min(scorers.length, 7))];
                     const minute = Math.floor(Math.random() * 90) + 1;
                     
                     matchGoals.push({
                         player: scorer.name,
                         minute: minute,
-                        position: scorer.position
+                        position: scorer.position,
+                        team: newState.teamName
                     });
                 }
                 
@@ -413,11 +415,40 @@ function hookSimulateWeek() {
                 }
             });
             
+            // GENERAR GOLES DEL RIVAL
+            const rivalGoals = [];
+            if (window.lastMatchResultForGoals) {
+                const result = window.lastMatchResultForGoals;
+                const isHome = result.home === newState.teamName;
+                const rivalTeam = isHome ? result.away : result.home;
+                const rivalGoalsCount = isHome ? result.awayGoals : result.homeGoals;
+                
+                console.log(`⚽ Generando ${rivalGoalsCount} goles para ${rivalTeam}`);
+                
+                // Generar nombres ficticios para el rival
+                const rivalNames = ['García', 'Martínez', 'López', 'Rodríguez', 'Fernández', 'González', 'Pérez', 'Sánchez'];
+                
+                for (let i = 0; i < rivalGoalsCount; i++) {
+                    const scorerName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
+                    const minute = Math.floor(Math.random() * 90) + 1;
+                    
+                    rivalGoals.push({
+                        player: scorerName,
+                        minute: minute,
+                        team: rivalTeam
+                    });
+                }
+                
+                rivalGoals.sort((a, b) => a.minute - b.minute);
+                console.log(`⚽ Goles rival generados:`, rivalGoals.map(g => `${g.player} (${g.minute}')`));
+            }
+            
             // Guardar para modal
             window.lastMatchCardsAndInjuries = {
                 cards: matchCards,
                 injuries: matchInjuries,
-                goals: matchGoals, // NUEVO
+                goals: matchGoals,
+                rivalGoals: rivalGoals, // NUEVO
                 week: newState.week
             };
             
@@ -584,20 +615,54 @@ setTimeout(() => {
                     
                     // Buscar sección de goles para reemplazarla
                     const goalsSection = modal.querySelector('.goals-section');
-                    if (goalsSection && data.goals && data.goals.length > 0) {
-                        const teamName = window.gameLogic.getGameState().teamName;
-                        goalsSection.innerHTML = `
-                            <h3>⚽ Goles (${teamName})</h3>
-                            <div class="goals-list">
-                                ${data.goals.map(goal => `
-                                    <div class="goal-item">
-                                        <span class="goal-minute">${goal.minute}'</span>
-                                        <span class="goal-player">${goal.player}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                        console.log('✅ Goles reemplazados:', data.goals.map(g => g.player));
+                    if (goalsSection) {
+                        const myTeamName = data.goals && data.goals.length > 0 && data.goals[0].team 
+                            ? data.goals[0].team 
+                            : window.gameLogic.getGameState().teamName;
+                        
+                        const rivalTeamName = data.rivalGoals && data.rivalGoals.length > 0 && data.rivalGoals[0].team
+                            ? data.rivalGoals[0].team
+                            : 'Rival';
+                        
+                        let goalsHTML = '';
+                        
+                        // Goles de mi equipo
+                        if (data.goals && data.goals.length > 0) {
+                            goalsHTML += `
+                                <h3 style="color: #4CAF50;">⚽ Goles (${myTeamName})</h3>
+                                <div class="goals-list" style="margin-bottom: 20px;">
+                                    ${data.goals.map(goal => `
+                                        <div class="goal-item">
+                                            <span class="goal-minute">${goal.minute}'</span>
+                                            <span class="goal-player">${goal.player}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else {
+                            goalsHTML += `
+                                <h3 style="color: #999;">⚽ Goles (${myTeamName})</h3>
+                                <p style="text-align: center; color: #999; margin-bottom: 20px;">Sin goles</p>
+                            `;
+                        }
+                        
+                        // Goles del rival
+                        if (data.rivalGoals && data.rivalGoals.length > 0) {
+                            goalsHTML += `
+                                <h3 style="color: #f44336;">⚽ Goles (${rivalTeamName})</h3>
+                                <div class="goals-list">
+                                    ${data.rivalGoals.map(goal => `
+                                        <div class="goal-item">
+                                            <span class="goal-minute">${goal.minute}'</span>
+                                            <span class="goal-player">${goal.player}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                        
+                        goalsSection.innerHTML = goalsHTML;
+                        console.log('✅ Goles reemplazados - Mi equipo:', data.goals?.map(g => g.player), 'Rival:', data.rivalGoals?.map(g => g.player));
                     }
                     
                     // Crear nuevas secciones SOLO con datos reales
