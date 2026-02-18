@@ -216,10 +216,7 @@ function hookSimulateWeek() {
         globalWeekCounter++;
         
         const state = window.gameLogic?.getGameState();
-        
-        // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
-        // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
-        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
+        const isPreseason = globalWeekCounter <= 4;
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
         
@@ -248,7 +245,7 @@ function hookSimulateWeek() {
             });
             
             window.gameLogic.updateGameState(state);
-            // NO guardar en localStorage - solo actualizar estado en memoria
+            window.gameLogic.saveToLocalStorage();
         }
         
         // SIMULAR
@@ -346,23 +343,7 @@ function hookSimulateWeek() {
             };
             
             window.gameLogic.updateGameState(newState);
-            // NO guardar en localStorage - el estado ya está actualizado en memoria
-            
-            // AUTO-GUARDAR en Firebase después de cada jornada
-            if (window.saveGameToCloud && window.currentUserId) {
-                console.log('💾 Auto-guardando en Firebase...');
-                window.saveGameToCloud(window.currentUserId, newState).then(result => {
-                    if (result.success) {
-                        console.log('✅ Partida auto-guardada en Firebase');
-                    } else {
-                        console.warn('⚠️ Error al auto-guardar:', result.error);
-                    }
-                }).catch(err => {
-                    console.error('❌ Error en auto-guardado:', err);
-                });
-            } else {
-                console.warn('⚠️ Auto-guardado no disponible - saveGameToCloud o currentUserId no encontrado');
-            }
+            window.gameLogic.saveToLocalStorage();
             
             // Verificar que las noticias se guardaron
             const newsAfterProcessing = newState.newsFeed.length;
