@@ -216,12 +216,37 @@ function hookSimulateWeek() {
         globalWeekCounter++;
         
         const state = window.gameLogic?.getGameState();
-        
-        // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
-        // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
-        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
+        const isPreseason = globalWeekCounter <= 4;
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
+        
+        // PRE-SIMULACIÓN
+        if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
+            const recoveredSuspensions = processWeeklySuspensions(state.squad);
+            recoveredSuspensions.forEach(name => {
+                const news = `✅ ${name} cumplió su sanción`;
+                if (typeof addNews === 'function') {
+                    addNews(news, 'info');
+                } else if (window.addNews) {
+                    window.addNews(news, 'info');
+                }
+                console.log('📰', news);
+            });
+            
+            const recoveredInjuries = processWeeklyRecoveries(state.squad);
+            recoveredInjuries.forEach(name => {
+                const news = `💚 ${name} se recuperó de su lesión`;
+                if (typeof addNews === 'function') {
+                    addNews(news, 'success');
+                } else if (window.addNews) {
+                    window.addNews(news, 'success');
+                }
+                console.log('📰', news);
+            });
+            
+            window.gameLogic.updateGameState(state);
+            window.gameLogic.saveToLocalStorage();
+        }
         
         // SIMULAR
         await originalSimulate();
@@ -231,45 +256,6 @@ function hookSimulateWeek() {
         
         if (newState && globalWeekCounter !== lastProcessedGlobalWeek && !isPreseason) {
             lastProcessedGlobalWeek = globalWeekCounter;
-            
-            console.log(`🎴 Procesando semana ${globalWeekCounter}`);
-            
-            // PRIMERO: Procesar recuperaciones (al INICIO de la semana)
-            const recoveredSuspensions = processWeeklySuspensions(newState.squad);
-            recoveredSuspensions.forEach(name => {
-                const news = `✅ ${name} cumplió su sanción`;
-                if (typeof window.addNews === 'function') {
-                    window.addNews(news, 'info');
-                    console.log('📰 RECUPERACIÓN:', news);
-                } else {
-                    newState.newsFeed.unshift({
-                        week: newState.week,
-                        message: news,
-                        timestamp: Date.now(),
-                        type: 'info',
-                        read: false
-                    });
-                }
-            });
-            
-            const recoveredInjuries = processWeeklyRecoveries(newState.squad);
-            recoveredInjuries.forEach(name => {
-                const news = `💚 ${name} se recuperó de su lesión`;
-                if (typeof window.addNews === 'function') {
-                    window.addNews(news, 'success');
-                    console.log('📰 RECUPERACIÓN:', news);
-                } else {
-                    newState.newsFeed.unshift({
-                        week: newState.week,
-                        message: news,
-                        timestamp: Date.now(),
-                        type: 'success',
-                        read: false
-                    });
-                }
-            });
-            
-            // SEGUNDO: Generar tarjetas/lesiones del partido
             
             console.log(`🎴 Generando tarjetas/lesiones`);
             
@@ -315,21 +301,13 @@ function hookSimulateWeek() {
                         newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
                     
-                    // Llamar a addNews directamente (accede a gameState global)
-                    if (typeof window.addNews === 'function') {
+                    // Usar addNews global (no window.gameLogic.addNews)
+                    if (typeof addNews === 'function') {
+                        addNews(newsText, cardResult.red ? 'error' : 'warning');
+                    } else if (window.addNews) {
                         window.addNews(newsText, cardResult.red ? 'error' : 'warning');
-                        console.log('📰 TARJETA (addNews):', newsText);
-                    } else {
-                        // Fallback: añadir manualmente
-                        newState.newsFeed.unshift({
-                            week: newState.week,
-                            message: newsText,
-                            timestamp: Date.now(),
-                            type: cardResult.red ? 'error' : 'warning',
-                            read: false
-                        });
-                        console.log('📰 TARJETA (manual):', newsText);
                     }
+                    console.log('📰 TARJETA:', newsText);
                 }
                 
                 // Lesiones
@@ -338,21 +316,13 @@ function hookSimulateWeek() {
                     matchInjuries.push(injuryResult);
                     const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
                     
-                    // Llamar a addNews directamente
-                    if (typeof window.addNews === 'function') {
+                    // Usar addNews global
+                    if (typeof addNews === 'function') {
+                        addNews(newsText, 'warning');
+                    } else if (window.addNews) {
                         window.addNews(newsText, 'warning');
-                        console.log('📰 LESIÓN (addNews):', newsText);
-                    } else {
-                        // Fallback: añadir manualmente
-                        newState.newsFeed.unshift({
-                            week: newState.week,
-                            message: newsText,
-                            timestamp: Date.now(),
-                            type: 'warning',
-                            read: false
-                        });
-                        console.log('📰 LESIÓN (manual):', newsText);
                     }
+                    console.log('📰 LESIÓN:', newsText);
                 }
                 
                 // CRÍTICO: Copiar cambios a lineup
@@ -412,93 +382,59 @@ setTimeout(hookSimulateWeek, 2000);
 // ============================================
 
 setTimeout(() => {
-    // Interceptar el botón de guardar alineación
-    const interceptButton = () => {
-        const saveButton = document.querySelector('button[onclick="window.saveLineup()"]');
-        if (saveButton) {
-            console.log('✅ Botón de guardar alineación encontrado');
+    const originalSaveLineup = window.saveLineup;
+    if (originalSaveLineup) {
+        window.saveLineup = function() {
+            const state = window.gameLogic?.getGameState();
+            if (!state || !state.lineup) return originalSaveLineup();
             
-            // Quitar el onclick original
-            saveButton.removeAttribute('onclick');
+            console.log('🔍 Validando alineación...');
             
-            // Añadir nuestro handler
-            saveButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            // SINCRONIZAR lineup con squad ANTES de validar
+            const errors = [];
+            
+            state.lineup.forEach((lineupPlayer, idx) => {
+                if (!lineupPlayer) return;
                 
-                const state = window.gameLogic?.getGameState();
-                if (!state || !state.lineup) {
-                    console.warn('⚠️ No hay estado o lineup');
-                    return;
-                }
+                // Buscar en squad
+                const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
                 
-                console.log('🔍 Validando alineación...');
-                
-                const errors = [];
-                
-                // Validar cada jugador
-                state.lineup.forEach((lineupPlayer) => {
-                    if (!lineupPlayer) return;
+                if (squadPlayer) {
+                    // PRIMERO inicializar
+                    initializePlayerCards(squadPlayer);
                     
-                    // Buscar en squad
-                    const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
+                    // Copiar estado actual del squad al lineup
+                    lineupPlayer.isInjured = squadPlayer.isInjured || false;
+                    lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
+                    lineupPlayer.injuryType = squadPlayer.injuryType || null;
+                    lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
+                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
+                    lineupPlayer.yellowCards = squadPlayer.yellowCards || 0;
+                    lineupPlayer.redCards = squadPlayer.redCards || 0;
                     
-                    if (squadPlayer) {
-                        initializePlayerCards(squadPlayer);
-                        
-                        // Sincronizar
-                        lineupPlayer.isInjured = squadPlayer.isInjured || false;
-                        lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
-                        lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
-                        lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
-                        
-                        // Validar
-                        if (squadPlayer.isInjured) {
-                            errors.push(`🏥 ${squadPlayer.name} lesionado (${squadPlayer.weeksOut} sem)`);
-                            console.error(`❌ LESIONADO: ${squadPlayer.name}`);
-                        }
-                        
-                        if (squadPlayer.isSuspended) {
-                            errors.push(`🚫 ${squadPlayer.name} sancionado (${squadPlayer.suspensionWeeks} partidos)`);
-                            console.error(`❌ SANCIONADO: ${squadPlayer.name}`);
-                        }
+                    // Validar
+                    if (squadPlayer.isInjured) {
+                        errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} sem)`);
                     }
-                });
-                
-                if (errors.length > 0) {
-                    alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
-                    console.error('❌ VALIDACIÓN FALLIDA');
-                    return; // BLOQUEAR
+                    
+                    if (squadPlayer.isSuspended) {
+                        errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
+                    }
                 }
-                
-                console.log('✅ Validación OK - Guardando...');
-                
-                // Guardar la alineación
-                window.gameLogic.updateGameState(state);
-                window.gameLogic.saveToLocalStorage();
-                alert('✅ Alineación guardada correctamente');
             });
             
-            return true;
-        }
-        return false;
-    };
-    
-    // Intentar interceptar el botón
-    if (!interceptButton()) {
-        // Si no está disponible, observar el DOM
-        const observer = new MutationObserver(() => {
-            if (interceptButton()) {
-                observer.disconnect();
+            if (errors.length > 0) {
+                alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
+                console.error('❌ Validación fallida:', errors);
+                return false; // BLOQUEAR
             }
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+            
+            console.log('✅ Validación OK');
+            return originalSaveLineup();
+        };
+        console.log('✅ Validación activada');
     }
-}, 3000);
+}, 2000);
 
 // ============================================
 // MODAL
