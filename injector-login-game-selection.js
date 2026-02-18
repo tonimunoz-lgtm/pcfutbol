@@ -1,4 +1,5 @@
 // injector-login-game-selection.js
+
 // Muestra un modal de selección después del login
 
 console.log('🎮 Game Selection Modal Injector cargando...');
