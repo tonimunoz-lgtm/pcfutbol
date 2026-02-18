@@ -6,6 +6,43 @@ console.log('🎮 Game Selection Modal Injector cargando...');
 (function() {
     'use strict';
     
+    // OCULTAR TODO EL JUEGO INMEDIATAMENTE
+    function hideGameLayout() {
+        const style = document.createElement('style');
+        style.id = 'game-selection-hide-style';
+        style.textContent = `
+            /* Ocultar todo el juego hasta que se elija una opción */
+            body > *:not(script):not(style):not(#gameSelectionModal):not(#loginModal) {
+                display: none !important;
+            }
+            
+            /* Asegurar que los modales se vean */
+            #gameSelectionModal,
+            #loginModal {
+                display: block !important;
+            }
+            
+            #gameSelectionModal.active,
+            #loginModal.active {
+                display: flex !important;
+            }
+        `;
+        document.head.appendChild(style);
+        console.log('🙈 Layout del juego oculto');
+    }
+    
+    // MOSTRAR EL JUEGO cuando se elija una opción
+    function showGameLayout() {
+        const style = document.getElementById('game-selection-hide-style');
+        if (style) {
+            style.remove();
+            console.log('👁️ Layout del juego visible');
+        }
+    }
+    
+    // Ocultar inmediatamente
+    hideGameLayout();
+    
     // Crear el HTML del modal
     function createGameSelectionModal() {
         if (document.getElementById('gameSelectionModal')) return;
@@ -68,15 +105,6 @@ console.log('🎮 Game Selection Modal Injector cargando...');
                 .game-selection-btn:active {
                     transform: translateY(-2px);
                 }
-                
-                /* Ocultar el contenido del juego inicialmente */
-                #gameContainer {
-                    display: none;
-                }
-                
-                #gameSelectionModal.active ~ #gameContainer {
-                    display: none;
-                }
             </style>
         `;
         
@@ -87,9 +115,8 @@ console.log('🎮 Game Selection Modal Injector cargando...');
             console.log('🎮 Nueva Partida seleccionada');
             document.getElementById('gameSelectionModal').classList.remove('active');
             
-            // Mostrar el contenedor del juego
-            const gameContainer = document.getElementById('gameContainer');
-            if (gameContainer) gameContainer.style.display = 'block';
+            // MOSTRAR el layout del juego
+            showGameLayout();
             
             setTimeout(() => {
                 if (typeof window.openModal === 'function') {
@@ -102,9 +129,8 @@ console.log('🎮 Game Selection Modal Injector cargando...');
             console.log('☁️ Cargar Partida desde la nube seleccionada');
             document.getElementById('gameSelectionModal').classList.remove('active');
             
-            // Mostrar el contenedor del juego
-            const gameContainer = document.getElementById('gameContainer');
-            if (gameContainer) gameContainer.style.display = 'block';
+            // MOSTRAR el layout del juego
+            showGameLayout();
             
             setTimeout(() => {
                 // Ir directamente al modal de partidas de la nube
@@ -124,10 +150,7 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         const modal = document.getElementById('gameSelectionModal');
         if (modal) {
             modal.classList.add('active');
-            
-            // Ocultar el contenedor del juego
-            const gameContainer = document.getElementById('gameContainer');
-            if (gameContainer) gameContainer.style.display = 'none';
+            console.log('📺 Modal de selección mostrado');
         }
     };
     
