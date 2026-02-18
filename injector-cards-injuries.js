@@ -220,34 +220,6 @@ function hookSimulateWeek() {
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
         
-        // PRE-SIMULACIÓN
-        if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
-            const recoveredSuspensions = processWeeklySuspensions(state.squad);
-            recoveredSuspensions.forEach(name => {
-                const news = `✅ ${name} cumplió su sanción`;
-                if (typeof addNews === 'function') {
-                    addNews(news, 'info');
-                } else if (window.addNews) {
-                    window.addNews(news, 'info');
-                }
-                console.log('📰', news);
-            });
-            
-            const recoveredInjuries = processWeeklyRecoveries(state.squad);
-            recoveredInjuries.forEach(name => {
-                const news = `💚 ${name} se recuperó de su lesión`;
-                if (typeof addNews === 'function') {
-                    addNews(news, 'success');
-                } else if (window.addNews) {
-                    window.addNews(news, 'success');
-                }
-                console.log('📰', news);
-            });
-            
-            window.gameLogic.updateGameState(state);
-            window.gameLogic.saveToLocalStorage();
-        }
-        
         // SIMULAR
         await originalSimulate();
         
@@ -256,6 +228,45 @@ function hookSimulateWeek() {
         
         if (newState && globalWeekCounter !== lastProcessedGlobalWeek && !isPreseason) {
             lastProcessedGlobalWeek = globalWeekCounter;
+            
+            console.log(`🎴 Procesando semana ${globalWeekCounter}`);
+            
+            // PRIMERO: Procesar recuperaciones (al INICIO de la semana)
+            const recoveredSuspensions = processWeeklySuspensions(newState.squad);
+            recoveredSuspensions.forEach(name => {
+                const news = `✅ ${name} cumplió su sanción`;
+                if (typeof window.addNews === 'function') {
+                    window.addNews(news, 'info');
+                    console.log('📰 RECUPERACIÓN:', news);
+                } else {
+                    newState.newsFeed.unshift({
+                        week: newState.week,
+                        message: news,
+                        timestamp: Date.now(),
+                        type: 'info',
+                        read: false
+                    });
+                }
+            });
+            
+            const recoveredInjuries = processWeeklyRecoveries(newState.squad);
+            recoveredInjuries.forEach(name => {
+                const news = `💚 ${name} se recuperó de su lesión`;
+                if (typeof window.addNews === 'function') {
+                    window.addNews(news, 'success');
+                    console.log('📰 RECUPERACIÓN:', news);
+                } else {
+                    newState.newsFeed.unshift({
+                        week: newState.week,
+                        message: news,
+                        timestamp: Date.now(),
+                        type: 'success',
+                        read: false
+                    });
+                }
+            });
+            
+            // SEGUNDO: Generar tarjetas/lesiones del partido
             
             console.log(`🎴 Generando tarjetas/lesiones`);
             
