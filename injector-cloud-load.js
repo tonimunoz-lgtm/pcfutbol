@@ -103,12 +103,17 @@
                 // Cargar el estado del juego
                 window.gameLogic.updateGameState(result.data.gameState);
                 
-                // Guardar también en localStorage como backup
-                window.gameLogic.saveToLocalStorage();
+               // NO guardar en localStorage - solo Firebase
+                // window.gameLogic.saveToLocalStorage();
                 
-                // Refrescar la UI
-                if (window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(result.data.gameState);
+               // Inicializar el UI ahora que hay partida cargada
+                if (typeof window.initializeGameUI === 'function') {
+                    window.initializeGameUI();
+                } else {
+                    // Fallback
+                    if (window.ui && window.ui.refreshUI) {
+                        window.ui.refreshUI(result.data.gameState);
+                    }
                 }
                 
                 // Cerrar modal
