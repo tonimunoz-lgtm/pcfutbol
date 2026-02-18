@@ -220,6 +220,30 @@ function hookSimulateWeek() {
             
             const errors = [];
             
+            // PRIMERO: Sincronizar lineup con squad para tener datos actualizados
+            state.lineup.forEach((lineupPlayer) => {
+                if (!lineupPlayer) return;
+                
+                const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
+                
+                if (squadPlayer) {
+                    initializePlayerCards(squadPlayer);
+                    
+                    // Copiar estado actualizado del squad al lineup
+                    lineupPlayer.isInjured = squadPlayer.isInjured || false;
+                    lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
+                    lineupPlayer.injuryType = squadPlayer.injuryType || null;
+                    lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
+                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
+                    lineupPlayer.yellowCards = squadPlayer.yellowCards || 0;
+                    lineupPlayer.redCards = squadPlayer.redCards || 0;
+                }
+            });
+            
+            // Actualizar el estado con lineup sincronizado
+            window.gameLogic.updateGameState(state);
+            
+            // AHORA SÍ: Validar
             // VALIDACIÓN 1: Verificar que haya 11 jugadores
             const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
             
@@ -236,14 +260,14 @@ function hookSimulateWeek() {
                 errors.push(`🧤 Solo puede haber 1 portero (tienes ${goalkeepers.length})`);
             }
             
-            // VALIDACIÓN 3: Lesiones y sanciones
+            // VALIDACIÓN 3: Lesiones y sanciones (ahora con datos sincronizados)
             state.lineup.forEach((lineupPlayer) => {
                 if (!lineupPlayer) return;
                 
                 const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
                 
                 if (squadPlayer) {
-                    initializePlayerCards(squadPlayer);
+                    console.log(`Validando ${squadPlayer.name}: isInjured=${squadPlayer.isInjured}, isSuspended=${squadPlayer.isSuspended}, YC=${squadPlayer.yellowCards}`);
                     
                     if (squadPlayer.isInjured) {
                         errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} semanas)`);
