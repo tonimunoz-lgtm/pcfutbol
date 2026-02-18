@@ -1,4 +1,3 @@
-
 // injector-cards-injuries.js
 // VERSIÓN FINAL - Arregla TODOS los problemas
 
@@ -432,7 +431,23 @@ function interceptSimulateButton() {
         
         const errors = [];
         
-        // Validar cada jugador de la alineación
+        // VALIDACIÓN 1: Verificar que haya 11 jugadores
+        const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
+        
+        if (validPlayers.length !== 11) {
+            errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
+        }
+        
+        // VALIDACIÓN 2: Verificar que haya exactamente 1 portero
+        const goalkeepers = validPlayers.filter(p => p.position === 'POR');
+        
+        if (goalkeepers.length === 0) {
+            errors.push(`🧤 Falta el portero en la alineación`);
+        } else if (goalkeepers.length > 1) {
+            errors.push(`🧤 Solo puede haber 1 portero (tienes ${goalkeepers.length})`);
+        }
+        
+        // VALIDACIÓN 3: Validar cada jugador (lesiones/sanciones)
         state.lineup.forEach((lineupPlayer) => {
             if (!lineupPlayer) return;
             
@@ -452,7 +467,7 @@ function interceptSimulateButton() {
         });
         
         if (errors.length > 0) {
-            alert(`❌ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, cambia la alineación antes de continuar.`);
+            alert(`❌ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, corrige la alineación antes de continuar.`);
             console.error('❌ Validación de alineación fallida:', errors);
             
             // Abrir automáticamente la página de alineación
@@ -503,6 +518,23 @@ setTimeout(() => {
             // SINCRONIZAR lineup con squad ANTES de validar
             const errors = [];
             
+            // VALIDACIÓN 1: Verificar que haya 11 jugadores
+            const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
+            
+            if (validPlayers.length !== 11) {
+                errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
+            }
+            
+            // VALIDACIÓN 2: Verificar que haya exactamente 1 portero
+            const goalkeepers = validPlayers.filter(p => p.position === 'POR');
+            
+            if (goalkeepers.length === 0) {
+                errors.push(`🧤 Falta el portero en la alineación`);
+            } else if (goalkeepers.length > 1) {
+                errors.push(`🧤 Solo puede haber 1 portero (tienes ${goalkeepers.length})`);
+            }
+            
+            // VALIDACIÓN 3: Lesiones y sanciones
             state.lineup.forEach((lineupPlayer, idx) => {
                 if (!lineupPlayer) return;
                 
