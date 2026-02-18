@@ -209,13 +209,71 @@ function hookSimulateWeek() {
     }
     
     isHooked = true;
-    console.log('✅ Hook aplicado');
+    console.log('✅ Hook aplicado con validación integrada');
     
     window.simulateWeek = async function() {
+        const state = window.gameLogic?.getGameState();
+        
+        // VALIDACIÓN ANTES DE SIMULAR
+        if (state && state.lineup) {
+            console.log('🔍 Validando alineación antes de simular...');
+            
+            const errors = [];
+            
+            // VALIDACIÓN 1: Verificar que haya 11 jugadores
+            const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
+            
+            if (validPlayers.length !== 11) {
+                errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
+            }
+            
+            // VALIDACIÓN 2: Verificar que haya exactamente 1 portero
+            const goalkeepers = validPlayers.filter(p => p.position === 'POR');
+            
+            if (goalkeepers.length === 0) {
+                errors.push(`🧤 Falta el portero en la alineación`);
+            } else if (goalkeepers.length > 1) {
+                errors.push(`🧤 Solo puede haber 1 portero (tienes ${goalkeepers.length})`);
+            }
+            
+            // VALIDACIÓN 3: Lesiones y sanciones
+            state.lineup.forEach((lineupPlayer) => {
+                if (!lineupPlayer) return;
+                
+                const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
+                
+                if (squadPlayer) {
+                    initializePlayerCards(squadPlayer);
+                    
+                    if (squadPlayer.isInjured) {
+                        errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} semanas)`);
+                    }
+                    
+                    if (squadPlayer.isSuspended) {
+                        errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
+                    }
+                }
+            });
+            
+            if (errors.length > 0) {
+                alert(`❌ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, corrige la alineación antes de continuar.`);
+                console.error('❌ Validación de alineación fallida:', errors);
+                
+                // Abrir automáticamente la página de alineación
+                const lineupButton = document.querySelector('.menu-item[onclick*="lineup"]');
+                if (lineupButton && window.switchPage) {
+                    window.switchPage('lineup', lineupButton);
+                }
+                
+                return; // BLOQUEAR la simulación
+            }
+            
+            console.log('✅ Alineación válida, continuando con simulación...');
+        }
+        
+        // CONTINUAR CON SIMULACIÓN NORMAL
         // Incrementar contador global
         globalWeekCounter++;
-        
-        const state = window.gameLogic?.getGameState();
         
         // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
         // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
@@ -223,7 +281,7 @@ function hookSimulateWeek() {
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
         
-        // PRE-SIMULACIÓN
+        // PRE-SIMULACIÓN: RECUPERACIONES (solo si no se procesó ya)
         if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
             const recoveredSuspensions = processWeeklySuspensions(state.squad);
             recoveredSuspensions.forEach(name => {
@@ -406,101 +464,14 @@ setTimeout(hookSimulateWeek, 1000);
 setTimeout(hookSimulateWeek, 2000);
 
 // ============================================
-// INTERCEPTAR BOTÓN "SEGUIR" - VALIDAR ANTES DE SIMULAR
+// INTERCEPTAR BOTÓN "SEGUIR" - YA NO ES NECESARIO
+// La validación está integrada en hookSimulateWeek
 // ============================================
 
-function interceptSimulateButton() {
-    // Interceptar ANTES de que se ejecute la simulación
-    const originalSimulateWeek = window.simulateWeek;
-    
-    if (!originalSimulateWeek) {
-        setTimeout(interceptSimulateButton, 500);
-        return;
-    }
-    
-    // Crear un wrapper que valida PRIMERO
-    const validateAndSimulate = async function() {
-        const state = window.gameLogic?.getGameState();
-        
-        if (!state || !state.lineup) {
-            console.log('⚠️ No hay estado o lineup, simulando sin validar');
-            return originalSimulateWeek();
-        }
-        
-        console.log('🔍 Validando alineación antes de simular...');
-        
-        const errors = [];
-        
-        // VALIDACIÓN 1: Verificar que haya 11 jugadores
-        const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
-        
-        if (validPlayers.length !== 11) {
-            errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
-        }
-        
-        // VALIDACIÓN 2: Verificar que haya exactamente 1 portero
-        const goalkeepers = validPlayers.filter(p => p.position === 'POR');
-        
-        if (goalkeepers.length === 0) {
-            errors.push(`🧤 Falta el portero en la alineación`);
-        } else if (goalkeepers.length > 1) {
-            errors.push(`🧤 Solo puede haber 1 portero (tienes ${goalkeepers.length})`);
-        }
-        
-        // VALIDACIÓN 3: Validar cada jugador (lesiones/sanciones)
-        state.lineup.forEach((lineupPlayer) => {
-            if (!lineupPlayer) return;
-            
-            const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
-            
-            if (squadPlayer) {
-                initializePlayerCards(squadPlayer);
-                
-                if (squadPlayer.isInjured) {
-                    errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} semanas)`);
-                }
-                
-                if (squadPlayer.isSuspended) {
-                    errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
-                }
-            }
-        });
-        
-        if (errors.length > 0) {
-            alert(`❌ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, corrige la alineación antes de continuar.`);
-            console.error('❌ Validación de alineación fallida:', errors);
-            
-            // Abrir automáticamente la página de alineación
-            const lineupButton = document.querySelector('.menu-item[onclick*="lineup"]');
-            if (lineupButton && window.switchPage) {
-                window.switchPage('lineup', lineupButton);
-            }
-            
-            return; // BLOQUEAR la simulación
-        }
-        
-        console.log('✅ Alineación válida, simulando...');
-        return originalSimulateWeek();
-    };
-    
-    // Buscar el botón "Seguir" y reemplazar su onclick
-    const checkButton = setInterval(() => {
-        const button = document.querySelector('button[onclick*="simulateWeek"]');
-        
-        if (button) {
-            // Reemplazar el onclick
-            button.onclick = validateAndSimulate;
-            console.log('✅ Botón "Seguir" interceptado con validación');
-            clearInterval(checkButton);
-        }
-    }, 500);
-    
-    // También interceptar si se llama directamente a simulateWeek
-    window.simulateWeek = validateAndSimulate;
-    console.log('✅ simulateWeek interceptado con validación');
-}
+// COMENTADO: Ya no se necesita porque la validación está en el hook principal
+// function interceptSimulateButton() { ... }
 
-setTimeout(interceptSimulateButton, 2000);
+// setTimeout(interceptSimulateButton, 2000); // DESACTIVADO
 
 // ============================================
 // VALIDACIÓN DE ALINEACIÓN
