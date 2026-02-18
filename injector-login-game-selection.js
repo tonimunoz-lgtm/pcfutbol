@@ -11,15 +11,26 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         const style = document.createElement('style');
         style.id = 'game-selection-hide-style';
         style.textContent = `
-            /* Ocultar el contenido del juego hasta que se elija una opción */
-            #dashboard,
-            #menuLeft,
-            .main-header {
+            /* Ocultar TODO excepto modales */
+            body {
+                background: #0a0e27 !important;
+            }
+            
+            body > *:not(script):not(style) {
                 display: none !important;
+            }
+            
+            /* Mostrar solo modales */
+            .modal {
+                display: block !important;
+            }
+            
+            .modal.active {
+                display: flex !important;
             }
         `;
         document.head.appendChild(style);
-        console.log('🙈 Layout del juego oculto');
+        console.log('🙈 Layout del juego oculto completamente');
     }
     
     // MOSTRAR EL JUEGO cuando se elija una opción
@@ -268,28 +279,23 @@ console.log('🎮 Game Selection Modal Injector cargando...');
                 }
             }
             
-            // Si no hay partida, forzar logout para que vuelva al login
-            console.log('⚠️ No hay partida activa, forzando logout...');
+            // Si no hay partida, verificar si hay usuario logueado
+            console.log('⚠️ No hay partida activa');
             
-            // Limpiar sesión
-            if (firebase && firebase.auth) {
-                firebase.auth().signOut().then(() => {
-                    console.log('🔄 Sesión cerrada, recargando...');
-                }).catch(() => {
-                    // Silenciar error
-                });
-            }
-            
-            // Asegurar que se muestre el login
-            hideGameLayout();
-            
-            // Si el usuario ya está logueado, mostrar el modal de selección
+            // Si hay usuario, mostrar modal de selección
             if (window.currentUser) {
+                console.log('👤 Usuario logueado, mostrando modal de selección');
+                hideGameLayout();
                 setTimeout(() => {
                     window.showGameSelectionModal();
                 }, 500);
+            } else {
+                // Si no hay usuario, simplemente ocultar el layout
+                // El login UI se encargará de mostrarse
+                console.log('🔐 Sin usuario, esperando login...');
+                hideGameLayout();
             }
-        }, 2000);
+        }, 2500); // Aumentar timeout para asegurar que Firebase esté listo
     }
     
     // Interceptar el cierre del modal de login
