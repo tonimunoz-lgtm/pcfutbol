@@ -216,7 +216,10 @@ function hookSimulateWeek() {
         globalWeekCounter++;
         
         const state = window.gameLogic?.getGameState();
-        const isPreseason = globalWeekCounter <= 4;
+        
+        // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
+        // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
+        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
         
