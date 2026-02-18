@@ -465,7 +465,7 @@ console.log('🎮 Game Selection Modal Injector cargando...');
         interceptLoginSuccess();
         preventModalClose();
         checkExistingGame();
-        startGameMonitor(); // NUEVO: Vigilante continuo
+       // startGameMonitor(); // NUEVO: Vigilante continuo
     }, 1000);
     
     console.log('✅ Game Selection Modal Injector cargado');
