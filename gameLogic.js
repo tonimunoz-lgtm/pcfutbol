@@ -1,3 +1,4 @@
+
 // gameLogic.js - Lógica central del juego  
 
 import {  
@@ -2169,15 +2170,72 @@ function validateLineup(lineupToCheck) {
 } 
   
 function saveToLocalStorage() {  
-    // localStorage DESACTIVADO - usar Firebase
-    console.log('🚫 saveToLocalStorage desactivado - usa Firebase');
-    return { success: false, message: 'Usa Firebase para guardar partidas.' };  
-} 
+    localStorage.setItem('pcfutbol-save', JSON.stringify(gameState));  
+    return { success: true, message: 'Partida guardada en el dispositivo.' };  
+}  
   
 function loadFromLocalStorage() {  
-    // localStorage DESACTIVADO - retornar siempre false
-    console.log('🚫 loadFromLocalStorage desactivado - usa Firebase');
-    return { success: false, message: 'Usa Firebase para cargar partidas.' };  
+    const saved = localStorage.getItem('pcfutbol-save');  
+    if (saved) {  
+        const loadedState = JSON.parse(saved);  
+        Object.assign(gameState, loadedState);  
+        Object.keys(STAFF_ROLES).forEach(role => {  
+            if (gameState.staff[role] === undefined) gameState.staff[role] = null;  
+        });  
+        if (!gameState.newsFeed) gameState.newsFeed = [];  
+        if (!gameState.unreadNewsCount) gameState.unreadNewsCount = 0;  
+        if (!gameState.trainingFocus) gameState.trainingFocus = { playerIndex: -1, attribute: null };  
+              
+        // Si no hay alineación o está incompleta, rellenar      
+        if (!gameState.lineup || gameState.lineup.length === 0) {  
+            gameState.lineup = gameState.squad.slice(0, 11);  
+        } else if (gameState.lineup.length < 11) {  
+            setLineup(gameState.lineup); // setLineup ya rellena automáticamente      
+        }  
+              
+        if (!gameState.currentSeason) gameState.currentSeason = '2025/2026';  
+        if (!gameState.seasonType) gameState.seasonType = 'preseason';  
+        if (!gameState.leagueTeams || gameState.leagueTeams.length === 0) {  
+            // Reconstruir leagueTeams basado en la división actual para evitar errores      
+            const divisionKey = gameState.division;  
+            let teamsInDivision = TEAMS_DATA[divisionKey];  
+            if (!teamsInDivision) { // Fallback si la división es desconocida (old saves or malformed data)  
+                console.warn(`División "${divisionKey}" no encontrada al cargar. Usando 'primera' por defecto.`);  
+                teamsInDivision = TEAMS_DATA.primera;  
+                gameState.division = 'primera'; // Forzar a una división conocida  
+            }  
+      
+            if (!teamsInDivision.includes(gameState.team)) {  
+                teamsInDivision.push(gameState.team);  
+            }  
+            gameState.leagueTeams = teamsInDivision;  
+        }  
+        // NEW: Generar calendario si no existe o se cargó vacío  
+        if (!gameState.seasonCalendar || gameState.seasonCalendar.length === 0) {  
+            console.log("Generando calendario al cargar partida.");  
+            gameState.seasonCalendar = generateLeagueCalendar(gameState.leagueTeams);  
+        }  
+        // NEW: Asegurar que maxSeasonWeeks esté definido  
+        if (!gameState.maxSeasonWeeks || gameState.maxSeasonWeeks === 0) {  
+            gameState.maxSeasonWeeks = gameState.leagueTeams.length * 2 - 2;  
+        }  
+    
+        if (!gameState.nextOpponent) gameState.nextOpponent = null;  
+        // NEW: Recalcular nextOpponent si la partida se cargó sin él (o con uno desactualizado)  
+        if (!gameState.nextOpponent && gameState.seasonCalendar.length > 0 && gameState.week <= gameState.maxSeasonWeeks) {  
+            const matchesForCurrentWeek = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
+            const myMatch = matchesForCurrentWeek.find(match => match.home === gameState.team || match.away === gameState.team);  
+            if (myMatch) {  
+                gameState.nextOpponent = (myMatch.home === gameState.team) ? myMatch.away : myMatch.home;  
+            } else {  
+                gameState.nextOpponent = "No hay oponente"; // Por si no hay partido para nuestra semana  
+            }  
+        }  
+            
+        updateWeeklyFinancials();  
+        return { success: true, message: 'Partida cargada.' };  
+    }  
+    return { success: false, message: 'No hay partida guardada en el dispositivo.' };  
 }  
   
 function resetGame() {  
