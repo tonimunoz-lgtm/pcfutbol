@@ -297,16 +297,19 @@ function hookSimulateWeek() {
         
         // CONTINUAR CON SIMULACIÓN NORMAL
         // Incrementar contador global
+        const previousGlobalWeek = globalWeekCounter;
         globalWeekCounter++;
         
         // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
         // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
         const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
         
-        console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
+        console.log(`📅 Semana global ${globalWeekCounter} (anterior: ${previousGlobalWeek}, last processed: ${lastProcessedGlobalWeek}), Semana ${state?.week}, Pretemporada: ${isPreseason}`);
         
-        // PRE-SIMULACIÓN: RECUPERACIONES (solo si no se procesó ya)
+        // PRE-SIMULACIÓN: RECUPERACIONES (solo si no se procesó ya esta semana)
         if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
+            console.log(`🔄 Procesando recuperaciones para semana global ${globalWeekCounter}`);
+            
             const recoveredSuspensions = processWeeklySuspensions(state.squad);
             recoveredSuspensions.forEach(name => {
                 const news = `✅ ${name} cumplió su sanción`;
@@ -331,6 +334,8 @@ function hookSimulateWeek() {
             
             window.gameLogic.updateGameState(state);
             // NO guardar en localStorage - solo actualizar estado en memoria
+        } else {
+            console.log(`⏭️ Saltando recuperaciones - ya procesadas para semana global ${globalWeekCounter}`);
         }
         
         // SIMULAR
