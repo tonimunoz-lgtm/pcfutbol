@@ -1,4 +1,3 @@
-
 // injector-cards-injuries.js
 // VERSIÓN FINAL - Arregla TODOS los problemas
 
@@ -217,37 +216,12 @@ function hookSimulateWeek() {
         globalWeekCounter++;
         
         const state = window.gameLogic?.getGameState();
-        const isPreseason = globalWeekCounter <= 4;
+        
+        // Detectar pretemporada: las primeras 4 semanas (week 1-4) antes del reset
+        // Cuando week vuelve a 1 después de la semana 4, ahí empieza la liga
+        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
         
         console.log(`📅 Semana global ${globalWeekCounter} (Semana ${state?.week}), Pretemporada: ${isPreseason}`);
-        
-        // PRE-SIMULACIÓN
-        if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
-            const recoveredSuspensions = processWeeklySuspensions(state.squad);
-            recoveredSuspensions.forEach(name => {
-                const news = `✅ ${name} cumplió su sanción`;
-                if (typeof addNews === 'function') {
-                    addNews(news, 'info');
-                } else if (window.addNews) {
-                    window.addNews(news, 'info');
-                }
-                console.log('📰', news);
-            });
-            
-            const recoveredInjuries = processWeeklyRecoveries(state.squad);
-            recoveredInjuries.forEach(name => {
-                const news = `💚 ${name} se recuperó de su lesión`;
-                if (typeof addNews === 'function') {
-                    addNews(news, 'success');
-                } else if (window.addNews) {
-                    window.addNews(news, 'success');
-                }
-                console.log('📰', news);
-            });
-            
-            window.gameLogic.updateGameState(state);
-            window.gameLogic.saveToLocalStorage();
-        }
         
         // SIMULAR
         await originalSimulate();
@@ -258,10 +232,50 @@ function hookSimulateWeek() {
         if (newState && globalWeekCounter !== lastProcessedGlobalWeek && !isPreseason) {
             lastProcessedGlobalWeek = globalWeekCounter;
             
-            console.log(`🎴 Generando tarjetas/lesiones`);
+            console.log(`🎴 Procesando semana ${globalWeekCounter}`);
+            
+            // PRIMERO: Procesar recuperaciones (al INICIO de la semana)
+            const recoveredSuspensions = processWeeklySuspensions(newState.squad);
+            recoveredSuspensions.forEach(name => {
+                const news = `✅ ${name} cumplió su sanción`;
+                if (typeof window.addNews === 'function') {
+                    window.addNews(news, 'info');
+                    console.log('📰 RECUPERACIÓN:', news);
+                } else {
+                    newState.newsFeed.unshift({
+                        week: newState.week,
+                        message: news,
+                        timestamp: Date.now(),
+                        type: 'info',
+                        read: false
+                    });
+                }
+            });
+            
+            const recoveredInjuries = processWeeklyRecoveries(newState.squad);
+            recoveredInjuries.forEach(name => {
+                const news = `💚 ${name} se recuperó de su lesión`;
+                if (typeof window.addNews === 'function') {
+                    window.addNews(news, 'success');
+                    console.log('📰 RECUPERACIÓN:', news);
+                } else {
+                    newState.newsFeed.unshift({
+                        week: newState.week,
+                        message: news,
+                        timestamp: Date.now(),
+                        type: 'success',
+                        read: false
+                    });
+                }
+            });
+            
+            // SEGUNDO: Generar tarjetas/lesiones del partido
+            
+            console.log(`🎴 Generando tarjetas/lesiones/goles`);
             
             const matchCards = [];
             const matchInjuries = [];
+            const matchGoals = [];
             
             // CRÍTICO: Procesar SOLO la alineación actual
             if (!newState.lineup || newState.lineup.length === 0) {
@@ -302,13 +316,21 @@ function hookSimulateWeek() {
                         newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
                     
-                    // Usar addNews global (no window.gameLogic.addNews)
-                    if (typeof addNews === 'function') {
-                        addNews(newsText, cardResult.red ? 'error' : 'warning');
-                    } else if (window.addNews) {
+                    // Llamar a addNews directamente (accede a gameState global)
+                    if (typeof window.addNews === 'function') {
                         window.addNews(newsText, cardResult.red ? 'error' : 'warning');
+                        console.log('📰 TARJETA (addNews):', newsText);
+                    } else {
+                        // Fallback: añadir manualmente
+                        newState.newsFeed.unshift({
+                            week: newState.week,
+                            message: newsText,
+                            timestamp: Date.now(),
+                            type: cardResult.red ? 'error' : 'warning',
+                            read: false
+                        });
+                        console.log('📰 TARJETA (manual):', newsText);
                     }
-                    console.log('📰 TARJETA:', newsText);
                 }
                 
                 // Lesiones
@@ -317,13 +339,21 @@ function hookSimulateWeek() {
                     matchInjuries.push(injuryResult);
                     const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
                     
-                    // Usar addNews global
-                    if (typeof addNews === 'function') {
-                        addNews(newsText, 'warning');
-                    } else if (window.addNews) {
+                    // Llamar a addNews directamente
+                    if (typeof window.addNews === 'function') {
                         window.addNews(newsText, 'warning');
+                        console.log('📰 LESIÓN (addNews):', newsText);
+                    } else {
+                        // Fallback: añadir manualmente
+                        newState.newsFeed.unshift({
+                            week: newState.week,
+                            message: newsText,
+                            timestamp: Date.now(),
+                            type: 'warning',
+                            read: false
+                        });
+                        console.log('📰 LESIÓN (manual):', newsText);
                     }
-                    console.log('📰 LESIÓN:', newsText);
                 }
                 
                 // CRÍTICO: Copiar cambios a lineup
@@ -336,10 +366,89 @@ function hookSimulateWeek() {
                 lineupPlayer.injuryType = squadPlayer.injuryType;
             });
             
+            // GENERAR GOLES del partido
+            if (window.lastMatchResultForGoals) {
+                const result = window.lastMatchResultForGoals;
+                const isHome = result.home === newState.teamName;
+                const myGoals = isHome ? result.homeGoals : result.awayGoals;
+                
+                console.log(`⚽ Generando ${myGoals} goles para ${newState.teamName}`);
+                
+                // Crear lista de goleadores potenciales (atacantes primero)
+                const scorers = [...newState.lineup].filter(p => p).sort((a, b) => {
+                    const attackPositions = ['DC', 'EXT', 'MD', 'MI'];
+                    const aIsAttacker = attackPositions.includes(a.position);
+                    const bIsAttacker = attackPositions.includes(b.position);
+                    if (aIsAttacker && !bIsAttacker) return -1;
+                    if (!aIsAttacker && bIsAttacker) return 1;
+                    return 0;
+                });
+                
+                // Asignar goles - GENERAR TODOS los goles
+                for (let i = 0; i < myGoals; i++) {
+                    if (scorers.length === 0) break;
+                    const scorer = scorers[Math.floor(Math.random() * Math.min(scorers.length, 7))];
+                    const minute = Math.floor(Math.random() * 90) + 1;
+                    
+                    matchGoals.push({
+                        player: scorer.name,
+                        minute: minute,
+                        position: scorer.position,
+                        team: newState.teamName
+                    });
+                }
+                
+                matchGoals.sort((a, b) => a.minute - b.minute);
+                console.log(`⚽ Goles generados:`, matchGoals.map(g => `${g.player} (${g.minute}')`));
+            }
+            
+            // Añadir minutos a tarjetas y lesiones
+            matchCards.forEach(card => {
+                if (!card.minute) {
+                    card.minute = Math.floor(Math.random() * 90) + 1;
+                }
+            });
+            
+            matchInjuries.forEach(injury => {
+                if (!injury.minute) {
+                    injury.minute = Math.floor(Math.random() * 90) + 1;
+                }
+            });
+            
+            // GENERAR GOLES DEL RIVAL
+            const rivalGoals = [];
+            if (window.lastMatchResultForGoals) {
+                const result = window.lastMatchResultForGoals;
+                const isHome = result.home === newState.teamName;
+                const rivalTeam = isHome ? result.away : result.home;
+                const rivalGoalsCount = isHome ? result.awayGoals : result.homeGoals;
+                
+                console.log(`⚽ Generando ${rivalGoalsCount} goles para ${rivalTeam}`);
+                
+                // Generar nombres ficticios para el rival
+                const rivalNames = ['García', 'Martínez', 'López', 'Rodríguez', 'Fernández', 'González', 'Pérez', 'Sánchez'];
+                
+                for (let i = 0; i < rivalGoalsCount; i++) {
+                    const scorerName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
+                    const minute = Math.floor(Math.random() * 90) + 1;
+                    
+                    rivalGoals.push({
+                        player: scorerName,
+                        minute: minute,
+                        team: rivalTeam
+                    });
+                }
+                
+                rivalGoals.sort((a, b) => a.minute - b.minute);
+                console.log(`⚽ Goles rival generados:`, rivalGoals.map(g => `${g.player} (${g.minute}')`));
+            }
+            
             // Guardar para modal
             window.lastMatchCardsAndInjuries = {
                 cards: matchCards,
                 injuries: matchInjuries,
+                goals: matchGoals,
+                rivalGoals: rivalGoals, // NUEVO
                 week: newState.week
             };
             
@@ -383,59 +492,93 @@ setTimeout(hookSimulateWeek, 2000);
 // ============================================
 
 setTimeout(() => {
-    const originalSaveLineup = window.saveLineup;
-    if (originalSaveLineup) {
-        window.saveLineup = function() {
-            const state = window.gameLogic?.getGameState();
-            if (!state || !state.lineup) return originalSaveLineup();
+    // Interceptar el botón de guardar alineación
+    const interceptButton = () => {
+        const saveButton = document.querySelector('button[onclick="window.saveLineup()"]');
+        if (saveButton) {
+            console.log('✅ Botón de guardar alineación encontrado');
             
-            console.log('🔍 Validando alineación...');
+            // Quitar el onclick original
+            saveButton.removeAttribute('onclick');
             
-            // SINCRONIZAR lineup con squad ANTES de validar
-            const errors = [];
-            
-            state.lineup.forEach((lineupPlayer, idx) => {
-                if (!lineupPlayer) return;
+            // Añadir nuestro handler
+            saveButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 
-                // Buscar en squad
-                const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
-                
-                if (squadPlayer) {
-                    // PRIMERO inicializar
-                    initializePlayerCards(squadPlayer);
-                    
-                    // Copiar estado actual del squad al lineup
-                    lineupPlayer.isInjured = squadPlayer.isInjured || false;
-                    lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
-                    lineupPlayer.injuryType = squadPlayer.injuryType || null;
-                    lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
-                    lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
-                    lineupPlayer.yellowCards = squadPlayer.yellowCards || 0;
-                    lineupPlayer.redCards = squadPlayer.redCards || 0;
-                    
-                    // Validar
-                    if (squadPlayer.isInjured) {
-                        errors.push(`🏥 ${squadPlayer.name} está lesionado (${squadPlayer.weeksOut} sem)`);
-                    }
-                    
-                    if (squadPlayer.isSuspended) {
-                        errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
-                    }
+                const state = window.gameLogic?.getGameState();
+                if (!state || !state.lineup) {
+                    console.warn('⚠️ No hay estado o lineup');
+                    return;
                 }
+                
+                console.log('🔍 Validando alineación...');
+                
+                const errors = [];
+                
+                // Validar cada jugador
+                state.lineup.forEach((lineupPlayer) => {
+                    if (!lineupPlayer) return;
+                    
+                    // Buscar en squad
+                    const squadPlayer = state.squad.find(sp => sp.name === lineupPlayer.name);
+                    
+                    if (squadPlayer) {
+                        initializePlayerCards(squadPlayer);
+                        
+                        // Sincronizar
+                        lineupPlayer.isInjured = squadPlayer.isInjured || false;
+                        lineupPlayer.weeksOut = squadPlayer.weeksOut || 0;
+                        lineupPlayer.isSuspended = squadPlayer.isSuspended || false;
+                        lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks || 0;
+                        
+                        // Validar
+                        if (squadPlayer.isInjured) {
+                            errors.push(`🏥 ${squadPlayer.name} lesionado (${squadPlayer.weeksOut} sem)`);
+                            console.error(`❌ LESIONADO: ${squadPlayer.name}`);
+                        }
+                        
+                        if (squadPlayer.isSuspended) {
+                            errors.push(`🚫 ${squadPlayer.name} sancionado (${squadPlayer.suspensionWeeks} partidos)`);
+                            console.error(`❌ SANCIONADO: ${squadPlayer.name}`);
+                        }
+                    }
+                });
+                
+                if (errors.length > 0) {
+                    alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
+                    console.error('❌ VALIDACIÓN FALLIDA');
+                    return; // BLOQUEAR
+                }
+                
+                console.log('✅ Validación OK - Guardando...');
+                
+                // Guardar la alineación
+                window.gameLogic.updateGameState(state);
+                window.gameLogic.saveToLocalStorage();
+                alert('✅ Alineación guardada correctamente');
             });
             
-            if (errors.length > 0) {
-                alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
-                console.error('❌ Validación fallida:', errors);
-                return false; // BLOQUEAR
+            return true;
+        }
+        return false;
+    };
+    
+    // Intentar interceptar el botón
+    if (!interceptButton()) {
+        // Si no está disponible, observar el DOM
+        const observer = new MutationObserver(() => {
+            if (interceptButton()) {
+                observer.disconnect();
             }
-            
-            console.log('✅ Validación OK');
-            return originalSaveLineup();
-        };
-        console.log('✅ Validación activada');
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
-}, 2000);
+}, 3000);
 
 // ============================================
 // MODAL
@@ -447,6 +590,9 @@ setTimeout(() => {
         
         window.injectMatchSummary = function(matchResult) {
             console.log('🎬 Modal llamado');
+            
+            // GUARDAR resultado para generar goles
+            window.lastMatchResultForGoals = matchResult;
             
             originalInject(matchResult);
             
@@ -467,6 +613,58 @@ setTimeout(() => {
                     oldCardsSections.forEach(section => section.remove());
                     console.log(`🗑️ Eliminadas ${oldCardsSections.length} secciones antiguas`);
                     
+                    // Buscar sección de goles para reemplazarla
+                    const goalsSection = modal.querySelector('.goals-section');
+                    if (goalsSection) {
+                        const myTeamName = data.goals && data.goals.length > 0 && data.goals[0].team 
+                            ? data.goals[0].team 
+                            : window.gameLogic.getGameState().teamName;
+                        
+                        const rivalTeamName = data.rivalGoals && data.rivalGoals.length > 0 && data.rivalGoals[0].team
+                            ? data.rivalGoals[0].team
+                            : 'Rival';
+                        
+                        let goalsHTML = '';
+                        
+                        // Goles de mi equipo
+                        if (data.goals && data.goals.length > 0) {
+                            goalsHTML += `
+                                <h3 style="color: #4CAF50;">⚽ Goles (${myTeamName})</h3>
+                                <div class="goals-list" style="margin-bottom: 20px;">
+                                    ${data.goals.map(goal => `
+                                        <div class="goal-item">
+                                            <span class="goal-minute">${goal.minute}'</span>
+                                            <span class="goal-player">${goal.player}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else {
+                            goalsHTML += `
+                                <h3 style="color: #999;">⚽ Goles (${myTeamName})</h3>
+                                <p style="text-align: center; color: #999; margin-bottom: 20px;">Sin goles</p>
+                            `;
+                        }
+                        
+                        // Goles del rival
+                        if (data.rivalGoals && data.rivalGoals.length > 0) {
+                            goalsHTML += `
+                                <h3 style="color: #f44336;">⚽ Goles (${rivalTeamName})</h3>
+                                <div class="goals-list">
+                                    ${data.rivalGoals.map(goal => `
+                                        <div class="goal-item">
+                                            <span class="goal-minute">${goal.minute}'</span>
+                                            <span class="goal-player">${goal.player}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                        
+                        goalsSection.innerHTML = goalsHTML;
+                        console.log('✅ Goles reemplazados - Mi equipo:', data.goals?.map(g => g.player), 'Rival:', data.rivalGoals?.map(g => g.player));
+                    }
+                    
                     // Crear nuevas secciones SOLO con datos reales
                     const statsSection = modal.querySelector('.stats-section');
                     if (statsSection) {
@@ -477,6 +675,7 @@ setTimeout(() => {
                                     <div class="cards-list">
                                         ${data.cards.map(card => `
                                             <div class="card-item home">
+                                                <span class="card-minute">${card.minute || '?'}'</span>
                                                 <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
                                                 <span class="card-player">${card.player}</span>
                                                 ${card.suspension > 0 ? `<span class="card-team">(Sanción: ${card.suspension} partidos)</span>` : ''}
@@ -496,6 +695,7 @@ setTimeout(() => {
                                     <div class="injuries-list">
                                         ${data.injuries.map(inj => `
                                             <div class="injury-item">
+                                                <span class="injury-minute">${inj.minute || '?'}'</span>
                                                 <span class="injury-player">${inj.player}</span>
                                                 <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
                                             </div>
@@ -569,7 +769,7 @@ function enhanceSquadTable() {
         
         initializePlayerCards(player);
         
-        let estadoCell = cells.find(c => c.textContent.includes('Apto') || c.textContent.includes('Les.'));
+        let estadoCell = cells.find(c => c.textContent.includes('Apto') || c.textContent.includes('Les.') || c.textContent.includes('Sancionado'));
         
         if (estadoCell) {
             const cellIndex = cells.indexOf(estadoCell);
@@ -603,6 +803,32 @@ function enhanceSquadTable() {
     });
 }
 
+// Observador para detectar cuando se regenera la tabla
+function setupTableObserver() {
+    const squadList = document.getElementById('squadList');
+    if (!squadList) {
+        setTimeout(setupTableObserver, 1000);
+        return;
+    }
+    
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                // La tabla se ha modificado, actualizar
+                enhanceSquadTable();
+            }
+        });
+    });
+    
+    observer.observe(squadList, {
+        childList: true,
+        subtree: true
+    });
+    
+    console.log('👀 Observador de plantilla activo');
+}
+
+// Eventos de clic
 let lastUpdate = 0;
 document.addEventListener('click', (e) => {
     if (e.target.textContent?.includes('Plantilla')) {
@@ -612,6 +838,9 @@ document.addEventListener('click', (e) => {
         setTimeout(enhanceSquadTable, 600);
     }
 });
+
+// Iniciar observador
+setTimeout(setupTableObserver, 3000);
 
 // ============================================
 // INICIALIZAR
