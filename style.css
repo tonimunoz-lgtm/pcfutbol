@@ -1725,26 +1725,73 @@ Salida
    ============================================ */
 @media (max-width: 640px) {
 
+    /* Body y layout: permitir scroll vertical */
+    body {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* El layout pasa a columna unica con scroll */
+    .main-layout {
+        height: auto;
+        min-height: calc(100vh - 50px);
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+    }
+
+    /* Cada cuadrante ocupa lo que necesite, en fila de 2 */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        height: auto;
+        overflow: visible;
+    }
+
+    /* Cuadrantes: altura automatica, sin overflow oculto */
+    .quadrant {
+        padding: 8px 4px;
+        justify-content: flex-start;
+        overflow: visible;
+        height: auto;
+        min-height: 100px;
+    }
+
+    /* Cuadrantes superiores: botones de arriba hacia abajo */
+    .quadrant.top-left,
+    .quadrant.top-right {
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    /* Cuadrantes inferiores: botones de abajo hacia arriba (igual que escritorio) */
+    .quadrant.bottom-left,
+    .quadrant.bottom-right {
+        flex-direction: column-reverse;
+        justify-content: flex-start;
+    }
+
     /* Ocultar texto del boton, dejar solo el icono */
     .menu-button {
-        font-size: 0;           /* oculta el texto */
+        font-size: 0;
         padding: 0;
-        width: 52px;
-        height: 52px;
-        min-width: 52px;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 4px auto;
+        margin: 3px auto;
     }
 
-    /* El icono (::before) centrado y mas grande */
+    /* El icono centrado */
     .menu-button::before {
-        position: static;       /* quita el absolute para que se centre con flex */
+        position: static;
         transform: none;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         margin: 0;
         left: auto;
         right: auto;
@@ -1756,8 +1803,6 @@ Salida
     .quadrant.top-right .menu-button,
     .quadrant.bottom-right .menu-button {
         padding: 0;
-        padding-right: 0;
-        padding-left: 0;
         text-align: center;
     }
     .quadrant.top-right .menu-button::before,
@@ -1766,29 +1811,17 @@ Salida
         left: auto;
     }
 
-    /* Iconos de texto (renovation, cantera) - ajustar */
+    /* Iconos de texto (renovation, cantera) */
     .renovation-icon::before,
     .cantera-icon::before {
-        font-size: 28px;
+        font-size: 26px;
         margin: 0;
         line-height: 1;
     }
 
-    /* Cuadrantes: apilar botones en fila */
-    .quadrant {
-        padding: 8px 4px;
-        justify-content: center;
-    }
-
-    .quadrant.bottom-left,
-    .quadrant.bottom-right {
-        flex-direction: column-reverse;
-        justify-content: flex-start;
-    }
-
     /* Titulo de seccion mas pequeno */
     .section-title {
-        font-size: 0.7em;
+        font-size: 0.65em;
         padding: 3px 5px;
         margin-top: 4px;
     }
@@ -1809,40 +1842,59 @@ Salida
         padding: 3px 5px;
     }
 
+    /* Fila central: se posiciona entre los cuadrantes */
+    .main-center-row {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        transform: none;
+        grid-column: 1 / -1;   /* ocupa las 2 columnas */
+        grid-row: 2;            /* entre cuadrantes superiores e inferiores */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        z-index: 5;
+        background: rgba(0,0,0,0.3);
+        border-top: 1px solid #224488;
+        border-bottom: 1px solid #224488;
+        order: 3;               /* entre top y bottom en flexbox */
+        pointer-events: auto;
+    }
+
+    /* Reordenar los cuadrantes con order para intercalar la fila central */
+    .quadrant.top-left    { order: 1; }
+    .quadrant.top-right   { order: 2; }
+    .quadrant.bottom-left { order: 4; }
+    .quadrant.bottom-right{ order: 5; }
+
     /* Circulo central mas pequeno */
     .main-center-circle {
-        width: 110px;
-        height: 110px;
+        width: 90px;
+        height: 90px;
     }
 
     .next-match-title {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     #nextMatchTeams {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     #nextMatchDate {
-        font-size: 9px;
+        font-size: 8px;
     }
 
     /* Botones centrales mas pequenos */
     .center-option {
-        font-size: 0.65em;
-        padding: 5px 6px;
-    }
-
-    .main-center-row {
-        padding: 0 5px;
+        font-size: 0.6em;
+        padding: 4px 5px;
     }
 
     .center-buttons {
-        gap: 5px;
+        gap: 4px;
         flex-direction: column;
-    }
-
-    .main-layout {
-        height: calc(100vh - 50px);
     }
 }
