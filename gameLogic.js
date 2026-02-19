@@ -437,11 +437,11 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     initPlayerDatabase();
     initYoungsterDatabase();
 
-    // \u2705 Recargar mercado de Firestore para la nueva temporada
+    // Recargar mercado de Firestore para la nueva temporada
     setTimeout(() => {
         const mySquadNames = (gameState.squad || []).map(p => p.name);
         loadMarketFromFirestore(mySquadNames).catch(err => {
-            console.warn('\u26a0\ufe0f No se pudo recargar el mercado para la nueva temporada:', err);
+            console.warn('No se pudo recargar el mercado:', err);
         });
     }, 500);
 
@@ -475,15 +475,15 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
                     'error'
                 );
             } else if (p.contractType === 'loaned') {
-                // Jugador cedido vuelve a su equipo de origen
+                // Jugador cedido vuelve a su club
                 addNews(
-                    `🔄 ${p.name} ha regresado a su club de origen tras finalizar la cesión.`,
+                    `ðŸ”„ ${p.name} ha regresado a su club de origen tras finalizar la cesiÃ³n.`, 
                     'info'
                 );
-                // \u2705 Devolver a Firestore al equipo origen
+                // Devolver a Firestore al equipo origen
                 if (window.returnLoanedPlayerToOrigin) {
                     window.returnLoanedPlayerToOrigin(p).catch(err => {
-                        console.warn('\u26a0\ufe0f Error devolviendo cedido a Firestore:', err);
+                        console.warn('Error devolviendo cedido a Firestore:', err);
                     });
                 }
                 return false; // âŒ ELIMINAR jugador cedido
@@ -587,10 +587,10 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
 
-    addNews(`\u00a1Bienvenido al PC F\u00fatbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    addNews(`ÃÂ¡Bienvenido al PC FÃÂºtbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
 
-    // \u2705 Cargar mercado de Firestore tras iniciar el juego
+    // Cargar mercado de fichajes desde Firestore
     setTimeout(async () => {
         const mySquadNames = (gameState.squad || []).map(p => p.name);
         await loadMarketFromFirestore(mySquadNames);
@@ -639,18 +639,13 @@ function signPlayer(player) {
         newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
     }
   
-    // Guardar equipo origen antes de cambiar el club
-    const originalTeam = player.originalTeam || player.club || null;
-
-    newPlayer.club = window.gameState ? gameState.team : newPlayer.club;
     gameState.squad.push(newPlayer);
-
-    // \u2705 ELIMINAR del mercado (memoria + Firestore)
+    // Eliminar del mercado de fichajes
+    const originalTeam = player.originalTeam || player.club || null;
     removeFromMarketByName(player.name, originalTeam);
-
-    updateWeeklyFinancials();
-    addNews(`\u00a1${player.name} ha sido fichado!`, 'success');
-    return { success: true, message: `\u00a1${player.name} ha sido fichado!` };
+    updateWeeklyFinancials();  
+    addNews(`Â¡${player.name} ha sido fichado!`, 'success');  
+    return { success: true, message: `Â¡${player.name} ha sido fichado!` };  
 }
   
 function signYoungster(youngster) {  
@@ -984,7 +979,6 @@ function applyWeeklyTraining() {
   
 function getPlayerMarket(filters = {}) {
     const scoutLevel = gameState.staff.scout?.level || 0;
-    // Pasar nombres de mi plantilla para excluirlos del mercado
     const mySquadNames = (gameState.squad || []).map(p => p.name);
     const filtersWithScout = { ...filters, scoutLevel };
     return getPlayerMarketData(filtersWithScout, mySquadNames);
@@ -2673,6 +2667,8 @@ export {
     initStandings,  
     getPlayerMarket,  
     getYoungsterMarket,  
+    loadMarketFromFirestore,
+    removeFromMarketByName,
     startNegotiation,  
     offerToPlayer,  
     offerToClub,  
@@ -2689,16 +2685,13 @@ export {
     getSeasonCalendar  
 }; 
 
-// Exponer funciones globalmente
+// Exponer funciones de ofertas globalmente
 if (typeof window !== 'undefined') {
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;
     window.counterOffer = counterOffer;
-
-    // Exponer funciones de mercado globalmente
     window.loadMarketFromFirestore = loadMarketFromFirestore;
     window.removeFromMarketByName = removeFromMarketByName;
-    window.getPlayerMarketFn = getPlayerMarket;
 
     // Exponer el gameLogic completo
     window.gameLogic = {
