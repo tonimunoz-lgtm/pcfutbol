@@ -1,12 +1,12 @@
-// gameLogic.js - Lógica central del juego  
+// gameLogic.js - LÃ³gica central del juego  
 
 import {  
     TEAMS_DATA, ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS,  
     STAFF_ROLES, STAFF_LEVEL_EFFECTS, DIVISION_MULTIPLIERS,  
     BASE_INJURY_PROB_PER_MATCH, BASE_RECOVERY_TIME_WEEKS,  
-    FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Eliminado SEASON_WEEKS de aquí  
+    FORMATIONS, PRESEASON_WEEKS, PROMOTION_RELEGATION // Eliminado SEASON_WEEKS de aquÃ­  
 } from './config.js';  
-import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName } from './players.js';  
+import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungsterMarketData, initPlayerDatabase, initYoungsterDatabase, calculateOverall as calculatePlayerOverall, generateRandomName, loadMarketFromFirestore, removeFromMarketByName } from './players.js';  
 import { getTeamData, saveTeamData } from './teamData.js';
 
 
@@ -16,11 +16,11 @@ const gameState = {
     teamLogo: null, // NUEVO
     stadiumImage: null, // NUEVO
     stadiumName: 'Estadio', // NUEVO
-    playerPurchases: 0,      // ✅ AÑADIR
-    playerSalesIncome: 0,    // ✅ AÑADIR
+    playerPurchases: 0,      // âœ… AÃ‘ADIR
+    playerSalesIncome: 0,    // âœ… AÃ‘ADIR
     playerCompensations: 0, 
     week: 1,  
-    division: 'Primera', // La división actual del equipo del jugador (puede ser 'rfef_grupo1' etc.)  
+    division: 'Primera', // La divisiÃ³n actual del equipo del jugador (puede ser 'rfef_grupo1' etc.)  
     squad: [],  
     academy: [],  
     standings: {},  
@@ -68,7 +68,7 @@ const gameState = {
     europeanProgress: 0,  
     // NEW: Para almacenar el calendario de la temporada  
     seasonCalendar: [],  
-    // NEW: Máximo de semanas en la temporada (dinámico)  
+    // NEW: MÃ¡ximo de semanas en la temporada (dinÃ¡mico)  
     maxSeasonWeeks: 38  
 };  
   
@@ -103,7 +103,7 @@ function initStandings(teamsArray) {
     return standings;  
 }  
   
-/*// NEW: Función para generar el calendario de la liga (Round-robin)  
+/*// NEW: FunciÃ³n para generar el calendario de la liga (Round-robin)  
 function generateLeagueCalendar(teams) {  
     const numTeams = teams.length;  
     if (numTeams < 2) return [];  
@@ -111,7 +111,7 @@ function generateLeagueCalendar(teams) {
     let schedule = [];  
     let tempTeams = [...teams];  
   
-    // Si el número de equipos es impar, añade un "BYE" para la rotación  
+    // Si el nÃºmero de equipos es impar, aÃ±ade un "BYE" para la rotaciÃ³n  
     if (numTeams % 2 !== 0) {  
         tempTeams.push("BYE");  
     }  
@@ -151,18 +151,18 @@ function generateLeagueCalendar(teams) {
     return fullSchedule;  
 }  */
 
-// Genera calendario de liga con alternancia más realista de casa/fuera
+// Genera calendario de liga con alternancia mÃ¡s realista de casa/fuera
 function generateLeagueCalendar(teams) {
     const numTeams = teams.length;
     if (numTeams < 2) return [];
 
-    // Si número de equipos impar, añadimos "BYE"
+    // Si nÃºmero de equipos impar, aÃ±adimos "BYE"
     let tempTeams = [...teams];
     if (numTeams % 2 !== 0) tempTeams.push("BYE");
 
     const numRounds = tempTeams.length - 1;
     const schedule = [];
-    const homeAwayTracker = {}; // trackeamos última localía de cada equipo
+    const homeAwayTracker = {}; // trackeamos Ãºltima localÃ­a de cada equipo
 
     tempTeams.forEach(t => homeAwayTracker[t] = null);
 
@@ -194,7 +194,7 @@ function generateLeagueCalendar(teams) {
             homeAwayTracker[awayTeam] = 'away';
         }
 
-        // Rotación: primer equipo fijo
+        // RotaciÃ³n: primer equipo fijo
         const last = tempTeams.pop();
         tempTeams.splice(1, 0, last);
     }
@@ -212,17 +212,17 @@ function generateLeagueCalendar(teams) {
 
   
 async function generateInitialSquad() {
-    console.log(`🔄 Generando plantilla inicial para ${gameState.team}...`);
+    console.log(`ðŸ”„ Generando plantilla inicial para ${gameState.team}...`);
     
-    // 🔥 INTENTAR CARGAR PLANTILLA REAL DESDE FIRESTORE
+    // ðŸ”¥ INTENTAR CARGAR PLANTILLA REAL DESDE FIRESTORE
     if (window.getTeamData) {
         try {
             const teamData = await window.getTeamData(gameState.team);
             
             if (teamData && teamData.squad && Array.isArray(teamData.squad) && teamData.squad.length > 0) {
-                console.log(`✅ Cargando plantilla real de ${gameState.team}: ${teamData.squad.length} jugadores`);
+                console.log(`âœ… Cargando plantilla real de ${gameState.team}: ${teamData.squad.length} jugadores`);
                 
-                // Convertir jugadores básicos a jugadores completos
+                // Convertir jugadores bÃ¡sicos a jugadores completos
                 const realSquad = teamData.squad.map(player => {
                     const completedPlayer = {
                         ...player,
@@ -281,22 +281,22 @@ async function generateInitialSquad() {
                     return completedPlayer;
                 });
                 
-                console.log(`✅ Plantilla real cargada: ${realSquad.length} jugadores`);
+                console.log(`âœ… Plantilla real cargada: ${realSquad.length} jugadores`);
                 return realSquad;
             }
         } catch (error) {
-            console.warn(`⚠️ No se pudo cargar plantilla real de ${gameState.team}:`, error);
+            console.warn(`âš ï¸ No se pudo cargar plantilla real de ${gameState.team}:`, error);
         }
     }
     
-    // 🔄 FALLBACK: GENERAR PLANTILLA ALEATORIA (código original)
-    console.log(`⚙️ Generando plantilla aleatoria para ${gameState.team}`);
+    // ðŸ”„ FALLBACK: GENERAR PLANTILLA ALEATORIA (cÃ³digo original)
+    console.log(`âš™ï¸ Generando plantilla aleatoria para ${gameState.team}`);
     
     const squad = [];  
     const allAvailablePlayers = initPlayerDatabase();
   
-    const elitePlayersNames = ['Griezmann', 'Koke', 'Oblak', 'Nahuel Molina', 'José Giménez', 'Samuel Lino', 'Álvaro Morata', 'Reinildo Mandava', 'Marcos Llorente', 'Pablo Barrios', 'Axel Witsel'];  
-    if (gameState.team === 'Atlético Madrid') {  
+    const elitePlayersNames = ['Griezmann', 'Koke', 'Oblak', 'Nahuel Molina', 'JosÃ© GimÃ©nez', 'Samuel Lino', 'Ãlvaro Morata', 'Reinildo Mandava', 'Marcos Llorente', 'Pablo Barrios', 'Axel Witsel'];  
+    if (gameState.team === 'AtlÃ©tico Madrid') {  
         elitePlayersNames.forEach(name => {  
             const p = allAvailablePlayers.find(ep => ep.name === name);  
             if (p && !squad.some(s => s.name === p.name)) {
@@ -337,7 +337,7 @@ async function generateInitialSquad() {
                                age < 30 ? 2 + Math.floor(Math.random() * 3) : 
                                1 + Math.floor(Math.random() * 2);
         
-        // Calcular cláusula de rescisión
+        // Calcular clÃ¡usula de rescisiÃ³n
         let multiplier = 2.0;
         if (player.age < 25) multiplier += 0.5;
         if (player.potential > 80) multiplier += 1.0;
@@ -378,9 +378,9 @@ function generateInitialAcademy() {
         player.value = Math.floor(player.overall * 1000 + player.potential * 500 + player.salary * 5);  
         player.cost = player.value;
         
-        // ✅ AÑADIR CAMPOS DE CONTRATO PARA CANTERA
+        // âœ… AÃ‘ADIR CAMPOS DE CONTRATO PARA CANTERA
         player.contractType = 'owned';
-        player.contractYears = 3 + Math.floor(Math.random() * 3); // 3-5 años para jóvenes
+        player.contractYears = 3 + Math.floor(Math.random() * 3); // 3-5 aÃ±os para jÃ³venes
         
         let multiplier = 2.0;
         if (age < 25) multiplier += 0.5;
@@ -418,7 +418,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
     let teamsInNewDivision = TEAMS_DATA[nextDivisionKey];  
     if (!teamsInNewDivision) {  
-        console.error(`División no encontrada en TEAMS_DATA: ${nextDivisionKey}. Usando Primera por defecto.`);  
+        console.error(`DivisiÃ³n no encontrada en TEAMS_DATA: ${nextDivisionKey}. Usando Primera por defecto.`);  
         teamsInNewDivision = TEAMS_DATA.primera;  
         gameState.division = 'primera';  
     }  
@@ -432,11 +432,19 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     gameState.seasonCalendar = generateLeagueCalendar(teamsInNewDivision);  
     gameState.maxSeasonWeeks = teamsInNewDivision.length * 2 - 2;  
   
-    addNews(`¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
+    addNews(`Â¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
   
-    initPlayerDatabase();  
-    initYoungsterDatabase();  
-  
+    initPlayerDatabase();
+    initYoungsterDatabase();
+
+    // \u2705 Recargar mercado de Firestore para la nueva temporada
+    setTimeout(() => {
+        const mySquadNames = (gameState.squad || []).map(p => p.name);
+        loadMarketFromFirestore(mySquadNames).catch(err => {
+            console.warn('\u26a0\ufe0f No se pudo recargar el mercado para la nueva temporada:', err);
+        });
+    }, 500);
+
     // ===== PRIMERA PLANTILLA =====
     gameState.squad = gameState.squad.filter(p => {
         p.age++;  
@@ -446,15 +454,15 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.weeksOut = 0; 
 
         // ========================================
-    // ✅ NUEVO: REDUCIR AÑOS DE CONTRATO
+    // âœ… NUEVO: REDUCIR AÃ‘OS DE CONTRATO
     // ========================================
     if (p.contractYears !== undefined && p.contractYears > 0) {
         p.contractYears--;
         
-        // Avisar si le queda 1 año
+        // Avisar si le queda 1 aÃ±o
         if (p.contractYears === 1 && p.contractType === 'owned') {
             addNews(
-                `⚠️ A ${p.name} le queda solo 1 año de contrato. Deberías renovarlo pronto.`, 
+                `âš ï¸ A ${p.name} le queda solo 1 aÃ±o de contrato. DeberÃ­as renovarlo pronto.`, 
                 'warning'
             );
         }
@@ -463,16 +471,22 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         if (p.contractYears === 0) {
             if (p.contractType === 'owned') {
                 addNews(
-                    `🔴 ¡URGENTE! El contrato de ${p.name} ha expirado. Si no renuevas, se irá libre.`, 
+                    `ðŸ”´ Â¡URGENTE! El contrato de ${p.name} ha expirado. Si no renuevas, se irÃ¡ libre.`, 
                     'error'
                 );
             } else if (p.contractType === 'loaned') {
-                // Jugador cedido vuelve a su club
+                // Jugador cedido vuelve a su equipo de origen
                 addNews(
-                    `🔄 ${p.name} ha regresado a su club de origen tras finalizar la cesión.`, 
+                    `🔄 ${p.name} ha regresado a su club de origen tras finalizar la cesión.`,
                     'info'
                 );
-                return false; // ❌ ELIMINAR jugador cedido
+                // \u2705 Devolver a Firestore al equipo origen
+                if (window.returnLoanedPlayerToOrigin) {
+                    window.returnLoanedPlayerToOrigin(p).catch(err => {
+                        console.warn('\u26a0\ufe0f Error devolviendo cedido a Firestore:', err);
+                    });
+                }
+                return false; // âŒ ELIMINAR jugador cedido
             }
         }
     }
@@ -480,7 +494,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
 
         const stage = getAgeStage(p.age);
 
-        // 🔻 Declive físico por edad
+        // ðŸ”» Declive fÃ­sico por edad
         if (stage === 'decline_soft' || stage === 'decline_hard') {
             const physicalAttrs = ['VE', 'AG', 'RE'];
             physicalAttrs.forEach(attr => {
@@ -490,7 +504,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
             });
         }
 
-        // 🔻 Declive mental MUY suave (solo mayores)
+        // ðŸ”» Declive mental MUY suave (solo mayores)
         if (stage === 'decline_hard') {
             ['VI', 'PA', 'CO'].forEach(attr => {
                 if (p[attr] > 50 && Math.random() < 0.2) {
@@ -499,12 +513,12 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
             });
         }
 
-        // 🔄 Recalcular overall tras cambios
+        // ðŸ”„ Recalcular overall tras cambios
         p.overall = calculatePlayerOverall(p);
 
-        // 🛑 Retiro
+        // ðŸ›‘ Retiro
         if (p.age >= 36 && Math.random() < 0.25) {
-            addNews(`${p.name} se ha retirado del fútbol a los ${p.age} años.`, 'info');
+            addNews(`${p.name} se ha retirado del fÃºtbol a los ${p.age} aÃ±os.`, 'info');
             return false;
         }
 
@@ -520,7 +534,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.weeksOut = 0;  
     });  
   
-    // Reestablecer alineación
+    // Reestablecer alineaciÃ³n
     const availablePlayers = gameState.squad
         .filter(p => !p.isInjured)
         .sort((a, b) => b.overall - a.overall);  
@@ -529,9 +543,9 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
 }
  
   
-// ✅ MODIFICAR selectTeamWithInitialSquad para usar await (línea 454-498)
+// âœ… MODIFICAR selectTeamWithInitialSquad para usar await (lÃ­nea 454-498)
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    // 📄 RESET COMPLETO DEL ESTADO
+    // ðŸ“„ RESET COMPLETO DEL ESTADO
     Object.assign(gameState, {
         team: teamName,
         division: divisionType,
@@ -550,7 +564,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         seasonCalendar: []
     });
 
-    // ⚠️ CAMBIO IMPORTANTE: Ahora con await
+    // âš ï¸ CAMBIO IMPORTANTE: Ahora con await
     gameState.squad = await generateInitialSquad();
     gameState.academy = generateInitialAcademy();
 
@@ -573,14 +587,20 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
 
-    addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    addNews(`\u00a1Bienvenido al PC F\u00fatbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
+
+    // \u2705 Cargar mercado de Firestore tras iniciar el juego
+    setTimeout(async () => {
+        const mySquadNames = (gameState.squad || []).map(p => p.name);
+        await loadMarketFromFirestore(mySquadNames);
+    }, 1000);
 }
 
   
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
-        return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
+        return { success: false, message: 'La plantilla estÃ¡ completa (25 jugadores max).' };  
     }  
     
     const newPlayer = { ...player };  
@@ -597,8 +617,8 @@ function signPlayer(player) {
     newPlayer.isInjured = false;  
     newPlayer.weeksOut = 0;  
     
-    // ✅ PRESERVAR campos de contrato
-    // Si viene de una cesión
+    // âœ… PRESERVAR campos de contrato
+    // Si viene de una cesiÃ³n
     if (newPlayer.loan === true) {
         newPlayer.contractType = 'loaned';
         newPlayer.contractYears = 1;
@@ -609,7 +629,7 @@ function signPlayer(player) {
         newPlayer.contractYears = 3 + Math.floor(Math.random() * 3);
     }
     
-    // Calcular cláusula si no tiene
+    // Calcular clÃ¡usula si no tiene
     if (!newPlayer.releaseClause) {
         let multiplier = 2.0;
         if (newPlayer.age < 25) multiplier += 0.5;
@@ -619,10 +639,18 @@ function signPlayer(player) {
         newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
     }
   
-    gameState.squad.push(newPlayer);  
-    updateWeeklyFinancials();  
-    addNews(`¡${player.name} ha sido fichado!`, 'success');  
-    return { success: true, message: `¡${player.name} ha sido fichado!` };  
+    // Guardar equipo origen antes de cambiar el club
+    const originalTeam = player.originalTeam || player.club || null;
+
+    newPlayer.club = window.gameState ? gameState.team : newPlayer.club;
+    gameState.squad.push(newPlayer);
+
+    // \u2705 ELIMINAR del mercado (memoria + Firestore)
+    removeFromMarketByName(player.name, originalTeam);
+
+    updateWeeklyFinancials();
+    addNews(`\u00a1${player.name} ha sido fichado!`, 'success');
+    return { success: true, message: `\u00a1${player.name} ha sido fichado!` };
 }
   
 function signYoungster(youngster) {  
@@ -630,7 +658,7 @@ function signYoungster(youngster) {
         return { success: false, message: 'Dinero insuficiente para contratar a este joven.' };  
     }  
     if (gameState.academy.length >= 15) {  
-        return { success: false, message: 'La cantera está completa (15 jóvenes max).' };  
+        return { success: false, message: 'La cantera estÃ¡ completa (15 jÃ³venes max).' };  
     }  
   
     const newYoungster = { ...youngster, club: gameState.team };  
@@ -642,7 +670,7 @@ function signYoungster(youngster) {
     gameState.balance -= newYoungster.cost;  
     gameState.academy.push(newYoungster);  
     updateWeeklyFinancials();  
-    addNews(`¡${youngster.name} se une a la cantera!`, 'info');  
+    addNews(`Â¡${youngster.name} se une a la cantera!`, 'info');  
     return { success: true, message: `${youngster.name} ha sido contratado para la cantera.` };  
 }  
   
@@ -665,12 +693,12 @@ function promoteYoungster(name) {
     promotedPlayer.isInjured = false;  
     promotedPlayer.weeksOut = 0;  
 
-    // ✅ FIX: ASIGNAR CONTRATO CORRECTO
+    // âœ… FIX: ASIGNAR CONTRATO CORRECTO
     promotedPlayer.contractType = 'owned';
-    promotedPlayer.contractYears = 3; // 3 años fijos
+    promotedPlayer.contractYears = 3; // 3 aÃ±os fijos
     
-    // Calcular cláusula
-    let multiplier = 2.5; // Jóvenes = cláusula más alta
+    // Calcular clÃ¡usula
+    let multiplier = 2.5; // JÃ³venes = clÃ¡usula mÃ¡s alta
     if (promotedPlayer.potential > 80) multiplier += 1.0;
     const clause = Math.floor(promotedPlayer.value * multiplier);
     promotedPlayer.releaseClause = Math.round(clause / 10000) * 10000;
@@ -678,7 +706,7 @@ function promoteYoungster(name) {
     
     gameState.squad.push(promotedPlayer);  
     updateWeeklyFinancials();  
-    addNews(`¡${youngster.name} ha sido ascendido a la primera plantilla!`, 'info');  
+    addNews(`Â¡${youngster.name} ha sido ascendido a la primera plantilla!`, 'info');  
     return { success: true, message: `${youngster.name} ha sido ascendido a la primera plantilla.` };  
 }  
   
@@ -691,12 +719,12 @@ function sellPlayer(name) {
   
     const salePrice = Math.floor(player.overall * 2000 + (player.matches * 500) * (1 + Math.random() * 0.5));  
     gameState.balance += salePrice; 
-    // ✅ REGISTRAR INGRESO POR VENTA
+    // âœ… REGISTRAR INGRESO POR VENTA
 if (!gameState.playerSalesIncome) gameState.playerSalesIncome = 0;
 gameState.playerSalesIncome += salePrice;
     updateWeeklyFinancials();  
-    addNews(`¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}€!`, 'info');  
-    return { success: true, message: `${player.name} vendido por ${salePrice}€.` };  
+    addNews(`Â¡${player.name} ha sido vendido por ${salePrice.toLocaleString('es-ES')}â‚¬!`, 'info');  
+    return { success: true, message: `${player.name} vendido por ${salePrice}â‚¬.` };  
 }  
   
 function startNegotiation(player) {  
@@ -708,12 +736,12 @@ function startNegotiation(player) {
     gameState.negotiatingPlayer = player;  
     gameState.negotiationStep = 1;  
   
-    return { success: true, message: `Iniciando negociación con ${player.name}.` };  
+    return { success: true, message: `Iniciando negociaciÃ³n con ${player.name}.` };  
 }  
   
 function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent) {  
     const player = gameState.negotiatingPlayer;  
-    if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
+    if (!player) return { success: false, message: 'No hay un jugador en negociaciÃ³n activa.' };  
   
     let acceptanceChance = 0.5;  
   
@@ -747,49 +775,49 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             ticketPercent: offeredTicketPercent  
         };  
         
-        // ✅ VERIFICAR SI SE PAGÓ LA CLÁUSULA
+        // âœ… VERIFICAR SI SE PAGÃ“ LA CLÃUSULA
         if (player.clausePaid === true) {
-            // FICHAJE DIRECTO - Sin negociación con club
+            // FICHAJE DIRECTO - Sin negociaciÃ³n con club
             const newPlayer = {  
                 ...player,  
                 salary: offeredSalary,  
                 loan: false,  
                 club: gameState.team,
                 contractType: 'owned',
-                contractYears: 3 + Math.floor(Math.random() * 3) // 3-5 años
+                contractYears: 3 + Math.floor(Math.random() * 3) // 3-5 aÃ±os
             };
             
             endNegotiation(true);
             
             addNews(
-                `✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`,
+                `âœ… Â¡Fichaje completado! ${player.name} llega tras pagar su clÃ¡usula de rescisiÃ³n.`,
                 'success'
             );
             
             return signPlayer(newPlayer);
         } else {
-            // Continuar a negociación con club
+            // Continuar a negociaciÃ³n con club
             gameState.negotiationStep = 2;  
             return { success: true, message: `${player.name} ha aceptado tu oferta personal. Ahora a negociar con su club, el ${player.club}.` };
         }
     } else {  
         if (roll > 0.8) {  
             endNegotiation();  
-            return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.`, type: 'error' };  
+            return { success: false, message: `${player.name} ha rechazado tu oferta. No estÃ¡ interesado en venir.`, type: 'error' };  
         } else {  
-            return { success: false, message: `${player.name} encuentra tu oferta insuficiente. Podrías subir el salario o añadir más incentivos.` };  
+            return { success: false, message: `${player.name} encuentra tu oferta insuficiente. PodrÃ­as subir el salario o aÃ±adir mÃ¡s incentivos.` };  
         }  
     }  
 }
   
 function offerToClub(offerAmount, playerExchange = [], isLoan = false) {  
     const player = gameState.negotiatingPlayer;  
-    if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
+    if (!player) return { success: false, message: 'No hay un jugador en negociaciÃ³n activa.' };  
   
     if (player.loanListed && isLoan) {  
         const myWageContribution = offerAmount;  
         if (myWageContribution < 0 || myWageContribution > 100) {  
-             return { success: false, message: 'La contribución salarial debe ser un porcentaje entre 0 y 100.' };  
+             return { success: false, message: 'La contribuciÃ³n salarial debe ser un porcentaje entre 0 y 100.' };  
         }  
   
         const actualWageToPay = player.salary * (myWageContribution / 100);  
@@ -815,7 +843,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
             return signPlayer(newPlayer);  
         } else {  
             endNegotiation();  
-            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.`, type: 'error' };  
+            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesiÃ³n. Quieren que te hagas cargo de mÃ¡s salario.`, type: 'error' };  
         }  
   
     } else {  
@@ -847,7 +875,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
                 return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };  
             }  
             gameState.balance -= offerAmount;
-// ✅ REGISTRAR GASTO EN FICHAJES
+// âœ… REGISTRAR GASTO EN FICHAJES
 if (!gameState.playerPurchases) gameState.playerPurchases = 0;
 gameState.playerPurchases += offerAmount;
 playerExchange.forEach(pName => {  
@@ -870,7 +898,7 @@ playerExchange.forEach(pName => {
                 endNegotiation();  
                 return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.`, type: 'error' };  
             } else {  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. PodrÃ­as mejorarla o aÃ±adir algÃºn jugador.` };  
             }  
         }  
     }  
@@ -878,7 +906,7 @@ playerExchange.forEach(pName => {
   
 function endNegotiation(success = false) {  
     if (!success && gameState.negotiatingPlayer) {  
-        addNews(`Negociación por ${gameState.negotiatingPlayer.name} fracasada.`, 'error');  
+        addNews(`NegociaciÃ³n por ${gameState.negotiatingPlayer.name} fracasada.`, 'error');  
     }  
     gameState.negotiatingPlayer = null;  
     gameState.negotiationStep = 0;  
@@ -888,10 +916,10 @@ function endNegotiation(success = false) {
   
 function setTrainingFocus(playerIndex, attribute) {  
     if (playerIndex < 0 || playerIndex >= gameState.squad.length) {  
-        return { success: false, message: 'Jugador no válido.' };  
+        return { success: false, message: 'Jugador no vÃ¡lido.' };  
     }  
     if (!ATTRIBUTES.includes(attribute)) {  
-        return { success: false, message: 'Atributo no válido para entrenar.' };  
+        return { success: false, message: 'Atributo no vÃ¡lido para entrenar.' };  
     }  
   
     gameState.trainingFocus = { playerIndex, attribute };  
@@ -907,14 +935,14 @@ function applyWeeklyTraining() {
     const attribute = gameState.trainingFocus.attribute;  
   
     if (player.isInjured) {  
-        return { success: false, message: `${player.name} está lesionado y no puede entrenar.`, type: 'system' };  
+        return { success: false, message: `${player.name} estÃ¡ lesionado y no puede entrenar.`, type: 'system' };  
     }  
   
     const currentAttrValue = player[attribute];  
     const potentialAttrValue = player.potential;  
   
     if (currentAttrValue >= potentialAttrValue) {  
-        return { success: false, message: `${player.name} ya alcanzó su potencial máximo en ${attribute}.`, type: 'system' };  
+        return { success: false, message: `${player.name} ya alcanzÃ³ su potencial mÃ¡ximo en ${attribute}.`, type: 'system' };  
     }  
   
     let improvementChance = 0.3;
@@ -954,9 +982,12 @@ function applyWeeklyTraining() {
     }  
 }  
   
-function getPlayerMarket(filters = {}) {  
-    const scoutLevel = gameState.staff.scout?.level || 0;  
-    return getPlayerMarketData(filters, scoutLevel);  
+function getPlayerMarket(filters = {}) {
+    const scoutLevel = gameState.staff.scout?.level || 0;
+    // Pasar nombres de mi plantilla para excluirlos del mercado
+    const mySquadNames = (gameState.squad || []).map(p => p.name);
+    const filtersWithScout = { ...filters, scoutLevel };
+    return getPlayerMarketData(filtersWithScout, mySquadNames);
 }  
   
 function getYoungsterMarket(filters = {}) {  
@@ -965,7 +996,7 @@ function getYoungsterMarket(filters = {}) {
 }  
   
 // ========================================
-// ✅ MEJORA 1: Mapeo de posiciones compatibles
+// âœ… MEJORA 1: Mapeo de posiciones compatibles
 // ========================================
 const POSITION_COMPATIBILITY = {
     'POR': ['POR'],
@@ -982,7 +1013,7 @@ const POSITION_COMPATIBILITY = {
 };
 
 // ========================================
-// ✅ MEJORA 2: Bonus/penalización según formación
+// âœ… MEJORA 2: Bonus/penalizaciÃ³n segÃºn formaciÃ³n
 // ========================================
 function getFormationModifiers(formation, mentality) {
     const modifiers = {
@@ -991,7 +1022,7 @@ function getFormationModifiers(formation, mentality) {
         midfieldBonus: 1.0
     };
     
-    // Ajustes por formación
+    // Ajustes por formaciÃ³n
     switch(formation) {
         case '433':
             modifiers.attackBonus = 1.05;
@@ -1033,7 +1064,7 @@ function getFormationModifiers(formation, mentality) {
 }
 
 // ========================================
-// ✅ MEJORA 3: Generar plantilla IA realista
+// âœ… MEJORA 3: Generar plantilla IA realista
 // ========================================
 async function generateAISquad(teamName, division) {
     // Intentar cargar plantilla real desde Firestore
@@ -1053,7 +1084,7 @@ async function generateAISquad(teamName, division) {
         }
     }
     
-    // Fallback: generar según división
+    // Fallback: generar segÃºn divisiÃ³n
     const divisionQuality = {
         primera: { min: 70, max: 88 },
         segunda: { min: 60, max: 75 },
@@ -1079,13 +1110,13 @@ async function generateAISquad(teamName, division) {
 }
 
 
-// ✅ MEJORA 2: Cálculo mejorado del overall del equipo
+// âœ… MEJORA 2: CÃ¡lculo mejorado del overall del equipo
 function calculateTeamEffectiveOverall(lineup, formation = '433') {
     if (!lineup || lineup.length === 0) return 40;
     
     const formationLayout = window.FORMATIONS?.[formation]?.layout || [];
     if (formationLayout.length === 0) {
-        // Fallback: cálculo simple si no hay formación
+        // Fallback: cÃ¡lculo simple si no hay formaciÃ³n
         const availablePlayers = lineup.filter(p => !p.isInjured);
         if (availablePlayers.length === 0) return 40;
         return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;
@@ -1100,17 +1131,17 @@ function calculateTeamEffectiveOverall(lineup, formation = '433') {
         const tacticalPosition = formationLayout[index]?.pos;
         if (!tacticalPosition) return;
         
-        // ⚠️ PENALIZACIÓN POR POSICIÓN INCORRECTA
+        // âš ï¸ PENALIZACIÃ“N POR POSICIÃ“N INCORRECTA
         let positionPenalty = 1.0;
         
         if (player.position === tacticalPosition) {
-            // ✅ Posición perfecta
+            // âœ… PosiciÃ³n perfecta
             positionPenalty = 1.0;
         } else if (POSITION_COMPATIBILITY[tacticalPosition]?.includes(player.position)) {
-            // ⚠️ Posición compatible (ej: DFC de LI)
+            // âš ï¸ PosiciÃ³n compatible (ej: DFC de LI)
             positionPenalty = 0.85; // -15%
         } else {
-            // ❌ Posición totalmente incorrecta (ej: POR de DC)
+            // âŒ PosiciÃ³n totalmente incorrecta (ej: POR de DC)
             positionPenalty = 0.50; // -50%
         }
         
@@ -1146,7 +1177,7 @@ function generateInjury(player) {
         }  
         player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin));  
   
-        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`, 'warning');  
+        addNews(`Â¡${player.name} se ha lesionado! EstarÃ¡ de baja ${player.weeksOut} semanas.`, 'warning');  
         return true;  
     }  
     return false;  
@@ -1174,25 +1205,25 @@ function calculateMatchOutcomeImproved({
         opponentFactor *= 1.12;
     }
     
-    // Modificadores de formación
+    // Modificadores de formaciÃ³n
     const teamMods = getFormationModifiers(teamFormation, teamMentality);
     const oppMods = getFormationModifiers(opponentFormation, opponentMentality);
     
-    // Aplicar bonus tácticos
+    // Aplicar bonus tÃ¡cticos
     const teamAttack = teamFactor * teamMods.attackBonus;
     const teamDefense = teamFactor * teamMods.defenseBonus;
     const oppAttack = opponentFactor * oppMods.attackBonus;
     const oppDefense = opponentFactor * oppMods.defenseBonus;
     
-    // Cálculo de goles (ataque propio vs defensa rival)
+    // CÃ¡lculo de goles (ataque propio vs defensa rival)
     let teamGoalChance = teamAttack / oppDefense;
     let oppGoalChance = oppAttack / teamDefense;
     
-    // Aleatoriedad controlada (±15%)
+    // Aleatoriedad controlada (Â±15%)
     teamGoalChance *= (0.85 + Math.random() * 0.3);
     oppGoalChance *= (0.85 + Math.random() * 0.3);
     
-    // Convertir a goles (más realista: 0-5 goles típicamente)
+    // Convertir a goles (mÃ¡s realista: 0-5 goles tÃ­picamente)
     const teamGoals = Math.min(7, Math.max(0, Math.round(teamGoalChance * 3)));
     const oppGoals = Math.min(7, Math.max(0, Math.round(oppGoalChance * 3)));
     
@@ -1204,7 +1235,7 @@ function calculateMatchOutcomeImproved({
 
 
   
-// ✅ MEJORA 6: Función playMatch mejorada
+// âœ… MEJORA 6: FunciÃ³n playMatch mejorada
 async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
     let homeSquad, awaySquad;
     let homeFormation = '433', awayFormation = '433';
@@ -1216,7 +1247,7 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         homeFormation = gameState.formation || '433';
         homeMentality = gameState.mentality || 'balanced';
     } else {
-        // ✅ Generar plantilla IA realista
+        // âœ… Generar plantilla IA realista
         homeSquad = await generateAISquad(homeTeamName, gameState.division);
         homeFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
         homeMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
@@ -1228,13 +1259,13 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         awayFormation = gameState.formation || '433';
         awayMentality = gameState.mentality || 'balanced';
     } else {
-        // ✅ Generar plantilla IA realista
+        // âœ… Generar plantilla IA realista
         awaySquad = await generateAISquad(awayTeamName, gameState.division);
         awayFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
         awayMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
     }
     
-    // ✅ Calcular overall REAL de cada equipo
+    // âœ… Calcular overall REAL de cada equipo
     const homeOverall = calculateTeamEffectiveOverall(homeSquad, homeFormation);
     const awayOverall = calculateTeamEffectiveOverall(awaySquad, awayFormation);
     
@@ -1242,7 +1273,7 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
     const homeForm = homeSquad.reduce((sum, p) => sum + (p.form || 75), 0) / homeSquad.length;
     const awayForm = awaySquad.reduce((sum, p) => sum + (p.form || 75), 0) / awaySquad.length;
     
-    // ✅ Calcular resultado con el motor mejorado
+    // âœ… Calcular resultado con el motor mejorado
     const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcomeImproved({
         teamOverall: homeOverall,
         opponentOverall: awayOverall,
@@ -1255,7 +1286,7 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         opponentForm: awayForm
     });
     
-    console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
+    console.log(`ðŸŸï¸ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
     
     return {
         homeTeam: homeTeamName,
@@ -1269,7 +1300,7 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
     };
 }
 
-// ✅ Exportar funciones
+// âœ… Exportar funciones
 if (typeof window !== 'undefined') {
     window.calculateTeamEffectiveOverallImproved = calculateTeamEffectiveOverall;
     window.playMatchImproved = playMatchImproved;
@@ -1277,18 +1308,18 @@ if (typeof window !== 'undefined') {
     window.generateAISquad = generateAISquad;
 }
 
-console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
+console.log('âœ… Motor de partidos mejorado cargado (Fase 1)');
 
   
 
 // ========================================
-// ✅ FUNCIÓN WRAPPER: Procesar partido completo
+// âœ… FUNCIÃ“N WRAPPER: Procesar partido completo
 // ========================================
 async function processMatch(homeTeam, awayTeam, gameState) {
-    // 1️⃣ Simular partido con motor mejorado
+    // 1ï¸âƒ£ Simular partido con motor mejorado
     const result = await playMatchImproved(homeTeam, awayTeam, gameState);
     
-    // 2️⃣ Actualizar clasificación
+    // 2ï¸âƒ£ Actualizar clasificaciÃ³n
     const updateStandings = (team, gf, gc) => {
         const stats = gameState.standings[team];
         if (!stats) return;
@@ -1311,7 +1342,7 @@ async function processMatch(homeTeam, awayTeam, gameState) {
     updateStandings(result.homeTeam, result.homeGoals, result.awayGoals);
     updateStandings(result.awayTeam, result.awayGoals, result.homeGoals);
     
-    // 3️⃣ Procesar lesiones y forma (solo para nuestro equipo)
+    // 3ï¸âƒ£ Procesar lesiones y forma (solo para nuestro equipo)
     if (homeTeam === gameState.team || awayTeam === gameState.team) {
         const ourSquad = (homeTeam === gameState.team) ? result.homeSquad : result.awaySquad;
         const ourGoals = (homeTeam === gameState.team) ? result.homeGoals : result.awayGoals;
@@ -1321,7 +1352,7 @@ async function processMatch(homeTeam, awayTeam, gameState) {
             // Incrementar partidos jugados
             player.matches++;
             
-            // Actualizar forma según resultado
+            // Actualizar forma segÃºn resultado
             if (ourGoals > rivalGoals) {
                 player.form = Math.min(99, player.form + Math.floor(Math.random() * 3));
             } else if (ourGoals < rivalGoals) {
@@ -1353,13 +1384,13 @@ function secondCoachAdvice() {
     const availableSquad = gameState.squad.filter(p => !p.isInjured);  
   
     if (gameState.trainingFocus.playerIndex === -1 && Math.random() < 0.7) {  
-        addNews(`[Segundo Entrenador] ¡No hemos fijado un foco de entrenamiento para esta semana!`, 'warning');  
+        addNews(`[Segundo Entrenador] Â¡No hemos fijado un foco de entrenamiento para esta semana!`, 'warning');  
     }  
   
     const lowFormLineupPlayers = currentLineup.filter(p => p.form < 65 && !p.isInjured);  
     if (lowFormLineupPlayers.length > 0 && Math.random() < 0.6) {  
         const p = lowFormLineupPlayers[Math.floor(Math.random() * lowFormLineupPlayers.length)];  
-        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}) tiene baja forma (${p.form}). ¿Debería salir en el once inicial?`, 'warning');  
+        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}) tiene baja forma (${p.form}). Â¿DeberÃ­a salir en el once inicial?`, 'warning');  
     }  
   
     const promisingBenched = availableSquad.filter(p =>  
@@ -1368,14 +1399,14 @@ function secondCoachAdvice() {
     );  
     if (promisingBenched.length > 0 && Math.random() < 0.4) {  
         const p = promisingBenched[Math.floor(Math.random() * promisingBenched.length)];  
-        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}/${p.potential}) es un gran talento. Deberíamos darle más minutos para que crezca.`, 'info');  
+        addNews(`[Segundo Entrenador] ${p.name} (${p.overall}/${p.potential}) es un gran talento. DeberÃ­amos darle mÃ¡s minutos para que crezca.`, 'info');  
     }  
   
     const criticalPositions = ['POR', 'DFC', 'MC', 'DC'];  
     for (const pos of criticalPositions) {  
         const availableInPosition = availableSquad.filter(p => p.position === pos).length;  
         if (pos === 'POR' && availableInPosition < 2) {  
-            addNews(`[Segundo Entrenador] Solo tenemos ${availableInPosition} ${pos} apto. Deberíamos buscar refuerzos para la portería.`, 'warning');  
+            addNews(`[Segundo Entrenador] Solo tenemos ${availableInPosition} ${pos} apto. DeberÃ­amos buscar refuerzos para la porterÃ­a.`, 'warning');  
         } else if (pos !== 'POR' && availableInPosition < 3) {  
             addNews(`[Segundo Entrenador] Tenemos pocos ${pos} aptos (${availableInPosition}). Considera fichar.`, 'warning');  
         }  
@@ -1386,17 +1417,17 @@ function secondCoachAdvice() {
                                     .filter(p => p.overall > 80 && p.transferListed && !p.loanListed);  
         if (topPlayersInMarket.length > 0) {  
             const p = topPlayersInMarket[Math.floor(Math.random() * topPlayersInMarket.length)];  
-            addNews(`[Segundo Entrenador] Nuestro ojeador ha encontrado a ${p.name} (${p.position}, OVR ${p.overall}) del ${p.club}. ¡Podría ser un gran fichaje!`, 'info');  
+            addNews(`[Segundo Entrenador] Nuestro ojeador ha encontrado a ${p.name} (${p.position}, OVR ${p.overall}) del ${p.club}. Â¡PodrÃ­a ser un gran fichaje!`, 'info');  
         }  
     }  
   
-    // Comprobación de alineación por el segundo entrenador ANTES de la simulación  
+    // ComprobaciÃ³n de alineaciÃ³n por el segundo entrenador ANTES de la simulaciÃ³n  
     const lineupValidation = validateLineup(currentLineup);  
     if (!lineupValidation.success) {  
         // Noticia para el segundo entrenador que se muestra ANTES de simular la jornada  
-        addNews(`[Segundo Entrenador - ALINEACIÓN CRÍTICA] Tu alineación es INVÁLIDA: ${lineupValidation.message}. Por favor, corrígela.`, 'error');  
+        addNews(`[Segundo Entrenador - ALINEACIÃ“N CRÃTICA] Tu alineaciÃ³n es INVÃLIDA: ${lineupValidation.message}. Por favor, corrÃ­gela.`, 'error');  
     }  
-    // NOTA: La decisión de bloquear la simulación se maneja en simulateWeek() en index.html  
+    // NOTA: La decisiÃ³n de bloquear la simulaciÃ³n se maneja en simulateWeek() en index.html  
 }  
   
 function boardMessages() {  
@@ -1409,16 +1440,16 @@ function boardMessages() {
   
         let message = '';  
         if (satisfaction < -2) {  
-            message = `[Directiva] Esperábamos mejores resultados a estas alturas de la temporada y estamos preocupados. Hay que mejorar.`;  
+            message = `[Directiva] EsperÃ¡bamos mejores resultados a estas alturas de la temporada y estamos preocupados. Hay que mejorar.`;  
             addNews(message, 'error');  
         } else if (satisfaction < 0) {  
-            message = `[Directiva] No estamos del todo satisfechos con el progreso actual. Es necesario un empujón.`;  
+            message = `[Directiva] No estamos del todo satisfechos con el progreso actual. Es necesario un empujÃ³n.`;  
             addNews(message, 'warning');  
         } else if (satisfaction > 2) {  
-            message = `[Directiva] Felicitaciones por el buen desempeño del equipo y la excelente gestión. Sigan así.`;  
+            message = `[Directiva] Felicitaciones por el buen desempeÃ±o del equipo y la excelente gestiÃ³n. Sigan asÃ­.`;  
             addNews(message, 'success');  
         } else if (Math.random() < 0.1) {  
-             message = `[Directiva] La estabilidad económica es clave para nuestro proyecto a largo plazo.`;  
+             message = `[Directiva] La estabilidad econÃ³mica es clave para nuestro proyecto a largo plazo.`;  
              addNews(message, 'info');  
         }  
     }  
@@ -1432,7 +1463,7 @@ function endSeason() {
   
     let nextDivisionKey = currentDivision;  
   
-    let seasonSummary = `¡Fin de la temporada ${currentSeason}!\n`;  
+    let seasonSummary = `Â¡Fin de la temporada ${currentSeason}!\n`;  
   
     const promoReleConfig = PROMOTION_RELEGATION[currentDivision];  
   
@@ -1443,11 +1474,11 @@ function endSeason() {
         const myTeamRankInGroup = sortedMyGroup.findIndex(([name]) => name === gameState.team) + 1;  
   
         if (myTeamRankInGroup <= numPromote) {  
-            seasonSummary += `¡Has ascendido a Segunda División! Felicidades.\n`;  
+            seasonSummary += `Â¡Has ascendido a Segunda DivisiÃ³n! Felicidades.\n`;  
             nextDivisionKey = 'segunda';  
         } else if (myTeamRankInGroup > (teamsInMyGroup.length - promoReleConfig.relegate)) {  
-            seasonSummary += `¡Has descendido a Tercera RFEF! Es hora de reconstruir.\n`;  
-            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1 (o elegir aleatoriamente si hay más grupos)  
+            seasonSummary += `Â¡Has descendido a Tercera RFEF! Es hora de reconstruir.\n`;  
+            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1 (o elegir aleatoriamente si hay mÃ¡s grupos)  
         }  
         else {  
             seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
@@ -1462,17 +1493,17 @@ function endSeason() {
         const numPromote = promoReleConfig.promote;  
         const promotedTeams = teams.slice(0, numPromote);  
         if (myTeamRank <= numPromote) {  
-            seasonSummary += `¡Has ascendido a Primera División! ¡Un logro enorme!\n`;  
+            seasonSummary += `Â¡Has ascendido a Primera DivisiÃ³n! Â¡Un logro enorme!\n`;  
             nextDivisionKey = 'primera';  
         }  
   
         const numRelegate = promoReleConfig.relegate;  
         const relegatedTeams = teams.slice(-numRelegate);  
         if (myTeamRank > teams.length - numRelegate) {  
-            seasonSummary += `¡Has descendido a Primera RFEF! Es hora de reconstruir.\n`;  
+            seasonSummary += `Â¡Has descendido a Primera RFEF! Es hora de reconstruir.\n`;  
             nextDivisionKey = Math.random() < 0.5 ? 'rfef_grupo1' : 'rfef_grupo2';  
         } else if (myTeamRank > numPromote) {  
-            seasonSummary += `Tu equipo permanece en Segunda División.\n`;  
+            seasonSummary += `Tu equipo permanece en Segunda DivisiÃ³n.\n`;  
         }  
         seasonSummary += `Equipos que ascienden a Primera: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
         seasonSummary += `Equipos que descienden a Primera RFEF: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
@@ -1482,20 +1513,20 @@ function endSeason() {
         const numRelegate = promoReleConfig.relegate;  
         const relegatedTeams = teams.slice(-numRelegate);  
         if (myTeamRank > teams.length - numRelegate) {  
-            seasonSummary += `¡Has descendido a Segunda División! A trabajar para volver.\n`;  
+            seasonSummary += `Â¡Has descendido a Segunda DivisiÃ³n! A trabajar para volver.\n`;  
             nextDivisionKey = 'segunda';  
         } else {  
-            seasonSummary += `Tu equipo permanece en Primera División.\n`;  
+            seasonSummary += `Tu equipo permanece en Primera DivisiÃ³n.\n`;  
         }  
         seasonSummary += `Equipos que descienden a Segunda: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
   
         const topPositions = [1, 2, 3, 4, 5, 6, 7];  
         if (topPositions.slice(0, 4).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Champions League!\n`;  
+            seasonSummary += `Â¡Te has clasificado para la Champions League!\n`;  
         } else if (topPositions.slice(4, 6).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Europa League!\n`;  
+            seasonSummary += `Â¡Te has clasificado para la Europa League!\n`;  
         } else if (topPositions.slice(6, 7).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Conference League!\n`;  
+            seasonSummary += `Â¡Te has clasificado para la Conference League!\n`;  
         }  
     }  
   
@@ -1519,10 +1550,10 @@ function endSeason() {
         if (gameState.week > PRESEASON_WEEKS) {  
             gameState.seasonType = 'regular';
             gameState.week = 1;
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
+            addNews(`Â¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');
         }
 
-        // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
+        // ===== ACTUALIZAR CÃRCULO CENTRAL CON PRÃ“XIMO PARTIDO =====
         let nextWeek, nextOpponent;
         if (gameState.seasonType === 'preseason') {
             nextWeek = gameState.week + 1 <= PRESEASON_WEEKS ? gameState.week + 1 : PRESEASON_WEEKS;
@@ -1534,7 +1565,7 @@ function endSeason() {
             const nextMatch = nextWeekMatches.find(match =>
                 match.home === gameState.team || match.away === gameState.team
             );
-            nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+            nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "â€”";
         }
 
         window.renderNextMatchInfo({
@@ -1546,7 +1577,7 @@ function endSeason() {
         return { myMatch: null, forcedLoss: false };
     }  
 
-    // ===== VALIDAR ALINEACIÓN =====
+    // ===== VALIDAR ALINEACIÃ“N =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
     applyWeeklyTraining();  
 
@@ -1557,7 +1588,7 @@ function endSeason() {
             if (p.weeksOut <= 0) {  
                 p.isInjured = false;  
                 p.weeksOut = 0;  
-                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
+                addNews(`Â¡${p.name} se ha recuperado de su lesiÃ³n!`, 'info');  
             }  
         }  
     });
@@ -1568,7 +1599,7 @@ function endSeason() {
             if (y.weeksOut <= 0) {  
                 y.isInjured = false;  
                 y.weeksOut = 0;  
-                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
+                addNews(`Â¡${y.name} (cantera) se ha recuperado de su lesiÃ³n!`, 'info');  
             }  
         }  
     });  
@@ -1581,7 +1612,7 @@ function endSeason() {
 
     // ===== PARTIDOS DE LA JORNADA ACTUAL =====
     const currentWeekMatches = gameState.seasonCalendar.filter(match => match.week === gameState.week);  
-    console.log(`📅 Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
+    console.log(`ðŸ“… Jornada ${gameState.week}: ${currentWeekMatches.length} partidos programados`);
 
     let myTeamMatch = currentWeekMatches.find(match => 
         match.home === gameState.team || match.away === gameState.team
@@ -1590,7 +1621,7 @@ function endSeason() {
     // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
+            addNews(`[SISTEMA - ALINEACIÃ“N INVÃLIDA] Tu equipo perdiÃ³ 0-3 por alineaciÃ³n indebida.`, 'error');  
 
             let homeGoals = myTeamMatch.home === gameState.team ? 0 : 3;
             let awayGoals = myTeamMatch.home === gameState.team ? 3 : 0;
@@ -1667,13 +1698,13 @@ function endSeason() {
                     score: `${result.homeGoals}-${result.awayGoals}`
                 });
                 
-                console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
+                console.log(`âš½ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
             }  
         });
     
-    console.log(`✅ Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
+    console.log(`âœ… Jornada ${gameState.week} completada - ${gameState.matchHistory.filter(m => m.week === gameState.week).length} partidos jugados`);
 
-    // ===== ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO =====
+    // ===== ACTUALIZAR CÃRCULO CENTRAL CON PRÃ“XIMO PARTIDO =====
     let nextWeek, nextOpponent;
     if (gameState.seasonType === 'preseason') {
         nextWeek = gameState.week + 1 <= PRESEASON_WEEKS ? gameState.week + 1 : PRESEASON_WEEKS;
@@ -1684,7 +1715,7 @@ function endSeason() {
         const nextMatch = nextWeekMatches.find(match =>
             match.home === gameState.team || match.away === gameState.team
         );
-        nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "—";
+        nextOpponent = nextMatch ? (nextMatch.home === gameState.team ? nextMatch.away : nextMatch.home) : "â€”";
     }
     window.renderNextMatchInfo({
         week: nextWeek,
@@ -1698,17 +1729,17 @@ function endSeason() {
     generateAIOffers();  
     checkMarketRecommendations();  
 
-    // ===== CRISIS ECONÓMICA =====
+    // ===== CRISIS ECONÃ“MICA =====
     if (gameState.staff.segundoEntrenador && 
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
         gameState.balance < 0) {  
-        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal. Si esto continúa, la directiva podría tomar medidas drásticas.`, 'error');  
+        addNews(`[Segundo Entrenador - Â¡CRISIS!] Nuestros nÃºmeros estÃ¡n muy mal. Si esto continÃºa, la directiva podrÃ­a tomar medidas drÃ¡sticas.`, 'error');  
     }  
 
     // ===== GAME OVER =====
     if (gameState.balance < -100000 && gameState.week > 10) {  
-        addNews(`¡Has sido despedido! La directiva ha perdido la confianza debido a la pésima gestión económica.`, 'error');  
-        alert("¡GAME OVER! Has sido despedido por la directiva.");  
+        addNews(`Â¡Has sido despedido! La directiva ha perdido la confianza debido a la pÃ©sima gestiÃ³n econÃ³mica.`, 'error');  
+        alert("Â¡GAME OVER! Has sido despedido por la directiva.");  
         resetGame();  
         return { myMatch: myMatchResult, forcedLoss: forcedLoss, gameOver: true };  
     }  
@@ -1734,14 +1765,14 @@ async function simulateFullWeek() {
         if (gameState.week > PRESEASON_WEEKS) {  
             gameState.seasonType = 'regular';  
             gameState.week = 1;  
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
+            addNews(`Â¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
         }  
 
         window.updateNextMatchInfo();
         return { myMatch: null, forcedLoss: false };
     }  
 
-    // ===== VALIDAR ALINEACIÓN =====
+    // ===== VALIDAR ALINEACIÃ“N =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
     applyWeeklyTraining();  
 
@@ -1752,7 +1783,7 @@ async function simulateFullWeek() {
             if (p.weeksOut <= 0) {  
                 p.isInjured = false;  
                 p.weeksOut = 0;  
-                addNews(`¡${p.name} se ha recuperado de su lesión!`, 'info');  
+                addNews(`Â¡${p.name} se ha recuperado de su lesiÃ³n!`, 'info');  
             }  
         }  
     });
@@ -1763,7 +1794,7 @@ async function simulateFullWeek() {
             if (y.weeksOut <= 0) {  
                 y.isInjured = false;  
                 y.weeksOut = 0;  
-                addNews(`¡${y.name} (cantera) se ha recuperado de su lesión!`, 'info');  
+                addNews(`Â¡${y.name} (cantera) se ha recuperado de su lesiÃ³n!`, 'info');  
             }  
         }  
     });  
@@ -1783,8 +1814,8 @@ async function simulateFullWeek() {
     // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            // Alineación inválida
-            addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
+            // AlineaciÃ³n invÃ¡lida
+            addNews(`[SISTEMA - ALINEACIÃ“N INVÃLIDA] Tu equipo perdiÃ³ 0-3 por alineaciÃ³n indebida.`, 'error');  
 
             let homeGoals = myTeamMatch.home === gameState.team ? 0 : 3;
             let awayGoals = myTeamMatch.home === gameState.team ? 3 : 0;
@@ -1840,17 +1871,17 @@ async function simulateFullWeek() {
                 score: `${result.homeGoals}-${result.awayGoals}` 
             });
         }
-    } // ✅ FIN de if (myTeamMatch)
+    } // âœ… FIN de if (myTeamMatch)
 
-    // ✅ NUEVO: DISPARAR MODAL INMEDIATAMENTE
+    // âœ… NUEVO: DISPARAR MODAL INMEDIATAMENTE
     if (myMatchResult) {
         // Esperar un momento para que se actualice la UI
         setTimeout(() => {
             if (window.injectMatchSummary) {
-                console.log('🎯 Abriendo modal de resultado:', myMatchResult);
+                console.log('ðŸŽ¯ Abriendo modal de resultado:', myMatchResult);
                 window.injectMatchSummary(myMatchResult);
             } else {
-                console.warn('⚠️ injectMatchSummary no está disponible');
+                console.warn('âš ï¸ injectMatchSummary no estÃ¡ disponible');
             }
         }, 500);
     }
@@ -1871,11 +1902,11 @@ async function simulateFullWeek() {
                 score: `${result.homeGoals}-${result.awayGoals}`
             });
             
-            console.log(`⚽ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
+            console.log(`âš½ ${result.homeTeam} ${result.homeGoals}-${result.awayGoals} ${result.awayTeam}`);
         }
     }
 
-    // ===== ACTUALIZAR PRÓXIMO PARTIDO =====
+    // ===== ACTUALIZAR PRÃ“XIMO PARTIDO =====
     gameState.week++;
     window.updateNextMatchInfo();
 
@@ -1884,17 +1915,17 @@ async function simulateFullWeek() {
     generateAIOffers();  
     checkMarketRecommendations();  
 
-    // ===== CRISIS ECONÓMICA =====
+    // ===== CRISIS ECONÃ“MICA =====
     if (gameState.staff.segundoEntrenador && 
         (gameState.weeklyIncome - gameState.weeklyExpenses < -10000) && 
         gameState.balance < 0) {  
-        addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal.`, 'error');  
+        addNews(`[Segundo Entrenador - Â¡CRISIS!] Nuestros nÃºmeros estÃ¡n muy mal.`, 'error');  
     }  
 
     // ===== GAME OVER =====
     if (gameState.balance < -100000 && gameState.week > 10) {  
-        addNews(`¡Has sido despedido!`, 'error');  
-        alert("¡GAME OVER!");  
+        addNews(`Â¡Has sido despedido!`, 'error');  
+        alert("Â¡GAME OVER!");  
         resetGame();  
         return { myMatch: myMatchResult, forcedLoss, gameOver: true };  
     }  
@@ -1919,9 +1950,9 @@ function handlePreseasonWeek() {
             const opponent = potentialOpponents[Math.floor(Math.random() * potentialOpponents.length)];  
             gameState.nextOpponent = opponent;  
             if (gameState.staff.segundoEntrenador) {  
-                addNews(`[Segundo Entrenador] Hemos recibido una invitación para un amistoso de pretemporada contra el ${opponent}.`, 'info');  
+                addNews(`[Segundo Entrenador] Hemos recibido una invitaciÃ³n para un amistoso de pretemporada contra el ${opponent}.`, 'info');  
             } else {  
-                addNews(`Invitación para amistoso de pretemporada contra el ${opponent}.`, 'info');  
+                addNews(`InvitaciÃ³n para amistoso de pretemporada contra el ${opponent}.`, 'info');  
             }  
         }  
     }  
@@ -1955,8 +1986,8 @@ function expandStadium(cost = 50000, capacityIncrease = 10000) {
     gameState.stadiumCapacity += capacityIncrease;  
     gameState.weeklyIncomeBase += Math.floor(capacityIncrease / 20);  
     updateWeeklyFinancials();  
-    addNews(`¡Estadio expandido a ${gameState.stadiumCapacity.toLocaleString('es-ES')} espectadores!`);  
-    return { success: true, message: `¡Estadio expandido a ${gameState.stadiumCapacity} espectadores!` };  
+    addNews(`Â¡Estadio expandido a ${gameState.stadiumCapacity.toLocaleString('es-ES')} espectadores!`);  
+    return { success: true, message: `Â¡Estadio expandido a ${gameState.stadiumCapacity} espectadores!` };  
 }  
   
 function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {  
@@ -1967,8 +1998,8 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
     gameState.trainingLevel = (gameState.trainingLevel || 0) + trainingLevelIncrease;  
     gameState.merchandisingRevenue += 200;  
     updateWeeklyFinancials();  
-    addNews(`¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!`);  
-    return { success: true, message: `¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
+    addNews(`Â¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!`);  
+    return { success: true, message: `Â¡Centro de entrenamiento mejorado a nivel ${gameState.trainingLevel}!` };  
 }  
   
 let currentStaffCandidates = {};  
@@ -1980,7 +2011,7 @@ function generateStaffCandidates(role, forceNew = false) {
   
     const candidates = [];  
     const roleConfig = STAFF_ROLES[role];  
-    const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego", "Miguel", "Sergio", "Elena", "Ricardo", "Carmen", "Javier"];  
+    const staffNames = ["Juan", "Pedro", "MarÃ­a", "Carlos", "Ana", "Luis", "SofÃ­a", "Pablo", "Laura", "Diego", "Miguel", "Sergio", "Elena", "Ricardo", "Carmen", "Javier"];  
   
     const divisionForMultiplier = gameState.division.includes('rfef') ? 'rfef_grupo1' : gameState.division;  
     const divisionFactor = DIVISION_MULTIPLIERS[divisionForMultiplier] || 1;  
@@ -2013,45 +2044,45 @@ function hireStaffFromCandidates(candidate) {
     if (existingStaff) {  
         indemnization = existingStaff.salary * 52;  
         if (gameState.balance < indemnization + candidate.clausula + candidate.salary) {  
-            return { success: false, message: `Dinero insuficiente. Necesitas ${indemnization.toLocaleString('es-ES')}€ para indemnizar a ${existingStaff.name} y pagar al nuevo staff.`, type: 'error' };  
+            return { success: false, message: `Dinero insuficiente. Necesitas ${indemnization.toLocaleString('es-ES')}â‚¬ para indemnizar a ${existingStaff.name} y pagar al nuevo staff.`, type: 'error' };  
         }  
         gameState.balance -= indemnization;  
-        addNews(`¡${existingStaff.name} (${existingStaff.displayName}) ha sido despedido con una indemnización de ${indemnization.toLocaleString('es-ES')}€!`, 'warning');  
+        addNews(`Â¡${existingStaff.name} (${existingStaff.displayName}) ha sido despedido con una indemnizaciÃ³n de ${indemnization.toLocaleString('es-ES')}â‚¬!`, 'warning');  
     }  
   
     if (gameState.balance < candidate.clausula) {  
-        return { success: false, message: `Dinero insuficiente para pagar la cláusula de ${candidate.clausula.toLocaleString('es-ES')}€.` };  
+        return { success: false, message: `Dinero insuficiente para pagar la clÃ¡usula de ${candidate.clausula.toLocaleString('es-ES')}â‚¬.` };  
     }  
     if (gameState.balance < candidate.salary) {  
-        return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}€/sem.` };  
+        return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}â‚¬/sem.` };  
     }  
   
     gameState.balance -= candidate.clausula;  
     gameState.staff[candidate.role] = candidate;  
     currentStaffCandidates[candidate.role] = null;  
     updateWeeklyFinancials();  
-    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${candidate.clausula.toLocaleString('es-ES')}€)`, 'success');  
-    return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
+    addNews(`Â¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (ClÃ¡usula: ${candidate.clausula.toLocaleString('es-ES')}â‚¬)`, 'success');  
+    return { success: true, message: `Â¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
 }  
   
 function setTicketPrice(newPrice) {  
     newPrice = parseInt(newPrice);  
     if (isNaN(newPrice) || newPrice < 5 || newPrice > 100) {  
-        return { success: false, message: 'El precio de la entrada debe ser un número entre 5 y 100.' };  
+        return { success: false, message: 'El precio de la entrada debe ser un nÃºmero entre 5 y 100.' };  
     }  
     gameState.ticketPrice = newPrice;  
     updateWeeklyFinancials();  
-    return { success: true, message: `El precio de la entrada se ha establecido en ${newPrice}€.` };  
+    return { success: true, message: `El precio de la entrada se ha establecido en ${newPrice}â‚¬.` };  
 }  
   
 function setMerchandisingPrice(newPrice) {  
     newPrice = parseInt(newPrice);  
     if (isNaN(newPrice) || newPrice < 1 || newPrice > 50) {  
-        return { success: false, message: 'El precio del merchandising debe ser un número entre 1 y 50.' };  
+        return { success: false, message: 'El precio del merchandising debe ser un nÃºmero entre 1 y 50.' };  
     }  
     gameState.merchandisingPrice = newPrice;  
     updateWeeklyFinancials();  
-    return { success: true, message: `El precio del merchandising se ha establecido en ${newPrice}€.` };  
+    return { success: true, message: `El precio del merchandising se ha establecido en ${newPrice}â‚¬.` };  
 }  
   
 function getLineup() {  
@@ -2064,14 +2095,14 @@ function getReservePlayers() {
 }  
   
 function setLineup(newLineup) {  
-    // Asegurarse de que la nueva alineación no tenga más de 11 jugadores      
+    // Asegurarse de que la nueva alineaciÃ³n no tenga mÃ¡s de 11 jugadores      
     if (newLineup.length > 11) {  
-        // Esto no debería pasar con la lógica actual, pero es una salvaguarda      
-        console.warn("Intentando establecer una alineación con más de 11 jugadores. Se truncará.");  
+        // Esto no deberÃ­a pasar con la lÃ³gica actual, pero es una salvaguarda      
+        console.warn("Intentando establecer una alineaciÃ³n con mÃ¡s de 11 jugadores. Se truncarÃ¡.");  
         newLineup = newLineup.slice(0, 11);  
     }  
           
-    // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
+    // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineaciÃ³n es menor de 11      
     // Esto es importante para que siempre haya 11 en `gameState.lineup`      
     if (newLineup.length < 11) {  
         const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
@@ -2082,7 +2113,7 @@ function setLineup(newLineup) {
                                 .slice(0, 11 - newLineup.length);  
               
         gameState.lineup = [...newLineup, ...playersToFill];  
-        // Asegurarse de que no hay más de 11 después de rellenar      
+        // Asegurarse de que no hay mÃ¡s de 11 despuÃ©s de rellenar      
         if (gameState.lineup.length > 11) {  
             gameState.lineup = gameState.lineup.slice(0, 11);  
         }  
@@ -2093,9 +2124,9 @@ function setLineup(newLineup) {
     // Asegurarse de que todos los jugadores en gameState.lineup existen en gameState.squad      
     const validPlayers = gameState.lineup.every(p => gameState.squad.some(s => s.name === p.name));  
     if (!validPlayers) {  
-        // Si hay jugadores en la alineación que ya no están en la plantilla (ej. vendidos),      
-        // limpiar y reconstruir la alineación      
-        console.warn("Jugadores en la alineación no encontrados en la plantilla. Reconstruyendo alineación.");  
+        // Si hay jugadores en la alineaciÃ³n que ya no estÃ¡n en la plantilla (ej. vendidos),      
+        // limpiar y reconstruir la alineaciÃ³n      
+        console.warn("Jugadores en la alineaciÃ³n no encontrados en la plantilla. Reconstruyendo alineaciÃ³n.");  
         const currentSquadNames = new Set(gameState.squad.map(p => p.name));  
         const filteredLineup = gameState.lineup.filter(p => currentSquadNames.has(p.name));  
         gameState.lineup = filteredLineup;  
@@ -2111,15 +2142,15 @@ function setLineup(newLineup) {
         }  
     }  
       
-    return { success: true, message: 'Alineación guardada correctamente.' };  
+    return { success: true, message: 'AlineaciÃ³n guardada correctamente.' };  
 }  
   
 function validateLineup(lineupToCheck) {  
     if (!Array.isArray(lineupToCheck) || lineupToCheck.length !== 11) {  
-        return { success: false, message: 'La alineación debe contener exactamente 11 jugadores.' };  
+        return { success: false, message: 'La alineaciÃ³n debe contener exactamente 11 jugadores.' };  
     }  
   
-    // ✅ Filtrar jugadores disponibles (no lesionados Y no cedidos OUT)
+    // âœ… Filtrar jugadores disponibles (no lesionados Y no cedidos OUT)
     const availablePlayers = gameState.squad.filter(p => 
         !p.isInjured && 
         p.contractType !== 'loaned_out'
@@ -2131,23 +2162,23 @@ function validateLineup(lineupToCheck) {
   
     for (const player of lineupToCheck) {  
         if (!player) {  
-            return { success: false, message: '¡Error! Hay slots vacíos en la alineación. Debes rellenar los 11 puestos.' };  
+            return { success: false, message: 'Â¡Error! Hay slots vacÃ­os en la alineaciÃ³n. Debes rellenar los 11 puestos.' };  
         }  
         if (playerNamesInLineup.has(player.name)) {  
-            return { success: false, message: `¡Error! El jugador ${player.name} está duplicado en la alineación.` };  
+            return { success: false, message: `Â¡Error! El jugador ${player.name} estÃ¡ duplicado en la alineaciÃ³n.` };  
         }  
         playerNamesInLineup.add(player.name);  
   
         if (!availablePlayerNames.has(player.name)) {  
             const fullPlayer = gameState.squad.find(p => p.name === player.name);  
             if (fullPlayer && fullPlayer.isInjured) {  
-                return { success: false, message: `¡Error! ${player.name} está lesionado y no puede jugar.` };  
+                return { success: false, message: `Â¡Error! ${player.name} estÃ¡ lesionado y no puede jugar.` };  
             }
-            // ✅ Verificar si está cedido OUT
+            // âœ… Verificar si estÃ¡ cedido OUT
             if (fullPlayer && fullPlayer.contractType === 'loaned_out') {
-                return { success: false, message: `¡Error! ${player.name} está cedido al ${fullPlayer.loanedTo} y no puede jugar.` };
+                return { success: false, message: `Â¡Error! ${player.name} estÃ¡ cedido al ${fullPlayer.loanedTo} y no puede jugar.` };
             }
-            return { success: false, message: `¡Error! ${player.name} no está en la plantilla o no está apto.` };  
+            return { success: false, message: `Â¡Error! ${player.name} no estÃ¡ en la plantilla o no estÃ¡ apto.` };  
         }  
   
         if (player.position === 'POR') {  
@@ -2158,25 +2189,25 @@ function validateLineup(lineupToCheck) {
     }  
   
     if (!hasGK) {  
-        return { success: false, message: '¡Error! Necesitas al menos un portero en la alineación.' };  
+        return { success: false, message: 'Â¡Error! Necesitas al menos un portero en la alineaciÃ³n.' };  
     }  
         
     if (numNonGkPlayers !== 10) {  
-        return { success: false, message: '¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
+        return { success: false, message: 'Â¡Error! Debes alinear exactamente 1 portero y 10 jugadores de campo.' };  
     }  
   
-    return { success: true, message: 'Alineación válida.' };  
+    return { success: true, message: 'AlineaciÃ³n vÃ¡lida.' };  
 } 
   
 function saveToLocalStorage() {  
     // localStorage DESACTIVADO - usar Firebase
-    console.log('🚫 saveToLocalStorage desactivado - usa Firebase');
+    console.log('ðŸš« saveToLocalStorage desactivado - usa Firebase');
     return { success: false, message: 'Usa Firebase para guardar partidas.' };  
 }
   
 function loadFromLocalStorage() {  
     // localStorage DESACTIVADO - retornar siempre false
-    console.log('🚫 loadFromLocalStorage desactivado - usa Firebase');
+    console.log('ðŸš« loadFromLocalStorage desactivado - usa Firebase');
     return { success: false, message: 'Usa Firebase para cargar partidas.' };  
 }
   
@@ -2187,12 +2218,12 @@ function resetGame() {
     window.location.reload();  
 }  
   
-// NEW: Función para obtener el calendario completo  
+// NEW: FunciÃ³n para obtener el calendario completo  
 function getSeasonCalendar() {  
     return gameState.seasonCalendar;  
 }  
 
-// ✅ AÑADIR EN gameLogic.js
+// âœ… AÃ‘ADIR EN gameLogic.js
 
 function firePlayer(playerName) {
     const playerIndex = gameState.squad.findIndex(p => p.name === playerName);
@@ -2208,17 +2239,17 @@ function firePlayer(playerName) {
         return { success: false, message: 'Solo puedes despedir jugadores en propiedad.' };
     }
     
-    // Calcular indemnización (salario × años restantes)
-    const compensation = player.salary * player.contractYears * 52; // 52 semanas/año
+    // Calcular indemnizaciÃ³n (salario Ã— aÃ±os restantes)
+    const compensation = player.salary * player.contractYears * 52; // 52 semanas/aÃ±o
     
     if (gameState.balance < compensation) {
         return { 
             success: false, 
-            message: `No tienes suficiente dinero para pagar la indemnización de ${compensation.toLocaleString('es-ES')}€` 
+            message: `No tienes suficiente dinero para pagar la indemnizaciÃ³n de ${compensation.toLocaleString('es-ES')}â‚¬` 
         };
     }
     
-    // Pagar indemnización
+    // Pagar indemnizaciÃ³n
     gameState.balance -= compensation;
     
     // Registrar gasto
@@ -2230,13 +2261,13 @@ function firePlayer(playerName) {
     
     // Noticia
     addNews(
-        `🚪 ${playerName} ha sido despedido del club. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`,
+        `ðŸšª ${playerName} ha sido despedido del club. IndemnizaciÃ³n pagada: ${compensation.toLocaleString('es-ES')}â‚¬`,
         'warning'
     );
     
     return { 
         success: true, 
-        message: `${playerName} ha sido despedido. Indemnización: ${compensation.toLocaleString('es-ES')}€`,
+        message: `${playerName} ha sido despedido. IndemnizaciÃ³n: ${compensation.toLocaleString('es-ES')}â‚¬`,
         compensation: compensation
     };
 }
@@ -2245,9 +2276,9 @@ function firePlayer(playerName) {
 // SISTEMA DE OFERTAS DE IA PARA VENTAS/CESIONES
 // ========================================
 
-// Función que se ejecuta cada semana para generar ofertas
+// FunciÃ³n que se ejecuta cada semana para generar ofertas
 function generateAIOffers() {
-    // ✅ FILTRAR: solo jugadores propios (owned) que estén en venta/cesión
+    // âœ… FILTRAR: solo jugadores propios (owned) que estÃ©n en venta/cesiÃ³n
     const playersForSale = gameState.squad.filter(p => 
         (p.transferListed || p.loanListed) && 
         p.contractType === 'owned'
@@ -2256,7 +2287,7 @@ function generateAIOffers() {
     if (playersForSale.length === 0) return;
     
     playersForSale.forEach(player => {
-        // Aumentar probabilidad según tiempo en mercado
+        // Aumentar probabilidad segÃºn tiempo en mercado
         let offerChance = 0.7;
         
         if (player.weeksOnMarket >= 2) offerChance = 0.9; // 90% si lleva 2+ semanas
@@ -2270,7 +2301,7 @@ function generateAIOffers() {
 
 
 
-// Generar oferta específica para un jugador
+// Generar oferta especÃ­fica para un jugador
 function generateOfferForPlayer(player) {
     // Seleccionar club oferente aleatorio
     const allClubs = [
@@ -2301,12 +2332,12 @@ function generateOfferForPlayer(player) {
         
         // Noticia
         addNews(
-            `📨 ¡Oferta recibida! ${offeringClub} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${player.askingPrice.toLocaleString('es-ES')}€)`,
+            `ðŸ“¨ Â¡Oferta recibida! ${offeringClub} ofrece ${offerAmount.toLocaleString('es-ES')}â‚¬ por ${player.name} (pedÃ­as ${player.askingPrice.toLocaleString('es-ES')}â‚¬)`,
             offerAmount >= player.askingPrice ? 'success' : 'info'
         );
         
     } else if (player.loanListed) {
-        // Oferta de CESIÓN
+        // Oferta de CESIÃ“N
         // La IA asume entre 30% y 70% del salario
         const wagePercentage = 0.3 + Math.random() * 0.4; // 30% - 70%
         const wageContribution = Math.round(player.salary * wagePercentage);
@@ -2322,7 +2353,7 @@ function generateOfferForPlayer(player) {
         
         // Noticia
         addNews(
-            `📨 ¡Oferta de cesión! ${offeringClub} quiere ceder a ${player.name} y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`,
+            `ðŸ“¨ Â¡Oferta de cesiÃ³n! ${offeringClub} quiere ceder a ${player.name} y asumirÃ­a ${wageContribution.toLocaleString('es-ES')}â‚¬/sem de su salario (${Math.round(wagePercentage * 100)}%)`,
             'info'
         );
     }
@@ -2357,7 +2388,7 @@ function renderOffersList() {
         return;
     }
     
-    let html = '<h2>📨 Ofertas Recibidas</h2>';
+    let html = '<h2>ðŸ“¨ Ofertas Recibidas</h2>';
     
     gameState.pendingOffers.forEach((offer, index) => {
         if (offer.type === 'transfer') {
@@ -2373,29 +2404,29 @@ function renderOffersList() {
                     margin: 10px 0;
                     border-radius: 5px;
                 ">
-                    <h3 style="color: #FFD700;">💰 Oferta de Compra</h3>
+                    <h3 style="color: #FFD700;">ðŸ’° Oferta de Compra</h3>
                     <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
                     <p><strong>Club:</strong> ${offer.club}</p>
-                    <p><strong>Oferta:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.amount.toLocaleString('es-ES')}€</span></p>
-                    <p><strong>Precio solicitado:</strong> ${offer.originalAskingPrice.toLocaleString('es-ES')}€ 
+                    <p><strong>Oferta:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.amount.toLocaleString('es-ES')}â‚¬</span></p>
+                    <p><strong>Precio solicitado:</strong> ${offer.originalAskingPrice.toLocaleString('es-ES')}â‚¬ 
                        <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
                     </p>
                     
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer(${index})">
-                            ✅ Aceptar
+                            âœ… Aceptar
                         </button>
                         <button class="btn" style="background: #2196F3;" onclick="window.counterOffer(${index})">
-                            🔄 Contraoferta
+                            ðŸ”„ Contraoferta
                         </button>
                         <button class="btn" style="background: #c73446;" onclick="window.rejectOffer(${index})">
-                            ❌ Rechazar
+                            âŒ Rechazar
                         </button>
                     </div>
                 </div>
             `;
         } else if (offer.type === 'loan') {
-            // Oferta de CESIÓN
+            // Oferta de CESIÃ“N
             const percentage = Math.round((offer.wageContribution / offer.totalSalary) * 100);
             const isGoodOffer = percentage >= 50;
             
@@ -2407,21 +2438,21 @@ function renderOffersList() {
                     margin: 10px 0;
                     border-radius: 5px;
                 ">
-                    <h3 style="color: #FFD700;">🔄 Oferta de Cesión</h3>
+                    <h3 style="color: #FFD700;">ðŸ”„ Oferta de CesiÃ³n</h3>
                     <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
                     <p><strong>Club:</strong> ${offer.club}</p>
-                    <p><strong>Salario total:</strong> ${offer.totalSalary.toLocaleString('es-ES')}€/sem</p>
-                    <p><strong>Asumen:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.wageContribution.toLocaleString('es-ES')}€/sem</span> 
+                    <p><strong>Salario total:</strong> ${offer.totalSalary.toLocaleString('es-ES')}â‚¬/sem</p>
+                    <p><strong>Asumen:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.wageContribution.toLocaleString('es-ES')}â‚¬/sem</span> 
                        <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
                     </p>
-                    <p><strong>Tú pagas:</strong> <span style="color: #ff3333;">${(offer.totalSalary - offer.wageContribution).toLocaleString('es-ES')}€/sem</span></p>
+                    <p><strong>TÃº pagas:</strong> <span style="color: #ff3333;">${(offer.totalSalary - offer.wageContribution).toLocaleString('es-ES')}â‚¬/sem</span></p>
                     
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer(${index})">
-                            ✅ Aceptar
+                            âœ… Aceptar
                         </button>
                         <button class="btn" style="background: #c73446;" onclick="window.rejectOffer(${index})">
-                            ❌ Rechazar
+                            âŒ Rechazar
                         </button>
                     </div>
                 </div>
@@ -2435,10 +2466,10 @@ function renderOffersList() {
 // Aceptar oferta
 // Aceptar oferta
 function acceptOffer(offerIndex) {
-    // ✅ VALIDAR
+    // âœ… VALIDAR
     if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
-        console.error('❌ Oferta no encontrada:', offerIndex);
-        alert('Error: Oferta no válida');
+        console.error('âŒ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no vÃ¡lida');
         return;
     }
     
@@ -2456,22 +2487,22 @@ function acceptOffer(offerIndex) {
         }
         
         addNews(
-            `✅ ¡Venta cerrada! Has vendido a ${offer.player.name} al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}€`,
+            `âœ… Â¡Venta cerrada! Has vendido a ${offer.player.name} al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}â‚¬`,
             'success'
         );
         
     } else if (offer.type === 'loan') {
-        // Cesión
+        // CesiÃ³n
         const player = gameState.squad.find(p => p.name === offer.player.name);
         if (player) {
             player.contractType = 'loaned_out';
-            player.loanedTo = offer.club; // ✅ Corregido: loanedTo en lugar de loanedToClub
+            player.loanedTo = offer.club; // âœ… Corregido: loanedTo en lugar de loanedToClub
             player.originalSalary = player.salary;
             player.salary = player.salary - offer.wageContribution;
         }
         
         addNews(
-            `✅ ¡Cesión cerrada! Has cedido a ${offer.player.name} al ${offer.club}. Asumen ${offer.wageContribution.toLocaleString('es-ES')}€/sem del salario`,
+            `âœ… Â¡CesiÃ³n cerrada! Has cedido a ${offer.player.name} al ${offer.club}. Asumen ${offer.wageContribution.toLocaleString('es-ES')}â‚¬/sem del salario`,
             'success'
         );
     }
@@ -2479,7 +2510,7 @@ function acceptOffer(offerIndex) {
     // Eliminar oferta
     gameState.pendingOffers.splice(offerIndex, 1);
     
-    // ✅ GUARDAR CAMBIOS
+    // âœ… GUARDAR CAMBIOS
     updateWeeklyFinancials();
     saveToLocalStorage();
     
@@ -2499,17 +2530,17 @@ function acceptOffer(offerIndex) {
 
 // Rechazar oferta
 function rejectOffer(offerIndex) {
-    // ✅ VALIDAR
+    // âœ… VALIDAR
     if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
-        console.error('❌ Oferta no encontrada:', offerIndex);
-        alert('Error: Oferta no válida');
+        console.error('âŒ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no vÃ¡lida');
         return;
     }
     
     const offer = gameState.pendingOffers[offerIndex];
     
     addNews(
-        `❌ Has rechazado la oferta de ${offer.club} por ${offer.player.name}`,
+        `âŒ Has rechazado la oferta de ${offer.club} por ${offer.player.name}`,
         'info'
     );
     
@@ -2527,10 +2558,10 @@ function rejectOffer(offerIndex) {
 
 // Contraoferta (solo para ventas)
 function counterOffer(offerIndex) {
-    // ✅ VALIDAR
+    // âœ… VALIDAR
     if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
-        console.error('❌ Oferta no encontrada:', offerIndex);
-        alert('Error: Oferta no válida');
+        console.error('âŒ Oferta no encontrada:', offerIndex);
+        alert('Error: Oferta no vÃ¡lida');
         return;
     }
     
@@ -2538,9 +2569,9 @@ function counterOffer(offerIndex) {
     
     const counterAmount = prompt(
         `Contraoferta para ${offer.player.name}\n\n` +
-        `Oferta actual: ${offer.amount.toLocaleString('es-ES')}€\n` +
-        `Tu precio: ${offer.originalAskingPrice.toLocaleString('es-ES')}€\n\n` +
-        `¿Cuánto quieres pedir?`,
+        `Oferta actual: ${offer.amount.toLocaleString('es-ES')}â‚¬\n` +
+        `Tu precio: ${offer.originalAskingPrice.toLocaleString('es-ES')}â‚¬\n\n` +
+        `Â¿CuÃ¡nto quieres pedir?`,
         offer.originalAskingPrice
     );
     
@@ -2548,7 +2579,7 @@ function counterOffer(offerIndex) {
     
     const counter = parseInt(counterAmount);
     if (isNaN(counter) || counter < 0) {
-        alert('Cantidad inválida');
+        alert('Cantidad invÃ¡lida');
         return;
     }
     
@@ -2562,15 +2593,15 @@ function counterOffer(offerIndex) {
         offer.originalAskingPrice = counter;
         
         addNews(
-            `✅ ${offer.club} ha aceptado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            `âœ… ${offer.club} ha aceptado tu contraoferta de ${counter.toLocaleString('es-ES')}â‚¬ por ${offer.player.name}`,
             'success'
         );
         
-        // Ejecutar venta automáticamente
+        // Ejecutar venta automÃ¡ticamente
         acceptOffer(offerIndex);
     } else {
         addNews(
-            `❌ ${offer.club} ha rechazado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            `âŒ ${offer.club} ha rechazado tu contraoferta de ${counter.toLocaleString('es-ES')}â‚¬ por ${offer.player.name}`,
             'warning'
         );
         
@@ -2586,7 +2617,7 @@ function counterOffer(offerIndex) {
     }
 }
 
-// Recomendaciones del secretario técnico
+// Recomendaciones del secretario tÃ©cnico
 function checkMarketRecommendations() {
     const playersForSale = gameState.squad.filter(p => p.transferListed || p.loanListed);
     
@@ -2604,12 +2635,12 @@ function checkMarketRecommendations() {
                 if (recommendation < 0.5) {
                     const newPrice = Math.round(player.askingPrice * 0.85);
                     addNews(
-                        `[Secretario Técnico] ${player.name} lleva ${player.weeksOnMarket} semanas sin ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}€`,
+                        `[Secretario TÃ©cnico] ${player.name} lleva ${player.weeksOnMarket} semanas sin ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}â‚¬`,
                         'warning'
                     );
                 } else {
                     addNews(
-                        `[Secretario Técnico] ${player.name} no recibe ofertas. Quizá deberías retirarlo del mercado y probarlo en la alineación`,
+                        `[Secretario TÃ©cnico] ${player.name} no recibe ofertas. QuizÃ¡ deberÃ­as retirarlo del mercado y probarlo en la alineaciÃ³n`,
                         'info'
                     );
                 }
@@ -2629,7 +2660,7 @@ export {
     signYoungster,  
     promoteYoungster,  
     sellPlayer,  
-    firePlayer,  // <-- ✅ AÑADE ESTA LÍNEA
+    firePlayer,  // <-- âœ… AÃ‘ADE ESTA LÃNEA
     expandStadium,  
     improveFacilities,  
     generateStaffCandidates,  
@@ -2658,20 +2689,25 @@ export {
     getSeasonCalendar  
 }; 
 
-// ✅ Exponer funciones de ofertas globalmente
+// Exponer funciones globalmente
 if (typeof window !== 'undefined') {
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;
     window.counterOffer = counterOffer;
-    
-    // También exponer el gameLogic completo
+
+    // Exponer funciones de mercado globalmente
+    window.loadMarketFromFirestore = loadMarketFromFirestore;
+    window.removeFromMarketByName = removeFromMarketByName;
+    window.getPlayerMarketFn = getPlayerMarket;
+
+    // Exponer el gameLogic completo
     window.gameLogic = {
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
         addNews,
         saveToLocalStorage,
-        // ... resto de funciones que necesites
+        getPlayerMarket,
     };
 }
 
@@ -2685,7 +2721,7 @@ function getAgeModifier(age) {
 }
 
 /*// ---------------------------------------------------
-// FUNCIÓN PARA ACTUALIZAR EL CÍRCULO CENTRAL
+// FUNCIÃ“N PARA ACTUALIZAR EL CÃRCULO CENTRAL
 // ---------------------------------------------------
 window.renderNextMatchInfo = function(state) {
     if (!state) return;
@@ -2709,11 +2745,11 @@ window.renderNextMatchInfo = function(state) {
 };
 
 // ---------------------------------------------------
-// FUNCIÓN AUXILIAR: calcular el próximo partido
+// FUNCIÃ“N AUXILIAR: calcular el prÃ³ximo partido
 // ---------------------------------------------------
 window.updateNextMatchInfo = function() {
-    let nextWeek = gameState.week; // siempre la próxima jornada a jugar
-    let nextOpponent = "—";
+    let nextWeek = gameState.week; // siempre la prÃ³xima jornada a jugar
+    let nextOpponent = "â€”";
 
     if (gameState.seasonType === 'preseason') {
         nextOpponent = "Rival amistoso";
@@ -2733,7 +2769,7 @@ window.updateNextMatchInfo = function() {
 };*/
 
 // ---------------------------------------------------
-// FUNCIÓN PARA ACTUALIZAR EL CÍRCULO CENTRAL
+// FUNCIÃ“N PARA ACTUALIZAR EL CÃRCULO CENTRAL
 // ---------------------------------------------------
 window.renderNextMatchInfo = function(state) {
     if (!state || !state.nextMatch) return;
@@ -2745,7 +2781,7 @@ window.renderNextMatchInfo = function(state) {
     // Actualizar jornada
     dateEl.textContent = `Jornada ${state.week}`;
 
-    // Determinar orden de equipos según local/visitante
+    // Determinar orden de equipos segÃºn local/visitante
     let teamDisplay;
     if (state.nextMatch.home === state.team) {
         // Juega en casa
@@ -2759,10 +2795,10 @@ window.renderNextMatchInfo = function(state) {
 };
 
 // ---------------------------------------------------
-// ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO
+// ACTUALIZAR CÃRCULO CENTRAL CON PRÃ“XIMO PARTIDO
 // ---------------------------------------------------
 window.updateNextMatchInfo = function() {
-    // Obtener el próximo partido según el estado
+    // Obtener el prÃ³ximo partido segÃºn el estado
     let nextMatch = null;
 
     if (gameState.seasonType === 'preseason') {
@@ -2773,8 +2809,8 @@ window.updateNextMatchInfo = function() {
             away: "Amistoso"
         };
     } else {
-        // Temporada regular: partido de la próxima jornada
-        const nextWeek = gameState.week; // el próximo partido es la jornada actual
+        // Temporada regular: partido de la prÃ³xima jornada
+        const nextWeek = gameState.week; // el prÃ³ximo partido es la jornada actual
         const nextWeekMatches = gameState.seasonCalendar.filter(
             match => match.week === nextWeek &&
                      (match.home === gameState.team || match.away === gameState.team)
@@ -2792,7 +2828,7 @@ window.updateNextMatchInfo = function() {
     // Jornada
     dateEl.textContent = `Jornada ${nextMatch.week || '-'}`;
 
-    // Determinar orden de equipos según si jugamos en casa o fuera
+    // Determinar orden de equipos segÃºn si jugamos en casa o fuera
     let teamDisplay;
     if (nextMatch.home === gameState.team) {
         teamDisplay = `${gameState.team}\nvs\n${nextMatch.away}`;
@@ -2808,7 +2844,7 @@ window.updateNextMatchInfo = function() {
 
 
 // ---------------------------------------------------
-// LLAMAR AL CARGAR PÁGINA
+// LLAMAR AL CARGAR PÃGINA
 // ---------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
     window.updateNextMatchInfo();
@@ -2888,12 +2924,12 @@ function renderTactic() {
 
 
 
-// Llamar cuando abras la página de tácticas
+// Llamar cuando abras la pÃ¡gina de tÃ¡cticas
 document.getElementById('formationSelect').addEventListener('change', () => {
     renderTactic();
 });
 
-// Conexión de selects de formación y mentalidad
+// ConexiÃ³n de selects de formaciÃ³n y mentalidad
 window.updateFormation = () => {
     const sel = document.getElementById('formationSelect');
     gameState.formation = sel.value;
@@ -2903,20 +2939,20 @@ window.updateFormation = () => {
 window.updateMentality = () => {
     const sel = document.getElementById('mentalitySelect');
     gameState.mentality = sel.value;
-    // Opcional: actualizar colores de jugadores según mentalidad
+    // Opcional: actualizar colores de jugadores segÃºn mentalidad
 };
 
 function renderBench() {
     const benchDiv = document.getElementById('tactic-bench');
 
-    // Limpia el contenido anterior (menos el título)
+    // Limpia el contenido anterior (menos el tÃ­tulo)
     benchDiv.innerHTML = '<h3>Suplentes</h3>';
 
     // Itera sobre los suplentes
     gameState.bench.forEach(player => {
         const playerEl = document.createElement('div');
         playerEl.className = 'bench-player';
-        playerEl.textContent = player.name; // o icono / número
+        playerEl.textContent = player.name; // o icono / nÃºmero
         benchDiv.appendChild(playerEl);
     });
 }
@@ -2925,5 +2961,5 @@ window.updateFormation = () => {
     const sel = document.getElementById('formationSelect');
     gameState.formation = sel.value;
     renderTactic();
-    renderBench(); // ✅ actualiza suplentes
+    renderBench(); // âœ… actualiza suplentes
 };
