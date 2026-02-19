@@ -1782,8 +1782,8 @@ Salida
 
     .quadrant.bottom-left,
     .quadrant.bottom-right {
-        flex-direction: column;
-        justify-content: flex-end;
+        flex-direction: column-reverse;
+        justify-content: flex-start;
     }
 
     /* Titulo de seccion mas pequeno */
