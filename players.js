@@ -1,10 +1,10 @@
 // players.js - Base de datos de jugadores profesionales y cantera  
-// ✅ CORREGIDO: Campos contractType, contractYears y releaseClause
-// ✅ NUEVO: Soporte para plantillas reales desde Firestore
+// âœ… CORREGIDO: Campos contractType, contractYears y releaseClause
+// âœ… NUEVO: Soporte para plantillas reales desde Firestore
 
 import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS, TEAMS_DATA } from './config.js';  
   
-// Combinar todos los equipos de TEAMS_DATA para la generación de jugadores de la IA  
+// Combinar todos los equipos de TEAMS_DATA para la generaciÃ³n de jugadores de la IA  
 const ALL_AI_CLUBS = [  
     ...TEAMS_DATA.primera,  
     ...TEAMS_DATA.segunda,  
@@ -14,17 +14,17 @@ const ALL_AI_CLUBS = [
   
 const PLAYER_FIRST_NAMES = [  
     "Juan", "Pedro", "Pablo", "Alberto", "Manuel", "Sergio", "Daniel", "Carlos", "Luis", "Francisco",  
-    "Javier", "David", "José", "Antonio", "Fernando", "Gonzalo", "Diego", "Miguel", "Álvaro", "Adrián",  
-    "Iván", "Jorge", "Raúl", "Ricardo", "Roberto", "Rubén", "Santiago", "Saúl", "Sebastián", "Vicente",  
-    "Marco", "Alejandro", "Gabriel", "Mario", "Ángel", "Héctor", "Óscar", "Lucas", "Hugo", "Bruno",  
-    "Guillermo", "Ignacio", "Enrique", "Emilio", "Arturo", "Ramón", "César", "Israel", "Joaquín", "Rafael"  
+    "Javier", "David", "JosÃ©", "Antonio", "Fernando", "Gonzalo", "Diego", "Miguel", "Ãlvaro", "AdriÃ¡n",  
+    "IvÃ¡n", "Jorge", "RaÃºl", "Ricardo", "Roberto", "RubÃ©n", "Santiago", "SaÃºl", "SebastiÃ¡n", "Vicente",  
+    "Marco", "Alejandro", "Gabriel", "Mario", "Ãngel", "HÃ©ctor", "Ã“scar", "Lucas", "Hugo", "Bruno",  
+    "Guillermo", "Ignacio", "Enrique", "Emilio", "Arturo", "RamÃ³n", "CÃ©sar", "Israel", "JoaquÃ­n", "Rafael"  
 ];  
   
 const PLAYER_LAST_NAMES = [  
-    "García", "Fernández", "González", "Rodríguez", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Martín",  
-    "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutierrez",  
-    "Navarro", "Torres", "Ramírez", "Serrano", "Molina", "Ortiz", "Delgado", "Castro", "Rubio", "Marín",  
-    "Domínguez", "Reyes", "Vázquez", "Cordero", "Cruz", "Guerrero", "Paredes", "Fuentes", "Flores", "Benítez"  
+    "GarcÃ­a", "FernÃ¡ndez", "GonzÃ¡lez", "RodrÃ­guez", "LÃ³pez", "MartÃ­nez", "SÃ¡nchez", "PÃ©rez", "GÃ³mez", "MartÃ­n",  
+    "JimÃ©nez", "Ruiz", "HernÃ¡ndez", "DÃ­az", "Moreno", "MuÃ±oz", "Ãlvarez", "Romero", "Alonso", "Gutierrez",  
+    "Navarro", "Torres", "RamÃ­rez", "Serrano", "Molina", "Ortiz", "Delgado", "Castro", "Rubio", "MarÃ­n",  
+    "DomÃ­nguez", "Reyes", "VÃ¡zquez", "Cordero", "Cruz", "Guerrero", "Paredes", "Fuentes", "Flores", "BenÃ­tez"  
 ];  
   
 function generateRandomName() {  
@@ -76,7 +76,7 @@ export function calculateOverall(player) {
     return Math.round(overallSum / totalWeight);  
 }  
 
-// ✅ FUNCIÓN: Calcular cláusula de rescisión
+// âœ… FUNCIÃ“N: Calcular clÃ¡usula de rescisiÃ³n
 function calculateReleaseClause(player) {
     let multiplier = 2.0;
     if (player.age < 25) multiplier += 0.5;
@@ -87,18 +87,18 @@ function calculateReleaseClause(player) {
     return Math.round(baseClause / 10000) * 10000;
 }
 
-// ✅ FUNCIÓN: Asignar tipo de contrato
+// âœ… FUNCIÃ“N: Asignar tipo de contrato
 function assignContractType() {
     return Math.random() < 0.8 ? 'owned' : 'loaned';
 }
 
-// ✅ FUNCIÓN: Asignar duración de contrato
+// âœ… FUNCIÃ“N: Asignar duraciÃ³n de contrato
 function assignContractYears(contractType, age) {
     if (contractType === 'loaned') return 1;
     
-    if (age < 23) return 3 + Math.floor(Math.random() * 3); // 3-5 años
-    if (age < 30) return 2 + Math.floor(Math.random() * 3); // 2-4 años
-    return 1 + Math.floor(Math.random() * 2); // 1-2 años
+    if (age < 23) return 3 + Math.floor(Math.random() * 3); // 3-5 aÃ±os
+    if (age < 30) return 2 + Math.floor(Math.random() * 3); // 2-4 aÃ±os
+    return 1 + Math.floor(Math.random() * 2); // 1-2 aÃ±os
 }
   
 function generateRandomAttributes(minVal, maxVal) {  
@@ -114,15 +114,15 @@ function generateRandomFoot() {
     return feet[Math.floor(Math.random() * feet.length)];  
 }  
 
-// ✅ NUEVO: Función para cargar plantilla real de un equipo desde Firestore
+// âœ… NUEVO: FunciÃ³n para cargar plantilla real de un equipo desde Firestore
 async function loadTeamSquad(teamName) {
     if (window.getTeamData) {
         try {
             const teamData = await window.getTeamData(teamName);
             if (teamData && teamData.squad && Array.isArray(teamData.squad) && teamData.squad.length > 0) {
-                console.log(`✅ Cargando plantilla real de ${teamName}: ${teamData.squad.length} jugadores`);
+                console.log(`âœ… Cargando plantilla real de ${teamName}: ${teamData.squad.length} jugadores`);
                 
-                // Convertir jugadores básicos a jugadores completos con todos los campos necesarios
+                // Convertir jugadores bÃ¡sicos a jugadores completos con todos los campos necesarios
                 return teamData.squad.map(player => {
                     const completedPlayer = {
                         ...player,
@@ -181,22 +181,22 @@ async function loadTeamSquad(teamName) {
                 });
             }
         } catch (error) {
-            console.warn(`⚠️ No se pudo cargar plantilla real de ${teamName}:`, error);
+            console.warn(`âš ï¸ No se pudo cargar plantilla real de ${teamName}:`, error);
         }
     }
     return null;
 }
 
-// Base de jugadores de élite
+// Base de jugadores de Ã©lite
 const ELITE_PLAYERS_BASE = [  
-  { name: 'Griezmann', position: 'DC', age: 33, salary: 15000, value: 180000, club: 'Atlético Madrid', EN: 70, VE: 85, RE: 80, AG: 85, CA: 80, EF: 90, MO: 88, AT: 90, DF: 60, foot: 'Zurdo' },  
-  { name: 'Koke', position: 'MC', age: 32, salary: 12000, value: 150000, club: 'Atlético Madrid', EN: 80, VE: 70, RE: 88, AG: 80, CA: 80, EF: 85, MO: 85, AT: 80, DF: 80, foot: 'Diestro' },  
-  { name: 'Oblak', position: 'POR', age: 31, salary: 10000, value: 120000, club: 'Atlético Madrid', EN: 90, VE: 60, RE: 70, AG: 80, CA: 95, EF: 85, MO: 88, AT: 40, DF: 95, foot: 'Diestro' },  
-  { name: 'Nahuel Molina', position: 'LD', age: 26, salary: 8000, value: 90000, club: 'Atlético Madrid', EN: 80, VE: 85, RE: 85, AG: 75, CA: 70, EF: 70, MO: 80, AT: 75, DF: 80, foot: 'Diestro' },  
-  { name: 'José Giménez', position: 'DFC', age: 29, salary: 9000, value: 100000, club: 'Atlético Madrid', EN: 90, VE: 70, RE: 85, AG: 90, CA: 85, EF: 75, MO: 85, AT: 50, DF: 90, foot: 'Diestro' },  
+  { name: 'Griezmann', position: 'DC', age: 33, salary: 15000, value: 180000, club: 'AtlÃ©tico Madrid', EN: 70, VE: 85, RE: 80, AG: 85, CA: 80, EF: 90, MO: 88, AT: 90, DF: 60, foot: 'Zurdo' },  
+  { name: 'Koke', position: 'MC', age: 32, salary: 12000, value: 150000, club: 'AtlÃ©tico Madrid', EN: 80, VE: 70, RE: 88, AG: 80, CA: 80, EF: 85, MO: 85, AT: 80, DF: 80, foot: 'Diestro' },  
+  { name: 'Oblak', position: 'POR', age: 31, salary: 10000, value: 120000, club: 'AtlÃ©tico Madrid', EN: 90, VE: 60, RE: 70, AG: 80, CA: 95, EF: 85, MO: 88, AT: 40, DF: 95, foot: 'Diestro' },  
+  { name: 'Nahuel Molina', position: 'LD', age: 26, salary: 8000, value: 90000, club: 'AtlÃ©tico Madrid', EN: 80, VE: 85, RE: 85, AG: 75, CA: 70, EF: 70, MO: 80, AT: 75, DF: 80, foot: 'Diestro' },  
+  { name: 'JosÃ© GimÃ©nez', position: 'DFC', age: 29, salary: 9000, value: 100000, club: 'AtlÃ©tico Madrid', EN: 90, VE: 70, RE: 85, AG: 90, CA: 85, EF: 75, MO: 85, AT: 50, DF: 90, foot: 'Diestro' },  
 ];  
 
-// Base de jóvenes
+// Base de jÃ³venes
 const YOUNGSTERS_BASE = [  
   { name: 'Gavi', position: 'MC', age: 19, salary: 1000, value: 50000, club: 'FC Barcelona', EN: 65, VE: 70, RE: 75, AG: 78, CA: 68, EF: 70, MO: 75, AT: 72, DF: 65, foot: 'Diestro', potential: 92 },  
   { name: 'Lamine Yamal', position: 'EXT', age: 17, salary: 800, value: 40000, club: 'FC Barcelona', EN: 55, VE: 85, RE: 70, AG: 70, CA: 65, EF: 75, MO: 70, AT: 78, DF: 50, foot: 'Zurdo', potential: 94 },  
@@ -205,7 +205,7 @@ const YOUNGSTERS_BASE = [
 let ALL_AVAILABLE_PLAYERS = [];  
 let ALL_AVAILABLE_YOUNGSTERS = [];  
 
-// ✅ CORREGIDO: Generar jugador aleatorio
+// âœ… CORREGIDO: Generar jugador aleatorio
 function generateRandomPlayer(minOverallTarget, maxOverallTarget) {  
     const position = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];  
     const age = 18 + Math.floor(Math.random() * 15);
@@ -236,7 +236,7 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
     player.askingPrice = player.value + Math.floor(Math.random() * player.value * 0.5);  
     player.loanWageContribution = Math.random() < 0.5 ? Math.floor(Math.random() * 0.3 * player.salary) : 0;  
 
-    // ✅ CAMPOS DE CONTRATO
+    // âœ… CAMPOS DE CONTRATO
     player.contractType = assignContractType();
     player.contractYears = assignContractYears(player.contractType, age);
     player.releaseClause = calculateReleaseClause(player);
@@ -244,7 +244,7 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
     return player;
 }  
 
-// ✅ CORREGIDO: Generar joven
+// âœ… CORREGIDO: Generar joven
 function generateRandomYoungster(minOverallTarget, maxOverallTarget, highPotential = false) {  
     const position = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];  
     const age = 16 + Math.floor(Math.random() * 5);
@@ -271,7 +271,7 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, highPotenti
     player.value = Math.floor(player.overall * 500 + player.potential * 800);  
     player.cost = Math.floor(player.value * (0.5 + Math.random() * 0.5));  
 
-    // ✅ JÓVENES = SIN CONTRATO (free agents)
+    // âœ… JÃ“VENES = SIN CONTRATO (free agents)
     player.contractType = 'free_agent';
     player.contractYears = 0;
     player.releaseClause = 0;
@@ -279,7 +279,7 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, highPotenti
     return player;  
 }  
 
-// ✅ CORREGIDO: Inicializar base de datos
+// âœ… CORREGIDO: Inicializar base de datos
 function initPlayerDatabase() {  
     ALL_AVAILABLE_PLAYERS = [];  
     
@@ -297,7 +297,7 @@ function initPlayerDatabase() {
         if (!fullPlayer.loanListed) fullPlayer.loanListed = false;  
         if (!fullPlayer.loanWageContribution) fullPlayer.loanWageContribution = 0;  
 
-        // ✅ CAMPOS DE CONTRATO
+        // âœ… CAMPOS DE CONTRATO
         fullPlayer.contractType = assignContractType();
         fullPlayer.contractYears = assignContractYears(fullPlayer.contractType, fullPlayer.age);
         fullPlayer.releaseClause = calculateReleaseClause(fullPlayer);
@@ -330,7 +330,7 @@ function initYoungsterDatabase() {
         if (!fullYoungster.potential) fullYoungster.potential = fullYoungster.overall + Math.floor(Math.random() * (95 - fullYoungster.overall));  
         if (!fullYoungster.cost) fullYoungster.cost = fullYoungster.value;  
 
-        // ✅ JÓVENES = FREE AGENTS
+        // âœ… JÃ“VENES = FREE AGENTS
         fullYoungster.contractType = 'free_agent';
         fullYoungster.contractYears = 0;
         fullYoungster.releaseClause = 0;
@@ -346,7 +346,7 @@ function initYoungsterDatabase() {
     }  
 }  
 
-// Configuración de calidad por división
+// ConfiguraciÃ³n de calidad por divisiÃ³n
 const DIVISION_QUALITY = {
     primera: {
         overall_range: { min: 70, max: 95 },
@@ -370,17 +370,17 @@ const DIVISION_QUALITY = {
     }
 };
 
-// ✅ MODIFICADO: generateRealisticSquad con soporte para plantillas reales
+// âœ… MODIFICADO: generateRealisticSquad con soporte para plantillas reales
 export async function generateRealisticSquad(teamName, division) {
-    // 🔥 PRIMERO: Intentar cargar plantilla real desde Firestore
+    // ðŸ”¥ PRIMERO: Intentar cargar plantilla real desde Firestore
     const realSquad = await loadTeamSquad(teamName);
     if (realSquad && realSquad.length > 0) {
-        console.log(`✅ Usando plantilla real de ${teamName} (${realSquad.length} jugadores)`);
+        console.log(`âœ… Usando plantilla real de ${teamName} (${realSquad.length} jugadores)`);
         return realSquad;
     }
     
-    // 🔄 FALLBACK: Si no hay plantilla real, generar aleatoriamente
-    console.log(`⚙️ Generando plantilla aleatoria para ${teamName}`);
+    // ðŸ”„ FALLBACK: Si no hay plantilla real, generar aleatoriamente
+    console.log(`âš™ï¸ Generando plantilla aleatoria para ${teamName}`);
     
     const config = DIVISION_QUALITY[division];
     const squad = [];
@@ -414,7 +414,7 @@ export async function generateRealisticSquad(teamName, division) {
     return squad;
 }
 
-// ✅ CORREGIDO: generatePlayerWithTargetOverall
+// âœ… CORREGIDO: generatePlayerWithTargetOverall
 function generatePlayerWithTargetOverall(position, targetOverall, teamName) {
     const age = 18 + Math.floor(Math.random() * 17);
     
@@ -451,7 +451,7 @@ function generatePlayerWithTargetOverall(position, targetOverall, teamName) {
     player.salary = Math.floor(player.overall * 100 + player.age * 50);
     player.value = Math.floor(player.overall * 2000 + player.potential * 500);
 
-    // ✅ CAMPOS DE CONTRATO
+    // âœ… CAMPOS DE CONTRATO
     player.contractType = assignContractType();
     player.contractYears = assignContractYears(player.contractType, age);
     player.releaseClause = calculateReleaseClause(player);
@@ -471,34 +471,92 @@ function calculateOverallFromAttributes(attributes, weights) {
     return Math.round(weightedSum / totalWeight);
 }
 
-// Funciones de mercado
-function getPlayerMarket(filters = {}, scoutLevel = 0) {  
-    let filteredPlayers = [...ALL_AVAILABLE_PLAYERS];  
-  
-    if (filters.position && filters.position !== 'ALL') {  
-        filteredPlayers = filteredPlayers.filter(p => p.position === filters.position);  
-    }  
-    if (filters.minOverall) {  
-        filteredPlayers = filteredPlayers.filter(p => p.overall >= filters.minOverall);  
-    }  
-    if (filters.maxAge) {  
-        filteredPlayers = filteredPlayers.filter(p => p.age <= filters.maxAge);  
-    }  
-    if (filters.searchName) {  
-        const searchTerm = filters.searchName.toLowerCase();  
-        filteredPlayers = filteredPlayers.filter(p => p.name.toLowerCase().includes(searchTerm));  
+// ✅ MERCADO HÍBRIDO: jugadores reales de Firestore + generados de relleno
+let FIRESTORE_MARKET_PLAYERS = [];
+let MARKET_LOADED_FROM_FIRESTORE = false;
+
+/**
+ * Carga el mercado desde Firestore. Llamar al inicio del juego.
+ */
+async function loadMarketFromFirestore(mySquadNames = []) {
+    if (window.getTransferMarket) {
+        try {
+            const firestorePlayers = await window.getTransferMarket(mySquadNames);
+            FIRESTORE_MARKET_PLAYERS = firestorePlayers.map(p => {
+                const completed = { ...p };
+                if (!completed.overall) completed.overall = calculateOverall(completed);
+                if (!completed.potential) completed.potential = Math.min(99, completed.overall + Math.floor(Math.random() * 10));
+                if (!completed.salary) completed.salary = Math.floor(completed.overall * 100 + (completed.age || 25) * 50);
+                if (!completed.value) completed.value = Math.floor(completed.overall * 2000 + completed.potential * 500);
+                if (!completed.foot) completed.foot = generateRandomFoot();
+                if (!completed.askingPrice) completed.askingPrice = Math.floor(completed.value * (1 + Math.random() * 0.5));
+                if (!completed.contractType) completed.contractType = 'owned';
+                if (!completed.contractYears) completed.contractYears = assignContractYears(completed.contractType, completed.age || 25);
+                if (!completed.releaseClause) completed.releaseClause = calculateReleaseClause(completed);
+                if (completed.loanListed === undefined) completed.loanListed = false;
+                if (completed.loanWageContribution === undefined) completed.loanWageContribution = 0;
+                completed.transferListed = true;
+                return completed;
+            });
+            MARKET_LOADED_FROM_FIRESTORE = true;
+            console.log('✅ Mercado de Firestore: ' + FIRESTORE_MARKET_PLAYERS.length + ' jugadores reales');
+        } catch (error) {
+            console.warn('⚠️ No se pudo cargar mercado de Firestore:', error);
+            FIRESTORE_MARKET_PLAYERS = [];
+        }
     }
-    
-    // ✅ AÑADIR FILTROS DE TRANSFERIBLES Y CEDIBLES
+    initPlayerDatabase();
+}
+
+/**
+ * Elimina un jugador del mercado en memoria y en Firestore.
+ */
+function removeFromMarketByName(playerName, originalTeam) {
+    FIRESTORE_MARKET_PLAYERS = FIRESTORE_MARKET_PLAYERS.filter(p => p.name !== playerName);
+    ALL_AVAILABLE_PLAYERS = ALL_AVAILABLE_PLAYERS.filter(p => p.name !== playerName);
+    if (originalTeam && window.removePlayerFromMarket) {
+        window.removePlayerFromMarket(playerName, originalTeam).catch(err => {
+            console.warn('⚠️ No se pudo eliminar del mercado Firestore:', err);
+        });
+    }
+}
+
+// Funciones de mercado
+function getPlayerMarket(filters = {}, mySquadNames = []) {
+    // Combinar reales (Firestore) + generados, sin duplicados por nombre
+    const realNames = new Set(FIRESTORE_MARKET_PLAYERS.map(p => p.name.toLowerCase()));
+    const generatedFiltered = ALL_AVAILABLE_PLAYERS.filter(p => !realNames.has(p.name.toLowerCase()));
+    let allMarket = [...FIRESTORE_MARKET_PLAYERS, ...generatedFiltered];
+
+    // Excluir los que ya están en mi plantilla
+    const mySquadSet = new Set(mySquadNames.map(n => n.toLowerCase()));
+    allMarket = allMarket.filter(p => !mySquadSet.has((p.name || '').toLowerCase()));
+
+    let filteredPlayers = allMarket;
+
+    if (filters.position && filters.position !== 'ALL') {
+        filteredPlayers = filteredPlayers.filter(p => p.position === filters.position);
+    }
+    if (filters.minOverall) {
+        filteredPlayers = filteredPlayers.filter(p => p.overall >= filters.minOverall);
+    }
+    if (filters.maxAge) {
+        filteredPlayers = filteredPlayers.filter(p => p.age <= filters.maxAge);
+    }
+    if (filters.searchName) {
+        const searchTerm = filters.searchName.toLowerCase();
+        filteredPlayers = filteredPlayers.filter(p => p.name.toLowerCase().includes(searchTerm));
+    }
     if (filters.transferListed) {
         filteredPlayers = filteredPlayers.filter(p => p.transferListed === true);
     }
     if (filters.loanListed) {
         filteredPlayers = filteredPlayers.filter(p => p.loanListed === true);
     }
-  
-    const revealCount = Math.min(filteredPlayers.length, 30 + scoutLevel * 10);  
-    return filteredPlayers.slice(0, revealCount);  
+
+    const scoutLevel = filters.scoutLevel || 0;
+    const revealCount = Math.min(filteredPlayers.length, 30 + scoutLevel * 10);
+    return filteredPlayers.slice(0, revealCount);
 }
   
 function getYoungsterMarket(filters = {}) {  
@@ -518,14 +576,16 @@ function getYoungsterMarket(filters = {}) {
 initPlayerDatabase();
 initYoungsterDatabase();
   
-export {  
-    initPlayerDatabase,  
-    initYoungsterDatabase,  
-    getPlayerMarket,  
-    getYoungsterMarket,  
+export {
+    initPlayerDatabase,
+    initYoungsterDatabase,
+    getPlayerMarket,
+    getYoungsterMarket,
     generateRandomName,
     calculateReleaseClause,
     assignContractType,
     assignContractYears,
-    loadTeamSquad  // ✅ EXPORTAR nueva función
+    loadTeamSquad,
+    loadMarketFromFirestore,
+    removeFromMarketByName
 };
