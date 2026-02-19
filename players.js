@@ -471,7 +471,7 @@ function calculateOverallFromAttributes(attributes, weights) {
     return Math.round(weightedSum / totalWeight);
 }
 
-// Mercado de fichajes - datos de Firestore
+// Mercado de fichajes - jugadores reales de Firestore
 let FIRESTORE_MARKET_PLAYERS = [];
 
 async function loadMarketFromFirestore(mySquadNames = []) {
@@ -494,9 +494,9 @@ async function loadMarketFromFirestore(mySquadNames = []) {
                 c.transferListed = true;
                 return c;
             });
-            console.log('✅ Mercado Firestore: ' + FIRESTORE_MARKET_PLAYERS.length + ' jugadores reales');
+            console.log('Mercado Firestore cargado: ' + FIRESTORE_MARKET_PLAYERS.length + ' jugadores reales');
         } catch (error) {
-            console.warn('⚠️ No se pudo cargar mercado Firestore:', error);
+            console.warn('No se pudo cargar mercado Firestore:', error);
             FIRESTORE_MARKET_PLAYERS = [];
         }
     }
@@ -508,7 +508,7 @@ function removeFromMarketByName(playerName, originalTeam) {
     ALL_AVAILABLE_PLAYERS = ALL_AVAILABLE_PLAYERS.filter(p => p.name !== playerName);
     if (originalTeam && window.removePlayerFromMarket) {
         window.removePlayerFromMarket(playerName, originalTeam).catch(err => {
-            console.warn('⚠️ Error eliminando del mercado Firestore:', err);
+            console.warn('Error eliminando del mercado Firestore:', err);
         });
     }
 }
@@ -536,6 +536,7 @@ function getPlayerMarket(filters = {}, mySquadNames = []) {
     const scoutLevel = filters.scoutLevel || 0;
     return fp.slice(0, Math.min(fp.length, 30 + scoutLevel * 10));
 }
+
   
 function getYoungsterMarket(filters = {}) {  
     let filteredYoungsters = [...ALL_AVAILABLE_YOUNGSTERS];  
