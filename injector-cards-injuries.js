@@ -426,12 +426,12 @@ function hookSimulateWeek() {
                 console.log('💾 Auto-guardando en Firebase...');
                 
                 // Generar gameId único o usar existente
-                const gameId = newState.gameId || `game_${newState.teamName}_${Date.now()}`;
+                const gameId = newState.gameId || `game_${newState.team}_${Date.now()}`;
                 if (!newState.gameId) {
                     newState.gameId = gameId; // Guardar para futuras jornadas
                 }
                 
-                const gameName = `${newState.teamName} - Jornada ${newState.week}`;
+                const gameName = `${newState.team} - Jornada ${newState.week}`;
                 
                 window.saveGameToCloud(window.currentUserId, gameId, gameName, newState).then(result => {
                     if (result.success) {
