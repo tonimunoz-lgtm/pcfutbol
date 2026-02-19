@@ -544,19 +544,14 @@
                 
                 if (saveResult.success) {
                     alert(`✅ Plantilla guardada: ${this.squadPlayers.length} jugadores`);
-                    // ✅ Sincronizar automáticamente con el mercado de fichajes
+                    // Sincronizar con el mercado de fichajes
                     if (window.syncTeamToTransferMarket) {
-                        try {
-                            const syncResult = await window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers);
-                            if (syncResult && syncResult.added > 0) {
-                                console.log(`Mercado sincronizado: +${syncResult.added} jugadores de ${this.currentTeam}`);
-                            }
-                        } catch(syncErr) {
-                            console.warn('Error sincronizando con el mercado:', syncErr);
-                        }
+                        window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers)
+                            .then(r => { if (r && r.added > 0) console.log('Mercado sync: +' + r.added + ' jugadores'); })
+                            .catch(e => console.warn('Error sync mercado:', e));
                     }
                 } else {
-                    alert(`Error: ${saveResult.error}`);
+                    alert(`❌ Error: ${saveResult.error}`);
                 }
             } catch (error) {
                 alert('âŒ Error: ' + error.message);
