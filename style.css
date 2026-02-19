@@ -1847,9 +1847,8 @@ Salida
         box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
     }
 
-    /* Los slots se contrarotan para que el texto quede recto */
+    /* Slots mas grandes y legibles, sin rotar */
     .pitch-position-placeholder {
-        transform: rotate(-90deg);
         font-size: 1.1em;
         border-width: 2px;
         z-index: 1;
