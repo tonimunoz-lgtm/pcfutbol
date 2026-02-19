@@ -108,7 +108,7 @@ function simulateMatchInjuries(player, staff) {
     } else {
         // Sin preparador físico = +50% probabilidad
         probability *= 1.5;
-        console.log('âš ï¸ Sin preparador físico: +50% probabilidad lesión');
+        console.log('⚠️ Sin preparador físico: +50% probabilidad lesión');
     }
     
     // Factores adicionales
@@ -134,9 +134,9 @@ function simulateMatchInjuries(player, staff) {
             const reduction = level * 0.1;
             const oldWeeks = weeks;
             weeks = Math.max(1, Math.ceil(weeks * (1 - reduction)));
-            console.log(`🏥 Médico nivel ${level}: ${oldWeeks} â†’ ${weeks} semanas (-${(reduction * 100).toFixed(0)}%)`);
+            console.log(`🏥 Médico nivel ${level}: ${oldWeeks} → ${weeks} semanas (-${(reduction * 100).toFixed(0)}%)`);
         } else {
-            console.log('âš ï¸ Sin médico: semanas sin reducción');
+            console.log('⚠️ Sin médico: semanas sin reducción');
         }
         
         const injuryType = INJURIES_CONFIG.TYPES[Math.floor(Math.random() * INJURIES_CONFIG.TYPES.length)];
@@ -255,7 +255,7 @@ function hookSimulateWeek() {
             const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
             
             if (validPlayers.length !== 11) {
-                errors.push(`âš ï¸ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
+                errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
             }
             
             // VALIDACIÃ“N 2: Verificar que haya exactamente 1 portero
@@ -287,8 +287,8 @@ function hookSimulateWeek() {
             });
             
             if (errors.length > 0) {
-                alert(`âŒ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, corrige la alineación antes de continuar.`);
-                console.error('âŒ Validación de alineación fallida:', errors);
+                alert(`❌ No puedes jugar con esta alineación:\n\n${errors.join('\n')}\n\n🔄 Por favor, corrige la alineación antes de continuar.`);
+                console.error('❌ Validación de alineación fallida:', errors);
                 
                 // Abrir automáticamente la página de alineación
                 const lineupButton = document.querySelector('.menu-item[onclick*="lineup"]');
@@ -350,7 +350,7 @@ function hookSimulateWeek() {
             
             // CRÍTICO: Procesar SOLO la alineación actual
             if (!newState.lineup || newState.lineup.length === 0) {
-                console.warn('âš ï¸ No hay alineación guardada');
+                console.warn('⚠️ No hay alineación guardada');
                 return;
             }
             
@@ -367,7 +367,7 @@ function hookSimulateWeek() {
                 const squadPlayer = newState.squad.find(sp => sp.name === lineupPlayer.name);
                 
                 if (!squadPlayer) {
-                    console.warn(`âš ï¸ ${lineupPlayer.name} no encontrado en squad`);
+                    console.warn(`⚠️ ${lineupPlayer.name} no encontrado en squad`);
                     return;
                 }
                 
@@ -382,7 +382,7 @@ function hookSimulateWeek() {
                     if (cardResult.red) {
                         newsText = `🟥 ${squadPlayer.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
                     } else if (cardResult.suspension > 0) {
-                        newsText = `âš ï¸ ${squadPlayer.name} acumula 5 amarillas - Sancionado 1 partido`;
+                        newsText = `⚠️ ${squadPlayer.name} acumula 5 amarillas - Sancionado 1 partido`;
                     } else {
                         newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
@@ -437,13 +437,13 @@ function hookSimulateWeek() {
                     if (result.success) {
                         console.log('✅ Partida auto-guardada en Firebase');
                     } else {
-                        console.warn('âš ï¸ Error al auto-guardar:', result.error);
+                        console.warn('⚠️ Error al auto-guardar:', result.error);
                     }
                 }).catch(err => {
-                    console.error('âŒ Error en auto-guardado:', err);
+                    console.error('❌ Error en auto-guardado:', err);
                 });
             } else {
-                console.warn('âš ï¸ Auto-guardado no disponible - saveGameToCloud o currentUserId no encontrado');
+                console.warn('⚠️ Auto-guardado no disponible - saveGameToCloud o currentUserId no encontrado');
             }
             
             // Verificar que las noticias se guardaron
@@ -466,7 +466,7 @@ function hookSimulateWeek() {
                     `).join('');
                     console.log('✅ Feed actualizado en DOM');
                 } else {
-                    console.warn('âš ï¸ Feed no encontrado o sin noticias');
+                    console.warn('⚠️ Feed no encontrado o sin noticias');
                 }
             }, 800);
             
@@ -508,7 +508,7 @@ setTimeout(() => {
             const validPlayers = state.lineup.filter(p => p !== null && p !== undefined);
             
             if (validPlayers.length !== 11) {
-                errors.push(`âš ï¸ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
+                errors.push(`⚠️ Necesitas exactamente 11 jugadores (tienes ${validPlayers.length})`);
             }
             
             // VALIDACIÃ“N 2: Verificar que haya exactamente 1 portero
@@ -552,8 +552,8 @@ setTimeout(() => {
             });
             
             if (errors.length > 0) {
-                alert(`âŒ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
-                console.error('âŒ Validación fallida:', errors);
+                alert(`❌ No puedes guardar esta alineación:\n\n${errors.join('\n')}`);
+                console.error('❌ Validación fallida:', errors);
                 return false; // BLOQUEAR
             }
             
@@ -582,17 +582,17 @@ setTimeout(() => {
                 if (window.lastMatchCardsAndInjuries) {
                     const modal = document.getElementById('matchSummaryModal');
                     if (!modal) {
-                        console.warn('âš ï¸ Modal no encontrado');
+                        console.warn('⚠️ Modal no encontrado');
                         return;
                     }
                     
                     const data = window.lastMatchCardsAndInjuries;
-                    console.log('âœï¸ Reemplazando con datos reales:', data);
+                    console.log('âœ️ Reemplazando con datos reales:', data);
                     
                     // Buscar TODAS las secciones de tarjetas y lesiones para eliminarlas
                     const oldCardsSections = modal.querySelectorAll('.cards-section, .injuries-section');
                     oldCardsSections.forEach(section => section.remove());
-                    console.log(`🗑ï¸ Eliminadas ${oldCardsSections.length} secciones antiguas`);
+                    console.log(`🗑️ Eliminadas ${oldCardsSections.length} secciones antiguas`);
                     
                     // Crear nuevas secciones SOLO con datos reales
                     const statsSection = modal.querySelector('.stats-section');
@@ -638,9 +638,9 @@ setTimeout(() => {
                     }
                     
                     delete window.lastMatchCardsAndInjuries;
-                    console.log('🗑ï¸ Datos limpiados');
+                    console.log('🗑️ Datos limpiados');
                 } else {
-                    console.warn('âš ï¸ No hay datos guardados');
+                    console.warn('⚠️ No hay datos guardados');
                 }
             }, 300); // Aumentado de 100ms a 300ms
         };
@@ -690,7 +690,7 @@ function enhanceSquadTable() {
         // Buscar el jugador en squad por nombre
         const player = state.squad.find(p => p.name === playerName);
         if (!player) {
-            console.warn(`âš ï¸ Plantilla: "${playerName}" no encontrado en squad`);
+            console.warn(`⚠️ Plantilla: "${playerName}" no encontrado en squad`);
             return;
         }
         
@@ -725,7 +725,7 @@ function enhanceSquadTable() {
             
             tarjetasCell.innerHTML = badges.length > 0 ? badges.join(' ') : '-';
             
-            console.log(`âœ“ ${playerName}: YC=${player.yellowCards}, RC=${player.redCards}, INJ=${player.isInjured}, SUS=${player.isSuspended}`);
+            console.log(`✓ ${playerName}: YC=${player.yellowCards}, RC=${player.redCards}, INJ=${player.isInjured}, SUS=${player.isSuspended}`);
         }
     });
 }
@@ -761,7 +761,7 @@ setTimeout(() => {
 window.CardsInjuriesSystem = {
     showStatus: function() {
         const state = window.gameLogic?.getGameState();
-        if (!state?.squad) return console.error('âŒ No hay datos');
+        if (!state?.squad) return console.error('❌ No hay datos');
         
         console.log(`=== SEMANA GLOBAL ${globalWeekCounter} (Semana ${state.week}) ===`);
         let found = 0;
