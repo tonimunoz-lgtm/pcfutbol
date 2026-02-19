@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC FÃºtbol Manager</title>
-  <!-- MÃ³vil: <768px carga stylemobil.css -->
+    <title>PC Fútbol Manager</title>
+  <!-- Móvil: <768px carga stylemobil.css -->
 <link rel="stylesheet" href="style.css">
 
 
@@ -26,7 +26,7 @@
             </div>
         </div>
         
-        <div class="header-title">âš½ PC FÃšTBOL MANAGER</div>
+        <div class="header-title">�?� PC F�?TBOL MANAGER</div>
         
         <div class="header-info">
             <div class="info-box">
@@ -35,7 +35,7 @@
             </div>
             <div class="info-box">
                 <span>Dinero:</span>
-                <span id="balanceDisplay">0â‚¬</span>
+                <span id="balanceDisplay">0�?�</span>
             </div>
         </div>
     </div>
@@ -43,34 +43,34 @@
     <!-- MAIN LAYOUT - 4 CUADRANTES -->
     <div class="main-layout">
         
-        <!-- CUADRANTE SUPERIOR IZQUIERDO: INFORMACIÃ“N -->
+        <!-- CUADRANTE SUPERIOR IZQUIERDO: INFORMACI�?N -->
         <div class="quadrant top-left">
-            <div class="section-title">ðŸ“Š INFORMACIÃ“N</div>
+            <div class="section-title">�??? INFORMACI�?N</div>
             <button class="menu-button blue-button results-icon" onclick="openPage('dashboard')">Resultados</button>
-            <button class="menu-button blue-button classification-icon" onclick="openPage('standings')">ClasificaciÃ³n</button>
+            <button class="menu-button blue-button classification-icon" onclick="openPage('standings')">Clasificación</button>
             <button class="menu-button blue-button calendar-icon" onclick="openPage('calendar')">Calendario</button>
         </div>
 
         <!-- CUADRANTE SUPERIOR DERECHO: EQUIPO -->
         <div class="quadrant top-right">
-            <div class="section-title">ðŸ‘¥ EQUIPO</div>
-            <button class="menu-button green-button lineup-icon" onclick="openPage('lineup')">AlineaciÃ³n</button>
-            <button class="menu-button green-button tactics-icon" onclick="openPage('tactics')">TÃ¡ctica</button>
+            <div class="section-title">�??� EQUIPO</div>
+            <button class="menu-button green-button lineup-icon" onclick="openPage('lineup')">Alineación</button>
+            <button class="menu-button green-button tactics-icon" onclick="openPage('tactics')">Táctica</button>
             <button class="menu-button green-button" style="opacity: 0.5; cursor: not-allowed;">Ver Rival</button>
         </div>
 
         <!-- CUADRANTE INFERIOR IZQUIERDO: FICHAJES -->
         <div class="quadrant bottom-left">
-            <div class="section-title">ðŸ”„ FICHAJES</div>
+            <div class="section-title">�??? FICHAJES</div>
             <button class="menu-button orange-button transfer-icon" onclick="openPage('transfers')">Fichar</button>
             <button class="menu-button orange-button renovation-icon" onclick="openPage('negotiations')">Negociaciones </button>
             <button class="menu-button orange-button squad-icon" onclick="openPage('squad')">Plantilla</button>
             <button class="menu-button orange-button cantera-icon" onclick="openPage('academy')">Cantera</button>
         </div>
 
-        <!-- CUADRANTE INFERIOR DERECHO: GESTIÃ“N -->
+        <!-- CUADRANTE INFERIOR DERECHO: GESTI�?N -->
         <div class="quadrant bottom-right">
-            <div class="section-title">ðŸ’¼ GESTIÃ“N</div>
+            <div class="section-title">�??� GESTI�?N</div>
             <button class="menu-button red-button staff-icon" onclick="openPage('staff')">Empleados</button>
             <button class="menu-button red-button cash-icon" onclick="openPage('finance')">Caja</button>
             <button class="menu-button red-button decisions-icon" onclick="openPage('commercial')">Decisiones</button>
@@ -82,15 +82,15 @@
 
     <!-- BOTONES IZQUIERDA -->
     <div class="center-buttons left">
-        <button class="center-option load-btn" onclick="window.openSettingsPage()">â˜ï¸ Cargar Juego</button>
-        <button class="center-option save-btn" onclick="window.saveCurrentGame()">ðŸ’¾ Guargar</button>
+        <button class="center-option load-btn" onclick="window.openSettingsPage()">�?�️ Cargar Juego</button>
+        <button class="center-option save-btn" onclick="window.saveCurrentGame()">�??� Guargar</button>
     </div>
 
-    <!-- CÃRCULO CENTRAL -->
+    <!-- CÍRCULO CENTRAL -->
     <div class="main-center-circle">
         <div id="nextMatchInfo">
             <div id="nextMatchDate">-</div>
-            <div class="next-match-title">PRÃ“XIMO PARTIDO</div>
+            <div class="next-match-title">PR�?XIMO PARTIDO</div>
             <div id="nextMatchTeams">-</div>
         </div>
     </div>
@@ -98,7 +98,7 @@
     <!-- BOTONES DERECHA -->
     <div class="center-buttons right">
         <button class="center-option exit-btn" onclick="window.openModal('gameMode')">Nuevo Juego</button>
-        <button class="center-option simulate-btn" onclick="window.simulateWeek()">â© Seguir</button>
+        <button class="center-option simulate-btn" onclick="window.simulateWeek()">⏩ Seguir</button>
     </div>
 
 </div>
@@ -106,15 +106,15 @@
     </div>
 
     <!-- ============================================
-         PÃGINAS DE CONTENIDO (Ocultas por defecto)
+         PÁGINAS DE CONTENIDO (Ocultas por defecto)
          ============================================ -->
 
- <!-- SECCIÃ“N DE SETTINGS OCULTA -->
+ <!-- SECCI�?N DE SETTINGS OCULTA -->
     <div id="settingsPage" class="page" style="display: none;">
         <div id="settings" class="settings-container">
-            <h1>âš™ï¸ Opciones</h1>
-            <p>AquÃ­ se cargarÃ¡n las opciones y el botÃ³n de la nube por el injector.</p>
-            <!-- injector-cloud-load.js inyectarÃ¡ la secciÃ³n de Cloud Load aquÃ­ -->
+            <h1>�??️ Opciones</h1>
+            <p>Aquí se cargarán las opciones y el botón de la nube por el injector.</p>
+            <!-- injector-cloud-load.js inyectará la sección de Cloud Load aquí -->
         </div>
         <button class="btn" onclick="window.closeSettingsPage()">Cerrar</button>
     </div>
@@ -123,15 +123,15 @@
     <!-- DASHBOARD / RESULTADOS -->
     <div id="dashboard" class="page">
         <div class="page-header">
-            <h1>ðŸ“Š Dashboard del Club</h1>
-            <button class="page-close-btn" onclick="closePage('dashboard')">âœ– CERRAR</button>
+            <h1>�??? Dashboard del Club</h1>
+            <button class="page-close-btn" onclick="closePage('dashboard')">�?? CERRAR</button>
         </div>
         
         <div id="warningAlert" style="display: none;"></div>
         
         <div class="data-grid">
             <div class="data-box">
-                <div class="data-label">PosiciÃ³n</div>
+                <div class="data-label">Posición</div>
                 <div class="data-value" id="dashPos">-</div>
             </div>
             <div class="data-box">
@@ -158,30 +158,30 @@
         
       <h2>Estado Financiero</h2>
 <table>
-    <tr><td>ðŸ’° Dinero en Caja:</td><td id="dashBalance" style="font-weight: bold;">0â‚¬</td></tr>
-    <tr style="background: rgba(76, 175, 80, 0.1);"><td>ðŸ“ˆ Ingresos Semanales:</td><td id="dashIncome" style="color: #4CAF50;">0â‚¬</td></tr>
-    <tr style="background: rgba(244, 67, 54, 0.1);"><td>ðŸ“‰ Gastos Semanales:</td><td id="dashExpenses" style="color: #f44336;">0â‚¬</td></tr>
-    <tr style="border-top: 2px solid #333;"><td><strong>Balance Semanal:</strong></td><td id="dashWeekly" class="data-value" style="font-weight: bold;">+0â‚¬</td></tr>
+    <tr><td>�??� Dinero en Caja:</td><td id="dashBalance" style="font-weight: bold;">0�?�</td></tr>
+    <tr style="background: rgba(76, 175, 80, 0.1);"><td>�??? Ingresos Semanales:</td><td id="dashIncome" style="color: #4CAF50;">0�?�</td></tr>
+    <tr style="background: rgba(244, 67, 54, 0.1);"><td>�??? Gastos Semanales:</td><td id="dashExpenses" style="color: #f44336;">0�?�</td></tr>
+    <tr style="border-top: 2px solid #333;"><td><strong>Balance Semanal:</strong></td><td id="dashWeekly" class="data-value" style="font-weight: bold;">+0�?�</td></tr>
     
     <tr style="height: 15px;"><td colspan="2"></td></tr>
     
-    <tr style="background: rgba(33, 150, 243, 0.1);"><td>ðŸ’¸ Fichajes (temporada):</td><td id="dashPurchases" style="color: #2196F3;">0â‚¬</td></tr>
-    <tr style="background: rgba(76, 175, 80, 0.1);"><td>ðŸ’° Ventas (temporada):</td><td id="dashSales" style="color: #4CAF50;">0â‚¬</td></tr>
-    <tr style="background: rgba(244, 67, 54, 0.1);"><td>ðŸšª Indemnizaciones:</td><td id="dashCompensations" style="color: #f44336;">0â‚¬</td></tr>
-    <tr style="border-top: 2px solid #333;"><td><strong>Balance Transferencias:</strong></td><td id="dashTransferBalance" style="font-weight: bold;">+0â‚¬</td></tr>
+    <tr style="background: rgba(33, 150, 243, 0.1);"><td>�??� Fichajes (temporada):</td><td id="dashPurchases" style="color: #2196F3;">0�?�</td></tr>
+    <tr style="background: rgba(76, 175, 80, 0.1);"><td>�??� Ventas (temporada):</td><td id="dashSales" style="color: #4CAF50;">0�?�</td></tr>
+    <tr style="background: rgba(244, 67, 54, 0.1);"><td>�??� Indemnizaciones:</td><td id="dashCompensations" style="color: #f44336;">0�?�</td></tr>
+    <tr style="border-top: 2px solid #333;"><td><strong>Balance Transferencias:</strong></td><td id="dashTransferBalance" style="font-weight: bold;">+0�?�</td></tr>
 </table>
         
-        <h2>Ãšltimas Noticias</h2>
+        <h2>�?ltimas Noticias</h2>
         <div id="newsFeed">
             <div class="alert alert-info">No hay noticias recientes.</div>
         </div>
     </div>
 
-    <!-- CLASIFICACIÃ“N -->
+    <!-- CLASIFICACI�?N -->
     <div id="standings" class="page">
         <div class="page-header">
-            <h1>ðŸ“ˆ ClasificaciÃ³n Liga</h1>
-            <button class="page-close-btn" onclick="closePage('standings')">âœ– CERRAR</button>
+            <h1>�??? Clasificación Liga</h1>
+            <button class="page-close-btn" onclick="closePage('standings')">�?? CERRAR</button>
         </div>
         
         <table>
@@ -198,59 +198,59 @@
     <!-- CALENDARIO -->
     <div id="calendar" class="page">
         <div class="page-header">
-            <h1>ðŸ“… Calendario de Partidos</h1>
-            <button class="page-close-btn" onclick="closePage('calendar')">âœ– CERRAR</button>
+            <h1>�??? Calendario de Partidos</h1>
+            <button class="page-close-btn" onclick="closePage('calendar')">�?? CERRAR</button>
         </div>
         
         <div id="calendarContent">
-            <div class="alert alert-info">AquÃ­ se mostrarÃ¡n los partidos de tu divisiÃ³n.</div>
+            <div class="alert alert-info">Aquí se mostrarán los partidos de tu división.</div>
         </div>
     </div>
 
-  <!-- ALINEACIÃ“N -->
+  <!-- ALINEACI�?N -->
 <div id="lineup" class="page">
     <div class="page-header">
-        <h1>âš½ AlineaciÃ³n</h1>
-        <button class="page-close-btn" onclick="closePage('lineup')">âœ– CERRAR</button>
+        <h1>�?� Alineación</h1>
+        <button class="page-close-btn" onclick="closePage('lineup')">�?? CERRAR</button>
     </div>
     
     <p class="alert alert-info" id="lineupMessage">
-        Arrastra y suelta jugadores para configurar tu alineaciÃ³n. Los jugadores lesionados no pueden ser alineados.
+        Arrastra y suelta jugadores para configurar tu alineación. Los jugadores lesionados no pueden ser alineados.
     </p>
     
     <!-- Contenedor horizontal: campo + suplentes -->
     <div class="lineup-main-container">
         <div class="pitch-container" id="pitchContainer">
-            <!-- AquÃ­ se renderizarÃ¡n los 11 titulares -->
+            <!-- Aquí se renderizarán los 11 titulares -->
         </div>
         
         <div class="reserves-container">
             <h2>Suplentes y No Convocados</h2>
             <div class="reserves-list" id="reservesList">
-                <!-- AquÃ­ se renderizarÃ¡n los suplentes -->
+                <!-- Aquí se renderizarán los suplentes -->
             </div>
         </div>
     </div>
     
-    <button class="btn" style="margin-top: 20px;" onclick="window.saveLineup()">Guardar AlineaciÃ³n</button>
+    <button class="btn" style="margin-top: 20px;" onclick="window.saveLineup()">Guardar Alineación</button>
 </div>
 
 
-    <!-- TÃCTICAS -->
+    <!-- TÁCTICAS -->
 <div id="tactics" class="page">
     <div class="page-header">
-        <h1>ðŸŽ¯ TÃ¡cticas</h1>
-        <button class="page-close-btn" onclick="closePage('tactics')">âœ– CERRAR</button>
+        <h1>�??� Tácticas</h1>
+        <button class="page-close-btn" onclick="closePage('tactics')">�?? CERRAR</button>
     </div>
     
     <div class="form-group" style="margin: 20px 0;">
-        <label style="display: block; margin-bottom: 5px;">FormaciÃ³n:</label>
+        <label style="display: block; margin-bottom: 5px;">Formación:</label>
         <select id="formationSelect" onchange="window.updateFormation()">
             <option value="433">4-3-3 Ofensiva</option>
-            <option value="442">4-4-2 ClÃ¡sica</option>
+            <option value="442">4-4-2 Clásica</option>
             <option value="352">3-5-2 Ultra Ofensiva</option>
             <option value="541">5-4-1 Defensiva</option>
-            <option value="451">4-5-1 ContenciÃ³n</option>
+            <option value="451">4-5-1 Contención</option>
         </select>
         
         <label style="display: block; margin-top: 15px; margin-bottom: 5px;">Mentalidad:</label>
@@ -274,20 +274,20 @@
 <div id="sellPlayerModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" onclick="window.closeModal('sellPlayer')">&times;</span>
-        <h1>ðŸ’° Poner en Venta</h1>
+        <h1>�??� Poner en Venta</h1>
         
         <div id="sellPlayerInfo">
             <h3><span id="sellPlayerName"></span></h3>
-            <p>PosiciÃ³n: <span id="sellPlayerPosition"></span> | Edad: <span id="sellPlayerAge"></span> | Overall: <span id="sellPlayerOverall"></span></p>
-            <p>Valor de Mercado: <span id="sellPlayerValue"></span>â‚¬</p>
-            <p>ClÃ¡usula de RescisiÃ³n: <span id="sellPlayerClause"></span>â‚¬</p>
+            <p>Posición: <span id="sellPlayerPosition"></span> | Edad: <span id="sellPlayerAge"></span> | Overall: <span id="sellPlayerOverall"></span></p>
+            <p>Valor de Mercado: <span id="sellPlayerValue"></span>�?�</p>
+            <p>Cláusula de Rescisión: <span id="sellPlayerClause"></span>�?�</p>
         </div>
         
         <div class="form-group">
-            <label>Tipo de OperaciÃ³n:</label>
+            <label>Tipo de Operación:</label>
             <select id="sellOperationType" onchange="window.updateSellOperationType()">
                 <option value="transfer">Venta Definitiva</option>
-                <option value="loan">CesiÃ³n</option>
+                <option value="loan">Cesión</option>
             </select>
         </div>
         
@@ -295,14 +295,14 @@
         <div id="sellTransferOptions">
             <div class="form-group">
                 <label>Precio de Venta:</label>
-                <input type="number" id="sellTransferPrice" min="0" step="10000">â‚¬
+                <input type="number" id="sellTransferPrice" min="0" step="10000">�?�
                 <p class="alert alert-info">
-                    ðŸ’¡ Precio mÃ­nimo recomendado: <span id="sellMinPrice"></span>â‚¬
+                    �??� Precio mínimo recomendado: <span id="sellMinPrice"></span>�?�
                 </p>
             </div>
         </div>
         
-        <!-- CESIÃ“N -->
+        <!-- CESI�?N -->
         <div id="sellLoanOptions" style="display: none;">
             <div class="form-group">
                 <label>% de Salario que Asumimos:</label>
@@ -310,19 +310,19 @@
                        oninput="document.getElementById('sellLoanWageValue').textContent=this.value">
                 <span id="sellLoanWageValue">50</span>%
                 <p class="alert alert-info">
-                    ðŸ“Š Salario actual: <span id="sellPlayerCurrentSalary"></span>â‚¬/sem<br>
-                    ðŸ’µ Pagaremos: <span id="sellLoanOurCost"></span>â‚¬/sem<br>
-                    ðŸ’° Ellos pagan: <span id="sellLoanTheirCost"></span>â‚¬/sem
+                    �??? Salario actual: <span id="sellPlayerCurrentSalary"></span>�?�/sem<br>
+                    �??� Pagaremos: <span id="sellLoanOurCost"></span>�?�/sem<br>
+                    �??� Ellos pagan: <span id="sellLoanTheirCost"></span>�?�/sem
                 </p>
             </div>
         </div>
         
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="btn" onclick="window.confirmListPlayer()">
-                âœ… Poner en Venta
+                �?? Poner en Venta
             </button>
             <button class="btn" style="background: #666;" onclick="window.closeModal('sellPlayer')">
-                âŒ Cancelar
+                �? Cancelar
             </button>
         </div>
     </div>
@@ -331,10 +331,10 @@
 <!-- MODAL: OFERTA RECIBIDA -->
 <div id="offerReceivedModal" class="modal">
     <div class="modal-content">
-        <h1>ðŸ“¨ Â¡Oferta Recibida!</h1>
+        <h1>�??� ¡Oferta Recibida!</h1>
         
         <div class="alert alert-success">
-            <p><strong><span id="offerBuyerTeam"></span></strong> estÃ¡ interesado en <strong><span id="offerPlayerName"></span></strong></p>
+            <p><strong><span id="offerBuyerTeam"></span></strong> está interesado en <strong><span id="offerPlayerName"></span></strong></p>
         </div>
         
         <div id="offerDetails">
@@ -357,13 +357,13 @@
         
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="btn" style="background: #4CAF50;" onclick="window.acceptOffer()">
-                âœ… Aceptar Oferta
+                �?? Aceptar Oferta
             </button>
             <button class="btn" style="background: #FF9800;" onclick="window.counterOffer()">
-                ðŸ”„ Contraoferta
+                �??? Contraoferta
             </button>
             <button class="btn" style="background: #c73446;" onclick="window.rejectOffer()">
-                âŒ Rechazar
+                �? Rechazar
             </button>
         </div>
     </div>
@@ -373,34 +373,34 @@
     <!-- NEGOCIACIONES / RENOVACIONES -->
 <div id="negotiations" class="page">
     <div class="page-header">
-        <h1>ðŸ“ Renovaciones de Contratos</h1>
-        <button class="page-close-btn" onclick="closePage('negotiations')">âœ– CERRAR</button>
+        <h1>�??� Renovaciones de Contratos</h1>
+        <button class="page-close-btn" onclick="closePage('negotiations')">�?? CERRAR</button>
     </div>
     
     <div class="alert alert-info">
-        ðŸ’¡ AquÃ­ puedes renovar contratos de tus jugadores actuales. Ten especial atenciÃ³n a los que tienen menos de 2 aÃ±os restantes.
+        �??� Aquí puedes renovar contratos de tus jugadores actuales. Ten especial atención a los que tienen menos de 2 años restantes.
     </div>
     
     <div id="negotiationsSquadList">
-        <!-- Se llenarÃ¡ dinÃ¡micamente -->
+        <!-- Se llenará dinámicamente -->
     </div>
 </div>
 
-<!-- MODAL: RENOVACIÃ“N DE CONTRATO -->
+<!-- MODAL: RENOVACI�?N DE CONTRATO -->
 <div id="renewalModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" onclick="window.closeModal('renewal')">&times;</span>
-        <h1>ðŸ“ RenovaciÃ³n de Contrato</h1>
+        <h1>�??� Renovación de Contrato</h1>
         
         <div class="renewal-player-info">
             <h3><span id="renewalPlayerName"></span></h3>
-            <p>PosiciÃ³n: <span id="renewalPlayerPosition"></span> | Edad: <span id="renewalPlayerAge"></span> | Overall: <span id="renewalPlayerOverall"></span></p>
+            <p>Posición: <span id="renewalPlayerPosition"></span> | Edad: <span id="renewalPlayerAge"></span> | Overall: <span id="renewalPlayerOverall"></span></p>
         </div>
         
         <h3>Contrato Actual:</h3>
         <table style="width: 100%; margin-bottom: 20px;">
             <tr>
-                <td>AÃ±os Restantes:</td>
+                <td>Años Restantes:</td>
                 <td id="renewalCurrentYears" style="font-weight: bold;"></td>
             </tr>
             <tr>
@@ -408,48 +408,48 @@
                 <td id="renewalCurrentSalary" style="font-weight: bold;"></td>
             </tr>
             <tr>
-                <td>ClÃ¡usula Actual:</td>
+                <td>Cláusula Actual:</td>
                 <td id="renewalCurrentClause" style="font-weight: bold;"></td>
             </tr>
         </table>
         
-        <h3>Propuesta de RenovaciÃ³n:</h3>
+        <h3>Propuesta de Renovación:</h3>
         <div class="form-group">
-            <label>DuraciÃ³n del Contrato:</label>
+            <label>Duración del Contrato:</label>
             <select id="renewalNewYears">
-                <option value="1">1 aÃ±o</option>
-                <option value="2">2 aÃ±os</option>
-                <option value="3" selected>3 aÃ±os</option>
-                <option value="4">4 aÃ±os</option>
-                <option value="5">5 aÃ±os</option>
+                <option value="1">1 año</option>
+                <option value="2">2 años</option>
+                <option value="3" selected>3 años</option>
+                <option value="4">4 años</option>
+                <option value="5">5 años</option>
             </select>
         </div>
         
         <div class="form-group">
             <label>Nuevo Salario Semanal:</label>
-            <input type="number" id="renewalNewSalary" min="0" step="100">â‚¬
+            <input type="number" id="renewalNewSalary" min="0" step="100">�?�
             <p class="alert alert-warning" id="renewalSalaryWarning" style="display: none;">
-                âš ï¸ El jugador podrÃ­a rechazar si el salario es muy bajo
+                �?�️ El jugador podría rechazar si el salario es muy bajo
             </p>
         </div>
         
         <div class="form-group">
-            <label>Nueva ClÃ¡usula de RescisiÃ³n:</label>
-            <input type="number" id="renewalNewClause" min="0" step="10000">â‚¬
+            <label>Nueva Cláusula de Rescisión:</label>
+            <input type="number" id="renewalNewClause" min="0" step="10000">�?�
         </div>
         
         <div class="form-group">
-            <label><input type="checkbox" id="renewalBonus"> Prima de Fichaje (mejora aceptaciÃ³n)</label>
+            <label><input type="checkbox" id="renewalBonus"> Prima de Fichaje (mejora aceptación)</label>
             <label><input type="checkbox" id="renewalCar"> Coche de Empresa</label>
             <label><input type="checkbox" id="renewalHouse"> Casa Pagada</label>
         </div>
         
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="btn" onclick="window.submitRenewalOffer()">
-                âœ… Enviar Oferta
+                �?? Enviar Oferta
             </button>
             <button class="btn" style="background: #666;" onclick="window.closeModal('renewal')">
-                âŒ Cancelar
+                �? Cancelar
             </button>
         </div>
     </div>
@@ -459,17 +459,17 @@
     <!-- MERCADO / FICHAJES -->
     <div id="transfers" class="page">
         <div class="page-header">
-            <h1>ðŸ”„ Mercado de Fichajes</h1>
-            <button class="page-close-btn" onclick="closePage('transfers')">âœ– CERRAR</button>
+            <h1>�??? Mercado de Fichajes</h1>
+            <button class="page-close-btn" onclick="closePage('transfers')">�?? CERRAR</button>
         </div>
         
-        <div class="alert alert-info">ðŸ’¡ Busca talentos jÃ³venes para comprar barato y revender caro, o refuerza tu equipo.</div>
+        <div class="alert alert-info">�??� Busca talentos jóvenes para comprar barato y revender caro, o refuerza tu equipo.</div>
         
         <h2>Buscar Jugadores</h2>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
             <input type="text" id="marketSearchName" placeholder="Nombre del jugador" style="width: 150px;">
             <select id="marketPosition" style="width: 120px;">
-                <option value="ALL">PosiciÃ³n</option>
+                <option value="ALL">Posición</option>
             </select>
             <input type="number" id="marketMinOverall" placeholder="Media min." min="1" max="99" style="width: 100px;">
             <input type="number" id="marketMaxAge" placeholder="Edad max." min="16" max="40" style="width: 100px;">
@@ -484,18 +484,18 @@
         </div>
         
         <div id="availablePlayersSearchResult" style="margin-top: 20px;">
-            <div class="alert alert-info">Utiliza los filtros de bÃºsqueda para encontrar jugadores.</div>
+            <div class="alert alert-info">Utiliza los filtros de búsqueda para encontrar jugadores.</div>
         </div>
         
-        <h2>Contratar JÃ³venes de Cantera</h2>
+        <h2>Contratar Jóvenes de Cantera</h2>
         <div id="availableYoungstersList" style="margin-top: 20px;"></div>
     </div>
 
     <!-- PLANTILLA -->
     <div id="squad" class="page">
         <div class="page-header">
-            <h1>ðŸ‘¥ Plantilla</h1>
-            <button class="page-close-btn" onclick="closePage('squad')">âœ– CERRAR</button>
+            <h1>�??� Plantilla</h1>
+            <button class="page-close-btn" onclick="closePage('squad')">�?? CERRAR</button>
         </div>
         
         <div id="squadList" style="margin-top: 20px;"></div>
@@ -504,8 +504,8 @@
     <!-- CANTERA -->
     <div id="academy" class="page">
         <div class="page-header">
-            <h1>ðŸŽ“ Academia y Cantera</h1>
-            <button class="page-close-btn" onclick="closePage('academy')">âœ– CERRAR</button>
+            <h1>�??? Academia y Cantera</h1>
+            <button class="page-close-btn" onclick="closePage('academy')">�?? CERRAR</button>
         </div>
         
         <button class="btn" onclick="window.openModal('signYoungster')">+ Contratar Joven de Mercado</button>
@@ -515,23 +515,23 @@
     <!-- STAFF / EMPLEADOS -->
     <div id="staff" class="page">
         <div class="page-header">
-            <h1>ðŸ‘” Personal del Club</h1>
-            <button class="page-close-btn" onclick="closePage('staff')">âœ– CERRAR</button>
+            <h1>�??? Personal del Club</h1>
+            <button class="page-close-btn" onclick="closePage('staff')">�?? CERRAR</button>
         </div>
         
         <table>
             <thead>
-                <tr><th>Rol</th><th>Nombre</th><th>Nivel</th><th>Salario</th><th>ClÃ¡usula</th><th>Acciones</th></tr>
+                <tr><th>Rol</th><th>Nombre</th><th>Nivel</th><th>Salario</th><th>Cláusula</th><th>Acciones</th></tr>
             </thead>
             <tbody>
-                <tr><td>ðŸ¥ MÃ©dico</td><td id="staffMedicoName"></td><td id="staffMedicoLevel"></td><td id="staffMedicoSalary"></td><td id="staffMedicoClausula"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="window.openHireStaffModal('medico')"></button></td></tr>
-                <tr><td>ðŸ§ª Entrenador FÃ­sico</td><td id="staffEntrenadorName"></td><td id="staffEntrenadorLevel"></td><td id="staffEntrenadorSalary"></td><td id="staffEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="window.openHireStaffModal('entrenador')"></button></td></tr>
-                <tr><td>âš½ Entrenador Porteros</td><td id="staffEntrenadorPorterosName"></td><td id="staffEntrenadorPorterosLevel"></td><td id="staffEntrenadorPorterosSalary"></td><td id="staffEntrenadorPorterosClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenadorPorteros" onclick="window.openHireStaffModal('entrenadorPorteros')"></button></td></tr>
-                <tr><td>ðŸ©¹ Fisioterapeuta</td><td id="staffFisioName"></td><td id="staffFisioLevel"></td><td id="staffFisioSalary"></td><td id="staffFisioClausula"></td><td><button class="btn btn-sm" id="btnHireFisio" onclick="window.openHireStaffModal('fisio')"></button></td></tr>
-                <tr><td>ðŸŽ¬ Analista VÃ­deo</td><td id="staffAnalistaName"></td><td id="staffAnalistaLevel"></td><td id="staffAnalistaSalary"></td><td id="staffAnalistaClausula"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="window.openHireStaffModal('analista')"></button></td></tr>
-                <tr><td>ðŸ” Ojeador</td><td id="staffScoutName"></td><td id="staffScoutLevel"></td><td id="staffScoutSalary"></td><td id="staffScoutClausula"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="window.openHireStaffModal('scout')"></button></td></tr>
-                <tr><td>âœï¸ Secretario TÃ©cnico</td><td id="staffSecretarioName"></td><td id="staffSecretarioLevel"></td><td id="staffSecretarioSalary"></td><td id="staffSecretarioClausula"></td><td><button class="btn btn-sm" id="btnHireSecretario" onclick="window.openHireStaffModal('secretario')"></button></td></tr>
-                <tr><td>ðŸ§‘â€ðŸ« Segundo Entrenador</td><td id="staffSegundoEntrenadorName"></td><td id="staffSegundoEntrenadorLevel"></td><td id="staffSegundoEntrenadorSalary"></td><td id="staffSegundoEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireSegundoEntrenador" onclick="window.openHireStaffModal('segundoEntrenador')"></button></td></tr>
+                <tr><td>�?�� Médico</td><td id="staffMedicoName"></td><td id="staffMedicoLevel"></td><td id="staffMedicoSalary"></td><td id="staffMedicoClausula"></td><td><button class="btn btn-sm" id="btnHireMedico" onclick="window.openHireStaffModal('medico')"></button></td></tr>
+                <tr><td>�?�� Entrenador Físico</td><td id="staffEntrenadorName"></td><td id="staffEntrenadorLevel"></td><td id="staffEntrenadorSalary"></td><td id="staffEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenador" onclick="window.openHireStaffModal('entrenador')"></button></td></tr>
+                <tr><td>�?� Entrenador Porteros</td><td id="staffEntrenadorPorterosName"></td><td id="staffEntrenadorPorterosLevel"></td><td id="staffEntrenadorPorterosSalary"></td><td id="staffEntrenadorPorterosClausula"></td><td><button class="btn btn-sm" id="btnHireEntrenadorPorteros" onclick="window.openHireStaffModal('entrenadorPorteros')"></button></td></tr>
+                <tr><td>�?�� Fisioterapeuta</td><td id="staffFisioName"></td><td id="staffFisioLevel"></td><td id="staffFisioSalary"></td><td id="staffFisioClausula"></td><td><button class="btn btn-sm" id="btnHireFisio" onclick="window.openHireStaffModal('fisio')"></button></td></tr>
+                <tr><td>�??� Analista Vídeo</td><td id="staffAnalistaName"></td><td id="staffAnalistaLevel"></td><td id="staffAnalistaSalary"></td><td id="staffAnalistaClausula"></td><td><button class="btn btn-sm" id="btnHireAnalista" onclick="window.openHireStaffModal('analista')"></button></td></tr>
+                <tr><td>�??� Ojeador</td><td id="staffScoutName"></td><td id="staffScoutLevel"></td><td id="staffScoutSalary"></td><td id="staffScoutClausula"></td><td><button class="btn btn-sm" id="btnHireScout" onclick="window.openHireStaffModal('scout')"></button></td></tr>
+                <tr><td>�?�️ Secretario Técnico</td><td id="staffSecretarioName"></td><td id="staffSecretarioLevel"></td><td id="staffSecretarioSalary"></td><td id="staffSecretarioClausula"></td><td><button class="btn btn-sm" id="btnHireSecretario" onclick="window.openHireStaffModal('secretario')"></button></td></tr>
+                <tr><td>�?�?�?��?�� Segundo Entrenador</td><td id="staffSegundoEntrenadorName"></td><td id="staffSegundoEntrenadorLevel"></td><td id="staffSegundoEntrenadorSalary"></td><td id="staffSegundoEntrenadorClausula"></td><td><button class="btn btn-sm" id="btnHireSegundoEntrenador" onclick="window.openHireStaffModal('segundoEntrenador')"></button></td></tr>
             </tbody>
         </table>
     </div>
@@ -539,22 +539,22 @@
     <!-- FINANZAS / CAJA -->
     <div id="finance" class="page">
         <div class="page-header">
-            <h1>ðŸ’¼ Finanzas</h1>
-            <button class="page-close-btn" onclick="closePage('finance')">âœ– CERRAR</button>
+            <h1>�??� Finanzas</h1>
+            <button class="page-close-btn" onclick="closePage('finance')">�?? CERRAR</button>
         </div>
         
         <div class="data-grid">
             <div class="data-box">
                 <div class="data-label">Ingresos/Semana</div>
-                <div class="data-value" id="financeWeeklyIncome">0â‚¬</div>
+                <div class="data-value" id="financeWeeklyIncome">0�?�</div>
             </div>
             <div class="data-box">
                 <div class="data-label">Gastos/Semana</div>
-                <div class="data-value negative" id="financeWeeklyExpenses">0â‚¬</div>
+                <div class="data-value negative" id="financeWeeklyExpenses">0�?�</div>
             </div>
             <div class="data-box">
                 <div class="data-label">Balance Actual</div>
-                <div class="data-value" id="financeBalance">0â‚¬</div>
+                <div class="data-value" id="financeBalance">0�?�</div>
             </div>
         </div>
         
@@ -562,20 +562,20 @@
         <table>
             <tr><td>Capacidad Estadio:</td><td id="financeStadiumCapacity">0</td></tr>
             <tr><td>Asistencia Esperada:</td><td id="financeExpectedAttendance">0</td></tr>
-            <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="5" max="100" onchange="window.setTicketPriceFromInput()">â‚¬</td></tr>
+            <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="5" max="100" onchange="window.setTicketPriceFromInput()">�?�</td></tr>
             <tr><td>Popularidad del Club:</td><td id="financePopularity">0%</td></tr>
             <tr><td>Fanbase:</td><td id="financeFanbase">0</td></tr>
             <tr><td>Merchandising vendido:</td><td id="financeMerchandisingItemsSold">0</td></tr>
-            <tr><td>Precio Merchandising:</td><td><input type="number" id="merchandisingPriceInput" min="1" max="50" onchange="window.setMerchandisingPriceFromInput()">â‚¬</td></tr>
-            <tr><td>Ingresos Merchandising:</td><td id="financeMerchandisingRevenue">0â‚¬</td></tr>
+            <tr><td>Precio Merchandising:</td><td><input type="number" id="merchandisingPriceInput" min="1" max="50" onchange="window.setMerchandisingPriceFromInput()">�?�</td></tr>
+            <tr><td>Ingresos Merchandising:</td><td id="financeMerchandisingRevenue">0�?�</td></tr>
         </table>
     </div>
 
     <!-- COMERCIAL / DECISIONES -->
     <div id="commercial" class="page">
         <div class="page-header">
-            <h1>ðŸ›’ GestiÃ³n Comercial</h1>
-            <button class="page-close-btn" onclick="closePage('commercial')">âœ– CERRAR</button>
+            <h1>�??? Gestión Comercial</h1>
+            <button class="page-close-btn" onclick="closePage('commercial')">�?? CERRAR</button>
         </div>
         
         <div class="data-grid">
@@ -593,7 +593,7 @@
             </div>
             <div class="data-box">
                 <div class="data-label">Ingresos Merchandising (semana)</div>
-                <div class="data-value" id="commercialMerchRevenue">0â‚¬</div>
+                <div class="data-value" id="commercialMerchRevenue">0�?�</div>
             </div>
         </div>
         
@@ -601,33 +601,33 @@
         <p>Ajusta el precio de tus entradas y merchandising para maximizar beneficios. Ten en cuenta que precios muy altos pueden reducir la popularidad y la asistencia.</p>
         
         <div style="margin-top: 20px;">
-            <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>â‚¬):</label>
+            <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>�?�):</label>
             <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" oninput="window.updateTicketPriceDisplay(this.value)" onchange="window.setTicketPriceFromSlider(this.value)">
-            <span id="ticketPriceSliderValue">20</span>â‚¬
+            <span id="ticketPriceSliderValue">20</span>�?�
         </div>
         
         <div style="margin-top: 15px;">
-            <label style="display: block; margin-bottom: 5px;">Precio del Merchandising (actual: <span id="currentMerchandisingPrice">0</span>â‚¬):</label>
+            <label style="display: block; margin-bottom: 5px;">Precio del Merchandising (actual: <span id="currentMerchandisingPrice">0</span>�?�):</label>
             <input type="range" id="merchandisingPriceSlider" min="1" max="50" value="10" oninput="window.updateMerchandisingPriceDisplay(this.value)" onchange="window.setMerchandisingPriceFromSlider(this.value)">
-            <span id="merchandisingPriceSliderValue">10</span>â‚¬
+            <span id="merchandisingPriceSliderValue">10</span>�?�
         </div>
     </div>
 
     <!-- INSTALACIONES / ESTADIO -->
     <div id="facilities" class="page">
         <div class="page-header">
-            <h1>ðŸŸï¸ Instalaciones</h1>
-            <button class="page-close-btn" onclick="closePage('facilities')">âœ– CERRAR</button>
+            <h1>�?�?️ Instalaciones</h1>
+            <button class="page-close-btn" onclick="closePage('facilities')">�?? CERRAR</button>
         </div>
         
-        <!-- SecciÃ³n del Estadio -->
+        <!-- Sección del Estadio -->
         <div class="facility-section">
             <h2>Estadio</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                 <div>
                     <p style="margin-bottom: 10px;"><strong>Nombre:</strong> <span id="stadiumNameDisplay" style="color: #00ff00;">-</span></p>
                     <p style="margin-bottom: 10px;"><strong>Capacidad actual:</strong> <span id="currentStadiumCapacity" style="color: #00ff00;">0</span> espectadores</p>
-                    <button class="btn" onclick="window.expandStadium()">Expandir Estadio (+10.000 asientos - 50.000â‚¬)</button>
+                    <button class="btn" onclick="window.expandStadium()">Expandir Estadio (+10.000 asientos - 50.000�?�)</button>
                 </div>
                 <div id="stadiumImageContainer" style="text-align: center;">
                     <p style="color: #999;">No hay imagen del estadio disponible</p>
@@ -635,12 +635,12 @@
             </div>
         </div>
         
-        <!-- SecciÃ³n del Centro de Entrenamiento -->
+        <!-- Sección del Centro de Entrenamiento -->
         <div class="facility-section">
             <h2>Centro de Entrenamiento</h2>
             <p style="margin-bottom: 15px;"><strong>Nivel actual:</strong> <span id="currentTrainingLevel" style="color: #00ff00; font-size: 1.5em;">1</span></p>
             <p style="color: #999; margin-bottom: 15px; font-size: 0.9em;">Un mejor centro de entrenamiento mejora la efectividad de los entrenamientos individuales</p>
-            <button class="btn" onclick="window.improveFacilities()">Mejorar Entrenamientos (30.000â‚¬)</button>
+            <button class="btn" onclick="window.improveFacilities()">Mejorar Entrenamientos (30.000�?�)</button>
         </div>
     </div>
 
@@ -648,24 +648,24 @@
          MODALES (mantienen la misma estructura)
          ============================================ -->
 
-    <!-- MODAL: SelecciÃ³n de Modo de Juego -->
+    <!-- MODAL: Selección de Modo de Juego -->
     <div id="gameModeModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="window.closeModal('gameMode')">&times;</span>
             <h1>Modo de Juego</h1>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('manager')">ðŸ… Liga Manager (Empezar con equipo preexistente)</button>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('promanager')">ðŸš€ Liga Promanager (Empezar desde abajo)</button>
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('manager')">�?�? Liga Manager (Empezar con equipo preexistente)</button>
+            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('promanager')">�??? Liga Promanager (Empezar desde abajo)</button>
         </div>
     </div>
 
-        <!-- MODAL: SelecciÃ³n de Equipo -->
+        <!-- MODAL: Selección de Equipo -->
     <div id="selectTeamModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="window.closeModal('selectTeam')">&times;</span>
             <h1>Selecciona tu Equipo</h1>
-            <h2>Primera DivisiÃ³n</h2>
+            <h2>Primera División</h2>
             <div id="primeraList" class="team-selection-list"></div>
-            <h2>Segunda DivisiÃ³n</h2>
+            <h2>Segunda División</h2>
             <div id="segundaList" class="team-selection-list"></div>
             <h2>Primera RFEF Grupo 1</h2>
             <div id="rfef_grupo1List" class="team-selection-list"></div>
@@ -683,25 +683,25 @@
         </div>
     </div>
 
-    <!-- MODAL: NegociaciÃ³n -->
+    <!-- MODAL: Negociación -->
     <div id="negotiationModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="window.endNegotiationUI(false)">&times;</span>
-            <h1>NegociaciÃ³n de Fichajes</h1>
+            <h1>Negociación de Fichajes</h1>
             
             <div class="negotiation-player-info">
                 <h3><span id="negotiationPlayerName"></span> (<span id="negotiationPlayerClub"></span>)</h3>
-                <p>PosiciÃ³n: <span id="negotiationPlayerPosition"></span> | Edad: <span id="negotiationPlayerAge"></span> | Media: <span id="negotiationPlayerOverall"></span> | Potencial: <span id="negotiationPlayerPotential"></span></p>
-                <p>Salario Actual: <span id="negotiationPlayerCurrentSalary"></span>â‚¬/sem | Valor de Mercado: <span id="negotiationPlayerValue"></span>â‚¬</p>
-                <p id="negotiationPlayerAskingPrice" style="display: none;"><span style="color: orange; font-weight: bold;">Precio solicitado: <span id="negotiationPlayerAskingPriceValue"></span>â‚¬</span></p>
-                <p id="negotiationPlayerLoanInfo" style="display: none;"><span style="color: lightblue; font-weight: bold;">Cedible (club actual paga <span id="negotiationPlayerLoanContribution"></span>â‚¬/sem)</span></p>
+                <p>Posición: <span id="negotiationPlayerPosition"></span> | Edad: <span id="negotiationPlayerAge"></span> | Media: <span id="negotiationPlayerOverall"></span> | Potencial: <span id="negotiationPlayerPotential"></span></p>
+                <p>Salario Actual: <span id="negotiationPlayerCurrentSalary"></span>�?�/sem | Valor de Mercado: <span id="negotiationPlayerValue"></span>�?�</p>
+                <p id="negotiationPlayerAskingPrice" style="display: none;"><span style="color: orange; font-weight: bold;">Precio solicitado: <span id="negotiationPlayerAskingPriceValue"></span>�?�</span></p>
+                <p id="negotiationPlayerLoanInfo" style="display: none;"><span style="color: lightblue; font-weight: bold;">Cedible (club actual paga <span id="negotiationPlayerLoanContribution"></span>�?�/sem)</span></p>
             </div>
             
             <!-- PASO 1: Oferta al Jugador -->
             <div id="negotiationStep1" class="negotiation-step">
                 <h2>Paso 1: Ofrecer Contrato Personal a <span id="negotiationPlayerNameStep1"></span></h2>
                 <label for="offeredSalary">Salario Semanal:</label>
-                <input type="number" id="offeredSalary" value="0" min="0" step="100">â‚¬
+                <input type="number" id="offeredSalary" value="0" min="0" step="100">�?�
                 
                 <div class="negotiation-incentives">
                     <div><input type="checkbox" id="offeredBonus"><label for="offeredBonus">Prima por Fichaje</label></div>
@@ -711,7 +711,7 @@
                     <div><input type="checkbox" id="offeredTicketPercent"><label for="offeredTicketPercent">% Entradas</label></div>
                 </div>
                 <button class="btn" onclick="window.submitPlayerOffer()">Hacer Oferta al Jugador</button>
-                <button class="btn" style="background: #c73446;" onclick="window.endNegotiationUI(false)">Cancelar NegociaciÃ³n</button>
+                <button class="btn" style="background: #c73446;" onclick="window.endNegotiationUI(false)">Cancelar Negociación</button>
             </div>
             
             <!-- PASO 2: Oferta al Club -->
@@ -719,24 +719,24 @@
                 <h2>Paso 2: Negociar con el Club <span id="negotiationPlayerClubStep2"></span></h2>
                 <p id="negotiationClubMessage"></p>
                 
-                <!-- Si es cesiÃ³n -->
+                <!-- Si es cesión -->
                 <div id="negotiationLoanOffer" style="display: none;">
-                    <label for="loanWageContribution">Â¿QuÃ© porcentaje de su salario semanal pagarÃ­as? (Actual: <span id="loanPlayerSalaryExample"></span>â‚¬)</label>
+                    <label for="loanWageContribution">¿Qué porcentaje de su salario semanal pagarías? (Actual: <span id="loanPlayerSalaryExample"></span>�?�)</label>
                     <input type="range" id="loanWageContribution" min="0" max="100" value="50" oninput="document.getElementById('loanWageContributionValue').textContent=this.value+'%'">
                     <span id="loanWageContributionValue">50</span>%
-                    <p class="alert alert-info">El club de origen paga <span id="loanClubContributionInfo"></span>â‚¬ de su salario actual.</p>
-                    <button class="btn" onclick="window.submitLoanOffer()">Hacer Oferta de CesiÃ³n</button>
+                    <p class="alert alert-info">El club de origen paga <span id="loanClubContributionInfo"></span>�?� de su salario actual.</p>
+                    <button class="btn" onclick="window.submitLoanOffer()">Hacer Oferta de Cesión</button>
                 </div>
                 
                 <!-- Si es traspaso -->
                 <div id="negotiationTransferOffer" style="display: none;">
                     <label for="offerAmount">Cantidad de Traspaso:</label>
-                    <input type="number" id="offerAmount" value="0" min="0" step="1000">â‚¬
+                    <input type="number" id="offerAmount" value="0" min="0" step="1000">�?�
                     <label style="margin-top: 15px;">Jugadores a incluir en el intercambio (opcional):</label>
                     <select id="playerExchangeSelect" multiple style="min-height: 100px;"></select>
                     <button class="btn" onclick="window.submitTransferOffer()">Hacer Oferta de Traspaso</button>
                 </div>
-                <button class="btn" style="background: #c73446; margin-top: 10px;" onclick="window.endNegotiationUI(false)">Cancelar NegociaciÃ³n</button>
+                <button class="btn" style="background: #c73446; margin-top: 10px;" onclick="window.endNegotiationUI(false)">Cancelar Negociación</button>
             </div>
         </div>
     </div>
@@ -749,17 +749,17 @@
             
             <div class="training-player-info">
                 <h3>Jugador: <span id="trainingPlayerName"></span></h3>
-                <p>PosiciÃ³n: <span id="trainingPlayerPosition"></span> | Media: <span id="trainingPlayerOverall"></span> | Potencial: <span id="trainingPlayerPotential"></span></p>
+                <p>Posición: <span id="trainingPlayerPosition"></span> | Media: <span id="trainingPlayerOverall"></span> | Potencial: <span id="trainingPlayerPotential"></span></p>
                 <p>Atributos actuales:</p>
                 <ul id="trainingPlayerAttributes" style="list-style: none; display: flex; flex-wrap: wrap; gap: 10px;"></ul>
             </div>
             
             <p class="alert alert-info" id="trainingInfoMessage">Selecciona un atributo para que <span id="trainingPlayerNameInfo"></span> se enfoque esta semana.</p>
             <div id="trainingStaffWarning" class="alert alert-warning" style="display: none;">
-                âš ï¸ Â¡Advertencia! No tienes un entrenador fÃ­sico contratado. El entrenamiento serÃ¡ menos efectivo.
+                �?�️ ¡Advertencia! No tienes un entrenador físico contratado. El entrenamiento será menos efectivo.
             </div>
             <div id="trainingGkStaffWarning" class="alert alert-warning" style="display: none;">
-                âš ï¸ Â¡Advertencia! No tienes un entrenador de porteros contratado. El entrenamiento para POR serÃ¡ menos efectivo.
+                �?�️ ¡Advertencia! No tienes un entrenador de porteros contratado. El entrenamiento para POR será menos efectivo.
             </div>
             
             <div class="attribute-selection" style="margin-top: 20px;">
@@ -802,7 +802,7 @@
             <img id="modalPlayerPhoto" src="https://via.placeholder.com/120x150?text=Foto" alt="Foto jugador">
             <div class="modal-header-info">
                 <h2 id="modalPlayerName">Nombre</h2>
-                <p id="modalPlayerPosition">PosiciÃ³n: -</p>
+                <p id="modalPlayerPosition">Posición: -</p>
                 <p id="modalPlayerOverall">OVR: -</p>
             </div>
         </div>
@@ -839,7 +839,7 @@
         import { getPlayerMarket, getYoungsterMarket } from './players.js';
 
         // ============================================
-        // FUNCIONES PARA NAVEGACIÃ“N DE PÃGINAS
+        // FUNCIONES PARA NAVEGACI�?N DE PÁGINAS
         // ============================================
         
         window.openPage = function(pageId) {
@@ -847,7 +847,7 @@
             if (page) {
                 page.classList.add('active');
                 
-                // Actualizar contenido segÃºn la pÃ¡gina
+                // Actualizar contenido según la página
                 const state = gameLogic.getGameState();
                 if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
                 if (pageId === 'academy') ui.renderAcademyList(state.academy);
@@ -876,8 +876,8 @@
         };
 
         window.handleExit = function() {
-            if (confirm('Â¿EstÃ¡s seguro de que quieres salir? AsegÃºrate de guardar tu partida antes.')) {
-                // AquÃ­ puedes aÃ±adir lÃ³gica de salida o redireccionamiento
+            if (confirm('¿Estás seguro de que quieres salir? Asegúrate de guardar tu partida antes.')) {
+                // Aquí puedes añadir lógica de salida o redireccionamiento
                 window.location.reload();
             }
         };
@@ -903,7 +903,7 @@
         };
 
         window.negotiatePlayer = function(playerName) {
-            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no estÃ¡ implementada todavÃ­a.`);
+            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía.`);
         };
 
         // Variables y funciones para Drag & Drop
@@ -921,11 +921,11 @@
                 alert("Los jugadores lesionados no pueden ser alineados.");
                 return;
             }
-            const _st = window.gameLogic?.getGameState();
-            const _sp = _st?.squad?.find(p => p.name === player.name);
-            if (_sp?.isSuspended) {
+            const _dragSt = window.gameLogic && window.gameLogic.getGameState();
+            const _dragSp = _dragSt && _dragSt.squad && _dragSt.squad.find(function(p){ return p.name === player.name; });
+            if (_dragSp && _dragSp.isSuspended) {
                 ev.preventDefault();
-                alert('?? ' + player.name + ' está sancionado (' + (_sp.suspensionWeeks || 0) + ' jornada/s) y no puede ser alineado.');
+                alert('? ' + player.name + ' est� sancionado (' + (_dragSp.suspensionWeeks || 0) + ' jornada/s).');
                 return;
             }
             draggedPlayer = player;
@@ -991,7 +991,7 @@
         document.getElementById('gameModeModal').classList.add('active');        
     } else if (type === 'selectTeam') {        
         document.getElementById('selectTeamModal').classList.add('active');        
-        window.renderTeamSelectors(); // <-- Â¡AsegÃºrate de que esta lÃ­nea estÃ© aquÃ­!  
+        window.renderTeamSelectors(); // <-- ¡Asegúrate de que esta línea esté aquí!  
     } else if (type === 'signYoungster') {        
         document.getElementById('signYoungsterModal').classList.add('active');        
         window.renderAvailableYoungsters();        
@@ -1011,23 +1011,23 @@
     if (modal) {
         modal.classList.remove('active');
     } else {
-        console.warn(`âš ï¸ Modal no encontrado: ${modalId}`);
+        console.warn(`�?�️ Modal no encontrado: ${modalId}`);
     }
 };
       
        window.startGameMode = function(mode) {        
     window.gameMode = mode;        
     window.closeModal('gameMode');  
-    // DESCOMENTA o ASEGÃšRATE de que esta lÃ­nea estÃ© presente:  
-    window.renderTeamSelectors(); // ðŸ‘ˆ IMPORTANTE  
+    // DESCOMENTA o ASEG�?RATE de que esta línea esté presente:  
+    window.renderTeamSelectors(); // �??? IMPORTANTE  
     window.openModal('selectTeam');        
 };    
       
  
 function renderTeamSelectors() {  
-    // ComprobaciÃ³n de seguridad: TEAMS_DATA debe existir  
+    // Comprobación de seguridad: TEAMS_DATA debe existir  
     if (!window.TEAMS_DATA) {  
-        console.error('âš ï¸ TEAMS_DATA no estÃ¡ disponible. No se pueden mostrar equipos.');  
+        console.error('�?�️ TEAMS_DATA no está disponible. No se pueden mostrar equipos.');  
         return;  
     }  
   
@@ -1043,7 +1043,7 @@ function renderTeamSelectors() {
         const listElement = document.getElementById(divisionListIds[divisionKey]);  
         if (!listElement) return;  
   
-        // MODIFICACIÃ“N: FILTRAR ELEMENTOS NULL/UNDEFINED DEL ARRAY DE EQUIPOS  
+        // MODIFICACI�?N: FILTRAR ELEMENTOS NULL/UNDEFINED DEL ARRAY DE EQUIPOS  
         const teamsToRender = (window.TEAMS_DATA[divisionKey] || []).filter(team => team);  
   
         if (teamsToRender.length === 0) {  
@@ -1068,11 +1068,11 @@ function renderTeamSelectors() {
 window.renderTeamSelectors = renderTeamSelectors;  
 
 // -------------------------
-// SelecciÃ³n de equipo y arranque
+// Selección de equipo y arranque
 // -------------------------
 window.selectTeamAndStart = function(teamName, division) {
     if (!teamName || !division) {
-        alert('âš ï¸ Equipo o divisiÃ³n invÃ¡lidos');
+        alert('�?�️ Equipo o división inválidos');
         return;
     }
 
@@ -1082,7 +1082,7 @@ window.selectTeamAndStart = function(teamName, division) {
     ui.refreshUI(gameLogic.getGameState());
     window.closeModal('selectTeam');
 
-    // Abrir dashboard automÃ¡ticamente
+    // Abrir dashboard automáticamente
     const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');
     if (dashboardButton) window.switchPage('dashboard', dashboardButton);
 };
@@ -1131,7 +1131,7 @@ window.selectTeamAndStart = function(teamName, division) {
         };
 
         window.sellPlayerConfirm = function(name) {
-            if (confirm(`Â¿EstÃ¡s seguro de que quieres vender a ${name}?`)) {
+            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {
                 const result = gameLogic.sellPlayer(name);
                 alert(result.message);
                 ui.refreshUI(gameLogic.getGameState());
@@ -1139,27 +1139,27 @@ window.selectTeamAndStart = function(teamName, division) {
         };
 
         window.promoteConfirm = function(name) {
-            if (confirm(`Â¿Ascender a ${name} a la primera plantilla?`)) {
+            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {
                 const result = gameLogic.promoteYoungster(name);
                 alert(result.message);
                 ui.refreshUI(gameLogic.getGameState());
             }
         };
 
-        // SimulaciÃ³n
+        // Simulación
         window.simulateWeek = async function() {
             const state = gameLogic.getGameState();
             const lineupValidation = gameLogic.validateLineup(state.lineup);
             
             if (!lineupValidation.success) {
                 if (state.staff.segundoEntrenador) {
-                    alert(`Â¡Advertencia del Segundo Entrenador!\n\nTu alineaciÃ³n actual es INVÃLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineaciÃ³n antes de simular la jornada.`);
-                    gameLogic.addNews(`[Segundo Entrenador - CRÃTICO] AlineaciÃ³n invÃ¡lida: ${lineupValidation.message}. Por favor, corrige.`, 'error');
+                    alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada.`);
+                    gameLogic.addNews(`[Segundo Entrenador - CRÍTICO] Alineación inválida: ${lineupValidation.message}. Por favor, corrige.`, 'error');
                     window.openPage('lineup');
                     return;
                 } else {
-                    alert(`Â¡AlineaciÃ³n invÃ¡lida detectada!\n\n${lineupValidation.message}\n\nTu equipo serÃ¡ penalizado con una derrota 0-3 por alineaciÃ³n indebida.`);
-                    gameLogic.addNews(`[SISTEMA - ATENCIÃ“N] AlineaciÃ³n invÃ¡lida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
+                    alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida.`);
+                    gameLogic.addNews(`[SISTEMA - ATENCI�?N] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
                 }
             }
             
@@ -1176,7 +1176,7 @@ window.selectTeamAndStart = function(teamName, division) {
                 
                 if (myMatch.home === state.team) {
                     if (parseInt(myMatch.score.split('-')[0]) > parseInt(myMatch.score.split('-')[1])) {
-                        matchResultTitle.textContent = 'Â¡VICTORIA!';
+                        matchResultTitle.textContent = '¡VICTORIA!';
                         matchResultTitle.style.color = '#00ff00';
                     } else if (parseInt(myMatch.score.split('-')[0]) === parseInt(myMatch.score.split('-')[1])) {
                         matchResultTitle.textContent = 'EMPATE';
@@ -1187,7 +1187,7 @@ window.selectTeamAndStart = function(teamName, division) {
                     }
                 } else {
                     if (parseInt(myMatch.score.split('-')[1]) > parseInt(myMatch.score.split('-')[0])) {
-                        matchResultTitle.textContent = 'Â¡VICTORIA!';
+                        matchResultTitle.textContent = '¡VICTORIA!';
                         matchResultTitle.style.color = '#00ff00';
                     } else if (parseInt(myMatch.score.split('-')[1]) === parseInt(myMatch.score.split('-')[0])) {
                         matchResultTitle.textContent = 'EMPATE';
@@ -1206,7 +1206,7 @@ window.selectTeamAndStart = function(teamName, division) {
             window.openPage('dashboard');
         };
 
-        // NegociaciÃ³n
+        // Negociación
         window.startNegotiationUI = function(encodedPlayerJson) {
             const player = encodedPlayerJson;
             const result = gameLogic.startNegotiation(player);
@@ -1276,7 +1276,7 @@ window.selectTeamAndStart = function(teamName, division) {
                 negotiationLoanOffer.style.display = 'none';
                 negotiationTransferOffer.style.display = 'none';
 
-                document.getElementById('negotiationClubMessage').textContent = `EstÃ¡s a punto de hacer una oferta a ${player.club} por ${player.name}.`;
+                document.getElementById('negotiationClubMessage').textContent = `Estás a punto de hacer una oferta a ${player.club} por ${player.name}.`;
 
                 if (player.loanListed) {
                     negotiationLoanOffer.style.display = 'block';
@@ -1305,7 +1305,7 @@ window.selectTeamAndStart = function(teamName, division) {
             if (result.success) {
                 window.updateNegotiationModal();
             } else {
-                if (result.message.includes('No estÃ¡ interesado')) {
+                if (result.message.includes('No está interesado')) {
                     window.endNegotiationUI(false);
                 }
             }
@@ -1318,7 +1318,7 @@ window.selectTeamAndStart = function(teamName, division) {
             state.squad.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.name;
-                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}â‚¬`;
+                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}�?�`;
                 select.appendChild(option);
             });
         }
@@ -1331,7 +1331,7 @@ window.selectTeamAndStart = function(teamName, division) {
             if (result.success) {
                 window.endNegotiationUI(true);
             } else {
-                if (result.message.includes('rechazado tu oferta de cesiÃ³n')) {
+                if (result.message.includes('rechazado tu oferta de cesión')) {
                     window.endNegotiationUI(false);
                 }
             }
@@ -1436,14 +1436,14 @@ window.selectTeamAndStart = function(teamName, division) {
             let indemnizationMessage = '';
             if (existingStaff) {
                 const indemnization = existingStaff.salary * 52;
-                indemnizationMessage = `<p class="alert alert-warning">Al contratar a un nuevo ${STAFF_ROLES[role].displayName}, se despedirÃ¡ a ${existingStaff.name} con una indemnizaciÃ³n de ${indemnization.toLocaleString('es-ES')}â‚¬ (salario de un aÃ±o).</p>`;
+                indemnizationMessage = `<p class="alert alert-warning">Al contratar a un nuevo ${STAFF_ROLES[role].displayName}, se despedirá a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}�?� (salario de un año).</p>`;
             }
 
             list.innerHTML = indemnizationMessage + candidates.map((c, idx) => `
                 <div class="staff-candidate">
                     <div>
                         <strong>${c.name}</strong> (Nivel ${c.level})<br>
-                        Salario: ${c.salary.toLocaleString('es-ES')}â‚¬/semana | ClÃ¡usula: ${c.clausula.toLocaleString('es-ES')}â‚¬
+                        Salario: ${c.salary.toLocaleString('es-ES')}�?�/semana | Cláusula: ${c.clausula.toLocaleString('es-ES')}�?�
                     </div>
                     <button class="btn btn-sm" onclick="window.hireStaffConfirm('${encodeURIComponent(JSON.stringify(c))}')">Contratar</button>
                 </div>
@@ -1456,11 +1456,11 @@ window.selectTeamAndStart = function(teamName, division) {
             const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));
             const state = gameLogic.getGameState();
             const existingStaff = state.staff[candidate.role];
-            let confirmationMessage = `Â¿EstÃ¡s seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}â‚¬/semana y una clÃ¡usula de ${candidate.clausula.toLocaleString('es-ES')}â‚¬?`;
+            let confirmationMessage = `¿Estás seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}�?�/semana y una cláusula de ${candidate.clausula.toLocaleString('es-ES')}�?�?`;
 
             if (existingStaff) {
                 const indemnization = existingStaff.salary * 52;
-                confirmationMessage += `\n\nEsto implicarÃ¡ despedir a ${existingStaff.name} con una indemnizaciÃ³n de ${indemnization.toLocaleString('es-ES')}â‚¬ (salario de un aÃ±o).`;
+                confirmationMessage += `\n\nEsto implicará despedir a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}�?� (salario de un año).`;
             }
 
             if (confirm(confirmationMessage)) {
@@ -1474,13 +1474,13 @@ window.selectTeamAndStart = function(teamName, division) {
             }
         };
 
-        // TÃ¡cticas
+        // Tácticas
         window.updateFormation = function() {
             const state = gameLogic.getGameState();
             const newFormation = document.getElementById('formationSelect').value;
             const updatedState = { ...state, formation: newFormation };
             gameLogic.updateGameState(updatedState);
-            alert('FormaciÃ³n actualizada a ' + FORMATIONS[updatedState.formation].name);
+            alert('Formación actualizada a ' + FORMATIONS[updatedState.formation].name);
             window.renderLineupPageUI();
         };
 
@@ -1489,7 +1489,7 @@ window.selectTeamAndStart = function(teamName, division) {
             const newMentality = document.getElementById('mentalitySelect').value;
             const updatedState = { ...state, mentality: newMentality };
             gameLogic.updateGameState(updatedState);
-            alert('Mentalidad tÃ¡ctica actualizada a ' + updatedState.mentality);
+            alert('Mentalidad táctica actualizada a ' + updatedState.mentality);
         };
 
         function updateTacticsDisplay(state) {
@@ -1548,7 +1548,7 @@ window.selectTeamAndStart = function(teamName, division) {
 
                 if (nameElem) nameElem.textContent = staff ? staff.name : 'No Contratado';
                 if (levelElem) levelElem.textContent = staff ? staff.level : '-';
-                if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + 'â‚¬' : '-';
+                if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '�?�' : '-';
                 if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-';
                 if (btnElem) {
                     btnElem.disabled = !!staff;
@@ -1623,9 +1623,9 @@ window.selectTeamAndStart = function(teamName, division) {
 
        function updateFinanceDisplay(state) {
     // === DATOS PRINCIPALES ===
-    document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + 'â‚¬';
-    document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + 'â‚¬';
-    document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + 'â‚¬';
+    document.getElementById('financeWeeklyIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '�?�';
+    document.getElementById('financeWeeklyExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '�?�';
+    document.getElementById('financeBalance').textContent = state.balance.toLocaleString('es-ES') + '�?�';
 
     // === ESTADIO ===
     document.getElementById('financeStadiumCapacity').textContent = state.stadiumCapacity.toLocaleString('es-ES');
@@ -1639,11 +1639,11 @@ window.selectTeamAndStart = function(teamName, division) {
     const ticketPriceInput = document.getElementById('ticketPriceInput');
     if (ticketPriceInput) ticketPriceInput.value = state.ticketPrice;
     
-    // âœ… NUEVO: Ingresos por taquilla
+    // �?? NUEVO: Ingresos por taquilla
     const ticketIncome = Math.floor(state.ticketPrice * attendance);
     const ticketIncomeElement = document.getElementById('financeTicketIncome');
     if (ticketIncomeElement) {
-        ticketIncomeElement.textContent = ticketIncome.toLocaleString('es-ES') + 'â‚¬';
+        ticketIncomeElement.textContent = ticketIncome.toLocaleString('es-ES') + '�?�';
     }
 
     // === POPULARIDAD Y MERCHANDISING ===
@@ -1654,58 +1654,58 @@ window.selectTeamAndStart = function(teamName, division) {
     const merchandisingPriceInput = document.getElementById('merchandisingPriceInput');
     if (merchandisingPriceInput) merchandisingPriceInput.value = state.merchandisingPrice;
 
-    document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + 'â‚¬';
+    document.getElementById('financeMerchandisingRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '�?�';
 
     // ========================================
-    // âœ… NUEVAS SECCIONES: TRANSACCIONES DE JUGADORES
+    // �?? NUEVAS SECCIONES: TRANSACCIONES DE JUGADORES
     // ========================================
     
     // === VENTAS DE JUGADORES ===
     const playerSales = state.playerSalesIncome || 0;
     const playerSalesElement = document.getElementById('financePlayerSales');
     if (playerSalesElement) {
-        playerSalesElement.textContent = playerSales.toLocaleString('es-ES') + 'â‚¬';
+        playerSalesElement.textContent = playerSales.toLocaleString('es-ES') + '�?�';
     }
 
     // === GASTOS: SALARIOS ===
     const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
     const playerSalariesElement = document.getElementById('financePlayerSalaries');
     if (playerSalariesElement) {
-        playerSalariesElement.textContent = playerSalaries.toLocaleString('es-ES') + 'â‚¬/sem';
+        playerSalariesElement.textContent = playerSalaries.toLocaleString('es-ES') + '�?�/sem';
     }
 
     const staffSalaries = Object.values(state.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);
     const staffSalariesElement = document.getElementById('financeStaffSalaries');
     if (staffSalariesElement) {
-        staffSalariesElement.textContent = staffSalaries.toLocaleString('es-ES') + 'â‚¬/sem';
+        staffSalariesElement.textContent = staffSalaries.toLocaleString('es-ES') + '�?�/sem';
     }
 
     // === COMPRAS DE JUGADORES ===
     const playerPurchases = state.playerPurchases || 0;
     const playerPurchasesElement = document.getElementById('financePlayerPurchases');
     if (playerPurchasesElement) {
-        playerPurchasesElement.textContent = playerPurchases.toLocaleString('es-ES') + 'â‚¬';
+        playerPurchasesElement.textContent = playerPurchases.toLocaleString('es-ES') + '�?�';
     }
 
     // === INDEMNIZACIONES ===
     const compensations = state.playerCompensations || 0;
     const compensationsElement = document.getElementById('financeCompensations');
     if (compensationsElement) {
-        compensationsElement.textContent = compensations.toLocaleString('es-ES') + 'â‚¬';
+        compensationsElement.textContent = compensations.toLocaleString('es-ES') + '�?�';
     }
 
     // === TOTAL GASTOS SEMANALES ===
     const totalExpenses = state.weeklyExpenses;
     const totalExpensesElement = document.getElementById('financeTotalExpenses');
     if (totalExpensesElement) {
-        totalExpensesElement.textContent = totalExpenses.toLocaleString('es-ES') + 'â‚¬';
+        totalExpensesElement.textContent = totalExpenses.toLocaleString('es-ES') + '�?�';
     }
 
     // === BALANCE SEMANAL ===
     const weeklyBalance = state.weeklyIncome - state.weeklyExpenses;
     const weeklyBalanceElement = document.getElementById('financeWeeklyBalance');
     if (weeklyBalanceElement) {
-        weeklyBalanceElement.textContent = (weeklyBalance >= 0 ? '+' : '') + weeklyBalance.toLocaleString('es-ES') + 'â‚¬';
+        weeklyBalanceElement.textContent = (weeklyBalance >= 0 ? '+' : '') + weeklyBalance.toLocaleString('es-ES') + '�?�';
         weeklyBalanceElement.style.color = weeklyBalance >= 0 ? '#4CAF50' : '#ff3333';
     }
 }
@@ -1715,7 +1715,7 @@ window.selectTeamAndStart = function(teamName, division) {
             document.getElementById('commercialPopularity').textContent = state.popularity + '%';
             document.getElementById('commercialFanbase').textContent = state.fanbase.toLocaleString('es-ES');
             document.getElementById('commercialItemsSold').textContent = state.merchandisingItemsSold.toLocaleString('es-ES');
-            document.getElementById('commercialMerchRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + 'â‚¬';
+            document.getElementById('commercialMerchRevenue').textContent = state.merchandisingRevenue.toLocaleString('es-ES') + '�?�';
 
             const ticketPriceSlider = document.getElementById('ticketPriceSlider');
             const merchandisingPriceSlider = document.getElementById('merchandisingPriceSlider');
@@ -1733,7 +1733,7 @@ window.selectTeamAndStart = function(teamName, division) {
         }
         window.updateCommercialDisplay = updateCommercialDisplay;
 
-        // AlineaciÃ³n
+        // Alineación
         window.renderLineupPageUI = function() {
             const state = gameLogic.getGameState();
             const currentFormation = FORMATIONS[state.formation];
@@ -1775,17 +1775,16 @@ window.selectTeamAndStart = function(teamName, division) {
                 if (playerInSlot) {
                     const playerDiv = document.createElement('div');
                     playerDiv.classList.add('pitch-player');
-                    // Sincronizar estado con squad (fuente de verdad)
-                    const _sq = window.gameLogic?.getGameState()?.squad?.find(p => p.name === playerInSlot.name);
-                    if (_sq) { playerInSlot.isInjured = _sq.isInjured||false; playerInSlot.isSuspended = _sq.isSuspended||false; playerInSlot.suspensionWeeks = _sq.suspensionWeeks||0; }
+                    var _slotSq = window.gameLogic && window.gameLogic.getGameState().squad && window.gameLogic.getGameState().squad.find(function(p){ return p.name === playerInSlot.name; });
+                    if (_slotSq) { playerInSlot.isInjured = _slotSq.isInjured||false; playerInSlot.isSuspended = _slotSq.isSuspended||false; playerInSlot.suspensionWeeks = _slotSq.suspensionWeeks||0; }
                     if (playerInSlot.isInjured) playerDiv.classList.add('injured');
                     if (playerInSlot.isSuspended) playerDiv.classList.add('suspended');
                     playerDiv.draggable = true;
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    const _icon = playerInSlot.isInjured ? ' ??' : playerInSlot.isSuspended ? ' ??' : '';
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}${_icon}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
+                    var _slotIcon = playerInSlot.isInjured ? ' ?' : playerInSlot.isSuspended ? ' ?' : '';
+                    playerDiv.innerHTML = `<span>${playerInSlot.name}${_slotIcon}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
-                    // âœ… AquÃ­ aÃ±adimos el onclick para abrir modal
+                    // �?? Aquí añadimos el onclick para abrir modal
                     playerDiv.onclick = () => openPlayerModal(playerInSlot);
                     slot.appendChild(playerDiv);
                 }
@@ -1795,17 +1794,16 @@ window.selectTeamAndStart = function(teamName, division) {
             reserves.forEach(player => {
                 const playerDiv = document.createElement('div');
                 playerDiv.classList.add('draggable-player');
-                // Sincronizar estado con squad
-                const _sqr = window.gameLogic?.getGameState()?.squad?.find(p => p.name === player.name);
-                if (_sqr) { player.isInjured = _sqr.isInjured||false; player.isSuspended = _sqr.isSuspended||false; player.suspensionWeeks = _sqr.suspensionWeeks||0; }
+                var _resSq = window.gameLogic && window.gameLogic.getGameState().squad && window.gameLogic.getGameState().squad.find(function(p){ return p.name === player.name; });
+                if (_resSq) { player.isInjured = _resSq.isInjured||false; player.isSuspended = _resSq.isSuspended||false; player.suspensionWeeks = _resSq.suspensionWeeks||0; }
                 if (player.isInjured) playerDiv.classList.add('injured');
                 if (player.isSuspended) playerDiv.classList.add('suspended');
                 playerDiv.draggable = true;
                 playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-                const _lbl = player.isInjured ? ' ??' : player.isSuspended ? ' ??' : '';
-                playerDiv.textContent = `${player.name}${_lbl} (${player.overall}) - ${player.position}`;
+                var _resLbl = player.isInjured ? ' ?' : player.isSuspended ? ' ?' : '';
+                playerDiv.textContent = `${player.name}${_resLbl} (${player.overall}) - ${player.position}`;
                 playerDiv.dataset.playername = player.name;
-                // âœ… AquÃ­ aÃ±adimos el onclick para abrir modal
+                // �?? Aquí añadimos el onclick para abrir modal
                 playerDiv.onclick = () => openPlayerModal(player);
                 reservesList.appendChild(playerDiv);
             });
@@ -1819,10 +1817,10 @@ window.selectTeamAndStart = function(teamName, division) {
                 const validation = gameLogic.validateLineup(lineup);
                 if (!validation.success) {
                     lineupMessageElem.className = 'alert alert-warning';
-                    lineupMessageElem.innerHTML = `âš ï¸ Advertencia: ${validation.message}`;
+                    lineupMessageElem.innerHTML = `�?�️ Advertencia: ${validation.message}`;
                 } else {
                     lineupMessageElem.className = 'alert alert-info';
-                    lineupMessageElem.innerHTML = `AlineaciÃ³n actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineaciÃ³n.`;
+                    lineupMessageElem.innerHTML = `Alineación actual: ${FORMATIONS[state.formation].name}. Arrastra y suelta jugadores para configurar tu alineación.`;
                 }
             }
         };
@@ -1849,28 +1847,28 @@ window.selectTeamAndStart = function(teamName, division) {
 
             const validationResult = gameLogic.validateLineup(newLayout);
             if (!validationResult.success) {
-                alert(`Error al guardar la alineaciÃ³n: ${validationResult.message}`);
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÃ“N] Error al guardar: ${validationResult.message}`, 'error');
+                alert(`Error al guardar la alineación: ${validationResult.message}`);
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACI�?N] Error al guardar: ${validationResult.message}`, 'error');
                 window.renderLineupPageUI();
                 return;
             }
 
             const result = gameLogic.setLineup(newLayout);
             if (result.success) {
-                gameLogic.addNews('Â¡AlineaciÃ³n guardada con Ã©xito!', 'success');
+                gameLogic.addNews('¡Alineación guardada con éxito!', 'success');
                 alert(result.message);
                 ui.refreshUI(gameLogic.getGameState());
                 window.renderLineupPageUI();
             } else {
-                gameLogic.addNews(`[Segundo Entrenador - ALINEACIÃ“N] Error al guardar la alineaciÃ³n: ${result.message}`, 'error');
-                alert(`Error al guardar la alineaciÃ³n: ${result.message}`);
+                gameLogic.addNews(`[Segundo Entrenador - ALINEACI�?N] Error al guardar la alineación: ${result.message}`, 'error');
+                alert(`Error al guardar la alineación: ${result.message}`);
             }
         };
 
         // Guardar/Cargar
         window.saveCurrentGame = async function() {
             if (!window.currentUserId) {
-                alert('âš ï¸ Debes iniciar sesiÃ³n para guardar partidas en la nube.');
+                alert('�?�️ Debes iniciar sesión para guardar partidas en la nube.');
                 return;
             }
 
@@ -1883,14 +1881,14 @@ window.selectTeamAndStart = function(teamName, division) {
             try {
                 const result = await window.saveGameToCloud(window.currentUserId, gameId, gameName, currentGameState);
                 if (result.success) {
-                    alert('âœ… Partida guardada en la nube correctamente.');
+                    alert('�?? Partida guardada en la nube correctamente.');
                 } else {
-                    alert('âŒ Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));
+                    alert('�? Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));
                     console.error('Error al guardar la partida en la nube:', result.error);
                 }
             } catch (error) {
                 console.error('Error inesperado al guardar la partida:', error);
-                alert('âŒ Error inesperado al guardar la partida: ' + error.message);
+                alert('�? Error inesperado al guardar la partida: ' + error.message);
             }
         };
 
@@ -1901,9 +1899,9 @@ window.selectTeamAndStart = function(teamName, division) {
 
        
 
-        // InicializaciÃ³n
+        // Inicialización
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('ðŸŽ® Inicializando PC FÃºtbol Manager...');
+            console.log('�??� Inicializando PC Fútbol Manager...');
             
             const marketPositionSelect = document.getElementById('marketPosition');
             POSITIONS.forEach(pos => {
@@ -1921,9 +1919,9 @@ window.selectTeamAndStart = function(teamName, division) {
                 formationSelect.appendChild(option);
             });
 
-           // NO cargar automÃ¡ticamente - esperar a que el usuario elija
-console.log('â¸ï¸ Esperando selecciÃ³n del usuario (Nueva/Cargar desde nube)');
-// No hacer nada aquÃ­ - el modal de login se encargarÃ¡
+           // NO cargar automáticamente - esperar a que el usuario elija
+console.log('⏸️ Esperando selección del usuario (Nueva/Cargar desde nube)');
+// No hacer nada aquí - el modal de login se encargará
         });
 
 
@@ -1931,10 +1929,10 @@ console.log('â¸ï¸ Esperando selecciÃ³n del usuario (Nueva/Cargar desde
 // SISTEMA DE RENOVACIONES DE CONTRATOS
 // ============================================
 
-// Variable global para el jugador en renovaciÃ³n
+// Variable global para el jugador en renovación
 let currentRenewalPlayerIndex = -1;
 
-// Abrir modal de renovaciÃ³n
+// Abrir modal de renovación
 window.openRenewalModal = function(playerIndex) {
     const state = window.gameLogic.getGameState();
     const player = state.squad[playerIndex];
@@ -1951,16 +1949,16 @@ window.openRenewalModal = function(playerIndex) {
     
     currentRenewalPlayerIndex = playerIndex;
     
-    // Rellenar informaciÃ³n del jugador
+    // Rellenar información del jugador
     document.getElementById('renewalPlayerName').textContent = player.name;
     document.getElementById('renewalPlayerPosition').textContent = player.position;
     document.getElementById('renewalPlayerAge').textContent = player.age;
     document.getElementById('renewalPlayerOverall').textContent = player.overall;
     
     // Contrato actual
-    document.getElementById('renewalCurrentYears').textContent = player.contractYears + ' aÃ±os';
-    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + 'â‚¬/sem';
-    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + 'â‚¬';
+    document.getElementById('renewalCurrentYears').textContent = player.contractYears + ' años';
+    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + '�?�/sem';
+    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + '�?�';
     
     // Valores por defecto para nueva oferta
     document.getElementById('renewalNewYears').value = 3;
@@ -1982,7 +1980,7 @@ window.openRenewalModal = function(playerIndex) {
     updateRenewalProbability();
 };
 
-// Actualizar probabilidad de aceptaciÃ³n
+// Actualizar probabilidad de aceptación
 window.updateRenewalProbability = function() {
     const state = window.gameLogic.getGameState();
     const player = state.squad[currentRenewalPlayerIndex];
@@ -2040,7 +2038,7 @@ window.updateRenewalProbability = function() {
     }
 };
 
-// Enviar oferta de renovaciÃ³n
+// Enviar oferta de renovación
 window.submitRenewalOffer = function() {
     const state = window.gameLogic.getGameState();
     const player = state.squad[currentRenewalPlayerIndex];
@@ -2063,12 +2061,12 @@ window.submitRenewalOffer = function() {
     }
     
     if (newYears < 1 || newYears > 5) {
-        alert('La duraciÃ³n debe ser entre 1 y 5 aÃ±os');
+        alert('La duración debe ser entre 1 y 5 años');
         return;
     }
     
     if (newClause < 0) {
-        alert('La clÃ¡usula no puede ser negativa');
+        alert('La cláusula no puede ser negativa');
         return;
     }
     
@@ -2098,9 +2096,9 @@ window.submitRenewalOffer = function() {
     const accepted = Math.random() * 100 < probability;
     
     if (accepted) {
-        // âœ… ACTUALIZAR CONTRATO
+        // �?? ACTUALIZAR CONTRATO
         player.salary = newSalary;
-        player.contractYears = player.contractYears + newYears;  // âœ… SUMAR aÃ±os
+        player.contractYears = player.contractYears + newYears;  // �?? SUMAR años
         player.releaseClause = newClause;
         
         let renewalCost = 0;
@@ -2110,18 +2108,18 @@ window.submitRenewalOffer = function() {
         
         state.balance -= renewalCost;
 
-                // âœ… GUARDAR Y REFRESCAR
+                // �?? GUARDAR Y REFRESCAR
         window.gameLogic.updateGameState(state);
         window.gameLogic.saveToLocalStorage();
         
         window.gameLogic.addNews(
-            `âœ… Â¡${player.name} ha aceptado la renovaciÃ³n! Nuevo contrato: ${newYears} aÃ±os, ${newSalary.toLocaleString('es-ES')}â‚¬/sem`,
+            `�?? ¡${player.name} ha aceptado la renovación! Nuevo contrato: ${newYears} años, ${newSalary.toLocaleString('es-ES')}�?�/sem`,
             'success'
         );
         
         if (renewalCost > 0) {
             window.gameLogic.addNews(
-                `ðŸ’° Coste de renovaciÃ³n: ${renewalCost.toLocaleString('es-ES')}â‚¬`,
+                `�??� Coste de renovación: ${renewalCost.toLocaleString('es-ES')}�?�`,
                 'info'
             );
         }
@@ -2129,7 +2127,7 @@ window.submitRenewalOffer = function() {
         window.closeModal('renewal');
         window.ui.refreshUI(state);
         
-        // Refrescar pÃ¡ginas si estÃ¡n abiertas
+        // Refrescar páginas si están abiertas
         if (document.getElementById('negotiations').classList.contains('active')) {
             window.ui.renderNegotiationsList(state);
         }
@@ -2138,15 +2136,15 @@ window.submitRenewalOffer = function() {
             window.ui.renderSquadList(state.squad, state.team);
         }
         
-        alert(`âœ… Â¡${player.name} ha aceptado la renovaciÃ³n!\n\nNuevo contrato: ${newYears} aÃ±os\nSalario: ${newSalary.toLocaleString('es-ES')}â‚¬/sem\nCoste total: ${renewalCost.toLocaleString('es-ES')}â‚¬`);
+        alert(`�?? ¡${player.name} ha aceptado la renovación!\n\nNuevo contrato: ${newYears} años\nSalario: ${newSalary.toLocaleString('es-ES')}�?�/sem\nCoste total: ${renewalCost.toLocaleString('es-ES')}�?�`);
         
     } else {
         window.gameLogic.addNews(
-            `âŒ ${player.name} ha rechazado tu oferta de renovaciÃ³n`,
+            `�? ${player.name} ha rechazado tu oferta de renovación`,
             'warning'
         );
         
-        alert(`âŒ ${player.name} ha rechazado tu oferta.\n\nProbabilidad de aceptaciÃ³n: ${Math.round(probability)}%\n\nPuedes intentarlo de nuevo con una mejor oferta.`);
+        alert(`�? ${player.name} ha rechazado tu oferta.\n\nProbabilidad de aceptación: ${Math.round(probability)}%\n\nPuedes intentarlo de nuevo con una mejor oferta.`);
     }
     
     currentRenewalPlayerIndex = -1;
@@ -2174,7 +2172,7 @@ function openPlayerModal(player) {
     document.getElementById('modalPlayerPhoto').src = player.photo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='150'%3E%3Crect fill='%23ddd' width='120' height='150'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial' font-size='14'%3EFoto%3C/text%3E%3C/svg%3E";
 
     document.getElementById('modalPlayerName').innerText = player.name || 'Desconocido';
-    document.getElementById('modalPlayerPosition').innerText = `PosiciÃ³n: ${player.position || '-'}`;
+    document.getElementById('modalPlayerPosition').innerText = `Posición: ${player.position || '-'}`;
     document.getElementById('modalPlayerOverall').innerText = `OVR: ${player.overall || '-'}`;
 
     document.getElementById('modalPlayerPersonal').innerHTML = `
@@ -2190,16 +2188,16 @@ function openPlayerModal(player) {
 
     document.getElementById('modalPlayerContract').innerHTML = `
         Tipo: ${player.contractType || '-'}<br>
-        AÃ±os: ${player.contractYears || 0}<br>
+        Años: ${player.contractYears || 0}<br>
         Release Clause: ${player.releaseClause || 0}<br>
         Salario: ${player.salary || 0}<br>
         Club: ${player.club || '-'}
     `;
 
     document.getElementById('modalPlayerStatus').innerHTML = `
-        Lesionado: ${player.isInjured ? 'SÃ­' : 'No'}<br>
+        Lesionado: ${player.isInjured ? 'Sí' : 'No'}<br>
         Semanas fuera: ${player.weeksOut || 0}<br>
-        Suspendido: ${player.isSuspended ? 'SÃ­' : 'No'}<br>
+        Suspendido: ${player.isSuspended ? 'Sí' : 'No'}<br>
         Tarjetas amarillas: ${player.yellowCards || 0}<br>
         Tarjeta roja: ${player.redCards || 0}
     `;
@@ -2245,7 +2243,7 @@ window.onclick = function(event) {
         window.ATTRIBUTES = ATTRIBUTES;
         window.POSITIONS = POSITIONS;
         window.FORMATIONS = FORMATIONS;
-        console.log('âœ“ MÃ³dulos cargados y exportados');
+        console.log('�?? Módulos cargados y exportados');
     </script>
 
     <!-- Injectors -->
@@ -2257,20 +2255,20 @@ window.onclick = function(event) {
     <script src="./injector-admin-complete.js"></script>
     <script src="./injector-expose-functions.js"></script>
     <script src="./injector-match-summary.js"></script>
-  <!-- âœ… AÃ‘ADIR ESTA LÃNEA AQUÃ -->
+  <!-- �?? A�?ADIR ESTA LÍNEA AQUÍ -->
     <script type="module" src="./injector-cards-injuries.js"></script>
   
     
   
 
-<!-- âœ… AÃ‘ADIR ESTE MODAL AL FINAL DE index.html (antes del </body>) -->
+<!-- �?? A�?ADIR ESTE MODAL AL FINAL DE index.html (antes del </body>) -->
 
 <!-- MODAL: Ofertas Recibidas -->
 <div id="offersModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <span class="modal-close" onclick="window.closeModal('offersModal')">&times;</span>
         <div id="offersList">
-            <!-- AquÃ­ se renderizan las ofertas -->
+            <!-- Aquí se renderizan las ofertas -->
         </div>
         <div style="text-align: center; margin-top: 20px;">
             <button class="btn" onclick="window.closeModal('offersModal')">Cerrar</button>
@@ -2279,14 +2277,14 @@ window.onclick = function(event) {
 </div>
 
 <script>
-// Limpiar localStorage de partidas al cargar la pÃ¡gina
+// Limpiar localStorage de partidas al cargar la página
 (function() {
     const gameKeys = Object.keys(localStorage).filter(k => 
         k.includes('pcfutbol') || k.includes('game') || k === 'pcfutbol-save'
     );
     
     if (gameKeys.length > 0) {
-        console.log('ðŸ—‘ï¸ Limpiando localStorage:', gameKeys);
+        console.log('�???️ Limpiando localStorage:', gameKeys);
         gameKeys.forEach(k => localStorage.removeItem(k));
     }
 })();
