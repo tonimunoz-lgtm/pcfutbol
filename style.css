@@ -1,3 +1,4 @@
+
 /* -- General Styling -- */  
 @font-face {  
     font-family: 'PC-Futbol-Retro'; /* Nombre de la fuente si tienes una especÃ­fica */  
@@ -1523,15 +1524,8 @@ Salida
 ========================================== */
 @media (max-width: 850px) {
 
-    .main-center-row {
-        flex-direction: column;
-        gap: 15px;
-        padding: 0;
-    }
-
     .center-buttons {
         justify-content: center;
-        flex-wrap: wrap;
     }
 
     .main-center-circle {
@@ -1895,6 +1889,5 @@ Salida
 
     .center-buttons {
         gap: 4px;
-        flex-direction: column;
     }
 }
