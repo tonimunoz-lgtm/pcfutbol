@@ -380,11 +380,11 @@ function hookSimulateWeek() {
                     
                     let newsText;
                     if (cardResult.red) {
-                        newsText = `ðŸŸ¥ ${squadPlayer.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
+                        newsText = `🟥 ${squadPlayer.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
                     } else if (cardResult.suspension > 0) {
                         newsText = `âš ï¸ ${squadPlayer.name} acumula 5 amarillas - Sancionado 1 partido`;
                     } else {
-                        newsText = `ðŸŸ¨ ${squadPlayer.name} vio tarjeta amarilla`;
+                        newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
                     }
                     
                     window.gameLogic.addNews(newsText, cardResult.red ? 'error' : 'warning');
@@ -600,13 +600,13 @@ setTimeout(() => {
                         if (data.cards.length > 0) {
                             const cardsHTML = `
                                 <div class="cards-section">
-                                    <h3>ðŸŸ¨ðŸŸ¥ Tarjetas (TU EQUIPO)</h3>
+                                    <h3>🟨🟥 Tarjetas (TU EQUIPO)</h3>
                                     <div class="cards-list">
                                         ${data.cards.map(card => `
                                             <div class="card-item home">
-                                                <span class="card-icon">${card.red ? 'ðŸŸ¥' : 'ðŸŸ¨'}</span>
+                                                <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
                                                 <span class="card-player">${card.player}</span>
-                                                ${card.suspension > 0 ? `<span class="card-team">(SanciÃ³n: ${card.suspension} partidos)</span>` : ''}
+                                                ${card.suspension > 0 ? `<span class="card-team">(Sanción: ${card.suspension} partidos)</span>` : ''}
                                             </div>
                                         `).join('')}
                                     </div>
@@ -619,7 +619,7 @@ setTimeout(() => {
                         if (data.injuries.length > 0) {
                             const injuriesHTML = `
                                 <div class="injuries-section">
-                                    <h3>ðŸš‘ Lesiones (TU EQUIPO)</h3>
+                                    <h3>🚑 Lesiones (TU EQUIPO)</h3>
                                     <div class="injuries-list">
                                         ${data.injuries.map(inj => `
                                             <div class="injury-item">
@@ -720,8 +720,8 @@ function enhanceSquadTable() {
             }
             
             const badges = [];
-            if (player.yellowCards > 0) badges.push(`ðŸŸ¨Ã—${player.yellowCards}`);
-            if (player.redCards > 0) badges.push(`ðŸŸ¥Ã—${player.redCards}`);
+            if (player.yellowCards > 0) badges.push(`🟨Ã—${player.yellowCards}`);
+            if (player.redCards > 0) badges.push(`🟥Ã—${player.redCards}`);
             
             tarjetasCell.innerHTML = badges.length > 0 ? badges.join(' ') : '-';
             
