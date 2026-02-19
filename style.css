@@ -1800,22 +1800,13 @@ Salida
     #nextMatchTeams   { font-size: 10px; white-space: pre-line; text-align: center; word-break: break-word; }
     #nextMatchDate    { font-size: 9px; }
 
-    /* ============================================
-       ALINEACION MOVIL
-       El campo (16:9 horizontal) se rota 90deg
-       con un pseudo-elemento ::before, quedando
-       vertical. Los slots se contrarotan -90deg
-       para que el texto quede recto.
-       ============================================ */
-
+    /* ALINEACION MOVIL */
     .lineup-main-container {
         flex-direction: column;
         gap: 8px;
         align-items: center;
     }
 
-    /* El contenedor del campo reserva espacio vertical (aspect 9:16)
-       y deja overflow visible para los slots */
     .pitch-container {
         width: 100%;
         max-width: 100%;
@@ -1827,14 +1818,12 @@ Salida
         box-shadow: none;
     }
 
-    /* La imagen del campo rotada 90deg dentro del contenedor.
-       width/height calculados para que al rotar 90deg
-       ocupe exactamente el ancho del contenedor */
+    /* height: 100% para que la imagen rotada ocupe todo el ancho del contenedor */
     .pitch-container::before {
         content: '';
         position: absolute;
         width: 177.8%;
-        height: 56.25%;
+        height: 100%;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(90deg);
@@ -1847,7 +1836,7 @@ Salida
         box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
     }
 
-    /* Slots mas grandes y legibles, sin rotar */
+    /* Slots legibles, sin rotar */
     .pitch-position-placeholder {
         font-size: 1.1em;
         border-width: 2px;
