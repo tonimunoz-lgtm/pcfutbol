@@ -1,15 +1,15 @@
 // injector-cloud-load.js
 (function() {
-    console.log('☁️ Cloud Load Injector cargando...');
+    console.log('â˜ï¸ Cloud Load Injector cargando...');
 
     // ========================================
     // FUNCIONES DE CARGA DESDE LA NUBE
     // ========================================
 
-    // Función para abrir el modal de partidas guardadas
+    // FunciÃ³n para abrir el modal de partidas guardadas
     window.openSavedGamesModal = async function() {
         if (!window.currentUserId) {
-            alert('⚠️ Debes iniciar sesión para acceder a tus partidas guardadas en la nube.');
+            alert('âš ï¸ Debes iniciar sesiÃ³n para acceder a tus partidas guardadas en la nube.');
             return;
         }
 
@@ -21,7 +21,7 @@
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 700px;">
                     <span class="modal-close" onclick="document.getElementById('savedGamesModal').classList.remove('active')">&times;</span>
-                    <h1>☁️ Partidas Guardadas en la Nube</h1>
+                    <h1>â˜ï¸ Partidas Guardadas en la Nube</h1>
                     <div id="savedGamesListContainer" style="margin-top: 20px;">
                         <div class="alert alert-info">Cargando partidas...</div>
                     </div>
@@ -44,7 +44,7 @@
                 return;
             }
 
-            // Ordenar por fecha de guardado (más reciente primero)
+            // Ordenar por fecha de guardado (mÃ¡s reciente primero)
             games.sort((a, b) => (b.lastSaved || 0) - (a.lastSaved || 0));
 
             container.innerHTML = games.map(game => {
@@ -58,15 +58,15 @@
                             <span style="color: #999; font-size: 0.9em;">
                                 Equipo: ${game.team || '?'} | 
                                 Jornada: ${game.week || '?'} | 
-                                División: ${game.division || '?'}
+                                DivisiÃ³n: ${game.division || '?'}
                             </span><br>
                             <span style="color: #666; font-size: 0.85em;">
                                 Guardada: ${dateStr}
                             </span>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-sm" onclick="window.loadGameFromCloudUI('${game.id}')">📂 Cargar</button>
-                            <button class="btn btn-sm" style="background: #c73446;" onclick="window.deleteGameFromCloudUI('${game.id}', '${(game.name || 'esta partida').replace(/'/g, "\\'")}')">🗑️ Borrar</button>
+                            <button class="btn btn-sm" onclick="window.loadGameFromCloudUI('${game.id}')">ðŸ“‚ Cargar</button>
+                            <button class="btn btn-sm" style="background: #c73446;" onclick="window.deleteGameFromCloudUI('${game.id}', '${(game.name || 'esta partida').replace(/'/g, "\\'")}')">ðŸ—‘ï¸ Borrar</button>
                         </div>
                     </div>
                 `;
@@ -75,18 +75,18 @@
         } catch (error) {
             console.error('Error cargando partidas:', error);
             document.getElementById('savedGamesListContainer').innerHTML = 
-                '<div class="alert alert-error">❌ Error al cargar las partidas: ' + error.message + '</div>';
+                '<div class="alert alert-error">âŒ Error al cargar las partidas: ' + error.message + '</div>';
         }
     };
 
-    // Función para cargar una partida específica
+    // FunciÃ³n para cargar una partida especÃ­fica
     window.loadGameFromCloudUI = async function(gameId) {
         if (!window.currentUserId) {
-            alert('⚠️ Debes iniciar sesión para cargar partidas.');
+            alert('âš ï¸ Debes iniciar sesiÃ³n para cargar partidas.');
             return;
         }
 
-        if (!confirm('¿Cargar esta partida? Se perderá el progreso no guardado de la partida actual.')) {
+        if (!confirm('Â¿Cargar esta partida? Se perderÃ¡ el progreso no guardado de la partida actual.')) {
             return;
         }
 
@@ -94,22 +94,31 @@
             const result = await window.loadGameFromCloud(window.currentUserId, gameId);
             
             if (result.success && result.data && result.data.gameState) {
-                // Verificar que gameLogic esté disponible
+                // Verificar que gameLogic estÃ© disponible
                 if (!window.gameLogic) {
-                    alert('❌ Error: El sistema de juego no está cargado.');
+                    alert('âŒ Error: El sistema de juego no estÃ¡ cargado.');
                     return;
                 }
 
                 // Cargar el estado del juego
                 window.gameLogic.updateGameState(result.data.gameState);
                 
-                // Guardar también en localStorage como backup
+                // Guardar tambiÃ©n en localStorage como backup
                 window.gameLogic.saveToLocalStorage();
                 
                 // Refrescar la UI
                 if (window.ui && window.ui.refreshUI) {
                     window.ui.refreshUI(result.data.gameState);
                 }
+
+                // ✅ Cargar mercado de Firestore tras restaurar partida
+                setTimeout(async () => {
+                    if (window.loadMarketFromFirestore) {
+                        const mySquadNames = (result.data.gameState.squad || []).map(p => p.name);
+                        await window.loadMarketFromFirestore(mySquadNames);
+                        console.log('✅ Mercado recargado tras cargar partida guardada');
+                    }
+                }, 800);
                 
                 // Cerrar modal
                 document.getElementById('savedGamesModal').classList.remove('active');
@@ -120,24 +129,24 @@
                     window.switchPage('dashboard', dashboardButton);
                 }
                 
-                alert(`✅ Partida "${result.data.name}" cargada correctamente!\n\nEquipo: ${result.data.team}\nJornada: ${result.data.week}`);
+                alert(`âœ… Partida "${result.data.name}" cargada correctamente!\n\nEquipo: ${result.data.team}\nJornada: ${result.data.week}`);
             } else {
-                alert('❌ Error al cargar la partida: ' + (result.message || result.error || 'Error desconocido'));
+                alert('âŒ Error al cargar la partida: ' + (result.message || result.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error al cargar partida:', error);
-            alert('❌ Error inesperado al cargar la partida: ' + error.message);
+            alert('âŒ Error inesperado al cargar la partida: ' + error.message);
         }
     };
 
-    // Función para eliminar una partida
+    // FunciÃ³n para eliminar una partida
     window.deleteGameFromCloudUI = async function(gameId, gameName) {
         if (!window.currentUserId) {
-            alert('⚠️ Debes iniciar sesión para eliminar partidas.');
+            alert('âš ï¸ Debes iniciar sesiÃ³n para eliminar partidas.');
             return;
         }
 
-        if (!confirm(`¿Estás seguro de que quieres eliminar "${gameName}"?\n\nEsta acción no se puede deshacer.`)) {
+        if (!confirm(`Â¿EstÃ¡s seguro de que quieres eliminar "${gameName}"?\n\nEsta acciÃ³n no se puede deshacer.`)) {
             return;
         }
 
@@ -145,34 +154,34 @@
             const result = await window.deleteGameFromCloud(window.currentUserId, gameId);
             
             if (result.success) {
-                alert(`✅ Partida "${gameName}" eliminada correctamente.`);
+                alert(`âœ… Partida "${gameName}" eliminada correctamente.`);
                 // Recargar la lista de partidas
                 window.openSavedGamesModal();
             } else {
-                alert('❌ Error al eliminar la partida: ' + (result.error || 'Error desconocido'));
+                alert('âŒ Error al eliminar la partida: ' + (result.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error al eliminar partida:', error);
-            alert('❌ Error inesperado al eliminar la partida: ' + error.message);
+            alert('âŒ Error inesperado al eliminar la partida: ' + error.message);
         }
     };
 
     // ========================================
-    // MODIFICAR LA SECCIÓN DE OPCIONES
+    // MODIFICAR LA SECCIÃ“N DE OPCIONES
     // ========================================
 
     function injectCloudLoadUI() {
-        // Esperar a que el DOM esté listo
+        // Esperar a que el DOM estÃ© listo
         const settingsPage = document.getElementById('settings');
         if (!settingsPage) {
-            console.warn('⚠️ Página de settings no encontrada, reintentando...');
+            console.warn('âš ï¸ PÃ¡gina de settings no encontrada, reintentando...');
             setTimeout(injectCloudLoadUI, 500);
             return;
         }
 
-        console.log('📝 Modificando sección de Opciones...');
+        console.log('ðŸ“ Modificando secciÃ³n de Opciones...');
 
-        // Buscar el botón de "Cargar de la Nube" que tiene el alert
+        // Buscar el botÃ³n de "Cargar de la Nube" que tiene el alert
         const buttons = settingsPage.querySelectorAll('button');
         let cloudLoadButton = null;
         
@@ -183,23 +192,23 @@
         });
 
         if (cloudLoadButton) {
-            // Reemplazar el botón existente
+            // Reemplazar el botÃ³n existente
             cloudLoadButton.onclick = window.openSavedGamesModal;
-            cloudLoadButton.innerHTML = '☁️ Ver y Cargar Partidas de la Nube';
-            console.log('✅ Botón de "Cargar de la Nube" actualizado');
+            cloudLoadButton.innerHTML = 'â˜ï¸ Ver y Cargar Partidas de la Nube';
+            console.log('âœ… BotÃ³n de "Cargar de la Nube" actualizado');
         } else {
-            // Si no existe, añadir una nueva sección completa
+            // Si no existe, aÃ±adir una nueva secciÃ³n completa
             const cloudSection = document.createElement('div');
             cloudSection.innerHTML = `
                 <hr style="margin-top: 20px; border-color: rgba(233, 69, 96, 0.3);">
-                <h2>☁️ Opciones de la Nube</h2>
+                <h2>â˜ï¸ Opciones de la Nube</h2>
                 <p style="color: #999; margin-bottom: 10px;">
-                    Las partidas se guardan automáticamente en la nube cuando haces clic en "💾 Guardar" en el header.
+                    Las partidas se guardan automÃ¡ticamente en la nube cuando haces clic en "ðŸ’¾ Guardar" en el header.
                 </p>
-                <button class="btn" onclick="window.openSavedGamesModal()">☁️ Ver y Cargar Partidas de la Nube</button>
+                <button class="btn" onclick="window.openSavedGamesModal()">â˜ï¸ Ver y Cargar Partidas de la Nube</button>
             `;
             
-            // Insertar antes del botón de cerrar (si existe)
+            // Insertar antes del botÃ³n de cerrar (si existe)
             const closeButton = Array.from(buttons).find(btn => 
                 btn.textContent.includes('Cerrar') || btn.style.background.includes('c73446')
             );
@@ -209,10 +218,10 @@
             } else {
                 settingsPage.appendChild(cloudSection);
             }
-            console.log('✅ Sección de opciones de la nube añadida');
+            console.log('âœ… SecciÃ³n de opciones de la nube aÃ±adida');
         }
 
-        // Añadir indicador de estado de Firebase
+        // AÃ±adir indicador de estado de Firebase
         if (!document.getElementById('firebaseStatusIndicator')) {
             const statusIndicator = document.createElement('p');
             statusIndicator.id = 'firebaseStatusIndicator';
@@ -222,7 +231,7 @@
                 <span id="firebaseStatus">Verificando...</span>
             `;
             
-            // Insertar después del botón de la nube
+            // Insertar despuÃ©s del botÃ³n de la nube
             const cloudBtn = Array.from(settingsPage.querySelectorAll('button')).find(btn => 
                 btn.textContent.includes('Ver y Cargar Partidas')
             );
@@ -231,42 +240,42 @@
                 cloudBtn.parentNode.insertBefore(statusIndicator, cloudBtn.nextSibling);
             }
             
-            // Actualizar estado después de un momento
+            // Actualizar estado despuÃ©s de un momento
             setTimeout(updateFirebaseStatus, 2000);
         }
     }
 
-    // Función para actualizar el estado de Firebase
+    // FunciÃ³n para actualizar el estado de Firebase
     function updateFirebaseStatus() {
         const statusSpan = document.getElementById('firebaseStatus');
         if (!statusSpan) return;
 
         if (window.firebaseConfig && window.firebaseConfig.enabled && window.currentUserId) {
-            statusSpan.innerHTML = '✅ Conectado (Usuario: ' + window.currentUserId.substring(0, 8) + '...)';
+            statusSpan.innerHTML = 'âœ… Conectado (Usuario: ' + window.currentUserId.substring(0, 8) + '...)';
             statusSpan.style.color = '#00ff00';
         } else if (window.firebaseConfig && window.firebaseConfig.enabled) {
-            statusSpan.innerHTML = '⚠️ Firebase habilitado pero sin autenticar';
+            statusSpan.innerHTML = 'âš ï¸ Firebase habilitado pero sin autenticar';
             statusSpan.style.color = 'orange';
         } else {
-            statusSpan.innerHTML = '❌ Firebase deshabilitado (solo localStorage)';
+            statusSpan.innerHTML = 'âŒ Firebase deshabilitado (solo localStorage)';
             statusSpan.style.color = 'red';
         }
     }
 
-    // Exponer función para actualizar estado (útil después del login)
+    // Exponer funciÃ³n para actualizar estado (Ãºtil despuÃ©s del login)
     window.updateFirebaseStatusIndicator = updateFirebaseStatus;
 
     // ========================================
-    // INICIALIZACIÓN
+    // INICIALIZACIÃ“N
     // ========================================
 
     window.addEventListener('DOMContentLoaded', () => {
-        console.log('☁️ Inicializando Cloud Load Injector...');
+        console.log('â˜ï¸ Inicializando Cloud Load Injector...');
         
-        // Intentar inyectar después de un pequeño delay
+        // Intentar inyectar despuÃ©s de un pequeÃ±o delay
         setTimeout(injectCloudLoadUI, 1000);
         
-        // También intentar cuando se cambie a la página de settings
+        // TambiÃ©n intentar cuando se cambie a la pÃ¡gina de settings
         const originalSwitchPage = window.switchPage;
         if (originalSwitchPage) {
             window.switchPage = function(pageId, element) {
@@ -292,5 +301,5 @@
         };
     }
 
-    console.log('✅ Cloud Load Injector cargado correctamente');
+    console.log('âœ… Cloud Load Injector cargado correctamente');
 })();
