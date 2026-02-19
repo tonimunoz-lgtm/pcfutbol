@@ -1833,8 +1833,8 @@ Salida
     .pitch-container::before {
         content: '';
         position: absolute;
-        width: 177.8%;   /* alto del contenedor en px = ancho x 16/9 */
-        height: 100%;    /* ancho del contenedor completo */
+        width: 177.8%;
+        height: 56.25%;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(90deg);
