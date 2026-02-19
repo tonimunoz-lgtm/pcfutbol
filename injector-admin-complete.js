@@ -184,7 +184,8 @@
 
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e94560;">
                         <h3>ðŸ“¦ Importar/Exportar Todo</h3>
-                        <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">ðŸ“¦ Exportar Todos los Datos</button>
+                        <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">
+                        <button class="btn" style="background: #e94560;" onclick="window.adminBackend.syncAllTeamsToMarket()">Sync Mercado Fichajes</button>ðŸ“¦ Exportar Todos los Datos</button>
                         <button class="btn" style="background: #00aa00;" onclick="document.getElementById('adminImportFile').click()">ðŸ“¥ Importar Datos</button>
                         <input type="file" id="adminImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.importAllData(event)">
                     </div>
@@ -543,15 +544,15 @@
                 const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, existingData);
                 
                 if (saveResult.success) {
-                    alert(`✅ Plantilla guardada: ${this.squadPlayers.length} jugadores`);
+                    alert(`âœ… Plantilla guardada: ${this.squadPlayers.length} jugadores`);
                     // Sincronizar con el mercado de fichajes
                     if (window.syncTeamToTransferMarket) {
                         window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers)
-                            .then(r => { if (r && r.added > 0) console.log('Mercado sync: +' + r.added + ' jugadores'); })
+                            .then(r => { if (r && r.added > 0) console.log('Mercado sync: +' + r.added); })
                             .catch(e => console.warn('Error sync mercado:', e));
                     }
                 } else {
-                    alert(`❌ Error: ${saveResult.error}`);
+                    alert(`âŒ Error: ${saveResult.error}`);
                 }
             } catch (error) {
                 alert('âŒ Error: ' + error.message);
@@ -570,6 +571,33 @@
             a.click();
             
             URL.revokeObjectURL(url);
+        },
+
+        syncAllTeamsToMarket: async function() {
+            if (!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) {
+                alert('Firebase no disponible');
+                return;
+            }
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Sincronizando...';
+            try {
+                const result = await window.getAllTeamsDataFromFirebase();
+                if (!result.success) { alert('Error: ' + (result.error || 'desconocido')); return; }
+                const teams = Object.entries(result.data);
+                const withSquad = teams.filter(([, data]) => data.squad && data.squad.length > 0);
+                let totalAdded = 0;
+                for (const [teamName, teamData] of withSquad) {
+                    const r = await window.syncTeamToTransferMarket(teamName, teamData.squad);
+                    if (r && r.added) totalAdded += r.added;
+                }
+                alert('Mercado sincronizado: ' + withSquad.length + ' equipos, ' + totalAdded + ' jugadores nuevos');
+            } catch(e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sync Mercado';
+            }
         },
 
         importAllData: async function(event) {
