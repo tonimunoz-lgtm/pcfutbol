@@ -471,92 +471,70 @@ function calculateOverallFromAttributes(attributes, weights) {
     return Math.round(weightedSum / totalWeight);
 }
 
-// ✅ MERCADO HÍBRIDO: jugadores reales de Firestore + generados de relleno
+// Mercado de fichajes - datos de Firestore
 let FIRESTORE_MARKET_PLAYERS = [];
-let MARKET_LOADED_FROM_FIRESTORE = false;
 
-/**
- * Carga el mercado desde Firestore. Llamar al inicio del juego.
- */
 async function loadMarketFromFirestore(mySquadNames = []) {
     if (window.getTransferMarket) {
         try {
             const firestorePlayers = await window.getTransferMarket(mySquadNames);
             FIRESTORE_MARKET_PLAYERS = firestorePlayers.map(p => {
-                const completed = { ...p };
-                if (!completed.overall) completed.overall = calculateOverall(completed);
-                if (!completed.potential) completed.potential = Math.min(99, completed.overall + Math.floor(Math.random() * 10));
-                if (!completed.salary) completed.salary = Math.floor(completed.overall * 100 + (completed.age || 25) * 50);
-                if (!completed.value) completed.value = Math.floor(completed.overall * 2000 + completed.potential * 500);
-                if (!completed.foot) completed.foot = generateRandomFoot();
-                if (!completed.askingPrice) completed.askingPrice = Math.floor(completed.value * (1 + Math.random() * 0.5));
-                if (!completed.contractType) completed.contractType = 'owned';
-                if (!completed.contractYears) completed.contractYears = assignContractYears(completed.contractType, completed.age || 25);
-                if (!completed.releaseClause) completed.releaseClause = calculateReleaseClause(completed);
-                if (completed.loanListed === undefined) completed.loanListed = false;
-                if (completed.loanWageContribution === undefined) completed.loanWageContribution = 0;
-                completed.transferListed = true;
-                return completed;
+                const c = { ...p };
+                if (!c.overall) c.overall = calculateOverall(c);
+                if (!c.potential) c.potential = Math.min(99, c.overall + Math.floor(Math.random() * 10));
+                if (!c.salary) c.salary = Math.floor(c.overall * 100 + (c.age || 25) * 50);
+                if (!c.value) c.value = Math.floor(c.overall * 2000 + c.potential * 500);
+                if (!c.foot) c.foot = generateRandomFoot();
+                if (!c.askingPrice) c.askingPrice = Math.floor(c.value * (1 + Math.random() * 0.5));
+                if (!c.contractType) c.contractType = 'owned';
+                if (!c.contractYears) c.contractYears = assignContractYears(c.contractType, c.age || 25);
+                if (!c.releaseClause) c.releaseClause = calculateReleaseClause(c);
+                if (c.loanListed === undefined) c.loanListed = false;
+                if (c.loanWageContribution === undefined) c.loanWageContribution = 0;
+                c.transferListed = true;
+                return c;
             });
-            MARKET_LOADED_FROM_FIRESTORE = true;
-            console.log('✅ Mercado de Firestore: ' + FIRESTORE_MARKET_PLAYERS.length + ' jugadores reales');
+            console.log('✅ Mercado Firestore: ' + FIRESTORE_MARKET_PLAYERS.length + ' jugadores reales');
         } catch (error) {
-            console.warn('⚠️ No se pudo cargar mercado de Firestore:', error);
+            console.warn('⚠️ No se pudo cargar mercado Firestore:', error);
             FIRESTORE_MARKET_PLAYERS = [];
         }
     }
     initPlayerDatabase();
 }
 
-/**
- * Elimina un jugador del mercado en memoria y en Firestore.
- */
 function removeFromMarketByName(playerName, originalTeam) {
     FIRESTORE_MARKET_PLAYERS = FIRESTORE_MARKET_PLAYERS.filter(p => p.name !== playerName);
     ALL_AVAILABLE_PLAYERS = ALL_AVAILABLE_PLAYERS.filter(p => p.name !== playerName);
     if (originalTeam && window.removePlayerFromMarket) {
         window.removePlayerFromMarket(playerName, originalTeam).catch(err => {
-            console.warn('⚠️ No se pudo eliminar del mercado Firestore:', err);
+            console.warn('⚠️ Error eliminando del mercado Firestore:', err);
         });
     }
 }
 
 // Funciones de mercado
 function getPlayerMarket(filters = {}, mySquadNames = []) {
-    // Combinar reales (Firestore) + generados, sin duplicados por nombre
     const realNames = new Set(FIRESTORE_MARKET_PLAYERS.map(p => p.name.toLowerCase()));
     const generatedFiltered = ALL_AVAILABLE_PLAYERS.filter(p => !realNames.has(p.name.toLowerCase()));
     let allMarket = [...FIRESTORE_MARKET_PLAYERS, ...generatedFiltered];
 
-    // Excluir los que ya están en mi plantilla
     const mySquadSet = new Set(mySquadNames.map(n => n.toLowerCase()));
     allMarket = allMarket.filter(p => !mySquadSet.has((p.name || '').toLowerCase()));
 
-    let filteredPlayers = allMarket;
-
-    if (filters.position && filters.position !== 'ALL') {
-        filteredPlayers = filteredPlayers.filter(p => p.position === filters.position);
-    }
-    if (filters.minOverall) {
-        filteredPlayers = filteredPlayers.filter(p => p.overall >= filters.minOverall);
-    }
-    if (filters.maxAge) {
-        filteredPlayers = filteredPlayers.filter(p => p.age <= filters.maxAge);
-    }
+    let fp = allMarket;
+    if (filters.position && filters.position !== 'ALL') fp = fp.filter(p => p.position === filters.position);
+    if (filters.minOverall) fp = fp.filter(p => p.overall >= filters.minOverall);
+    if (filters.maxAge) fp = fp.filter(p => p.age <= filters.maxAge);
     if (filters.searchName) {
-        const searchTerm = filters.searchName.toLowerCase();
-        filteredPlayers = filteredPlayers.filter(p => p.name.toLowerCase().includes(searchTerm));
+        const s = filters.searchName.toLowerCase();
+        fp = fp.filter(p => p.name.toLowerCase().includes(s));
     }
-    if (filters.transferListed) {
-        filteredPlayers = filteredPlayers.filter(p => p.transferListed === true);
-    }
-    if (filters.loanListed) {
-        filteredPlayers = filteredPlayers.filter(p => p.loanListed === true);
-    }
+    if (filters.transferListed) fp = fp.filter(p => p.transferListed === true);
+    if (filters.loanListed) fp = fp.filter(p => p.loanListed === true);
 
     const scoutLevel = filters.scoutLevel || 0;
-    const revealCount = Math.min(filteredPlayers.length, 30 + scoutLevel * 10);
-    return filteredPlayers.slice(0, revealCount);
+    return fp.slice(0, Math.min(fp.length, 30 + scoutLevel * 10));
 }
   
 function getYoungsterMarket(filters = {}) {  
