@@ -262,8 +262,8 @@ body {
 .decisions-icon::before {background-image: url('/assets/iconos/entradas.png');}
 /*.stadium-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }*/
 .stadium-icon::before {background-image: url('/assets/iconos/estadio.png');}
-.renovation-icon::before {content: "\270D\FE0F"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
-.cantera-icon::before {content: "\1F331"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
+.renovation-icon::before {content: "âœï¸"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
+.cantera-icon::before {content: "ðŸŒ±"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
 
 /* ============================================
    PÃGINAS DE CONTENIDO - Pantallas secundarias
@@ -1523,8 +1523,15 @@ Salida
 ========================================== */
 @media (max-width: 850px) {
 
+    .main-center-row {
+        flex-direction: column;
+        gap: 15px;
+        padding: 0;
+    }
+
     .center-buttons {
         justify-content: center;
+        flex-wrap: wrap;
     }
 
     .main-center-circle {
@@ -1713,27 +1720,11 @@ Salida
 
 /* ============================================
    MODO MOVIL - Solo iconos en botones de menu
-   En pantallas pequenas se oculta el texto y
-   el boton se convierte en un cuadrado de icono
    ============================================ */
 @media (max-width: 640px) {
 
-    /* Body y layout: permitir scroll vertical */
-    body {
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
+    body { overflow-y: auto; overflow-x: hidden; }
 
-    /* El layout pasa a columna unica con scroll */
-    .main-layout {
-        height: auto;
-        min-height: calc(100vh - 50px);
-        display: flex;
-        flex-direction: column;
-        overflow: visible;
-    }
-
-    /* Cada cuadrante ocupa lo que necesite, en fila de 2 */
     .main-layout {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1742,270 +1733,155 @@ Salida
         overflow: visible;
     }
 
-    /* Cuadrantes: altura automatica, sin overflow oculto */
     .quadrant {
-        padding: 8px 4px;
-        justify-content: flex-start;
-        overflow: visible;
-        height: auto;
-        min-height: 100px;
+        padding: 8px 4px; justify-content: flex-start;
+        overflow: visible; height: auto; min-height: 100px;
     }
 
-    /* Cuadrantes superiores: botones de arriba hacia abajo */
-    .quadrant.top-left,
-    .quadrant.top-right {
-        flex-direction: column;
-        justify-content: flex-start;
+    .quadrant.top-left, .quadrant.top-right {
+        flex-direction: column; justify-content: flex-start;
     }
 
-    /* Cuadrantes inferiores: botones de abajo hacia arriba (igual que escritorio) */
-    .quadrant.bottom-left,
-    .quadrant.bottom-right {
-        flex-direction: column-reverse;
-        justify-content: flex-start;
+    .quadrant.bottom-left, .quadrant.bottom-right {
+        flex-direction: column-reverse; justify-content: flex-start;
     }
 
-    /* Ocultar texto del boton, dejar solo el icono */
     .menu-button {
-        font-size: 0;
-        padding: 0;
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 3px auto;
+        font-size: 0; padding: 0; width: 48px; height: 48px;
+        min-width: 48px; border-radius: 10px; display: flex;
+        align-items: center; justify-content: center; margin: 3px auto;
     }
 
-    /* El icono centrado */
     .menu-button::before {
-        position: static;
-        transform: none;
-        width: 28px;
-        height: 28px;
-        margin: 0;
-        left: auto;
-        right: auto;
-        top: auto;
-        display: block;
+        position: static; transform: none; width: 28px; height: 28px;
+        margin: 0; left: auto; right: auto; top: auto; display: block;
     }
 
-    /* Botones cuadrantes derechos: revertir espejo */
     .quadrant.top-right .menu-button,
-    .quadrant.bottom-right .menu-button {
-        padding: 0;
-        text-align: center;
-    }
+    .quadrant.bottom-right .menu-button { padding: 0; text-align: center; }
+
     .quadrant.top-right .menu-button::before,
-    .quadrant.bottom-right .menu-button::before {
-        right: auto;
-        left: auto;
+    .quadrant.bottom-right .menu-button::before { right: auto; left: auto; }
+
+    .renovation-icon::before, .cantera-icon::before {
+        font-size: 26px; margin: 0; line-height: 1;
     }
 
-    /* Iconos de texto (renovation, cantera) */
-    .renovation-icon::before,
-    .cantera-icon::before {
-        font-size: 26px;
-        margin: 0;
-        line-height: 1;
-    }
+    .section-title { font-size: 0.65em; padding: 3px 5px; margin-top: 4px; }
+    .header { height: 50px; padding: 3px 8px; }
+    .header-title { font-size: 0.9em; letter-spacing: 0; }
+    .info-box { font-size: 0.6em; padding: 3px 5px; }
 
-    /* Titulo de seccion mas pequeno */
-    .section-title {
-        font-size: 0.65em;
-        padding: 3px 5px;
-        margin-top: 4px;
-    }
-
-    /* Header mas compacto */
-    .header {
-        height: 50px;
-        padding: 3px 8px;
-    }
-
-    .header-title {
-        font-size: 0.9em;
-        letter-spacing: 0;
-    }
-
-    .info-box {
-        font-size: 0.6em;
-        padding: 3px 5px;
-    }
-
-    /* Fila central: entre cuadrantes superiores e inferiores */
     .main-center-row {
-        position: relative;
-        top: auto;
-        left: auto;
-        right: auto;
-        transform: none;
-        grid-column: 1 / -1;
-        order: 3;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        z-index: 5;
-        background: rgba(0,0,0,0.3);
-        border-top: 1px solid #224488;
-        border-bottom: 1px solid #224488;
+        position: relative; top: auto; left: auto; right: auto; transform: none;
+        grid-column: 1 / -1; order: 3; display: flex; flex-direction: row;
+        justify-content: space-between; align-items: center;
+        padding: 8px 12px; z-index: 5; background: rgba(0,0,0,0.3);
+        border-top: 1px solid #224488; border-bottom: 1px solid #224488;
         pointer-events: auto;
     }
 
-    /* Botones en columna a cada lado del circulo */
-    .center-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        align-items: center;
-    }
+    .center-buttons { display: flex; flex-direction: column; gap: 6px; align-items: center; }
 
-    .center-buttons.left  { align-items: flex-end; }
-    .center-buttons.right { align-items: flex-start; }
-
-    /* Botones compactos e igual de anchos dentro de su columna */
     .center-option {
-        font-size: 0.65em;
-        padding: 6px 8px;
-        width: 100%;
-        white-space: nowrap;
-        text-align: center;
-        box-sizing: border-box;
+        font-size: 0.65em; padding: 6px 8px; width: 100%;
+        white-space: nowrap; text-align: center; box-sizing: border-box;
     }
 
-    /* Reordenar los cuadrantes */
     .quadrant.top-left    { order: 1; }
     .quadrant.top-right   { order: 2; }
     .quadrant.bottom-left { order: 4; }
     .quadrant.bottom-right{ order: 5; }
 
-    /* Circulo central mas grande ahora que los botones van en columna */
-    .main-center-circle {
-        width: 140px;
-        height: 140px;
-        flex-shrink: 0;
-    }
+    .main-center-circle { width: 140px; height: 140px; flex-shrink: 0; }
 
-    /* Texto del circulo: en columna, centrado */
-    #nextMatchInfo {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-    }
+    #nextMatchInfo { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .next-match-title { font-size: 10px; white-space: nowrap; }
+    #nextMatchTeams   { font-size: 10px; white-space: pre-line; text-align: center; word-break: break-word; }
+    #nextMatchDate    { font-size: 9px; }
 
-    .next-match-title {
-        font-size: 10px;
-        white-space: nowrap;
-    }
-
-    #nextMatchTeams {
-        font-size: 10px;
-        white-space: pre-line;
-        text-align: center;
-        word-break: break-word;
-    }
-
-    #nextMatchDate {
-        font-size: 9px;
-    }
     /* ============================================
-       ALINEACION EN MOVIL - Solo CSS
-       Campo rotado 90deg -> queda vertical
-       Portero arriba, delanteros abajo
-       Suplentes en fila horizontal deslizable
+       ALINEACION MOVIL
+       El campo (16:9 horizontal) se rota 90deg
+       con un pseudo-elemento ::before, quedando
+       vertical. Los slots se contrarotan -90deg
+       para que el texto quede recto.
        ============================================ */
 
-    /* Contenedor principal: columna */
     .lineup-main-container {
         flex-direction: column;
         gap: 8px;
         align-items: center;
     }
 
-    /* Wrapper para el campo rotado:
-       el campo es 16:9 rotado -> ocupa ancho de pantalla como alto
-       usamos un wrapper que tiene el alto del campo rotado */
+    /* El contenedor del campo reserva espacio vertical (aspect 9:16)
+       y deja overflow visible para los slots */
     .pitch-container {
         width: 100%;
         max-width: 100%;
-        aspect-ratio: 9 / 16;      /* altura = ancho original del campo */
-        transform: rotate(90deg);  /* rotar la imagen del campo */
-        transform-origin: center center;
-        overflow: visible;         /* slots se salen del borde rotado */
+        aspect-ratio: 9 / 16;
+        position: relative;
+        overflow: visible;
+        border: none;
+        background: none;
+        box-shadow: none;
     }
 
-    /* Los slots estan posicionados en % del campo original (16:9).
-       Al rotar el contenedor 90deg, left<->top se invierten visualmente.
-       Contrarrotamos cada slot para que el texto quede recto */
+    /* La imagen del campo rotada 90deg dentro del contenedor.
+       width/height calculados para que al rotar 90deg
+       ocupe exactamente el ancho del contenedor */
+    .pitch-container::before {
+        content: '';
+        position: absolute;
+        width: 177.8%;
+        height: 56.25%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+        background-image: url('assets/imagenes/campodefutbol.png');
+        background-size: cover;
+        background-position: center;
+        border: 2px solid #8BC34A;
+        border-radius: 10px;
+        box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
+    }
+
+    /* Los slots se contrarotan para que el texto quede recto */
     .pitch-position-placeholder {
         transform: rotate(-90deg);
-        font-size: 1em;
+        font-size: 1.1em;
         border-width: 2px;
-        width: 14%;
-        height: 16%;
+        z-index: 1;
     }
 
-    /* Texto del jugador en el slot */
-    .pitch-player {
-        font-size: 0.85em;
-    }
-
+    .pitch-player { font-size: 0.9em; }
     .pitch-player span:first-child {
-        font-weight: bold;
-        font-size: 0.9em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 95%;
+        font-weight: bold; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; max-width: 95%;
     }
+    .pitch-player span:last-child { font-size: 0.75em; opacity: 0.85; }
 
-    .pitch-player span:last-child {
-        font-size: 0.75em;
-        opacity: 0.85;
-    }
-
-    /* Suplentes: fila horizontal deslizable debajo del campo */
+    /* Suplentes: fila horizontal deslizable */
     .reserves-container {
-        width: 100%;
-        min-width: unset;
-        border-left: none;
-        border-top: 2px solid #5588FF;
-        padding-left: 0;
-        padding-top: 8px;
+        width: 100%; min-width: unset;
+        border-left: none; border-top: 2px solid #5588FF;
+        padding-left: 0; padding-top: 8px;
     }
 
     .reserves-list {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
+        flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: #5588FF transparent;
-        padding-bottom: 4px;
-        align-items: stretch;
-        gap: 6px;
+        scrollbar-width: thin; scrollbar-color: #5588FF transparent;
+        padding-bottom: 4px; align-items: stretch; gap: 6px;
     }
 
     .reserves-list::-webkit-scrollbar { height: 3px; }
     .reserves-list::-webkit-scrollbar-thumb { background: #5588FF; border-radius: 3px; }
 
-    /* Cada suplente: tarjeta compacta */
     .draggable-player {
-        flex: 0 0 auto;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 5px 6px;
-        font-size: 0.68em;
-        min-width: 60px;
-        max-width: 75px;
-        white-space: normal;
-        word-break: break-word;
+        flex: 0 0 auto; flex-direction: column; align-items: center;
+        text-align: center; padding: 5px 6px; font-size: 0.68em;
+        min-width: 60px; max-width: 75px; white-space: normal; word-break: break-word;
     }
-
 }
