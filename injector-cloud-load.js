@@ -109,12 +109,11 @@
                 // Refrescar la UI
                 if (window.ui && window.ui.refreshUI) {
                     window.ui.refreshUI(result.data.gameState);
-
-                    // Recargar mercado de fichajes
+                    // Recargar mercado tras cargar partida
                     if (window.loadMarketFromFirestore) {
                         setTimeout(async () => {
-                            const names = (result.data.gameState.squad || []).map(p => p.name);
-                            await window.loadMarketFromFirestore(names);
+                            const _names = (result.data.gameState.squad || []).map(p => p.name);
+                            await window.loadMarketFromFirestore(_names);
                         }, 800);
                     }
                 }
