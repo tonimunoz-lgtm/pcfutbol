@@ -434,17 +434,15 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
     addNews(`Â¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
   
-    initPlayerDatabase();
-    initYoungsterDatabase();
-
-    // Recargar mercado de Firestore para la nueva temporada
+    initPlayerDatabase();  
+    initYoungsterDatabase();  
+  
+    // Recargar mercado al inicio de nueva temporada
     setTimeout(() => {
-        const mySquadNames = (gameState.squad || []).map(p => p.name);
-        loadMarketFromFirestore(mySquadNames).catch(err => {
-            console.warn('No se pudo recargar el mercado:', err);
-        });
+        const _sqNames = (gameState.squad || []).map(p => p.name);
+        loadMarketFromFirestore(_sqNames).catch(e => console.warn('Error recargando mercado:', e));
     }, 500);
-
+  
     // ===== PRIMERA PLANTILLA =====
     gameState.squad = gameState.squad.filter(p => {
         p.age++;  
@@ -480,11 +478,9 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
                     `ðŸ”„ ${p.name} ha regresado a su club de origen tras finalizar la cesiÃ³n.`, 
                     'info'
                 );
-                // Devolver a Firestore al equipo origen
+                // Devolver al equipo origen en Firestore
                 if (window.returnLoanedPlayerToOrigin) {
-                    window.returnLoanedPlayerToOrigin(p).catch(err => {
-                        console.warn('Error devolviendo cedido a Firestore:', err);
-                    });
+                    window.returnLoanedPlayerToOrigin(p).catch(e => console.warn('Error devolviendo cedido:', e));
                 }
                 return false; // âŒ ELIMINAR jugador cedido
             }
@@ -587,13 +583,12 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
 
-    addNews(`ÃÂ¡Bienvenido al PC FÃÂºtbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    addNews(`Â¡Bienvenido al PC FÃºtbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
-
-    // Cargar mercado de fichajes desde Firestore
+    // Cargar mercado de Firestore tras seleccionar equipo
     setTimeout(async () => {
-        const mySquadNames = (gameState.squad || []).map(p => p.name);
-        await loadMarketFromFirestore(mySquadNames);
+        const _sqNames = (gameState.squad || []).map(p => p.name);
+        await loadMarketFromFirestore(_sqNames);
     }, 1000);
 }
 
@@ -639,10 +634,10 @@ function signPlayer(player) {
         newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
     }
   
-    gameState.squad.push(newPlayer);
-    // Eliminar del mercado de fichajes
-    const originalTeam = player.originalTeam || player.club || null;
-    removeFromMarketByName(player.name, originalTeam);
+    gameState.squad.push(newPlayer);  
+    // Eliminar del mercado al fichar
+    const _origTeam = player.originalTeam || player.club || null;
+    removeFromMarketByName(player.name, _origTeam);
     updateWeeklyFinancials();  
     addNews(`Â¡${player.name} ha sido fichado!`, 'success');  
     return { success: true, message: `Â¡${player.name} ha sido fichado!` };  
@@ -981,8 +976,28 @@ function getPlayerMarket(filters = {}) {
     const scoutLevel = gameState.staff.scout?.level || 0;
     const mySquadNames = (gameState.squad || []).map(p => p.name);
     const filtersWithScout = { ...filters, scoutLevel };
-    return getPlayerMarketData(filtersWithScout, mySquadNames);
+
+    // Jugadores externos (Firestore + generados), excluyendo mi plantilla
+    let marketPlayers = getPlayerMarketData(filtersWithScout, mySquadNames);
+
+    // Mis jugadores en venta/cesion tambien aparecen en el mercado
+    const myListedPlayers = (gameState.squad || []).filter(p => p.transferListed || p.loanListed);
+    if (myListedPlayers.length > 0) {
+        const marketNames = new Set(marketPlayers.map(p => p.name.toLowerCase()));
+        const toAdd = myListedPlayers.filter(p => !marketNames.has(p.name.toLowerCase()));
+        marketPlayers = [...toAdd, ...marketPlayers];
+    }
+
+    // Aplicar filtros de posicion/nombre/estado
+    let fp = marketPlayers;
+    if (filters.position && filters.position !== 'ALL') fp = fp.filter(p => p.position === filters.position);
+    if (filters.searchName) fp = fp.filter(p => p.name.toLowerCase().includes(filters.searchName.toLowerCase()));
+    if (filters.transferListed) fp = fp.filter(p => p.transferListed === true);
+    if (filters.loanListed) fp = fp.filter(p => p.loanListed === true);
+
+    return fp;
 }  
+
   
 function getYoungsterMarket(filters = {}) {  
     const scoutLevel = gameState.staff.scout?.level || 0;  
@@ -2685,22 +2700,22 @@ export {
     getSeasonCalendar  
 }; 
 
-// Exponer funciones de ofertas globalmente
+// âœ… Exponer funciones de ofertas globalmente
 if (typeof window !== 'undefined') {
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;
     window.counterOffer = counterOffer;
     window.loadMarketFromFirestore = loadMarketFromFirestore;
     window.removeFromMarketByName = removeFromMarketByName;
-
-    // Exponer el gameLogic completo
+    
+    // TambiÃ©n exponer el gameLogic completo
     window.gameLogic = {
         getGameState,
         updateGameState,
         selectTeamWithInitialSquad,
         addNews,
         saveToLocalStorage,
-        getPlayerMarket,
+        // ... resto de funciones que necesites
     };
 }
 
