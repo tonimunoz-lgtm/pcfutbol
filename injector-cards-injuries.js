@@ -426,14 +426,31 @@ function hookSimulateWeek() {
                 console.log('💾 Auto-guardando en Firebase...');
                 
                 // Generar gameId único o usar existente
-                const gameId = newState.gameId || `game_${newState.team}_${Date.now()}`;
+                // Limpiar undefined del gameState antes de guardar en Firebase
+                function cleanForFirebase(obj) {
+                    if (obj === null || obj === undefined) return null;
+                    if (Array.isArray(obj)) return obj.map(cleanForFirebase);
+                    if (typeof obj === 'object') {
+                        const clean = {};
+                        for (const k in obj) {
+                            const v = obj[k];
+                            if (v !== undefined) {
+                                clean[k] = cleanForFirebase(v);
+                            }
+                        }
+                        return clean;
+                    }
+                    return obj;
+                }
+                const cleanState = cleanForFirebase(newState);
+                const gameId = cleanState.gameId || `game_${cleanState.team}_${Date.now()}`;
                 if (!newState.gameId) {
                     newState.gameId = gameId; // Guardar para futuras jornadas
                 }
                 
                 const gameName = `${newState.team} - Jornada ${newState.week}`;
                 
-                window.saveGameToCloud(window.currentUserId, gameId, gameName, newState).then(result => {
+                window.saveGameToCloud(window.currentUserId, gameId, gameName, cleanState).then(result => {
                     if (result.success) {
                         console.log('✅ Partida auto-guardada en Firebase');
                     } else {
