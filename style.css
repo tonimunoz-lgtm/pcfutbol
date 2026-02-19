@@ -1915,41 +1915,57 @@ Salida
     }
     /* ============================================
        ALINEACION EN MOVIL - Solo CSS
-       Campo vertical a pantalla completa +
-       suplentes en fila horizontal deslizable
+       Campo rotado 90deg -> queda vertical
+       Portero arriba, delanteros abajo
+       Suplentes en fila horizontal deslizable
        ============================================ */
 
-    /* Contenedor principal: columna en vez de fila */
+    /* Contenedor principal: columna */
     .lineup-main-container {
         flex-direction: column;
         gap: 8px;
+        align-items: center;
     }
 
-    /* Campo: 100% ancho, vertical */
+    /* Wrapper para el campo rotado:
+       el campo es 16:9 rotado -> ocupa ancho de pantalla como alto
+       usamos un wrapper que tiene el alto del campo rotado */
     .pitch-container {
         width: 100%;
         max-width: 100%;
-        aspect-ratio: 9 / 14;
+        aspect-ratio: 9 / 16;      /* altura = ancho original del campo */
+        transform: rotate(90deg);  /* rotar la imagen del campo */
+        transform-origin: center center;
+        overflow: visible;         /* slots se salen del borde rotado */
     }
 
-    /* Slots mas grandes y legibles */
+    /* Los slots estan posicionados en % del campo original (16:9).
+       Al rotar el contenedor 90deg, left<->top se invierten visualmente.
+       Contrarrotamos cada slot para que el texto quede recto */
     .pitch-position-placeholder {
-        font-size: 1.1em;
+        transform: rotate(-90deg);
+        font-size: 1em;
         border-width: 2px;
+        width: 14%;
+        height: 16%;
     }
 
-    /* Jugador en slot: texto mas grande */
+    /* Texto del jugador en el slot */
     .pitch-player {
-        font-size: 1em;
+        font-size: 0.85em;
     }
 
     .pitch-player span:first-child {
-        font-size: 1em;
         font-weight: bold;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 95%;
     }
 
     .pitch-player span:last-child {
-        font-size: 0.8em;
+        font-size: 0.75em;
         opacity: 0.85;
     }
 
@@ -1972,21 +1988,22 @@ Salida
         scrollbar-color: #5588FF transparent;
         padding-bottom: 4px;
         align-items: stretch;
+        gap: 6px;
     }
 
     .reserves-list::-webkit-scrollbar { height: 3px; }
     .reserves-list::-webkit-scrollbar-thumb { background: #5588FF; border-radius: 3px; }
 
-    /* Cada suplente: tarjeta compacta vertical */
+    /* Cada suplente: tarjeta compacta */
     .draggable-player {
         flex: 0 0 auto;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 6px 8px;
-        font-size: 0.72em;
-        min-width: 58px;
-        max-width: 72px;
+        padding: 5px 6px;
+        font-size: 0.68em;
+        min-width: 60px;
+        max-width: 75px;
         white-space: normal;
         word-break: break-word;
     }
