@@ -109,16 +109,15 @@
                 // Refrescar la UI
                 if (window.ui && window.ui.refreshUI) {
                     window.ui.refreshUI(result.data.gameState);
-                }
 
-                // ✅ Cargar mercado de Firestore tras restaurar partida
-                setTimeout(async () => {
+                    // Recargar mercado de fichajes
                     if (window.loadMarketFromFirestore) {
-                        const mySquadNames = (result.data.gameState.squad || []).map(p => p.name);
-                        await window.loadMarketFromFirestore(mySquadNames);
-                        console.log('✅ Mercado recargado tras cargar partida guardada');
+                        setTimeout(async () => {
+                            const names = (result.data.gameState.squad || []).map(p => p.name);
+                            await window.loadMarketFromFirestore(names);
+                        }, 800);
                     }
-                }, 800);
+                }
                 
                 // Cerrar modal
                 document.getElementById('savedGamesModal').classList.remove('active');
