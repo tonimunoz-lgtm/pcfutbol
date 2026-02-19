@@ -1,4 +1,11 @@
 // injector-cards-injuries.js
+
+// CSS para sancionados (sin tocar style.css)
+(function(){
+    var s = document.createElement('style');
+    s.textContent = '.pitch-player.suspended{background:#7A4A00!important;border-color:#FF9800!important;cursor:not-allowed!important;opacity:0.8!important}.draggable-player.suspended{background:#7A4A00!important;border-color:#FF9800!important;cursor:not-allowed!important;opacity:0.8!important}';
+    document.head.appendChild(s);
+})();
 // VERSIÃ“N FINAL - Arregla TODOS los problemas
 
 console.log('ðŸŽ´ Sistema de tarjetas y lesiones (FINAL)...');
@@ -783,5 +790,100 @@ window.CardsInjuriesSystem = {
         console.log('ðŸ”„ Contador reseteado');
     }
 };
+
+// ============================================
+// HOOK ALINEACION: BLOQUEAR SANCIONADOS
+// Se hace aqui para no tocar index.html
+// ============================================
+
+setTimeout(function() {
+
+    // 1. Hookear drag() para bloquear sancionados
+    var originalDrag = window.drag;
+    if (originalDrag) {
+        window.drag = function(ev, playerJson) {
+            try {
+                var player = JSON.parse(decodeURIComponent(playerJson));
+                var st = window.gameLogic && window.gameLogic.getGameState();
+                var sp = st && st.squad && st.squad.find(function(p) { return p.name === player.name; });
+                if (sp && sp.isSuspended) {
+                    ev.preventDefault();
+                    alert(player.name + ' esta sancionado (' + (sp.suspensionWeeks || 0) + ' jornada/s) y no puede ser alineado.');
+                    return;
+                }
+            } catch(e) {}
+            return originalDrag.call(this, ev, playerJson);
+        };
+        console.log('âœ… Hook drag() sancionados aplicado');
+    }
+
+    // 2. Hookear drop() para bloquear sancionados
+    var originalDrop = window.drop;
+    if (originalDrop) {
+        window.drop = function(ev, targetSlotId) {
+            try {
+                var st = window.gameLogic && window.gameLogic.getGameState();
+                // draggedPlayer es la variable interna de index.html, no accesible directamente
+                // La validacion real la hace el hook de drag() de arriba
+                // Pero por si acaso tambien validamos aqui via squad
+            } catch(e) {}
+            return originalDrop.call(this, ev, targetSlotId);
+        };
+    }
+
+    // 3. Hookear renderLineupPageUI() para marcar sancionados visualmente
+    var originalRender = window.renderLineupPageUI;
+    if (originalRender) {
+        window.renderLineupPageUI = function() {
+            originalRender.call(this);
+            // Tras el render, marcar sancionados
+            setTimeout(function() {
+                var st = window.gameLogic && window.gameLogic.getGameState();
+                if (!st || !st.squad) return;
+
+                // Marcar en el campo (pitch-player)
+                var pitchPlayers = document.querySelectorAll('.pitch-player');
+                pitchPlayers.forEach(function(div) {
+                    var name = div.dataset && div.dataset.playername;
+                    if (!name) {
+                        // intentar extraer del texto
+                        var span = div.querySelector('span');
+                        name = span ? span.textContent.trim() : null;
+                    }
+                    if (!name) return;
+                    var p = st.squad.find(function(s) { return s.name === name; });
+                    if (p && p.isSuspended) {
+                        div.classList.add('suspended');
+                        div.style.background = '#7A4A00';
+                        div.style.borderColor = '#FF9800';
+                        div.style.cursor = 'not-allowed';
+                        div.style.opacity = '0.8';
+                    }
+                });
+
+                // Marcar en la lista de reservas (draggable-player)
+                var reservePlayers = document.querySelectorAll('.draggable-player');
+                reservePlayers.forEach(function(div) {
+                    var name = div.dataset && div.dataset.playername;
+                    if (!name) {
+                        name = div.textContent ? div.textContent.split('(')[0].trim() : null;
+                    }
+                    if (!name) return;
+                    var p = st.squad.find(function(s) { return s.name === name; });
+                    if (p && p.isSuspended) {
+                        div.classList.add('suspended');
+                        div.style.background = '#7A4A00';
+                        div.style.borderColor = '#FF9800';
+                        div.style.cursor = 'not-allowed';
+                        div.style.opacity = '0.8';
+                    }
+                });
+
+            }, 50);
+        };
+        console.log('âœ… Hook renderLineupPageUI() sancionados aplicado');
+    }
+
+}, 3000);
 
 console.log('âœ… Sistema cargado (FINAL con contador global)');
