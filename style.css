@@ -1913,4 +1913,82 @@ Salida
     #nextMatchDate {
         font-size: 9px;
     }
+    /* ============================================
+       ALINEACION EN MOVIL - Solo CSS
+       Campo vertical a pantalla completa +
+       suplentes en fila horizontal deslizable
+       ============================================ */
+
+    /* Contenedor principal: columna en vez de fila */
+    .lineup-main-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Campo: 100% ancho, vertical */
+    .pitch-container {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 9 / 14;
+    }
+
+    /* Slots mas grandes y legibles */
+    .pitch-position-placeholder {
+        font-size: 1.1em;
+        border-width: 2px;
+    }
+
+    /* Jugador en slot: texto mas grande */
+    .pitch-player {
+        font-size: 1em;
+    }
+
+    .pitch-player span:first-child {
+        font-size: 1em;
+        font-weight: bold;
+    }
+
+    .pitch-player span:last-child {
+        font-size: 0.8em;
+        opacity: 0.85;
+    }
+
+    /* Suplentes: fila horizontal deslizable debajo del campo */
+    .reserves-container {
+        width: 100%;
+        min-width: unset;
+        border-left: none;
+        border-top: 2px solid #5588FF;
+        padding-left: 0;
+        padding-top: 8px;
+    }
+
+    .reserves-list {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #5588FF transparent;
+        padding-bottom: 4px;
+        align-items: stretch;
+    }
+
+    .reserves-list::-webkit-scrollbar { height: 3px; }
+    .reserves-list::-webkit-scrollbar-thumb { background: #5588FF; border-radius: 3px; }
+
+    /* Cada suplente: tarjeta compacta vertical */
+    .draggable-player {
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 6px 8px;
+        font-size: 0.72em;
+        min-width: 58px;
+        max-width: 72px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
 }
