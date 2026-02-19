@@ -629,18 +629,10 @@ window.confirmListPlayer = function() {
         alert(`${player.name} ha sido puesto disponible para cesiÃ³n`);
     }
     
-    // Guardar cambios
+    // \u00e2\u009c\u0085 GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
-
-    // \u2705 Sincronizar con mercado de Firestore
-    if (window.addPlayerToMarket && player.transferListed || player.loanListed) {
-        const myTeam = window.gameLogic.getGameState().team;
-        window.addPlayerToMarket(player, myTeam).catch(err => {
-            console.warn('\u26a0\ufe0f Error a\u00f1adiendo al mercado Firestore:', err);
-        });
-    }
-
+    
     window.closeModal('sellPlayer');
     
     // âœ… Refrescar con estado actualizado
@@ -1088,14 +1080,5 @@ window.removeFromMarket = function(playerIndex) {
     alert(message);
     
     window.gameLogic.updateGameState(state);
-
-    // \u2705 Retirar del mercado de Firestore tambi\u00e9n
-    if (window.removePlayerFromMarketByUser) {
-        const myTeam = window.gameLogic.getGameState().team;
-        window.removePlayerFromMarketByUser(player.name, myTeam).catch(err => {
-            console.warn('\u26a0\ufe0f Error retirando del mercado Firestore:', err);
-        });
-    }
-
     window.ui.refreshUI(state);
 };
