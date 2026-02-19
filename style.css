@@ -262,8 +262,8 @@ body {
 .decisions-icon::before {background-image: url('/assets/iconos/entradas.png');}
 /*.stadium-icon::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%23FFFFFF" d="M144 0a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM0 320a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm144 160a32 32 0 1 0 0 64 32 32 0 1 0 0-64zM240 0h320c26.5 0 48 21.5 48 48v416c0 26.5-21.5 48-48 48H240c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zm80 432c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16zm0-128c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H336c-8.8 0-16-7.2-16-16z"/></svg>'); }*/
 .stadium-icon::before {background-image: url('/assets/iconos/estadio.png');}
-.renovation-icon::before {content: "âœï¸"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
-.cantera-icon::before {content: "ðŸŒ±"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
+.renovation-icon::before {content: "\270D\FE0F"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
+.cantera-icon::before {content: "\1F331"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
 
 /* ============================================
    PÃGINAS DE CONTENIDO - Pantallas secundarias
