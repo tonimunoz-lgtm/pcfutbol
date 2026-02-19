@@ -1,11 +1,11 @@
 // injector-expose-functions.js
-// Este injector expone las funciones del módulo ES6 al scope global
+// Este injector expone las funciones del mÃ³dulo ES6 al scope global
 // para que puedan ser llamadas desde onclick en el HTML
 
 (function() {
-    console.log('🔗 Function Exposure Injector cargando...');
+    console.log('ðŸ”— Function Exposure Injector cargando...');
 
-    // Esperar a que los módulos estén cargados
+    // Esperar a que los mÃ³dulos estÃ©n cargados
     function waitForModules() {
         return new Promise((resolve) => {
             const checkInterval = setInterval(() => {
@@ -19,29 +19,29 @@
             setTimeout(() => {
                 clearInterval(checkInterval);
                 if (!window.gameLogic || !window.ui) {
-                    console.error('❌ Módulos no cargados después de 10 segundos');
+                    console.error('âŒ MÃ³dulos no cargados despuÃ©s de 10 segundos');
                 }
                 resolve();
             }, 10000);
         });
     }
 
-    // Función principal de exposición
+    // FunciÃ³n principal de exposiciÃ³n
     async function exposeGameFunctions() {
         await waitForModules();
 
         if (!window.gameLogic) {
-            console.error('❌ gameLogic no disponible');
+            console.error('âŒ gameLogic no disponible');
             return;
         }
 
-        console.log('📤 Exponiendo funciones del juego...');
+        console.log('ðŸ“¤ Exponiendo funciones del juego...');
 
         // ============================================
         // PRIMERO: FUNCIONES AUXILIARES Y DE UTILIDAD
         // ============================================
 
-        // Función para popular el select de intercambio de jugadores
+        // FunciÃ³n para popular el select de intercambio de jugadores
         window.populatePlayerExchangeSelect = function() {
             const select = document.getElementById('playerExchangeSelect');
             if (!select) return;
@@ -51,13 +51,13 @@
             state.squad.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.name;
-                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}€`;
+                option.textContent = `${p.name} (OVR: ${p.overall}) - VAL: ${p.value.toLocaleString('es-ES')}â‚¬`;
                 select.appendChild(option);
             });
         };
 
         // ============================================
-        // SEGUNDO: FUNCIONES DE NEGOCIACIÓN
+        // SEGUNDO: FUNCIONES DE NEGOCIACIÃ“N
         // ============================================
 
         window.updateNegotiationModal = function() {
@@ -118,7 +118,7 @@
                 negotiationLoanOffer.style.display = 'none';
                 negotiationTransferOffer.style.display = 'none';
 
-                document.getElementById('negotiationClubMessage').textContent = `Estás a punto de hacer una oferta a ${player.club} por ${player.name}.`;
+                document.getElementById('negotiationClubMessage').textContent = `EstÃ¡s a punto de hacer una oferta a ${player.club} por ${player.name}.`;
 
                 if (player.loanListed) {
                     negotiationLoanOffer.style.display = 'block';
@@ -157,7 +157,7 @@
             if (result.success) {
                 window.updateNegotiationModal();
             } else {
-                if (result.message && result.message.includes('No está interesado')) {
+                if (result.message && result.message.includes('No estÃ¡ interesado')) {
                     window.endNegotiationUI(false);
                 }
             }
@@ -170,7 +170,7 @@
             if (result.success) {
                 window.endNegotiationUI(true);
             } else {
-                if (result.message && result.message.includes('rechazado tu oferta de cesión')) {
+                if (result.message && result.message.includes('rechazado tu oferta de cesiÃ³n')) {
                     window.endNegotiationUI(false);
                 }
             }
@@ -255,7 +255,7 @@
                 document.getElementById('trainingGkStaffWarning').style.display = 'none';
             }
 
-            // Guardar el índice para submitTrainingFocus
+            // Guardar el Ã­ndice para submitTrainingFocus
             window.currentTrainingPlayerIndex = playerIndex;
 
             window.openModal('training');
@@ -270,7 +270,7 @@
 
             const playerIndex = window.currentTrainingPlayerIndex;
             if (playerIndex === undefined || playerIndex === -1) {
-                alert('Error: No se ha seleccionado un jugador válido.');
+                alert('Error: No se ha seleccionado un jugador vÃ¡lido.');
                 return;
             }
 
@@ -289,7 +289,7 @@
         // ============================================
 
         window.sellPlayer = function(playerName) {
-            if (confirm(`¿Estás seguro de que quieres vender a ${playerName}?`)) {
+            if (confirm(`Â¿EstÃ¡s seguro de que quieres vender a ${playerName}?`)) {
                 const result = window.gameLogic.sellPlayer(playerName);
                 alert(result.message);
                 if (result.success && window.ui && window.ui.refreshUI) {
@@ -299,7 +299,7 @@
         };
 
         window.sellPlayerConfirm = function(name) {
-            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {
+            if (confirm(`Â¿EstÃ¡s seguro de que quieres vender a ${name}?`)) {
                 const result = window.gameLogic.sellPlayer(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
@@ -313,7 +313,7 @@
         };
 
         window.promoteConfirm = function(name) {
-            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {
+            if (confirm(`Â¿Ascender a ${name} a la primera plantilla?`)) {
                 const result = window.gameLogic.promoteYoungster(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
@@ -335,43 +335,43 @@
         };
 
         window.negotiatePlayer = function(playerName) {
-            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no está implementada todavía. Esto sería para renovaciones, subidas de sueldo, etc.`);
+            alert(`La funcionalidad "Negociar" para jugadores de tu plantilla no estÃ¡ implementada todavÃ­a. Esto serÃ­a para renovaciones, subidas de sueldo, etc.`);
             console.log(`Intentando negociar con ${playerName}`);
         };
 
-        // AHORA SÍ: Abrir modal de entrenamiento (que ya tiene setPlayerTrainingFocusUI definida)
+        // AHORA SÃ: Abrir modal de entrenamiento (que ya tiene setPlayerTrainingFocusUI definida)
         window.openTrainingModal = function(playerIndex, playerName) {
             window.setPlayerTrainingFocusUI(playerIndex, playerName);
         };
 
-        console.log('✅ Funciones del juego expuestas globalmente');
-        console.log('   ✓ sellPlayer');
-        console.log('   ✓ openTrainingModal');
-        console.log('   ✓ promoteYoungster');
-        console.log('   ✓ negotiatePlayer');
-        console.log('   ✓ startNegotiationUI');
-        console.log('   ✓ submitPlayerOffer');
-        console.log('   ✓ submitLoanOffer');
-        console.log('   ✓ submitTransferOffer');
-        console.log('   ✓ endNegotiationUI');
-        console.log('   ✓ setPlayerTrainingFocusUI');
-        console.log('   ✓ submitTrainingFocus');
+        console.log('âœ… Funciones del juego expuestas globalmente');
+        console.log('   âœ“ sellPlayer');
+        console.log('   âœ“ openTrainingModal');
+        console.log('   âœ“ promoteYoungster');
+        console.log('   âœ“ negotiatePlayer');
+        console.log('   âœ“ startNegotiationUI');
+        console.log('   âœ“ submitPlayerOffer');
+        console.log('   âœ“ submitLoanOffer');
+        console.log('   âœ“ submitTransferOffer');
+        console.log('   âœ“ endNegotiationUI');
+        console.log('   âœ“ setPlayerTrainingFocusUI');
+        console.log('   âœ“ submitTrainingFocus');
     }
 
-    // Inicializar cuando el DOM esté listo
+    // Inicializar cuando el DOM estÃ© listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', exposeGameFunctions);
     } else {
-        // DOM ya está listo
+        // DOM ya estÃ¡ listo
         exposeGameFunctions();
     }
 
-    console.log('✅ Function Exposure Injector cargado correctamente');
+    console.log('âœ… Function Exposure Injector cargado correctamente');
 })();
 
 // Funciones adicionales para completar la funcionalidad de iconos
 
-// Función para despedir/rescindir contrato de un jugador
+// FunciÃ³n para despedir/rescindir contrato de un jugador
 window.firePlayerConfirm = function(playerName) {
     const state = window.gameLogic.getGameState();
     const player = state.squad.find(p => p.name === playerName);
@@ -382,25 +382,25 @@ window.firePlayerConfirm = function(playerName) {
     }
     
     if (player.contractType !== 'owned') {
-        alert('Solo puedes despedir jugadores en propiedad. Los cedidos volverán a su club al finalizar la cesión.');
+        alert('Solo puedes despedir jugadores en propiedad. Los cedidos volverÃ¡n a su club al finalizar la cesiÃ³n.');
         return;
     }
     
-    // Calcular indemnización (20% del valor del jugador)
+    // Calcular indemnizaciÃ³n (20% del valor del jugador)
     const compensation = Math.round(player.value * 0.2);
     
     const confirmed = confirm(
-        `¿Estás seguro de que quieres despedir a ${playerName}?\n\n` +
-        `Tendrás que pagar una indemnización de ${compensation.toLocaleString('es-ES')}€\n` +
+        `Â¿EstÃ¡s seguro de que quieres despedir a ${playerName}?\n\n` +
+        `TendrÃ¡s que pagar una indemnizaciÃ³n de ${compensation.toLocaleString('es-ES')}â‚¬\n` +
         `(20% del valor de mercado del jugador)\n\n` +
-        `Esta acción no se puede deshacer.`
+        `Esta acciÃ³n no se puede deshacer.`
     );
     
     if (!confirmed) return;
     
     // Verificar si hay suficiente dinero
     if (state.balance < compensation) {
-        alert(`No tienes suficiente dinero para pagar la indemnización de ${compensation.toLocaleString('es-ES')}€`);
+        alert(`No tienes suficiente dinero para pagar la indemnizaciÃ³n de ${compensation.toLocaleString('es-ES')}â‚¬`);
         return;
     }
     
@@ -409,35 +409,35 @@ window.firePlayerConfirm = function(playerName) {
     if (playerIndex !== -1) {
         state.squad.splice(playerIndex, 1);
         state.balance -= compensation;
-        // ✅ REGISTRAR INDEMNIZACIÓN
+        // âœ… REGISTRAR INDEMNIZACIÃ“N
 if (!state.playerCompensations) state.playerCompensations = 0;
 state.playerCompensations += compensation;
         
         if (window.gameLogic.addNews) {
             window.gameLogic.addNews(
-                `🚫 Has despedido a ${playerName}. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`,
+                `ðŸš« Has despedido a ${playerName}. IndemnizaciÃ³n pagada: ${compensation.toLocaleString('es-ES')}â‚¬`,
                 'warning'
             );
         }
         
-        alert(`${playerName} ha sido despedido del club.\nIndemnización pagada: ${compensation.toLocaleString('es-ES')}€`);
+        alert(`${playerName} ha sido despedido del club.\nIndemnizaciÃ³n pagada: ${compensation.toLocaleString('es-ES')}â‚¬`);
         
-        // Actualizar alineación si el jugador estaba en ella
+        // Actualizar alineaciÃ³n si el jugador estaba en ella
         if (state.lineup.some(p => p && p.name === playerName)) {
             const newLineup = state.lineup.filter(p => p && p.name !== playerName);
             window.gameLogic.setLineup(newLineup);
         }
         
-       // ✅ Refrescar UI con estado ACTUALIZADO
+       // âœ… Refrescar UI con estado ACTUALIZADO
 if (window.ui && window.ui.refreshUI) {
-    window.gameLogic.updateGameState(state);  // ✅ Guardar cambios primero
-    const updatedState = window.gameLogic.getGameState();  // ✅ Obtener estado actualizado
-    window.ui.refreshUI(updatedState);  // ✅ Refrescar con estado nuevo
+    window.gameLogic.updateGameState(state);  // âœ… Guardar cambios primero
+    const updatedState = window.gameLogic.getGameState();  // âœ… Obtener estado actualizado
+    window.ui.refreshUI(updatedState);  // âœ… Refrescar con estado nuevo
 }
     }
 };
 
-// Función para abrir interfaz de venta (conecta con el sistema existente)
+// FunciÃ³n para abrir interfaz de venta (conecta con el sistema existente)
 window.openSellPlayerUI = function(playerIndex) {
     const state = window.gameLogic.getGameState();
     const player = state.squad[playerIndex];
@@ -458,8 +458,8 @@ window.openSellPlayerUI = function(playerIndex) {
     
     const priceInput = prompt(
         `Poner a ${player.name} en el mercado de transferencias\n\n` +
-        `Valor de mercado: ${suggestedPrice.toLocaleString('es-ES')}€\n` +
-        `Precio mínimo recomendado: ${minPrice.toLocaleString('es-ES')}€\n\n` +
+        `Valor de mercado: ${suggestedPrice.toLocaleString('es-ES')}â‚¬\n` +
+        `Precio mÃ­nimo recomendado: ${minPrice.toLocaleString('es-ES')}â‚¬\n\n` +
         `Introduce el precio de venta:`,
         suggestedPrice
     );
@@ -469,14 +469,14 @@ window.openSellPlayerUI = function(playerIndex) {
     const price = parseInt(priceInput);
     
     if (isNaN(price) || price < 0) {
-        alert('Precio inválido');
+        alert('Precio invÃ¡lido');
         return;
     }
     
     if (price < minPrice) {
         const confirmLowPrice = confirm(
-            `El precio introducido (${price.toLocaleString('es-ES')}€) está por debajo del mínimo recomendado.\n\n` +
-            `¿Estás seguro de vender por este precio?`
+            `El precio introducido (${price.toLocaleString('es-ES')}â‚¬) estÃ¡ por debajo del mÃ­nimo recomendado.\n\n` +
+            `Â¿EstÃ¡s seguro de vender por este precio?`
         );
         if (!confirmLowPrice) return;
     }
@@ -487,12 +487,12 @@ window.openSellPlayerUI = function(playerIndex) {
     
     if (window.gameLogic.addNews) {
         window.gameLogic.addNews(
-            `💰 ${player.name} ha sido puesto en el mercado por ${price.toLocaleString('es-ES')}€`,
+            `ðŸ’° ${player.name} ha sido puesto en el mercado por ${price.toLocaleString('es-ES')}â‚¬`,
             'info'
         );
     }
     
-    alert(`${player.name} ha sido puesto en el mercado de transferencias por ${price.toLocaleString('es-ES')}€`);
+    alert(`${player.name} ha sido puesto en el mercado de transferencias por ${price.toLocaleString('es-ES')}â‚¬`);
     
     // Refrescar UI
     if (window.ui && window.ui.refreshUI) {
@@ -524,7 +524,7 @@ window.openSellPlayerModal = function(playerIndex) {
     
     currentSellPlayerIndex = playerIndex;
     
-    // Rellenar información
+    // Rellenar informaciÃ³n
     document.getElementById('sellPlayerName').textContent = player.name;
     document.getElementById('sellPlayerPosition').textContent = player.position;
     document.getElementById('sellPlayerAge').textContent = player.age;
@@ -542,7 +542,7 @@ window.openSellPlayerModal = function(playerIndex) {
     window.openModal('sellPlayer');
 };
 
-// Actualizar tipo de operación
+// Actualizar tipo de operaciÃ³n
 window.updateSellOperationType = function() {
     const type = document.getElementById('sellOperationType').value;
     
@@ -556,7 +556,7 @@ window.updateSellOperationType = function() {
     }
 };
 
-// Actualizar preview de costes de cesión
+// Actualizar preview de costes de cesiÃ³n
 window.updateLoanCostPreview = function() {
     const state = window.gameLogic.getGameState();
     const player = state.squad[currentSellPlayerIndex];
@@ -595,7 +595,7 @@ window.confirmListPlayer = function() {
         const price = parseInt(document.getElementById('sellTransferPrice').value);
         
         if (!price || price <= 0) {
-            alert('Introduce un precio válido');
+            alert('Introduce un precio vÃ¡lido');
             return;
         }
         
@@ -603,47 +603,55 @@ window.confirmListPlayer = function() {
         player.transferListed = true;
         player.loanListed = false;
         player.askingPrice = price;
-        player.weeksOnMarket = 0; // ✅ Inicializar contador
+        player.weeksOnMarket = 0; // âœ… Inicializar contador
         
         window.gameLogic.addNews(
-            `💰 Has puesto a ${player.name} en venta por ${price.toLocaleString('es-ES')}€`,
+            `ðŸ’° Has puesto a ${player.name} en venta por ${price.toLocaleString('es-ES')}â‚¬`,
             'info'
         );
         
-        alert(`${player.name} ha sido puesto en venta por ${price.toLocaleString('es-ES')}€`);
+        alert(`${player.name} ha sido puesto en venta por ${price.toLocaleString('es-ES')}â‚¬`);
         
     } else {
-        // Cesión
+        // CesiÃ³n
         const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value);
         
         player.transferListed = false;
         player.loanListed = true;
         player.loanWageContribution = Math.round(player.salary * ((100 - wagePercent) / 100));
-        player.weeksOnMarket = 0; // ✅ Inicializar contador
+        player.weeksOnMarket = 0; // âœ… Inicializar contador
         
         window.gameLogic.addNews(
-            `🔄 Has puesto a ${player.name} disponible para cesión (asumes ${wagePercent}% salario)`,
+            `ðŸ”„ Has puesto a ${player.name} disponible para cesiÃ³n (asumes ${wagePercent}% salario)`,
             'info'
         );
         
-        alert(`${player.name} ha sido puesto disponible para cesión`);
+        alert(`${player.name} ha sido puesto disponible para cesiÃ³n`);
     }
     
-    // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
+    // Guardar cambios
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
-    
+
+    // \u2705 Sincronizar con mercado de Firestore
+    if (window.addPlayerToMarket && player.transferListed || player.loanListed) {
+        const myTeam = window.gameLogic.getGameState().team;
+        window.addPlayerToMarket(player, myTeam).catch(err => {
+            console.warn('\u26a0\ufe0f Error a\u00f1adiendo al mercado Firestore:', err);
+        });
+    }
+
     window.closeModal('sellPlayer');
     
-    // ✅ Refrescar con estado actualizado
+    // âœ… Refrescar con estado actualizado
     const updatedState = window.gameLogic.getGameState();
     window.ui.refreshUI(updatedState);
     
-    // Programar generación de oferta
+    // Programar generaciÃ³n de oferta
     setTimeout(() => {
         if (window.gameLogic && window.gameLogic.generateOfferForPlayer) {
-            // Si está en gameLogic, no tiene window.
-            console.log('⚠️ generateOfferForPlayer está en gameLogic, no en window');
+            // Si estÃ¡ en gameLogic, no tiene window.
+            console.log('âš ï¸ generateOfferForPlayer estÃ¡ en gameLogic, no en window');
         }
     }, 5000);
 };
@@ -672,7 +680,7 @@ window.generateOfferForPlayer = function(player) {
         
         currentOffer = {
             player: player,
-            playerIndex: state.squad.findIndex(p => p.name === player.name), // ✅ CAMBIO AQUÍ
+            playerIndex: state.squad.findIndex(p => p.name === player.name), // âœ… CAMBIO AQUÃ
             buyerTeam: buyerTeam,
             type: 'transfer',
             amount: offerAmount,
@@ -682,24 +690,24 @@ window.generateOfferForPlayer = function(player) {
         // Mostrar oferta
         document.getElementById('offerBuyerTeam').textContent = buyerTeam;
         document.getElementById('offerPlayerName').textContent = player.name;
-        document.getElementById('offerType').textContent = '💼 Traspaso Definitivo';
-        document.getElementById('offerAmount').textContent = offerAmount.toLocaleString('es-ES') + '€';
-        document.getElementById('offerAsking').textContent = player.askingPrice.toLocaleString('es-ES') + '€';
+        document.getElementById('offerType').textContent = 'ðŸ’¼ Traspaso Definitivo';
+        document.getElementById('offerAmount').textContent = offerAmount.toLocaleString('es-ES') + 'â‚¬';
+        document.getElementById('offerAsking').textContent = player.askingPrice.toLocaleString('es-ES') + 'â‚¬';
         
         window.gameLogic.addNews(
-            `📨 ¡Oferta recibida! ${buyerTeam} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${player.name}`,
+            `ðŸ“¨ Â¡Oferta recibida! ${buyerTeam} ofrece ${offerAmount.toLocaleString('es-ES')}â‚¬ por ${player.name}`,
             'info'
         );
         
         window.openModal('offerReceived');
         
     } else if (player.loanListed) {
-        // Oferta de cesión
+        // Oferta de cesiÃ³n
         const wagePercentTheyPay = 30 + Math.floor(Math.random() * 40); // 30%-70%
         
         currentOffer = {
             player: player,
-            playerIndex: state.squad.findIndex(p => p.name === player.name), // ✅ CAMBIO AQUÍ
+            playerIndex: state.squad.findIndex(p => p.name === player.name), // âœ… CAMBIO AQUÃ
             buyerTeam: buyerTeam,
             type: 'loan',
             wagePercent: wagePercentTheyPay
@@ -707,12 +715,12 @@ window.generateOfferForPlayer = function(player) {
         
         document.getElementById('offerBuyerTeam').textContent = buyerTeam;
         document.getElementById('offerPlayerName').textContent = player.name;
-        document.getElementById('offerType').textContent = '🔄 Cesión (1 año)';
+        document.getElementById('offerType').textContent = 'ðŸ”„ CesiÃ³n (1 aÃ±o)';
         document.getElementById('offerAmount').textContent = `Asumen ${wagePercentTheyPay}% del salario`;
-        document.getElementById('offerAsking').textContent = 'Cesión';
+        document.getElementById('offerAsking').textContent = 'CesiÃ³n';
         
         window.gameLogic.addNews(
-            `📨 ¡Oferta de cesión! ${buyerTeam} quiere ceder a ${player.name} (asumen ${wagePercentTheyPay}% salario)`,
+            `ðŸ“¨ Â¡Oferta de cesiÃ³n! ${buyerTeam} quiere ceder a ${player.name} (asumen ${wagePercentTheyPay}% salario)`,
             'info'
         );
         
@@ -740,40 +748,40 @@ window.acceptOffer = function() {
         state.playerSalesIncome += income;
         
         window.gameLogic.addNews(
-            `✅ ¡Venta cerrada! Has vendido a ${player.name} al ${currentOffer.buyerTeam} por ${income.toLocaleString('es-ES')}€`,
+            `âœ… Â¡Venta cerrada! Has vendido a ${player.name} al ${currentOffer.buyerTeam} por ${income.toLocaleString('es-ES')}â‚¬`,
             'success'
         );
         
-        alert(`¡Venta exitosa!\n\n${player.name} → ${currentOffer.buyerTeam}\nIngreso: ${income.toLocaleString('es-ES')}€`);
+        alert(`Â¡Venta exitosa!\n\n${player.name} â†’ ${currentOffer.buyerTeam}\nIngreso: ${income.toLocaleString('es-ES')}â‚¬`);
         
     } else if (currentOffer.type === 'loan') {
-    // Cesión - Modificar jugador DIRECTAMENTE en squad
-    const squadPlayer = state.squad[currentOffer.playerIndex]; // ✅ Obtener del squad
+    // CesiÃ³n - Modificar jugador DIRECTAMENTE en squad
+    const squadPlayer = state.squad[currentOffer.playerIndex]; // âœ… Obtener del squad
     
     if (squadPlayer) {
         const newSalary = Math.round(squadPlayer.salary * ((100 - currentOffer.wagePercent) / 100));
         
-        squadPlayer.contractType = 'loaned_out'; // ✅ Cedido a otro equipo
+        squadPlayer.contractType = 'loaned_out'; // âœ… Cedido a otro equipo
         squadPlayer.originalSalary = squadPlayer.salary;
         squadPlayer.salary = newSalary;
-        squadPlayer.loanedTo = currentOffer.buyerTeam; // ✅ Guardar equipo destino
+        squadPlayer.loanedTo = currentOffer.buyerTeam; // âœ… Guardar equipo destino
         squadPlayer.contractYears = 1;
         
         window.gameLogic.addNews(
-            `✅ ¡Cesión cerrada! Has cedido a ${squadPlayer.name} al ${currentOffer.buyerTeam} (pagan ${currentOffer.wagePercent}% salario)`,
+            `âœ… Â¡CesiÃ³n cerrada! Has cedido a ${squadPlayer.name} al ${currentOffer.buyerTeam} (pagan ${currentOffer.wagePercent}% salario)`,
             'success'
         );
         
-        alert(`¡Cesión exitosa!\n\n${squadPlayer.name} → ${currentOffer.buyerTeam}\nAhorro salarial: ${(squadPlayer.originalSalary - newSalary).toLocaleString('es-ES')}€/sem`);
+        alert(`Â¡CesiÃ³n exitosa!\n\n${squadPlayer.name} â†’ ${currentOffer.buyerTeam}\nAhorro salarial: ${(squadPlayer.originalSalary - newSalary).toLocaleString('es-ES')}â‚¬/sem`);
     }
 }
 
-    // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
+    // âœ… GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
     
     window.closeModal('offerReceived');
-    // ✅ Refrescar con estado ACTUALIZADO
+    // âœ… Refrescar con estado ACTUALIZADO
     const updatedState = window.gameLogic.getGameState();
     window.ui.refreshUI(updatedState);
     currentOffer = null;
@@ -784,11 +792,11 @@ window.rejectOffer = function() {
     if (!currentOffer) return;
     
     window.gameLogic.addNews(
-        `❌ Has rechazado la oferta de ${currentOffer.buyerTeam} por ${currentOffer.player.name}`,
+        `âŒ Has rechazado la oferta de ${currentOffer.buyerTeam} por ${currentOffer.player.name}`,
         'info'
     );
     
-    alert(`Oferta rechazada. ${currentOffer.player.name} seguirá en venta.`);
+    alert(`Oferta rechazada. ${currentOffer.player.name} seguirÃ¡ en venta.`);
     
     window.closeModal('offerReceived');
     currentOffer = null;
@@ -800,17 +808,17 @@ window.counterOffer = function() {
     
     if (currentOffer.type === 'transfer') {
         const newPrice = prompt(
-            `Oferta actual: ${currentOffer.amount.toLocaleString('es-ES')}€\n` +
-            `Tu precio: ${currentOffer.askingPrice.toLocaleString('es-ES')}€\n\n` +
+            `Oferta actual: ${currentOffer.amount.toLocaleString('es-ES')}â‚¬\n` +
+            `Tu precio: ${currentOffer.askingPrice.toLocaleString('es-ES')}â‚¬\n\n` +
             `Introduce tu contraoferta:`,
             currentOffer.askingPrice
         );
         
         if (newPrice && parseInt(newPrice) > 0) {
-            // 50% de aceptación si es razonable
+            // 50% de aceptaciÃ³n si es razonable
             if (Math.random() < 0.5 && parseInt(newPrice) <= currentOffer.askingPrice * 1.2) {
                 currentOffer.amount = parseInt(newPrice);
-                alert(`${currentOffer.buyerTeam} ha aceptado tu contraoferta de ${parseInt(newPrice).toLocaleString('es-ES')}€`);
+                alert(`${currentOffer.buyerTeam} ha aceptado tu contraoferta de ${parseInt(newPrice).toLocaleString('es-ES')}â‚¬`);
                 window.acceptOffer();
             } else {
                 alert(`${currentOffer.buyerTeam} ha rechazado tu contraoferta`);
@@ -821,7 +829,7 @@ window.counterOffer = function() {
     }
 };
 
-// ✅ AÑADIR
+// âœ… AÃ‘ADIR
 
 window.firePlayerConfirm = function(playerName) {
     const state = window.gameLogic.getGameState();
@@ -835,11 +843,11 @@ window.firePlayerConfirm = function(playerName) {
     const compensation = player.salary * player.contractYears * 52;
     
     const confirmed = confirm(
-        `¿Estás seguro de DESPEDIR a ${playerName}?\n\n` +
-        `Años restantes: ${player.contractYears}\n` +
-        `Salario semanal: ${player.salary.toLocaleString('es-ES')}€\n` +
-        `Indemnización total: ${compensation.toLocaleString('es-ES')}€\n\n` +
-        `⚠️ Esta acción NO se puede deshacer`
+        `Â¿EstÃ¡s seguro de DESPEDIR a ${playerName}?\n\n` +
+        `AÃ±os restantes: ${player.contractYears}\n` +
+        `Salario semanal: ${player.salary.toLocaleString('es-ES')}â‚¬\n` +
+        `IndemnizaciÃ³n total: ${compensation.toLocaleString('es-ES')}â‚¬\n\n` +
+        `âš ï¸ Esta acciÃ³n NO se puede deshacer`
     );
     
     if (!confirmed) return;
@@ -847,9 +855,9 @@ window.firePlayerConfirm = function(playerName) {
     const result = window.gameLogic.firePlayer(playerName);
     
     if (result.success) {
-        alert(`${playerName} ha sido despedido.\n\nIndemnización pagada: ${result.compensation.toLocaleString('es-ES')}€`);
+        alert(`${playerName} ha sido despedido.\n\nIndemnizaciÃ³n pagada: ${result.compensation.toLocaleString('es-ES')}â‚¬`);
         
-        // Actualizar alineación si estaba en ella
+        // Actualizar alineaciÃ³n si estaba en ella
         if (state.lineup.some(p => p && p.name === playerName)) {
             const newLineup = state.lineup.filter(p => p && p.name !== playerName);
             window.gameLogic.setLineup(newLineup);
@@ -883,15 +891,15 @@ window.openRenewalModal = function(playerIndex) {
     
     currentRenewalPlayerIndex = playerIndex;
     
-    // Rellenar información
+    // Rellenar informaciÃ³n
     document.getElementById('renewalPlayerName').textContent = player.name;
     document.getElementById('renewalPlayerPosition').textContent = player.position;
     document.getElementById('renewalPlayerAge').textContent = player.age;
     document.getElementById('renewalPlayerOverall').textContent = player.overall;
     
-    document.getElementById('renewalCurrentYears').textContent = player.contractYears + (player.contractYears === 1 ? ' año' : ' años');
-    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + '€/sem';
-    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + '€';
+    document.getElementById('renewalCurrentYears').textContent = player.contractYears + (player.contractYears === 1 ? ' aÃ±o' : ' aÃ±os');
+    document.getElementById('renewalCurrentSalary').textContent = player.salary.toLocaleString('es-ES') + 'â‚¬/sem';
+    document.getElementById('renewalCurrentClause').textContent = (player.releaseClause || 0).toLocaleString('es-ES') + 'â‚¬';
     
     // Sugerir valores
     const suggestedSalary = Math.round(player.salary * 1.1); // +10%
@@ -932,11 +940,11 @@ window.submitRenewalOffer = function() {
     const hasHouse = document.getElementById('renewalHouse').checked;
     
     if (!newSalary || newSalary <= 0 || !newClause || newClause <= 0) {
-        alert('Introduce valores válidos');
+        alert('Introduce valores vÃ¡lidos');
         return;
     }
     
-    // Calcular probabilidad de aceptación
+    // Calcular probabilidad de aceptaciÃ³n
     let acceptanceChance = 0.5;
     
     // Factor salario
@@ -946,7 +954,7 @@ window.submitRenewalOffer = function() {
     else if (salaryRatio >= 1.0) acceptanceChance += 0.1;
     else if (salaryRatio < 0.9) acceptanceChance -= 0.3;
     
-    // Factor años
+    // Factor aÃ±os
     if (newYears >= 4) acceptanceChance += 0.1;
     else if (newYears <= 2) acceptanceChance -= 0.1;
     
@@ -958,7 +966,7 @@ window.submitRenewalOffer = function() {
     // Factor edad
     if (player.age > 30 && newYears >= 3) acceptanceChance += 0.1;
     
-    // Urgencia (si le queda poco contrato, más probable que acepte)
+    // Urgencia (si le queda poco contrato, mÃ¡s probable que acepte)
     if (player.contractYears <= 1) acceptanceChance += 0.15;
     
     // Efecto secretario
@@ -971,13 +979,13 @@ window.submitRenewalOffer = function() {
     
     // Registrar oferta
     window.gameLogic.addNews(
-        `📝 Has enviado oferta de renovación a ${player.name}: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem`,
+        `ðŸ“ Has enviado oferta de renovaciÃ³n a ${player.name}: ${newYears} aÃ±os, ${newSalary.toLocaleString('es-ES')}â‚¬/sem`,
         'info'
     );
     
     window.closeModal('renewal');
     
-    // Simular respuesta (después de 3 segundos)
+    // Simular respuesta (despuÃ©s de 3 segundos)
     setTimeout(() => {
         const accepted = Math.random() < acceptanceChance;
         
@@ -988,20 +996,20 @@ window.submitRenewalOffer = function() {
             player.releaseClause = newClause;
             
             window.gameLogic.addNews(
-                `✅ ¡Renovación exitosa! ${player.name} ha firmado por ${newYears} años`,
+                `âœ… Â¡RenovaciÃ³n exitosa! ${player.name} ha firmado por ${newYears} aÃ±os`,
                 'success'
             );
             
-            alert(`¡${player.name} ha aceptado la renovación!\n\nNuevo contrato: ${newYears} años\nSalario: ${newSalary.toLocaleString('es-ES')}€/sem`);
+            alert(`Â¡${player.name} ha aceptado la renovaciÃ³n!\n\nNuevo contrato: ${newYears} aÃ±os\nSalario: ${newSalary.toLocaleString('es-ES')}â‚¬/sem`);
             
         } else {
             // RECHAZADA
             window.gameLogic.addNews(
-                `❌ ${player.name} ha rechazado tu oferta de renovación. Necesita mejores condiciones.`,
+                `âŒ ${player.name} ha rechazado tu oferta de renovaciÃ³n. Necesita mejores condiciones.`,
                 'warning'
             );
             
-            alert(`${player.name} ha rechazado la oferta.\n\nIntenta mejorar las condiciones o espera a que esté más cerca del final de su contrato.`);
+            alert(`${player.name} ha rechazado la oferta.\n\nIntenta mejorar las condiciones o espera a que estÃ© mÃ¡s cerca del final de su contrato.`);
         }
         
         window.ui.refreshUI(state);
@@ -1011,7 +1019,7 @@ window.submitRenewalOffer = function() {
 };
 
 // ========================================
-// PAGAR CLÁUSULA DE RESCISIÓN
+// PAGAR CLÃUSULA DE RESCISIÃ“N
 // ========================================
 
 window.payReleaseClause = function(encodedPlayerJson) {
@@ -1021,20 +1029,20 @@ window.payReleaseClause = function(encodedPlayerJson) {
     const clause = player.releaseClause || player.value * 3;
     
     const confirmed = confirm(
-        `¿Pagar la cláusula de rescisión de ${player.name}?\n\n` +
-        `Cláusula: ${clause.toLocaleString('es-ES')}€\n\n` +
-        `⚠️ Si pagas la cláusula, el ${player.club} no puede negarse.\n` +
-        `Solo necesitarás convencer al jugador.`
+        `Â¿Pagar la clÃ¡usula de rescisiÃ³n de ${player.name}?\n\n` +
+        `ClÃ¡usula: ${clause.toLocaleString('es-ES')}â‚¬\n\n` +
+        `âš ï¸ Si pagas la clÃ¡usula, el ${player.club} no puede negarse.\n` +
+        `Solo necesitarÃ¡s convencer al jugador.`
     );
     
     if (!confirmed) return;
     
     if (state.balance < clause) {
-        alert(`No tienes suficiente dinero.\n\nNecesitas: ${clause.toLocaleString('es-ES')}€\nTienes: ${state.balance.toLocaleString('es-ES')}€`);
+        alert(`No tienes suficiente dinero.\n\nNecesitas: ${clause.toLocaleString('es-ES')}â‚¬\nTienes: ${state.balance.toLocaleString('es-ES')}â‚¬`);
         return;
     }
     
-    // Pagar cláusula
+    // Pagar clÃ¡usula
     state.balance -= clause;
     
     // Registrar gasto
@@ -1042,16 +1050,16 @@ window.payReleaseClause = function(encodedPlayerJson) {
     state.playerPurchases += clause;
     
     window.gameLogic.addNews(
-        `💰 Has pagado la cláusula de ${player.name} por ${clause.toLocaleString('es-ES')}€. Ahora negocia con él.`,
+        `ðŸ’° Has pagado la clÃ¡usula de ${player.name} por ${clause.toLocaleString('es-ES')}â‚¬. Ahora negocia con Ã©l.`,
         'info'
     );
     
-    // Iniciar negociación solo con jugador (saltar fase de club)
+    // Iniciar negociaciÃ³n solo con jugador (saltar fase de club)
     player.clausePaid = true;
     player.askingPrice = 0; // Ya pagamos
     window.startNegotiationUI(encodeURIComponent(JSON.stringify(player)));
     
-    alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
+    alert(`Â¡ClÃ¡usula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
 };
 
 window.removeFromMarket = function(playerIndex) {
@@ -1074,11 +1082,20 @@ window.removeFromMarket = function(playerIndex) {
     
     const message = wasForSale ? 
         `${player.name} retirado del mercado de transferencias` :
-        `${player.name} ya no está disponible para cesión`;
+        `${player.name} ya no estÃ¡ disponible para cesiÃ³n`;
     
-    window.gameLogic.addNews(`🔙 ${message}`, 'info');
+    window.gameLogic.addNews(`ðŸ”™ ${message}`, 'info');
     alert(message);
     
     window.gameLogic.updateGameState(state);
+
+    // \u2705 Retirar del mercado de Firestore tambi\u00e9n
+    if (window.removePlayerFromMarketByUser) {
+        const myTeam = window.gameLogic.getGameState().team;
+        window.removePlayerFromMarketByUser(player.name, myTeam).catch(err => {
+            console.warn('\u26a0\ufe0f Error retirando del mercado Firestore:', err);
+        });
+    }
+
     window.ui.refreshUI(state);
 };
