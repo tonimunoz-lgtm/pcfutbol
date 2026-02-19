@@ -1867,12 +1867,14 @@ Salida
     .center-buttons.left  { align-items: flex-end; }
     .center-buttons.right { align-items: flex-start; }
 
-    /* Botones compactos */
+    /* Botones compactos e igual de anchos dentro de su columna */
     .center-option {
         font-size: 0.65em;
         padding: 6px 8px;
-        width: auto;
+        width: 100%;
         white-space: nowrap;
+        text-align: center;
+        box-sizing: border-box;
     }
 
     /* Reordenar los cuadrantes */
