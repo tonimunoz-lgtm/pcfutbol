@@ -629,7 +629,7 @@ window.confirmListPlayer = function() {
         alert(`${player.name} ha sido puesto disponible para cesiÃ³n`);
     }
     
-    // \u00e2\u009c\u0085 GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
+    // âœ… GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
     
