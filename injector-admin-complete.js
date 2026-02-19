@@ -1,13 +1,13 @@
-// injector-admin-complete.js (con gestión de plantillas)
+// injector-admin-complete.js (con gestiÃ³n de plantillas)
 (function() {
-    // ⚙️ CONFIGURACIÓN DE ADMINISTRADORES
+    // âš™ï¸ CONFIGURACIÃ“N DE ADMINISTRADORES
     const ADMIN_EMAILS = [
         'tonaco92@gmail.com'
     ];
 
     const DIVISIONS = {
-        'primera': 'Primera División',
-        'segunda': 'Segunda División',
+        'primera': 'Primera DivisiÃ³n',
+        'segunda': 'Segunda DivisiÃ³n',
         'rfef_grupo1': 'Primera RFEF Grupo 1',
         'rfef_grupo2': 'Primera RFEF Grupo 2'
     };
@@ -15,7 +15,7 @@
     const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MCD', 'MP', 'EXT', 'DC', 'SD'];
     const ATTRIBUTES = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
 
-    // Función para verificar si el usuario actual es administrador
+    // FunciÃ³n para verificar si el usuario actual es administrador
     function isUserAdmin() {
         if (window.currentUser && window.currentUser.email) {
             return ADMIN_EMAILS.includes(window.currentUser.email);
@@ -29,7 +29,7 @@
         return false;
     }
 
-    // Función para convertir imagen a Base64
+    // FunciÃ³n para convertir imagen a Base64
     function fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -39,7 +39,7 @@
         });
     }
 
-    // Calcular overall automáticamente
+    // Calcular overall automÃ¡ticamente
     function calculateOverall(player) {
         const attrs = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
         let sum = 0;
@@ -55,12 +55,12 @@
 
     window.openAdminPanel = function() {
         if (!isUserAdmin()) {
-            alert('❌ No tienes permisos de administrador');
+            alert('âŒ No tienes permisos de administrador');
             return;
         }
 
         if (!window.gameLogic) {
-            alert('El juego aún no está cargado completamente');
+            alert('El juego aÃºn no estÃ¡ cargado completamente');
             return;
         }
 
@@ -71,25 +71,25 @@
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
                     <span class="modal-close" onclick="document.getElementById('adminModal').classList.remove('active')">&times;</span>
-                    <h1 style="color: #e94560;">🔧 Panel de Administración</h1>
+                    <h1 style="color: #e94560;">ðŸ”§ Panel de AdministraciÃ³n</h1>
                     
                     <!-- Tabs -->
                     <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e94560;">
                         <button id="tabTeamData" class="admin-tab active" onclick="window.adminBackend.switchTab('teamData')">
-                            🏟️ Datos del Equipo
+                            ðŸŸï¸ Datos del Equipo
                         </button>
                         <button id="tabSquad" class="admin-tab" onclick="window.adminBackend.switchTab('squad')">
-                            👥 Plantilla
+                            ðŸ‘¥ Plantilla
                         </button>
                     </div>
 
                     <div style="margin-bottom: 30px;">
                         <h2>Seleccionar Equipo</h2>
-                        <label>División:</label>
+                        <label>DivisiÃ³n:</label>
                         <select id="adminDivisionSelect" onchange="window.adminBackend.loadTeamsFromDivision()" style="margin-bottom: 10px;">
-                            <option value="">-- Selecciona una división --</option>
-                            <option value="primera">Primera División</option>
-                            <option value="segunda">Segunda División</option>
+                            <option value="">-- Selecciona una divisiÃ³n --</option>
+                            <option value="primera">Primera DivisiÃ³n</option>
+                            <option value="segunda">Segunda DivisiÃ³n</option>
                             <option value="rfef_grupo1">Primera RFEF Grupo 1</option>
                             <option value="rfef_grupo2">Primera RFEF Grupo 2</option>
                         </select>
@@ -106,44 +106,44 @@
                             <h2>Datos del Equipo: <span id="adminCurrentTeamName"></span></h2>
                             
                             <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                                <h3>🏟️ Estadio</h3>
+                                <h3>ðŸŸï¸ Estadio</h3>
                                 <div style="margin-bottom: 10px;">
                                     <label>Nombre del estadio:</label>
-                                    <input id="adminStadiumName" type="text" placeholder="Ej: Santiago Bernabéu">
+                                    <input id="adminStadiumName" type="text" placeholder="Ej: Santiago BernabÃ©u">
                                 </div>
                                 <div style="margin-bottom: 10px;">
                                     <label>Capacidad:</label>
                                     <input id="adminStadiumCapacity" type="number" step="1000" min="1000">
                                 </div>
                                 <div style="margin-bottom: 10px;">
-                                    <label>Foto del estadio (.png/.jpg - máx 500KB):</label>
+                                    <label>Foto del estadio (.png/.jpg - mÃ¡x 500KB):</label>
                                     <input id="adminStadiumImage" type="file" accept="image/png,image/jpeg">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
+                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardarÃ¡ como Base64 en Firestore</small>
                                     <div id="adminStadiumPreview" style="margin-top: 10px;"></div>
                                 </div>
                             </div>
 
                             <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                                <h3>🛡️ Escudo</h3>
+                                <h3>ðŸ›¡ï¸ Escudo</h3>
                                 <div style="margin-bottom: 10px;">
-                                    <label>Escudo del equipo (.png/.jpg - máx 200KB):</label>
+                                    <label>Escudo del equipo (.png/.jpg - mÃ¡x 200KB):</label>
                                     <input id="adminTeamLogo" type="file" accept="image/png,image/jpeg">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
+                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardarÃ¡ como Base64 en Firestore</small>
                                     <div id="adminLogoPreview" style="margin-top: 10px;"></div>
                                 </div>
                             </div>
 
                             <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                                <h3>💰 Presupuesto Inicial</h3>
+                                <h3>ðŸ’° Presupuesto Inicial</h3>
                                 <div style="margin-bottom: 10px;">
-                                    <label>Presupuesto inicial (€):</label>
+                                    <label>Presupuesto inicial (â‚¬):</label>
                                     <input id="adminInitialBudget" type="number" step="1000000" min="0">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Este será el presupuesto al iniciar con este equipo</small>
+                                    <small style="display: block; color: #999; margin-top: 5px;">Este serÃ¡ el presupuesto al iniciar con este equipo</small>
                                 </div>
                             </div>
 
                             <div style="margin-top: 20px;">
-                                <button class="btn" onclick="window.adminBackend.saveTeamData()">💾 Guardar Datos del Equipo</button>
+                                <button class="btn" onclick="window.adminBackend.saveTeamData()">ðŸ’¾ Guardar Datos del Equipo</button>
                             </div>
                         </div>
                     </div>
@@ -154,38 +154,38 @@
                             <h2>Plantilla de: <span id="adminSquadTeamName"></span></h2>
                             
                             <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                                <h3>⚽ Gestión de Jugadores</h3>
-                                <p style="color: #999;">Define la plantilla real del equipo. Si no defines jugadores, se generarán aleatoriamente.</p>
+                                <h3>âš½ GestiÃ³n de Jugadores</h3>
+                                <p style="color: #999;">Define la plantilla real del equipo. Si no defines jugadores, se generarÃ¡n aleatoriamente.</p>
                                 
                                 <div style="margin-bottom: 20px;">
                                     <button class="btn" onclick="window.adminBackend.addPlayer()" style="background: #00aa00;">
-                                        ➕ Añadir Jugador
+                                        âž• AÃ±adir Jugador
                                     </button>
                                     <button class="btn" onclick="window.adminBackend.importSquadJSON()" style="background: #0088cc;">
-                                        📥 Importar JSON
+                                        ðŸ“¥ Importar JSON
                                     </button>
                                     <button class="btn" onclick="window.adminBackend.exportSquadJSON()" style="background: #ff9500;">
-                                        📤 Exportar JSON
+                                        ðŸ“¤ Exportar JSON
                                     </button>
                                     <input type="file" id="squadImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.handleSquadImport(event)">
                                 </div>
 
                                 <div id="playersListContainer" style="max-height: 500px; overflow-y: auto;">
-                                    <!-- Aquí se renderizarán los jugadores -->
+                                    <!-- AquÃ­ se renderizarÃ¡n los jugadores -->
                                 </div>
                             </div>
 
                             <div style="margin-top: 20px;">
-                                <button class="btn" onclick="window.adminBackend.saveSquadData()">💾 Guardar Plantilla</button>
-                                <button class="btn" style="background: #c73446;" onclick="window.adminBackend.clearSquad()">🗑️ Limpiar Plantilla (volver a aleatorio)</button>
+                                <button class="btn" onclick="window.adminBackend.saveSquadData()">ðŸ’¾ Guardar Plantilla</button>
+                                <button class="btn" style="background: #c73446;" onclick="window.adminBackend.clearSquad()">ðŸ—‘ï¸ Limpiar Plantilla (volver a aleatorio)</button>
                             </div>
                         </div>
                     </div>
 
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e94560;">
-                        <h3>📦 Importar/Exportar Todo</h3>
-                        <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">📦 Exportar Todos los Datos</button>
-                        <button class="btn" style="background: #00aa00;" onclick="document.getElementById('adminImportFile').click()">📥 Importar Datos</button>
+                        <h3>ðŸ“¦ Importar/Exportar Todo</h3>
+                        <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">ðŸ“¦ Exportar Todos los Datos</button>
+                        <button class="btn" style="background: #00aa00;" onclick="document.getElementById('adminImportFile').click()">ðŸ“¥ Importar Datos</button>
                         <input type="file" id="adminImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.importAllData(event)">
                     </div>
 
@@ -331,7 +331,7 @@
             const container = document.getElementById('playersListContainer');
             
             if (this.squadPlayers.length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay jugadores definidos. Se generarán aleatoriamente al iniciar el juego.</p>';
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay jugadores definidos. Se generarÃ¡n aleatoriamente al iniciar el juego.</p>';
                 return;
             }
 
@@ -339,10 +339,10 @@
                 <div class="player-card">
                     <div class="player-card-header">
                         <strong style="color: #e94560;">#${index + 1} - OVR: ${player.overall || calculateOverall(player)}</strong>
-                        <button class="btn" style="background: #c73446; padding: 5px 10px;" onclick="window.adminBackend.removePlayer(${index})">🗑️ Eliminar</button>
+                        <button class="btn" style="background: #c73446; padding: 5px 10px;" onclick="window.adminBackend.removePlayer(${index})">ðŸ—‘ï¸ Eliminar</button>
                     </div>
                     
-                    <!-- Datos básicos -->
+                    <!-- Datos bÃ¡sicos -->
                     <div class="player-inputs">
                         <input type="text" placeholder="Nombre" value="${player.name || ''}" onchange="window.adminBackend.updatePlayer(${index}, 'name', this.value)">
                         <select onchange="window.adminBackend.updatePlayer(${index}, 'position', this.value)">
@@ -353,7 +353,7 @@
                     
                     <!-- Datos de contrato -->
                     <div style="margin: 10px 0; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 5px;">
-                        <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
+                        <small style="color: #999; display: block; margin-bottom: 5px;">ðŸ“ Contrato:</small>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
                             <div>
                                 <small style="color: #e94560;">Tipo</small>
@@ -363,7 +363,7 @@
                                 </select>
                             </div>
                             <div>
-                                <small style="color: #e94560;">Años</small>
+                                <small style="color: #e94560;">AÃ±os</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" max="10" value="${player.contractYears || 3}" onchange="window.adminBackend.updatePlayer(${index}, 'contractYears', parseInt(this.value))">
                             </div>
                             <div>
@@ -371,7 +371,7 @@
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="100" value="${player.salary || 1000}" onchange="window.adminBackend.updatePlayer(${index}, 'salary', parseInt(this.value))">
                             </div>
                             <div>
-                                <small style="color: #e94560;">Cláusula</small>
+                                <small style="color: #e94560;">ClÃ¡usula</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="10000" value="${player.releaseClause || 0}" onchange="window.adminBackend.updatePlayer(${index}, 'releaseClause', parseInt(this.value))">
                             </div>
                         </div>
@@ -379,7 +379,7 @@
                     
                     <!-- Atributos -->
                     <div style="margin-bottom: 10px;">
-                        <small style="color: #999;">⚽ Atributos (1-99):</small>
+                        <small style="color: #999;">âš½ Atributos (1-99):</small>
                     </div>
                     <div class="player-attributes">
                         ${ATTRIBUTES.map(attr => `
@@ -409,7 +409,7 @@
         },
 
         removePlayer: function(index) {
-            if (confirm('¿Eliminar este jugador?')) {
+            if (confirm('Â¿Eliminar este jugador?')) {
                 this.squadPlayers.splice(index, 1);
                 this.renderSquadList();
             }
@@ -427,7 +427,7 @@
         },
 
         clearSquad: function() {
-            if (confirm('¿Eliminar toda la plantilla? El equipo generará jugadores aleatorios.')) {
+            if (confirm('Â¿Eliminar toda la plantilla? El equipo generarÃ¡ jugadores aleatorios.')) {
                 this.squadPlayers = [];
                 this.renderSquadList();
             }
@@ -464,15 +464,15 @@
                 try {
                     const imported = JSON.parse(e.target.result);
                     if (!Array.isArray(imported)) {
-                        alert('❌ El archivo debe contener un array de jugadores');
+                        alert('âŒ El archivo debe contener un array de jugadores');
                         return;
                     }
                     
                     this.squadPlayers = imported;
                     this.renderSquadList();
-                    alert(`✅ Plantilla importada: ${imported.length} jugadores`);
+                    alert(`âœ… Plantilla importada: ${imported.length} jugadores`);
                 } catch (error) {
-                    alert('❌ Error al importar: ' + error.message);
+                    alert('âŒ Error al importar: ' + error.message);
                 }
             };
             reader.readAsText(file);
@@ -503,7 +503,7 @@
             try {
                 if (logoFile) {
                     if (logoFile.size > 200 * 1024) {
-                        alert('⚠️ El escudo es demasiado grande. Máximo 200KB.');
+                        alert('âš ï¸ El escudo es demasiado grande. MÃ¡ximo 200KB.');
                         return;
                     }
                     teamData.logo = await fileToBase64(logoFile);
@@ -511,7 +511,7 @@
 
                 if (stadiumFile) {
                     if (stadiumFile.size > 500 * 1024) {
-                        alert('⚠️ La imagen del estadio es demasiado grande. Máximo 500KB.');
+                        alert('âš ï¸ La imagen del estadio es demasiado grande. MÃ¡ximo 500KB.');
                         return;
                     }
                     teamData.stadiumImage = await fileToBase64(stadiumFile);
@@ -520,13 +520,13 @@
                 const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);
                 
                 if (saveResult.success) {
-                    alert(`✅ Datos del equipo guardados`);
+                    alert(`âœ… Datos del equipo guardados`);
                     await this.loadTeamData();
                 } else {
-                    alert(`❌ Error: ${saveResult.error}`);
+                    alert(`âŒ Error: ${saveResult.error}`);
                 }
             } catch (error) {
-                alert('❌ Error: ' + error.message);
+                alert('âŒ Error: ' + error.message);
             }
         },
 
@@ -544,11 +544,22 @@
                 
                 if (saveResult.success) {
                     alert(`✅ Plantilla guardada: ${this.squadPlayers.length} jugadores`);
+                    // ✅ Sincronizar automáticamente con el mercado de fichajes
+                    if (window.syncTeamToTransferMarket) {
+                        try {
+                            const syncResult = await window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers);
+                            if (syncResult && syncResult.added > 0) {
+                                console.log(`Mercado sincronizado: +${syncResult.added} jugadores de ${this.currentTeam}`);
+                            }
+                        } catch(syncErr) {
+                            console.warn('Error sincronizando con el mercado:', syncErr);
+                        }
+                    }
                 } else {
-                    alert(`❌ Error: ${saveResult.error}`);
+                    alert(`Error: ${saveResult.error}`);
                 }
             } catch (error) {
-                alert('❌ Error: ' + error.message);
+                alert('âŒ Error: ' + error.message);
             }
         },
 
@@ -578,10 +589,10 @@
                         window.saveTeamDataToFirebase(teamName, data[teamName])
                     );
                     await Promise.all(promises);
-                    alert(`✅ Importados ${Object.keys(data).length} equipos`);
+                    alert(`âœ… Importados ${Object.keys(data).length} equipos`);
                     if (this.currentTeam) await this.loadTeamData();
                 } catch (error) {
-                    alert('❌ Error: ' + error.message);
+                    alert('âŒ Error: ' + error.message);
                 }
             };
             reader.readAsText(file);
@@ -600,11 +611,11 @@
                             const adminBtn = document.createElement('button');
                             adminBtn.id = 'adminButton';
                             adminBtn.className = 'btn btn-sm';
-                            adminBtn.innerHTML = '⚙️ Admin';
+                            adminBtn.innerHTML = 'âš™ï¸ Admin';
                             adminBtn.onclick = () => window.openAdminPanel();
                             adminBtn.style.background = '#ff9500';
                             headerInfo.appendChild(adminBtn);
-                            console.log('✅ Botón de administrador añadido');
+                            console.log('âœ… BotÃ³n de administrador aÃ±adido');
                         }
                     }
                 }, 1000);
