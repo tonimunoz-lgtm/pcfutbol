@@ -54,17 +54,12 @@
     }
 
     // =====================================================
-    // BUGFIX: el squad en ui.js se ordena por overall antes
-    // de renderizar, pero confirmListPlayer busca por indice
-    // en el squad SIN ordenar. Resultado: jugador equivocado.
-    // Solucion: guardar nombre al abrir modal, buscar por nombre.
+    // BUGFIX indice venta
     // =====================================================
     function patchSellPlayerIndex() {
-        // Interceptar openSellPlayerModal para capturar el nombre correcto
         const originalOpen = window.openSellPlayerModal;
         window.openSellPlayerModal = function(playerIndex) {
             const state = window.gameLogic.getGameState();
-            // ui.js renderiza el squad ordenado por overall (sort((a,b)=>b.overall-a.overall))
             const sorted = [...(state.squad || [])].sort((a, b) => b.overall - a.overall);
             if (sorted[playerIndex]) {
                 _sellPlayerName = sorted[playerIndex].name;
@@ -72,7 +67,6 @@
             originalOpen(playerIndex);
         };
 
-        // Reemplazar confirmListPlayer para buscar por nombre en vez de indice
         window.confirmListPlayer = function() {
             if (!_sellPlayerName) return;
             const state = window.gameLogic.getGameState();
@@ -113,7 +107,6 @@
             _sellPlayerName = null;
         };
 
-        // Fix updateLoanCostPreview que tambien usaba el indice roto
         window.updateLoanCostPreview = function() {
             if (!_sellPlayerName) return;
             const state = window.gameLogic.getGameState();
@@ -131,7 +124,6 @@
 
     // =====================================================
     // INTERCEPCION: searchPlayersMarket
-    // Mezcla: mis jugadores en venta + Firestore + generados
     // =====================================================
     function patchSearchPlayersMarket() {
         window.searchPlayersMarket = function() {
@@ -147,15 +139,10 @@
                 loanListed:     document.getElementById('marketLoanListed')?.checked || false,
             };
 
-            // 1. Mis jugadores en venta/cesion
             const myListed = (state.squad || []).filter(p => p.transferListed || p.loanListed);
-
-            // 2. Jugadores reales de Firestore (sin los mios)
             const firestoreFiltered = firestoreMarketPlayers.filter(p =>
                 !myNames.has((p.name || '').toLowerCase())
             );
-
-            // 3. Jugadores generados (sin duplicados)
             const firestoreNames = new Set(firestoreMarketPlayers.map(p => p.name.toLowerCase()));
             const myListedNames  = new Set(myListed.map(p => p.name.toLowerCase()));
             const scoutLevel = state.staff?.scout?.level || 0;
@@ -168,7 +155,6 @@
 
             let all = [...myListed, ...firestoreFiltered, ...generated];
 
-            // Aplicar filtros
             if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);
             if (filters.minOverall)
@@ -220,7 +206,7 @@
     }
 
     // =====================================================
-    // ADMIN: sync al guardar + boton sync masivo
+    // ADMIN: sync al guardar plantilla
     // =====================================================
     function patchAdminSaveSquad() {
         if (!window.adminBackend) return;
@@ -236,13 +222,78 @@
         console.log('Admin saveSquadData interceptado');
     }
 
+    // =====================================================
+    // BOTON SYNC EN PANEL ADMIN
+    // injector-admin-complete.js crea el modal dinámicamente
+    // al pulsar el botón Admin. Usamos MutationObserver para
+    // detectar cuando aparece y añadir el botón sync.
+    // =====================================================
+    function injectSyncButton() {
+        const observer = new MutationObserver(() => {
+            const adminModal = document.getElementById('adminModal');
+            if (!adminModal) return;
+            if (document.getElementById('syncMarketBtn')) return; // ya inyectado
+
+            // El modal tiene una sección "Importar/Exportar Todo" con un botón
+            // que llama a adminImportFile.click() — lo usamos como ancla
+            const importBtn = adminModal.querySelector('button[onclick*="adminImportFile"]');
+            if (!importBtn) return;
+
+            const syncBtn = document.createElement('button');
+            syncBtn.id = 'syncMarketBtn';
+            syncBtn.className = 'btn';
+            syncBtn.style.cssText = 'background:#e94560; margin-top:5px;';
+            syncBtn.innerHTML = '🔄 Sync Mercado Fichajes';
+            syncBtn.addEventListener('click', syncAllTeamsToMarket);
+
+            importBtn.insertAdjacentElement('afterend', syncBtn);
+            console.log('✅ Boton Sync Mercado añadido al admin');
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    async function syncAllTeamsToMarket(e) {
+        const btn = e && e.currentTarget;
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Sincronizando...'; }
+        try {
+            if (typeof window.syncTeamToTransferMarket !== 'function')
+                throw new Error('syncTeamToTransferMarket no encontrada. ¿firebase-config.js actualizado?');
+            if (typeof window.getAllTeamsDataFromFirebase !== 'function')
+                throw new Error('getAllTeamsDataFromFirebase no encontrada');
+
+            const result = await window.getAllTeamsDataFromFirebase();
+            if (!result || !result.success)
+                throw new Error(result?.error || 'Error obteniendo equipos de Firebase');
+
+            const withSquad = Object.entries(result.data)
+                .filter(([, data]) => data.squad && data.squad.length > 0);
+
+            if (withSquad.length === 0) {
+                alert('No hay equipos con plantilla guardada en Firebase.');
+                return;
+            }
+
+            let totalAdded = 0;
+            for (const [teamName, teamData] of withSquad) {
+                const r = await window.syncTeamToTransferMarket(teamName, teamData.squad);
+                if (r && r.added) totalAdded += r.added;
+            }
+
+            alert('✅ Mercado sincronizado:\n' + withSquad.length + ' equipos procesados\n' + totalAdded + ' jugadores nuevos añadidos');
+            await loadMarketFromFirestore();
+        } catch(err) {
+            alert('❌ Error: ' + err.message);
+            console.error('Sync error:', err);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Sync Mercado Fichajes'; }
+        }
+    }
 
     // =====================================================
-    // SYNC INICIAL: sincronizar todos los equipos con
-    // plantilla real al cargar el juego por primera vez
+    // SYNC INICIAL
     // =====================================================
     async function doInitialSync() {
-        // Esperar a que Firebase este listo
         let tries = 0;
         while ((!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) && tries < 30) {
             await new Promise(r => setTimeout(r, 300));
@@ -273,6 +324,7 @@
         patchSearchPlayersMarket();
         patchStartNegotiationUI();
         patchAfterSign();
+        injectSyncButton(); // observer activo desde el inicio
         setTimeout(() => {
             patchAdminSaveSquad();
         }, 2000);
