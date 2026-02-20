@@ -1,9 +1,9 @@
 // ui.js - Renderizado y UI  
   
 import * as gameLogic from './gameLogic.js';  
-import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquí  
+import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from './config.js'; // Eliminado SEASON_WEEKS de aquÃ­  
   
-// ui.js - Añadir al principio del archivo
+// ui.js - AÃ±adir al principio del archivo
 
 function getTeamLogo(teamName, size = '25px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
@@ -20,24 +20,24 @@ function getTeamLogo(teamName, size = '25px') {
     const standingsDiv = document.getElementById('standingsTable');
     if (!standingsDiv) return;
 
-    // ✅ Validación: verificar que standings exista
+    // âœ… ValidaciÃ³n: verificar que standings exista
     if (!state.standings || Object.keys(state.standings).length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificaciÃ³n disponible</p>';
         return;
     }
 
-    // ✅ Filtrar equipos con datos inválidos
+    // âœ… Filtrar equipos con datos invÃ¡lidos
     const validStandings = Object.entries(state.standings)
         .filter(([team, stats]) => {
             if (!stats || stats.pts === undefined) {
-                console.warn(`⚠️ Equipo ${team} tiene datos inválidos en standings:`, stats);
+                console.warn(`âš ï¸ Equipo ${team} tiene datos invÃ¡lidos en standings:`, stats);
                 return false;
             }
             return true;
         });
 
     if (validStandings.length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">ClasificaciÃ³n no disponible</p>';
         return;
     }
 
@@ -117,7 +117,7 @@ function renderStandingsTable(state) {
     if (!standingsDiv) return;
 
     if (!state.standings || Object.keys(state.standings).length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificaciÃ³n disponible</p>';
         return;
     }
 
@@ -125,7 +125,7 @@ function renderStandingsTable(state) {
         .filter(([team, stats]) => stats && stats.pts !== undefined);
 
     if (validStandings.length === 0) {
-        standingsDiv.innerHTML = '<p class="text-center text-gray-500">Clasificación no disponible</p>';
+        standingsDiv.innerHTML = '<p class="text-center text-gray-500">ClasificaciÃ³n no disponible</p>';
         return;
     }
 
@@ -176,14 +176,14 @@ function renderStandingsTable(state) {
 
 
   
-// ✅ FUNCIÓN renderSquadList CORREGIDA - REEMPLAZAR COMPLETA en ui.js
+// âœ… FUNCIÃ“N renderSquadList CORREGIDA - REEMPLAZAR COMPLETA en ui.js
 
 function renderSquadList(squad, currentTeam) {  
     const list = document.getElementById('squadList');  
     if (!list) return;  
   
     if (!squad || squad.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jugadores en plantilla. ¡Ficha algunos para comenzar!</div>';  
+        list.innerHTML = '<div class="alert alert-info">âŒ No hay jugadores en plantilla. Â¡Ficha algunos para comenzar!</div>';  
         return;  
     }  
   
@@ -192,7 +192,7 @@ function renderSquadList(squad, currentTeam) {
             <table style="font-size: 0.8em; min-width: 1400px;">
                 <thead>
                     <tr>
-                        <th>Nº</th>
+                        <th>NÂº</th>
                         <th>JUGADOR</th>
                         <th>OVR</th>
                         <th>POT</th>
@@ -203,8 +203,8 @@ function renderSquadList(squad, currentTeam) {
                         <th>FORMA</th>
                         <th>ESTADO</th>
                         <th>CONTRATO</th>
-                        <th>DURACIÓN</th>
-                        <th>CLÁUSULA</th>
+                        <th>DURACIÃ“N</th>
+                        <th>CLÃUSULA</th>
                         <th>SALARIO</th>
                    <!-- <th>VALOR</th> -->
                         <th>ACCIONES</th>
@@ -213,11 +213,12 @@ function renderSquadList(squad, currentTeam) {
                 <tbody>  
     `;  
   
-    const sorted = squad.sort((a, b) => b.overall - a.overall);  
-    let playersHtml = sorted.map((p, idx) => {  
+    const sorted = [...squad].sort((a, b) => b.overall - a.overall);  
+    let playersHtml = sorted.map((p) => {  
+        const idx = squad.findIndex(s => s.name === p.name);  
         const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
         
-        // ✅ VALORES CON DEFAULTS
+        // âœ… VALORES CON DEFAULTS
         const contractType = p.contractType || 'owned';
         const contractYears = p.contractYears || 0;
         const releaseClause = p.releaseClause || 0;
@@ -235,41 +236,41 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.form || 0}</td>  
                 <td>${statusText}</td>
                 
-                <!-- ✅ COLUMNAS EN ORDEN CORRECTO -->
+                <!-- âœ… COLUMNAS EN ORDEN CORRECTO -->
                 <td>
     ${(() => {
         let statusHTML = '';
         
         // Estado de contrato
         if (p.contractType === 'loaned_out') {
-            statusHTML += `<span style="color: #9E9E9E;">📤 Cedido a ${p.loanedTo || '?'}</span>`;
+            statusHTML += `<span style="color: #9E9E9E;">ðŸ“¤ Cedido a ${p.loanedTo || '?'}</span>`;
         } else if (p.contractType === 'loaned') {
-            statusHTML += `<span style="color: #FF9800;">🔄 Cedido</span>`;
+            statusHTML += `<span style="color: #FF9800;">ðŸ”„ Cedido</span>`;
         } else {
-            statusHTML += `<span style="color: #4CAF50;">✅ Contratado</span>`;
+            statusHTML += `<span style="color: #4CAF50;">âœ… Contratado</span>`;
         }
         
         // Indicador de mercado
         if (p.transferListed) {
-            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">💰 En venta (${p.askingPrice.toLocaleString('es-ES')}€)</span>`;
+            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">ðŸ’° En venta (${p.askingPrice.toLocaleString('es-ES')}â‚¬)</span>`;
         } else if (p.loanListed) {
-            statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">🔄 Cedible</span>`;
+            statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">ðŸ”„ Cedible</span>`;
         }
         
         return statusHTML;
     })()}
 </td>
-                <td>${contractYears} ${contractYears === 1 ? 'año' : 'años'}</td>
-                <td>${releaseClause.toLocaleString('es-ES')}€</td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-           <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->
+                <td>${contractYears} ${contractYears === 1 ? 'aÃ±o' : 'aÃ±os'}</td>
+                <td>${releaseClause.toLocaleString('es-ES')}â‚¬</td>
+                <td>${p.salary.toLocaleString('es-ES')}â‚¬</td>  
+           <!-- <td>${p.value.toLocaleString('es-ES')}â‚¬</td> -->
                 
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
     ${p.contractType !== 'loaned_out' ? `
         <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})" 
                 title="Entrenar" style="padding: 5px 8px;">
-            💪
+            ðŸ’ª
         </button>
     ` : ''}
     
@@ -277,24 +278,24 @@ function renderSquadList(squad, currentTeam) {
         ${!p.transferListed && !p.loanListed ? `
             <button class="btn btn-sm" style="background: #FF9800; padding: 5px 8px;" 
                     onclick="window.openSellPlayerModal(${idx})" title="Poner en venta">
-                💰
+                ðŸ’°
             </button>
         ` : `
             <button class="btn btn-sm" style="background: #9E9E9E; padding: 5px 8px;" 
                     onclick="window.removeFromMarket(${idx})" title="Retirar del mercado">
-                ❌
+                âŒ
             </button>
         `}
         <button class="btn btn-sm" style="background: #c73446; padding: 5px 8px;" 
                 onclick="window.firePlayerConfirm('${p.name}')" title="Despedir">
-            🚪
+            ðŸšª
         </button>
     ` : p.contractType === 'loaned_out' ? `
-        <span style="color: #9E9E9E; font-size: 0.85em;">📤 Cedido</span>
+        <span style="color: #9E9E9E; font-size: 0.85em;">ðŸ“¤ Cedido</span>
     ` : `
         <button class="btn btn-sm" style="background: #9E9E9E; padding: 5px 8px;" 
                 disabled title="Cedido a nosotros">
-            🔒
+            ðŸ”’
         </button>
     `}
 </td>
@@ -309,7 +310,7 @@ function renderAcademyList(academy) {
     if (!list) return;  
   
     if (!academy || academy.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
+        list.innerHTML = '<div class="alert alert-info">âŒ No hay jÃ³venes en cantera. Â¡Contrata talentos para desarrollarlos!</div>';  
         return;  
     }  
   
@@ -318,7 +319,7 @@ function renderAcademyList(academy) {
             <table style="font-size: 0.8em; min-width: 1200px;">  
                 <thead>  
                     <tr>  
-                        <th>Nº</th>  
+                        <th>NÂº</th>  
                         <th>JUGADOR</th>  
                         <th>OVR</th>  
                         <th>POT</th>  
@@ -353,8 +354,8 @@ function renderAcademyList(academy) {
                 <td>${p.form || 0}</td>  
                 <td>${statusText}</td>  
                 <td>${p.matches || 0}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-           <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->  
+                <td>${p.salary.toLocaleString('es-ES')}â‚¬</td>  
+           <!-- <td>${p.value.toLocaleString('es-ES')}â‚¬</td> -->  
                 <td>  
                     <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
                 </td>  
@@ -389,7 +390,7 @@ function renderPlayerMarketList(players) {
                         <th>CLUB</th>  
                         <th>SALARIO</th>  
                         <th>VALOR</th>  
-                        <th>CLÁUSULA</th>  
+                        <th>CLÃUSULA</th>  
                         <th>PRECIO P.</th>  
                         <th>ESTADO</th>  
                         <th>ACCIONES</th>  
@@ -400,7 +401,7 @@ function renderPlayerMarketList(players) {
   
     let playersHtml = players.map((p, idx) => {  
         const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
-        const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
+        const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + 'â‚¬' : '-';  
         const clauseAmount = p.releaseClause || (p.value * 3);
         
         return `  
@@ -413,10 +414,10 @@ function renderPlayerMarketList(players) {
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
                 <td>${p.club}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td>  
+                <td>${p.salary.toLocaleString('es-ES')}â‚¬</td>  
+                <td>${p.value.toLocaleString('es-ES')}â‚¬</td>  
                 <td style="color: #FF9800; font-weight: bold;">
-                    ${clauseAmount.toLocaleString('es-ES')}€
+                    ${clauseAmount.toLocaleString('es-ES')}â‚¬
                 </td>
                 <td>${askingPrice}</td>  
                 <td>${estado}</td>  
@@ -428,7 +429,7 @@ function renderPlayerMarketList(players) {
                     ` : `
                         <button class="btn btn-sm" style="background: #FF5722;" 
                                 onclick="window.payReleaseClause('${encodeURIComponent(JSON.stringify(p))}')">
-                            💰 Cláusula
+                            ðŸ’° ClÃ¡usula
                         </button>
                     `}
                 </td>  
@@ -444,7 +445,7 @@ function renderAvailableYoungstersMarket(youngsters) {
     const list = document.getElementById('availableYoungstersList');  
     if (!list) return;  
     if (!youngsters || youngsters.length === 0) {  
-        list.innerHTML = '<div class="alert alert-info">No hay jóvenes talentos disponibles.</div>';  
+        list.innerHTML = '<div class="alert alert-info">No hay jÃ³venes talentos disponibles.</div>';  
         return;  
     }  
   
@@ -478,7 +479,7 @@ function renderAvailableYoungstersMarket(youngsters) {
             <td>${y.foot || 'N/A'}</td>  
             ${ATTRIBUTES.map(attr => `<td>${y[attr] || 0}</td>`).join('')}  
             <td>${y.club}</td>  
-            <td>${y.cost.toLocaleString('es-ES')}€</td>  
+            <td>${y.cost.toLocaleString('es-ES')}â‚¬</td>  
             <td>  
                 <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
             </td>  
@@ -500,14 +501,14 @@ function renderNextMatchCard(homeTeam, opponentName, week) {
             <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
                 <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">PRETEMPORADA ${state.currentSeason}</div>  
                 <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">Semana ${state.week} de ${PRESEASON_WEEKS}</div>  
-                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">¡A preparar la temporada!</div>  
+                <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">Â¡A preparar la temporada!</div>  
             </div>  
         `;  
     } else {  
         matchDisplay = `  
             <div style="text-align: center; background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 40px; border-radius: 5px; margin: 20px 0;">  
                 <div style="color: #e94560; font-size: 1.4em; margin-bottom: 25px; font-weight: bold;">${state.team}</div>  
-                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">⚽ VS ⚽</div>  
+                <div style="color: #999; font-size: 1.2em; margin-bottom: 25px;">âš½ VS âš½</div>  
                 <div style="color: #e94560; font-size: 1.4em; font-weight: bold;">${opponentName}</div>  
                 <div style="color: #999; margin-top: 25px; font-size: 0.95em;">Jornada ${state.week} de ${state.maxSeasonWeeks}</div>  
             </div>  
@@ -519,7 +520,7 @@ function renderNextMatchCard(homeTeam, opponentName, week) {
 function updateDashboardStats(state) {  
     document.getElementById('teamName').textContent = state.team || '-';  
     document.getElementById('weekNo').textContent = `${state.week} (${state.currentSeason})`;  
-    document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + '€';  
+    document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + 'â‚¬';  
   
     const teamStats = state.standings[state.team];  
     const sorted = Object.entries(state.standings).sort((a, b) => {  
@@ -537,14 +538,14 @@ function updateDashboardStats(state) {
     document.getElementById('dashGoals').textContent = teamStats?.gf || 0;  
     document.getElementById('dashSquad').textContent = state.squad?.length || 0;  
     document.getElementById('dashAcademy').textContent = state.academy?.length || 0;  
-    document.getElementById('dashBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
-    document.getElementById('dashIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';  
-    document.getElementById('dashExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';  
+    document.getElementById('dashBalance').textContent = state.balance.toLocaleString('es-ES') + 'â‚¬';  
+    document.getElementById('dashIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + 'â‚¬';  
+    document.getElementById('dashExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + 'â‚¬';  
   
     const weekly = state.weeklyIncome - state.weeklyExpenses;  
-    document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
+    document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + 'â‚¬';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
-// ✅ AÑADIR INFORMACIÓN DE TRANSFERENCIAS
+// âœ… AÃ‘ADIR INFORMACIÃ“N DE TRANSFERENCIAS
 const purchases = state.playerPurchases || 0;
 const sales = state.playerSalesIncome || 0;
 const compensations = state.playerCompensations || 0;
@@ -555,12 +556,12 @@ const dashSalesEl = document.getElementById('dashSales');
 const dashCompensationsEl = document.getElementById('dashCompensations');
 const dashTransferBalanceEl = document.getElementById('dashTransferBalance');
 
-if (dashPurchasesEl) dashPurchasesEl.textContent = purchases.toLocaleString('es-ES') + '€';
-if (dashSalesEl) dashSalesEl.textContent = sales.toLocaleString('es-ES') + '€';
-if (dashCompensationsEl) dashCompensationsEl.textContent = compensations.toLocaleString('es-ES') + '€';
+if (dashPurchasesEl) dashPurchasesEl.textContent = purchases.toLocaleString('es-ES') + 'â‚¬';
+if (dashSalesEl) dashSalesEl.textContent = sales.toLocaleString('es-ES') + 'â‚¬';
+if (dashCompensationsEl) dashCompensationsEl.textContent = compensations.toLocaleString('es-ES') + 'â‚¬';
 
 if (dashTransferBalanceEl) {
-    dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + '€';
+    dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + 'â‚¬';
     dashTransferBalanceEl.style.color = transferBalance >= 0 ? '#4CAF50' : '#f44336';
 }
   
@@ -569,7 +570,7 @@ if (dashTransferBalanceEl) {
         if (weekly < 0) {  
             warningAlert.innerHTML = `  
                 <div class="alert alert-warning" style="border-color: #ff3333; background: rgba(255, 51, 51, 0.1); color: #ff3333;">  
-                    ⚠️ ATENCIÓN: Tu club está en números rojos (${weekly.toLocaleString('es-ES')}€/semana). Si continúa así, ¡podrías ser destituido!  
+                    âš ï¸ ATENCIÃ“N: Tu club estÃ¡ en nÃºmeros rojos (${weekly.toLocaleString('es-ES')}â‚¬/semana). Si continÃºa asÃ­, Â¡podrÃ­as ser destituido!  
                 </div>  
             `;  
             warningAlert.style.display = 'block';  
@@ -599,19 +600,19 @@ if (dashTransferBalanceEl) {
     }  
 }  
   
-// NEW: Función para renderizar la página de calendario (modificada)  
+// NEW: FunciÃ³n para renderizar la pÃ¡gina de calendario (modificada)  
 function renderCalendarPage(state) {  
     const calendarContent = document.getElementById('calendarContent');  
     if (!calendarContent) return;  
   
     const calendar = state.seasonCalendar; // Usar directamente el calendario del estado  
     if (!calendar || calendar.length === 0) {  
-        calendarContent.innerHTML = '<div class="alert alert-info">Aún no hay calendario generado para esta temporada.</div>';  
+        calendarContent.innerHTML = '<div class="alert alert-info">AÃºn no hay calendario generado para esta temporada.</div>';  
         return;  
     }  
   
     let calendarHtml = '';  
-    const numJornadas = state.maxSeasonWeeks; // Usar el máximo de semanas definido en el estado  
+    const numJornadas = state.maxSeasonWeeks; // Usar el mÃ¡ximo de semanas definido en el estado  
   
     for (let i = 1; i <= numJornadas; i++) {  
         const jornadaMatches = calendar.filter(match => match.week === i); // Filtra los partidos de la semana 'i'  
@@ -701,7 +702,7 @@ function refreshUI(state) {
 }
 
 
-// ✅ AÑADIR NUEVA FUNCIÓN EN ui.js
+// âœ… AÃ‘ADIR NUEVA FUNCIÃ“N EN ui.js
 
 function renderNegotiationsList(state) {
     const list = document.getElementById('negotiationsSquadList');
@@ -720,7 +721,7 @@ function renderNegotiationsList(state) {
         return;
     }
     
-    // Ordenar por años restantes (urgentes primero)
+    // Ordenar por aÃ±os restantes (urgentes primero)
     const sorted = ownedPlayers.sort((a, b) => a.contractYears - b.contractYears);
     
     let html = `
@@ -732,10 +733,10 @@ function renderNegotiationsList(state) {
                         <th>EDAD</th>
                         <th>POS</th>
                         <th>OVR</th>
-                        <th>AÑOS RESTANTES</th>
+                        <th>AÃ‘OS RESTANTES</th>
                         <th>SALARIO</th>
-                        <th>CLÁUSULA</th>
-                        <th>ACCIÓN</th>
+                        <th>CLÃUSULA</th>
+                        <th>ACCIÃ“N</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -752,14 +753,14 @@ function renderNegotiationsList(state) {
                 <td>${p.position}</td>
                 <td>${p.overall}</td>
                 <td style="color: ${urgencyColor}; font-weight: bold;">
-                    ${p.contractYears} ${p.contractYears === 1 ? 'año' : 'años'}
-                    ${p.contractYears <= 1 ? '⚠️' : ''}
+                    ${p.contractYears} ${p.contractYears === 1 ? 'aÃ±o' : 'aÃ±os'}
+                    ${p.contractYears <= 1 ? 'âš ï¸' : ''}
                 </td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>
-                <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
+                <td>${p.salary.toLocaleString('es-ES')}â‚¬</td>
+                <td>${(p.releaseClause || 0).toLocaleString('es-ES')}â‚¬</td>
                 <td>
                     <button class="btn btn-sm" onclick="window.openRenewalModal(${state.squad.indexOf(p)})">
-                        📝 Renovar
+                        ðŸ“ Renovar
                     </button>
                 </td>
             </tr>
@@ -776,7 +777,7 @@ function renderNegotiationsList(state) {
 }
 
 
-// Función para renderizar logo del equipo
+// FunciÃ³n para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
     if (storedData) {
