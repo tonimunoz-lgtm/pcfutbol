@@ -236,85 +236,6 @@
         console.log('Admin saveSquadData interceptado');
     }
 
-    function addSyncButtonToAdmin() {
-        const observer = new MutationObserver(() => {
-            const modal = document.getElementById('adminModal');
-            if (!modal || document.getElementById('syncMarketBtn')) return;
-            const allH3 = modal.querySelectorAll('h3');
-            allH3.forEach(h => {
-                if ((h.textContent.includes('Importar') || h.textContent.includes('Exportar')) &&
-                    !document.getElementById('syncMarketBtn')) {
-                    const btn = document.createElement('button');
-                    btn.id = 'syncMarketBtn';
-                    btn.className = 'btn';
-                    btn.style.background = '#e94560';
-                    btn.style.marginTop = '10px';
-                    btn.textContent = 'Sync Mercado Fichajes';
-                    btn.onclick = syncAllTeamsToMarket;
-                    h.parentElement.appendChild(btn);
-                }
-            });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    async function syncAllTeamsToMarket(e) {
-        // Esperar hasta 5s a que Firebase este disponible
-        let tries = 0;
-        while ((!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) && tries < 25) {
-            await new Promise(r => setTimeout(r, 200));
-            tries++;
-        }
-        if (!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) {
-            alert('Firebase no disponible. Asegurate de estar autenticado.');
-            return;
-        }
-        const btn = e?.target;
-        if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
-        try {
-            const result = await window.getAllTeamsDataFromFirebase();
-            if (!result.success) { alert('Error: ' + (result.error || 'desconocido')); return; }
-            const withSquad = Object.entries(result.data)
-                .filter(([, data]) => data.squad && data.squad.length > 0);
-            let totalAdded = 0;
-            for (const [teamName, teamData] of withSquad) {
-                const r = await window.syncTeamToTransferMarket(teamName, teamData.squad);
-                if (r?.added) totalAdded += r.added;
-            }
-            alert('Mercado sincronizado: ' + withSquad.length + ' equipos, ' + totalAdded + ' jugadores nuevos');
-            await loadMarketFromFirestore();
-        } catch(err) {
-            alert('Error: ' + err.message);
-        } finally {
-            if (btn) { btn.disabled = false; btn.textContent = 'Sync Mercado Fichajes'; }
-        }
-    }
-
-    // =====================================================
-    // RECARGAR AL CARGAR PARTIDA
-    // =====================================================
-    function patchCloudLoad() {
-        const orig = window.loadGameFromCloudUI;
-        if (!orig) return;
-        window.loadGameFromCloudUI = async function(gameId) {
-            await orig(gameId);
-            setTimeout(loadMarketFromFirestore, 1200);
-        };
-    }
-
-    // =====================================================
-    // RECARGAR AL ABRIR PAGINA DE FICHAJES
-    // =====================================================
-    function patchOpenPage() {
-        const orig = window.openPage;
-        if (!orig) return;
-        window.openPage = function(pageId) {
-            orig(pageId);
-            if (pageId === 'transfers' && firestoreMarketPlayers.length === 0) {
-                loadMarketFromFirestore().then(() => window.searchPlayersMarket());
-            }
-        };
-    }
 
     // =====================================================
     // SYNC INICIAL: sincronizar todos los equipos con
@@ -357,7 +278,6 @@
 
         setTimeout(() => {
             patchAdminSaveSquad();
-            addSyncButtonToAdmin();
         }, 2000);
 
         await doInitialSync();
