@@ -213,9 +213,8 @@ function renderSquadList(squad, currentTeam) {
                 <tbody>  
     `;  
   
-       const sorted = [...squad].sort((a, b) => b.overall - a.overall);
-        let playersHtml = sorted.map((p) => {
-        const idx = squad.findIndex(s => s.name === p.name);  // índice real
+    const sorted = squad.sort((a, b) => b.overall - a.overall);  
+    let playersHtml = sorted.map((p, idx) => {  
         const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
         
         // ✅ VALORES CON DEFAULTS
@@ -268,7 +267,7 @@ function renderSquadList(squad, currentTeam) {
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
     ${p.contractType !== 'loaned_out' ? `
-        <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})" 
+        <button class="btn btn-sm" onclick="window.openTrainingModal('${p.name}')" 
                 title="Entrenar" style="padding: 5px 8px;">
             💪
         </button>
@@ -277,12 +276,12 @@ function renderSquadList(squad, currentTeam) {
     ${contractType === 'owned' ? `
         ${!p.transferListed && !p.loanListed ? `
             <button class="btn btn-sm" style="background: #FF9800; padding: 5px 8px;" 
-                    onclick="window.openSellPlayerModal(${idx})" title="Poner en venta">
+                    onclick="window.openSellPlayerModal('${p.name}')" title="Poner en venta">
                 💰
             </button>
         ` : `
             <button class="btn btn-sm" style="background: #9E9E9E; padding: 5px 8px;" 
-                    onclick="window.removeFromMarket(${idx})" title="Retirar del mercado">
+                    onclick="window.removeFromMarket('${p.name}')" title="Retirar del mercado">
                 ❌
             </button>
         `}
