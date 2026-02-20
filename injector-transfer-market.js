@@ -259,8 +259,14 @@
     }
 
     async function syncAllTeamsToMarket(e) {
+        // Esperar hasta 5s a que Firebase este disponible
+        let tries = 0;
+        while ((!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) && tries < 25) {
+            await new Promise(r => setTimeout(r, 200));
+            tries++;
+        }
         if (!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) {
-            alert('Firebase no disponible');
+            alert('Firebase no disponible. Asegurate de estar autenticado.');
             return;
         }
         const btn = e?.target;
@@ -315,6 +321,12 @@
     // plantilla real al cargar el juego por primera vez
     // =====================================================
     async function doInitialSync() {
+        // Esperar a que Firebase este listo
+        let tries = 0;
+        while ((!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) && tries < 30) {
+            await new Promise(r => setTimeout(r, 300));
+            tries++;
+        }
         if (!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) return;
         try {
             const result = await window.getAllTeamsDataFromFirebase();
