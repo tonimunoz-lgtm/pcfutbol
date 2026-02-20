@@ -36,9 +36,9 @@ const INJURIES_CONFIG = {
     BASE_PROBABILITY: 0.08,
     TYPES: [
         'Esguince de tobillo',
-        'LesiÃ³n muscular',
+        'Lesión muscular',
         'Rotura de ligamentos',
-        'ContusiÃ³n',
+        'Contusión',
         'Tendinitis'
     ]
 };
@@ -200,7 +200,7 @@ function processWeeklyRecoveries(squad) {
 }
 
 // ============================================
-// HOOK EN SIMULACIÃƒâ€œN
+// HOOK EN SIMULACIÓN
 // ============================================
 
 let isHooked = false;
@@ -216,12 +216,12 @@ function hookSimulateWeek() {
     }
     
     isHooked = true;
-    console.log('✅ Hook aplicado con validaciÃ³n integrada');
+    console.log('✅ Hook aplicado con validación integrada');
     
     window.simulateWeek = async function() {
         const state = window.gameLogic?.getGameState();
         
-        // VALIDACIÃƒâ€œN ANTES DE SIMULAR
+        // VALIDACIÓN ANTES DE SIMULAR
         if (state && state.lineup) {
             console.log('🔍 Validando alineación antes de simular...');
             
