@@ -213,8 +213,9 @@ function renderSquadList(squad, currentTeam) {
                 <tbody>  
     `;  
   
-    const sorted = squad.sort((a, b) => b.overall - a.overall);  
-    let playersHtml = sorted.map((p, idx) => {  
+       const sorted = [...squad].sort((a, b) => b.overall - a.overall);
+        let playersHtml = sorted.map((p) => {
+        const idx = squad.findIndex(s => s.name === p.name);  // índice real
         const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
         
         // ✅ VALORES CON DEFAULTS
