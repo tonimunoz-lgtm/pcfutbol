@@ -1,4 +1,5 @@
 // injector-admin-complete.js (con gestión de plantillas)
+
 (function() {
     // ⚙️ CONFIGURACIÓN DE ADMINISTRADORES
     const ADMIN_EMAILS = [
