@@ -320,28 +320,37 @@ async function syncTeamToTransferMarket(teamName, squadPlayers) {
     if (!firebaseConfig.enabled || !db) return { success: false, error: 'Firebase no disponible' };
     if (!authReady) { try { await authReadyPromise; } catch(e) { return { success: false }; } }
     try {
-        const marketRef = doc(db, 'transfer_market', teamName);
-        const marketSnap = await getDoc(marketRef);
-        const existingMarket = marketSnap.exists() ? (marketSnap.data().players || []) : [];
-        const namesInMarket = new Set(existingMarket.map(p => p.name));
-        const candidates = squadPlayers.filter(p => p.name && !namesInMarket.has(p.name));
+        // Calcular overall si falta (jugadores con atributos individuales)
+        function calcOverall(p) {
+            if (p.overall) return p.overall;
+            const attrs = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
+            const vals = attrs.map(a => parseInt(p[a]) || 0).filter(v => v > 0);
+            return vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 70;
+        }
+
+        // Seleccionar exactamente 2 jugadores aleatorios de la plantilla
+        const candidates = squadPlayers.filter(p => p.name);
         if (candidates.length === 0) return { success: true, added: 0 };
-        const shuffled = candidates.sort(() => Math.random() - 0.5);
-        const toAdd = shuffled.slice(0, Math.min(4, Math.max(2, Math.floor(candidates.length * 0.15))));
+        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+        const toAdd = shuffled.slice(0, 2);
+
         const newEntries = toAdd.map(p => ({
             ...p,
+            overall: calcOverall(p),
             club: teamName,
             originalTeam: teamName,
             transferListed: true,
             loanListed: p.age < 26 ? Math.random() < 0.4 : false,
             addedToMarketAt: Date.now()
         }));
-        await setDoc(marketRef, {
+
+        // REEMPLAZAR (no acumular) los jugadores de este equipo en el mercado
+        await setDoc(doc(db, 'transfer_market', teamName), {
             teamName,
-            players: [...existingMarket, ...newEntries],
+            players: newEntries,
             lastUpdated: Date.now()
         });
-        console.log('✅ Mercado sync ' + teamName + ': +' + newEntries.length + ' jugadores');
+        console.log('✅ Mercado sync ' + teamName + ': 2 jugadores');
         return { success: true, added: newEntries.length };
     } catch (error) {
         console.error('❌ Error sincronizando mercado:', error);
