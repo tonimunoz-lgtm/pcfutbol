@@ -7,7 +7,8 @@
     // =====================================================
     // ESTADO LOCAL
     // =====================================================
-    let firestoreMarketPlayers = []; // Jugadores reales cargados de Firestore
+    let firestoreMarketPlayers = [];
+    let _sellPlayerName = null; // Fix bug indice venta
 
     // =====================================================
     // ESPERAR A QUE EL JUEGO ESTE LISTO
@@ -15,10 +16,7 @@
     function waitForGame() {
         return new Promise(resolve => {
             const t = setInterval(() => {
-                if (window.gameLogic && window.ui) {
-                    clearInterval(t);
-                    resolve();
-                }
+                if (window.gameLogic && window.ui) { clearInterval(t); resolve(); }
             }, 200);
             setTimeout(() => { clearInterval(t); resolve(); }, 15000);
         });
@@ -29,29 +27,25 @@
     // =====================================================
     async function loadMarketFromFirestore() {
         if (!window.getTransferMarket) return;
-
         try {
             const state = window.gameLogic.getGameState();
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
-
             const players = await window.getTransferMarket([...myNames]);
-
             firestoreMarketPlayers = players
                 .filter(p => !myNames.has((p.name || '').toLowerCase()))
                 .map(p => {
                     const c = { ...p };
-                    if (!c.value)        c.value        = Math.floor((c.overall || 70) * 2000);
-                    if (!c.salary)       c.salary       = Math.floor((c.overall || 70) * 100);
-                    if (!c.askingPrice)  c.askingPrice  = Math.floor(c.value * (1 + Math.random() * 0.5));
+                    if (!c.value)         c.value         = Math.floor((c.overall || 70) * 2000);
+                    if (!c.salary)        c.salary        = Math.floor((c.overall || 70) * 100);
+                    if (!c.askingPrice)   c.askingPrice   = Math.floor(c.value * (1 + Math.random() * 0.5));
                     if (!c.releaseClause) c.releaseClause = Math.floor(c.value * 3);
-                    if (!c.potential)    c.potential    = Math.min(99, (c.overall || 70) + Math.floor(Math.random() * 10));
-                    if (!c.foot)         c.foot         = Math.random() > 0.2 ? 'Diestro' : 'Zurdo';
-                    if (!c.contractType) c.contractType = 'owned';
+                    if (!c.potential)     c.potential     = Math.min(99, (c.overall || 70) + Math.floor(Math.random() * 10));
+                    if (!c.foot)          c.foot          = Math.random() > 0.2 ? 'Diestro' : 'Zurdo';
+                    if (!c.contractType)  c.contractType  = 'owned';
                     if (!c.contractYears) c.contractYears = 2 + Math.floor(Math.random() * 3);
                     c.transferListed = true;
                     return c;
                 });
-
             console.log('Mercado cargado: ' + firestoreMarketPlayers.length + ' jugadores de Firestore');
         } catch(e) {
             console.warn('Error cargando mercado Firestore:', e);
@@ -60,18 +54,90 @@
     }
 
     // =====================================================
+    // BUGFIX: el squad en ui.js se ordena por overall antes
+    // de renderizar, pero confirmListPlayer busca por indice
+    // en el squad SIN ordenar. Resultado: jugador equivocado.
+    // Solucion: guardar nombre al abrir modal, buscar por nombre.
+    // =====================================================
+    function patchSellPlayerIndex() {
+        // Interceptar openSellPlayerModal para capturar el nombre correcto
+        const originalOpen = window.openSellPlayerModal;
+        window.openSellPlayerModal = function(playerIndex) {
+            const state = window.gameLogic.getGameState();
+            // ui.js renderiza el squad ordenado por overall (sort((a,b)=>b.overall-a.overall))
+            const sorted = [...(state.squad || [])].sort((a, b) => b.overall - a.overall);
+            if (sorted[playerIndex]) {
+                _sellPlayerName = sorted[playerIndex].name;
+            }
+            originalOpen(playerIndex);
+        };
+
+        // Reemplazar confirmListPlayer para buscar por nombre en vez de indice
+        window.confirmListPlayer = function() {
+            if (!_sellPlayerName) return;
+            const state = window.gameLogic.getGameState();
+            const player = state.squad.find(p => p.name === _sellPlayerName);
+            if (!player) { alert('Jugador no encontrado'); return; }
+
+            const operationType = document.getElementById('sellOperationType').value;
+
+            if (operationType === 'transfer') {
+                const price = parseInt(document.getElementById('sellTransferPrice').value);
+                if (!price || price <= 0) { alert('Introduce un precio valido'); return; }
+                player.transferListed = true;
+                player.loanListed = false;
+                player.askingPrice = price;
+                player.weeksOnMarket = 0;
+                window.gameLogic.addNews(
+                    'Has puesto a ' + player.name + ' en venta por ' + price.toLocaleString('es-ES') + '\u20ac',
+                    'info'
+                );
+                alert(player.name + ' ha sido puesto en venta por ' + price.toLocaleString('es-ES') + '\u20ac');
+            } else {
+                const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
+                player.transferListed = false;
+                player.loanListed = true;
+                player.loanWageContribution = Math.round(player.salary * ((100 - wagePercent) / 100));
+                player.weeksOnMarket = 0;
+                window.gameLogic.addNews(
+                    'Has puesto a ' + player.name + ' disponible para cesion (asumes ' + wagePercent + '% salario)',
+                    'info'
+                );
+                alert(player.name + ' ha sido puesto disponible para cesion');
+            }
+
+            window.gameLogic.updateGameState(state);
+            window.gameLogic.saveToLocalStorage();
+            window.closeModal('sellPlayer');
+            window.ui.refreshUI(window.gameLogic.getGameState());
+            _sellPlayerName = null;
+        };
+
+        // Fix updateLoanCostPreview que tambien usaba el indice roto
+        window.updateLoanCostPreview = function() {
+            if (!_sellPlayerName) return;
+            const state = window.gameLogic.getGameState();
+            const player = state.squad.find(p => p.name === _sellPlayerName);
+            if (!player) return;
+            const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
+            const ourCost = Math.round(player.salary * (wagePercent / 100));
+            const theirCost = player.salary - ourCost;
+            document.getElementById('sellLoanOurCost').textContent = ourCost.toLocaleString('es-ES');
+            document.getElementById('sellLoanTheirCost').textContent = theirCost.toLocaleString('es-ES');
+        };
+
+        console.log('Bug indice venta corregido');
+    }
+
+    // =====================================================
     // INTERCEPCION: searchPlayersMarket
-    // Reemplazamos la funcion de index.html para mezclar
-    // jugadores de Firestore + jugadores del usuario en venta
+    // Mezcla: mis jugadores en venta + Firestore + generados
     // =====================================================
     function patchSearchPlayersMarket() {
-        const originalSearch = window.searchPlayersMarket;
-
         window.searchPlayersMarket = function() {
             const state = window.gameLogic.getGameState();
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
 
-            // Filtros del formulario
             const filters = {
                 searchName:     document.getElementById('marketSearchName')?.value || '',
                 position:       document.getElementById('marketPosition')?.value || 'ALL',
@@ -81,165 +147,113 @@
                 loanListed:     document.getElementById('marketLoanListed')?.checked || false,
             };
 
-            // 1. Jugadores del usuario en venta/cesion
+            // 1. Mis jugadores en venta/cesion
             const myListed = (state.squad || []).filter(p => p.transferListed || p.loanListed);
 
-            // 2. Jugadores reales de Firestore (ya sin los mios)
+            // 2. Jugadores reales de Firestore (sin los mios)
             const firestoreFiltered = firestoreMarketPlayers.filter(p =>
                 !myNames.has((p.name || '').toLowerCase())
             );
 
-            // 3. Jugadores generados del mercado original (sin duplicados)
+            // 3. Jugadores generados (sin duplicados)
             const firestoreNames = new Set(firestoreMarketPlayers.map(p => p.name.toLowerCase()));
             const myListedNames  = new Set(myListed.map(p => p.name.toLowerCase()));
             const scoutLevel = state.staff?.scout?.level || 0;
-            const originalPlayers = window.gameLogic.getPlayerMarket({}) // sin filtros aqui
+            const generated = window.gameLogic.getPlayerMarket({})
                 .filter(p =>
                     !firestoreNames.has(p.name.toLowerCase()) &&
                     !myListedNames.has(p.name.toLowerCase()) &&
                     !myNames.has(p.name.toLowerCase())
                 );
 
-            // Combinar: mis jugadores en venta primero, luego Firestore, luego generados
-            let all = [...myListed, ...firestoreFiltered, ...originalPlayers];
+            let all = [...myListed, ...firestoreFiltered, ...generated];
 
             // Aplicar filtros
-            if (filters.position && filters.position !== 'ALL') {
+            if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);
-            }
-            if (filters.minOverall) {
+            if (filters.minOverall)
                 all = all.filter(p => (p.overall || 0) >= filters.minOverall);
-            }
-            if (filters.maxAge && filters.maxAge < 100) {
+            if (filters.maxAge && filters.maxAge < 100)
                 all = all.filter(p => (p.age || 99) <= filters.maxAge);
-            }
             if (filters.searchName) {
                 const s = filters.searchName.toLowerCase();
                 all = all.filter(p => (p.name || '').toLowerCase().includes(s));
             }
-            if (filters.transferListed) {
-                all = all.filter(p => p.transferListed === true);
-            }
-            if (filters.loanListed) {
-                all = all.filter(p => p.loanListed === true);
-            }
+            if (filters.transferListed) all = all.filter(p => p.transferListed === true);
+            if (filters.loanListed)     all = all.filter(p => p.loanListed === true);
 
-            // Limitar segun nivel de ojeador
-            const limit = 30 + scoutLevel * 10;
-            all = all.slice(0, limit);
-
+            all = all.slice(0, 30 + scoutLevel * 10);
             window.ui.renderPlayerMarketList(all);
         };
-
-        console.log('searchPlayersMarket interceptado por injector-transfer-market');
+        console.log('searchPlayersMarket interceptado');
     }
 
     // =====================================================
-    // INTERCEPCION: startNegotiationUI
-    // Cuando se ficha un jugador, eliminarlo del mercado Firestore
+    // AL FICHAR: eliminar del mercado Firestore
     // =====================================================
     function patchStartNegotiationUI() {
-        const originalStartNeg = window.startNegotiationUI;
-        if (!originalStartNeg) return;
-
+        const orig = window.startNegotiationUI;
+        if (!orig) return;
         window.startNegotiationUI = function(encodedPlayerJson) {
-            // Guardar el jugador para saber su equipo origen al fichar
-            try {
-                const player = JSON.parse(decodeURIComponent(encodedPlayerJson));
-                window._pendingSignPlayer = player;
-            } catch(e) {}
-            originalStartNeg(encodedPlayerJson);
+            try { window._pendingSignPlayer = JSON.parse(decodeURIComponent(encodedPlayerJson)); } catch(e) {}
+            orig(encodedPlayerJson);
         };
     }
 
-    // =====================================================
-    // INTERCEPCION: signPlayer resultado
-    // Despues de fichar, eliminar del mercado Firestore
-    // =====================================================
     function patchAfterSign() {
-        // El signPlayer de gameLogic no tiene hook directo.
-        // Lo que si tenemos es que despues de fichar se llama
-        // window.ui.refreshUI. Interceptamos eso para detectar
-        // si el squad crecio y eliminar al jugador del mercado.
-
         let lastSquadLength = 0;
-
-        const originalRefreshUI = window.ui.refreshUI;
+        const originalRefreshUI = window.ui.refreshUI.bind(window.ui);
         window.ui.refreshUI = function(state) {
             const currentLength = (state?.squad || []).length;
-
             if (currentLength > lastSquadLength && window._pendingSignPlayer) {
                 const signed = window._pendingSignPlayer;
                 window._pendingSignPlayer = null;
-
-                // Eliminar de la lista local
-                firestoreMarketPlayers = firestoreMarketPlayers.filter(
-                    p => p.name !== signed.name
-                );
-
-                // Eliminar de Firestore
+                firestoreMarketPlayers = firestoreMarketPlayers.filter(p => p.name !== signed.name);
                 if (window.removePlayerFromMarket && signed.originalTeam) {
                     window.removePlayerFromMarket(signed.name, signed.originalTeam)
-                        .catch(e => console.warn('Error eliminando del mercado Firestore:', e));
+                        .catch(e => console.warn('Error eliminando del mercado:', e));
                 }
             }
-
             lastSquadLength = currentLength;
-            originalRefreshUI.call(window.ui, state);
+            originalRefreshUI(state);
         };
     }
 
     // =====================================================
-    // SYNC AL GUARDAR PLANTILLA (admin)
-    // Engancha en saveSquadData sin tocar el archivo admin
+    // ADMIN: sync al guardar + boton sync masivo
     // =====================================================
     function patchAdminSaveSquad() {
         if (!window.adminBackend) return;
-
         const originalSave = window.adminBackend.saveSquadData;
         window.adminBackend.saveSquadData = async function() {
             await originalSave.call(this);
-            // Tras guardar, sincronizar con el mercado
             if (window.syncTeamToTransferMarket && this.currentTeam && this.squadPlayers?.length > 0) {
                 window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers)
-                    .then(r => { if (r?.added > 0) console.log('Sync mercado: +' + r.added + ' jugadores'); })
-                    .catch(e => console.warn('Error sync mercado:', e));
+                    .then(r => { if (r?.added > 0) console.log('Sync mercado: +' + r.added); })
+                    .catch(e => console.warn('Error sync:', e));
             }
         };
-
-        // Anadir boton Sync Mercado al panel admin si existe
-        addSyncButtonToAdmin();
-
         console.log('Admin saveSquadData interceptado');
     }
 
-    // =====================================================
-    // BOTON "SYNC MERCADO FICHAJES" en el panel admin
-    // =====================================================
     function addSyncButtonToAdmin() {
-        // Esperar a que el modal se cree (se crea al abrir el panel)
         const observer = new MutationObserver(() => {
-            const importExportDiv = document.querySelector('#adminModal h3');
-            if (!importExportDiv) return;
-
-            // Buscar la seccion de importar/exportar
-            const allH3 = document.querySelectorAll('#adminModal h3');
-            let targetDiv = null;
+            const modal = document.getElementById('adminModal');
+            if (!modal || document.getElementById('syncMarketBtn')) return;
+            const allH3 = modal.querySelectorAll('h3');
             allH3.forEach(h => {
-                if (h.textContent.includes('Importar') || h.textContent.includes('Exportar')) {
-                    targetDiv = h.parentElement;
+                if ((h.textContent.includes('Importar') || h.textContent.includes('Exportar')) &&
+                    !document.getElementById('syncMarketBtn')) {
+                    const btn = document.createElement('button');
+                    btn.id = 'syncMarketBtn';
+                    btn.className = 'btn';
+                    btn.style.background = '#e94560';
+                    btn.style.marginTop = '10px';
+                    btn.textContent = 'Sync Mercado Fichajes';
+                    btn.onclick = syncAllTeamsToMarket;
+                    h.parentElement.appendChild(btn);
                 }
             });
-
-            if (targetDiv && !document.getElementById('syncMarketBtn')) {
-                const btn = document.createElement('button');
-                btn.id = 'syncMarketBtn';
-                btn.className = 'btn';
-                btn.style.background = '#e94560';
-                btn.textContent = '🔄 Sync Mercado Fichajes';
-                btn.onclick = syncAllTeamsToMarket;
-                targetDiv.appendChild(btn);
-            }
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
@@ -251,66 +265,69 @@
         }
         const btn = e?.target;
         if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
-
         try {
             const result = await window.getAllTeamsDataFromFirebase();
             if (!result.success) { alert('Error: ' + (result.error || 'desconocido')); return; }
-
             const withSquad = Object.entries(result.data)
                 .filter(([, data]) => data.squad && data.squad.length > 0);
-
             let totalAdded = 0;
             for (const [teamName, teamData] of withSquad) {
                 const r = await window.syncTeamToTransferMarket(teamName, teamData.squad);
                 if (r?.added) totalAdded += r.added;
             }
-
             alert('Mercado sincronizado: ' + withSquad.length + ' equipos, ' + totalAdded + ' jugadores nuevos');
-
-            // Recargar mercado local
             await loadMarketFromFirestore();
         } catch(err) {
             alert('Error: ' + err.message);
         } finally {
-            if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Mercado Fichajes'; }
+            if (btn) { btn.disabled = false; btn.textContent = 'Sync Mercado Fichajes'; }
         }
     }
 
     // =====================================================
-    // RECARGAR MERCADO AL CARGAR PARTIDA
-    // Engancha en loadGameFromCloudUI sin tocar el archivo
+    // RECARGAR AL CARGAR PARTIDA
     // =====================================================
     function patchCloudLoad() {
-        const originalLoad = window.loadGameFromCloudUI;
-        if (!originalLoad) return;
-
+        const orig = window.loadGameFromCloudUI;
+        if (!orig) return;
         window.loadGameFromCloudUI = async function(gameId) {
-            await originalLoad(gameId);
-            setTimeout(async () => {
-                await loadMarketFromFirestore();
-            }, 1200);
+            await orig(gameId);
+            setTimeout(loadMarketFromFirestore, 1200);
         };
-        console.log('loadGameFromCloudUI interceptado');
     }
 
     // =====================================================
-    // RECARGAR AL ABRIR LA PAGINA DE FICHAJES
+    // RECARGAR AL ABRIR PAGINA DE FICHAJES
     // =====================================================
     function patchOpenPage() {
-        const originalOpenPage = window.openPage;
-        if (!originalOpenPage) return;
-
+        const orig = window.openPage;
+        if (!orig) return;
         window.openPage = function(pageId) {
-            originalOpenPage(pageId);
-            if (pageId === 'transfers') {
-                // Si el mercado esta vacio, recargar
-                if (firestoreMarketPlayers.length === 0) {
-                    loadMarketFromFirestore().then(() => {
-                        window.searchPlayersMarket();
-                    });
-                }
+            orig(pageId);
+            if (pageId === 'transfers' && firestoreMarketPlayers.length === 0) {
+                loadMarketFromFirestore().then(() => window.searchPlayersMarket());
             }
         };
+    }
+
+    // =====================================================
+    // SYNC INICIAL: sincronizar todos los equipos con
+    // plantilla real al cargar el juego por primera vez
+    // =====================================================
+    async function doInitialSync() {
+        if (!window.syncTeamToTransferMarket || !window.getAllTeamsDataFromFirebase) return;
+        try {
+            const result = await window.getAllTeamsDataFromFirebase();
+            if (!result.success) return;
+            const withSquad = Object.entries(result.data)
+                .filter(([, data]) => data.squad && data.squad.length > 0);
+            for (const [teamName, teamData] of withSquad) {
+                await window.syncTeamToTransferMarket(teamName, teamData.squad);
+            }
+            console.log('Sync inicial: ' + withSquad.length + ' equipos sincronizados');
+        } catch(e) {
+            console.warn('Error en sync inicial:', e);
+        }
     }
 
     // =====================================================
@@ -319,16 +336,19 @@
     async function init() {
         await waitForGame();
 
+        patchSellPlayerIndex();
         patchSearchPlayersMarket();
         patchStartNegotiationUI();
         patchAfterSign();
         patchCloudLoad();
         patchOpenPage();
 
-        // Esperar a que el admin pueda estar cargado
-        setTimeout(() => patchAdminSaveSquad(), 2000);
+        setTimeout(() => {
+            patchAdminSaveSquad();
+            addSyncButtonToAdmin();
+        }, 2000);
 
-        // Cargar mercado inicial
+        await doInitialSync();
         await loadMarketFromFirestore();
 
         console.log('injector-transfer-market listo');
