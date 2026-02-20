@@ -340,7 +340,9 @@
         };
 
         // AHORA SÍ: Abrir modal de entrenamiento (que ya tiene setPlayerTrainingFocusUI definida)
-        window.openTrainingModal = function(playerIndex, playerName) {
+        window.openTrainingModal = function(playerName) {
+            const state = window.gameLogic.getGameState();
+            const playerIndex = state.squad.findIndex(p => p.name === playerName);
             window.setPlayerTrainingFocusUI(playerIndex, playerName);
         };
 
@@ -505,16 +507,13 @@ window.openSellPlayerUI = function(playerIndex) {
 // ========================================
 
 let currentSellPlayerIndex = -1;
-let currentSellPlayerName = null; // Fix: guardar nombre para evitar bug de índice
+let currentSellPlayerName = null;
 let currentOffer = null;
 
 // Abrir modal de venta
-window.openSellPlayerModal = function(playerIndex) {
+window.openSellPlayerModal = function(playerName) {
     const state = window.gameLogic.getGameState();
-    // ui.js ordena el squad por overall antes de renderizar,
-    // así que el índice recibido es del array ordenado, no del squad original.
-    const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
-    const player = sorted[playerIndex];
+    const player = state.squad.find(p => p.name === playerName);
     
     if (!player) {
         alert('Jugador no encontrado');
@@ -526,8 +525,7 @@ window.openSellPlayerModal = function(playerIndex) {
         return;
     }
     
-    currentSellPlayerName = player.name;
-    currentSellPlayerIndex = state.squad.findIndex(p => p.name === player.name);
+    currentSellPlayerName = playerName;
     
     // Rellenar información
     document.getElementById('sellPlayerName').textContent = player.name;
@@ -564,9 +562,7 @@ window.updateSellOperationType = function() {
 // Actualizar preview de costes de cesión
 window.updateLoanCostPreview = function() {
     const state = window.gameLogic.getGameState();
-    const player = currentSellPlayerName
-        ? state.squad.find(p => p.name === currentSellPlayerName)
-        : state.squad[currentSellPlayerIndex];
+    const player = state.squad.find(p => p.name === currentSellPlayerName);
     
     if (!player) return;
     
@@ -589,9 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Confirmar poner en venta
 window.confirmListPlayer = function() {
     const state = window.gameLogic.getGameState();
-    const player = currentSellPlayerName
-        ? state.squad.find(p => p.name === currentSellPlayerName)
-        : state.squad[currentSellPlayerIndex];
+    const player = state.squad.find(p => p.name === currentSellPlayerName);
     
     if (!player) {
         alert('Error: Jugador no encontrado');
@@ -643,7 +637,6 @@ window.confirmListPlayer = function() {
     window.gameLogic.saveToLocalStorage();
     
     window.closeModal('sellPlayer');
-    currentSellPlayerName = null;
     
     // ✅ Refrescar con estado actualizado
     const updatedState = window.gameLogic.getGameState();
@@ -1064,9 +1057,9 @@ window.payReleaseClause = function(encodedPlayerJson) {
     alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
 };
 
-window.removeFromMarket = function(playerIndex) {
+window.removeFromMarket = function(playerName) {
     const state = window.gameLogic.getGameState();
-    const player = state.squad[playerIndex];
+    const player = state.squad.find(p => p.name === playerName);
     
     if (!player) {
         alert('Jugador no encontrado');
