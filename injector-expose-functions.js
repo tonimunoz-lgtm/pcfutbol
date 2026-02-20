@@ -340,9 +340,7 @@
         };
 
         // AHORA SÍ: Abrir modal de entrenamiento (que ya tiene setPlayerTrainingFocusUI definida)
-        window.openTrainingModal = function(playerName) {
-            const state = window.gameLogic.getGameState();
-            const playerIndex = state.squad.findIndex(p => p.name === playerName);
+        window.openTrainingModal = function(playerIndex, playerName) {
             window.setPlayerTrainingFocusUI(playerIndex, playerName);
         };
 
@@ -507,13 +505,13 @@ window.openSellPlayerUI = function(playerIndex) {
 // ========================================
 
 let currentSellPlayerIndex = -1;
-let currentSellPlayerName = null;
 let currentOffer = null;
 
 // Abrir modal de venta
-window.openSellPlayerModal = function(playerName) {
+window.openSellPlayerModal = function(playerIndex) {
     const state = window.gameLogic.getGameState();
-    const player = state.squad.find(p => p.name === playerName);
+    const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
+    const player = sorted[playerIndex];
     
     if (!player) {
         alert('Jugador no encontrado');
@@ -525,7 +523,7 @@ window.openSellPlayerModal = function(playerName) {
         return;
     }
     
-    currentSellPlayerName = playerName;
+    currentSellPlayerIndex = playerIndex;
     
     // Rellenar información
     document.getElementById('sellPlayerName').textContent = player.name;
@@ -562,7 +560,8 @@ window.updateSellOperationType = function() {
 // Actualizar preview de costes de cesión
 window.updateLoanCostPreview = function() {
     const state = window.gameLogic.getGameState();
-    const player = state.squad.find(p => p.name === currentSellPlayerName);
+    const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
+    const player = sorted[currentSellPlayerIndex];
     
     if (!player) return;
     
@@ -585,7 +584,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Confirmar poner en venta
 window.confirmListPlayer = function() {
     const state = window.gameLogic.getGameState();
-    const player = state.squad.find(p => p.name === currentSellPlayerName);
+    const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
+    const player = sorted[currentSellPlayerIndex];
     
     if (!player) {
         alert('Error: Jugador no encontrado');
@@ -1057,9 +1057,10 @@ window.payReleaseClause = function(encodedPlayerJson) {
     alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
 };
 
-window.removeFromMarket = function(playerName) {
+window.removeFromMarket = function(playerIndex) {
     const state = window.gameLogic.getGameState();
-    const player = state.squad.find(p => p.name === playerName);
+    const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
+    const player = sorted[playerIndex];
     
     if (!player) {
         alert('Jugador no encontrado');
