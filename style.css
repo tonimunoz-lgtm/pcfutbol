@@ -827,7 +827,7 @@ input:focus, select:focus {
 }
 
 .pitch-player.injured::after {
-    content: 'âŒ';
+    content: '⛔';
     position: absolute;
     top: 2px;
     right: 2px;
@@ -837,7 +837,7 @@ input:focus, select:focus {
 }
 
 .pitch-player.suspended::after {
-    content: 'â›”';
+    content: '🚫';
     position: absolute;
     top: 2px;
     right: 2px;
@@ -991,7 +991,7 @@ Salida
 }
 
 .pitch-player.injured::after {
-    content: 'âŒ';
+    content: '⛔';
     position: absolute;
     top: 2px;
     right: 2px;
@@ -1001,7 +1001,7 @@ Salida
 }
 
 .pitch-player.suspended::after {
-    content: 'â›”';
+    content: '🚫';
     position: absolute;
     top: 2px;
     right: 2px;
