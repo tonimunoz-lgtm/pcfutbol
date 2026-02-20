@@ -273,9 +273,6 @@
         patchSearchPlayersMarket();
         patchStartNegotiationUI();
         patchAfterSign();
-        patchCloudLoad();
-        patchOpenPage();
-
         setTimeout(() => {
             patchAdminSaveSquad();
         }, 2000);
