@@ -186,7 +186,6 @@
                         <h3>📦 Importar/Exportar Todo</h3>
                         <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">📦 Exportar Todos los Datos</button>
                         <button class="btn" style="background: #00aa00;" onclick="document.getElementById('adminImportFile').click()">📥 Importar Datos</button>
-                        <button class="btn" style="background: #e94560;" onclick="window.adminBackend.syncAllTeamsToMarket(event)">🔄 Sync Mercado Fichajes</button>
                         <input type="file" id="adminImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.importAllData(event)">
                     </div>
 
@@ -545,12 +544,6 @@
                 
                 if (saveResult.success) {
                     alert(`✅ Plantilla guardada: ${this.squadPlayers.length} jugadores`);
-                    // Sincronizar con el mercado de fichajes
-                    if (window.syncTeamToTransferMarket) {
-                        window.syncTeamToTransferMarket(this.currentTeam, this.squadPlayers)
-                            .then(r => { if (r && r.added > 0) console.log('Mercado sync: +' + r.added); })
-                            .catch(e => console.warn('Error sync mercado:', e));
-                    }
                 } else {
                     alert(`❌ Error: ${saveResult.error}`);
                 }
@@ -571,40 +564,6 @@
             a.click();
             
             URL.revokeObjectURL(url);
-        },
-
-        syncAllTeamsToMarket: async function(e) {
-            const btn = e && e.target;
-            if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
-            try {
-                if (typeof window.syncTeamToTransferMarket !== 'function') {
-                    throw new Error('Funcion syncTeamToTransferMarket no encontrada. Asegurate de tener firebase-config.js actualizado.');
-                }
-                if (typeof window.getAllTeamsDataFromFirebase !== 'function') {
-                    throw new Error('Funcion getAllTeamsDataFromFirebase no encontrada.');
-                }
-                const result = await window.getAllTeamsDataFromFirebase();
-                if (!result || !result.success) {
-                    throw new Error(result ? (result.error || 'Error obteniendo equipos') : 'Sin respuesta');
-                }
-                const withSquad = Object.entries(result.data)
-                    .filter(([, data]) => data.squad && data.squad.length > 0);
-                if (withSquad.length === 0) {
-                    alert('No hay equipos con plantilla guardada en Firebase.');
-                    return;
-                }
-                let totalAdded = 0;
-                for (const [teamName, teamData] of withSquad) {
-                    const r = await window.syncTeamToTransferMarket(teamName, teamData.squad);
-                    if (r && r.added) totalAdded += r.added;
-                }
-                alert('Mercado sincronizado: ' + withSquad.length + ' equipos, ' + totalAdded + ' jugadores nuevos');
-            } catch(err) {
-                alert('Error: ' + err.message);
-                console.error('Sync error:', err);
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Sync Mercado Fichajes'; }
-            }
         },
 
         importAllData: async function(event) {
