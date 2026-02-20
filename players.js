@@ -1,4 +1,5 @@
 // players.js - Base de datos de jugadores profesionales y cantera  
+
 // ✅ CORREGIDO: Campos contractType, contractYears y releaseClause
 // ✅ NUEVO: Soporte para plantillas reales desde Firestore
 
