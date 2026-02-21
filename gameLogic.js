@@ -466,13 +466,27 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
                     `🔴 ¡URGENTE! El contrato de ${p.name} ha expirado. Si no renuevas, se irá libre.`, 
                     'error'
                 );
-            } else if (p.contractType === 'loaned') {
+           } else if (p.contractType === 'loaned') {
                 // Jugador cedido vuelve a su club
                 addNews(
                     `🔄 ${p.name} ha regresado a su club de origen tras finalizar la cesión.`, 
                     'info'
                 );
                 return false; // ❌ ELIMINAR jugador cedido
+            } else if (p.contractType === 'loaned_out') {
+                // Jugador que YO cedí: vuelve a mi plantilla al inicio de temporada
+                const loanedClub = p.loanedTo || 'su club de cesión';
+                p.contractType = 'owned';
+                if (p.originalSalary) {
+                    p.salary = p.originalSalary;
+                    delete p.originalSalary;
+                }
+                delete p.loanedTo;
+                p.loanListed = false;
+                p.transferListed = false;
+                if (!p.contractYears || p.contractYears <= 0) p.contractYears = 1;
+                addNews(`🔄 ${p.name} ha vuelto tras su cesión al ${loanedClub}.`, 'info');
+                // NO return false — el jugador se queda en la plantilla
             }
         }
     }
