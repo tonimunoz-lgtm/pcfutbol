@@ -616,6 +616,8 @@ function signPlayer(player) {
     if (newPlayer.loan === true) {
         newPlayer.contractType = 'loaned';
         newPlayer.contractYears = 1;
+        newPlayer.loanListed = false;
+        newPlayer.transferListed = false;
     }
     // Si no tiene contractType, asignar
     else if (!newPlayer.contractType) {
