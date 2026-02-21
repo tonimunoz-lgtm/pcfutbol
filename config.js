@@ -46,7 +46,7 @@ const TEAMS_DATA = {
         'Real Murcia CF', 'SD Tarazona', 'Sevilla Atlético', 'UD Ibiza', 'Villarreal CF B'
 ], 
 
-// 👶 NUEVA DIVISIÓN INFANTIL VALLÈS (20 equipos)
+/* 👶 NUEVA DIVISIÓN INFANTIL VALLÈS (20 equipos)
     infantil_valles: [
         'Atlètic Matadeperenc',
         'CFU Can Rull RT',
@@ -68,7 +68,7 @@ const TEAMS_DATA = {
         'CF Cerdanyola del Vallès',
         'CE Lliçà d’Amunt',
         'EF Sant Quirze'
-    ]
+    ]*/
     
 };  
   
