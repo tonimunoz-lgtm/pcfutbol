@@ -45,6 +45,31 @@ const TEAMS_DATA = {
         'FC Cartagena', 'Gimnàstic de Tarragona', 'Hércules CF', 'Juventud Torremolinos CF', 'Marbella FC',
         'Real Murcia CF', 'SD Tarazona', 'Sevilla Atlético', 'UD Ibiza', 'Villarreal CF B'
 ], 
+
+// 👶 NUEVA DIVISIÓN INFANTIL VALLÈS (20 equipos)
+    infantil_valles: [
+        'Atlètic Matadeperenc',
+        'CFU Can Rull RT',
+        'Terrassa FC',
+        'CF Matadepera',
+        'UE Castellar',
+        'Junior FC Sant Cugat',
+        'Sant Cugat FC',
+        'CE Mercantil',
+        'Sabadellenca',
+        'UD San Lorenzo',
+        'Atlètic Terrassa FC',
+        'CE Sabadell FC',
+        'CF Ripollet',
+        'CF Montcada',
+        'UE Rubí',
+        'EF Bonaire',
+        'CF Barberà',
+        'CF Cerdanyola del Vallès',
+        'CE Lliçà d’Amunt',
+        'EF Sant Quirze'
+    ]
+    
 };  
   
 const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];  
