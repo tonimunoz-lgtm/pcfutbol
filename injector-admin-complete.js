@@ -222,12 +222,12 @@
                         align-items: center;
                         margin-bottom: 10px;
                     }
-                    .player-inputs {
-                        display: grid;
-                        grid-template-columns: 2fr 1fr 1fr;
-                        gap: 10px;
-                        margin-bottom: 10px;
-                    }
+                   /* Contenedor de inputs básicos (Nombre, Posición, Edad) */
+.player-inputs {
+    display: grid;
+    grid-template-columns: 3fr 1.5fr 1fr; /* nombre más ancho, posición intermedia, edad pequeña */
+    gap: 10px;
+}
                     /* Mantener todo horizontal pero inputs más anchos */
                     .player-attributes {
                         display: grid;
