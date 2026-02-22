@@ -224,8 +224,8 @@
                     }
                     .player-inputs {
                         display: grid;
-                        grid-template-columns: 80px 40px 40px;
-                        gap: 10px;
+                        grid-template-columns: 80px 60px 60px;
+                        gap: 5px;
                         margin-bottom: 10px;
                     }
                     .player-attributes {
