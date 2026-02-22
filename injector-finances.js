@@ -102,100 +102,103 @@
     }
 
     // ============================================================
-    // 3. PARCHE: Registrar TODOS los movimientos extraordinarios
-    // ============================================================
-    function patchTransactions() {
-        const gl = window.gameLogic;
-        if (!gl) return;
+// 3. PARCHE: Registrar TODOS los movimientos extraordinarios
+// ============================================================
+function patchTransactions() {
+    const gl = window.gameLogic;
+    if (!gl) return;
 
-        // Helper: añadir movimiento al historial de la temporada
-        function registerMovement(type, description, amount) {
-            const s = gl.getGameState();
-            if (!s.seasonMovements) s.seasonMovements = [];
-            s.seasonMovements.push({
-                week: s.week,
-                type,        // 'purchase' | 'sale' | 'compensation' | 'renovation' | 'staff_hire' | 'staff_compensation'
-                description,
-                amount       // positivo = ingreso, negativo = gasto
-            });
+    // Helper: añadir movimiento al historial de la temporada
+    function registerMovement(type, description, amount) {
+        const s = gl.getGameState();
+        if (!s.seasonMovements) s.seasonMovements = [];
+        s.seasonMovements.push({
+            week: s.week,
+            type,        // 'purchase' | 'sale' | 'compensation' | 'renovation' | 'staff_hire' | 'staff_compensation'
+            description,
+            amount       // positivo = ingreso, negativo = gasto
+        });
 
-            // Actualizar acumulados de temporada
-            const updates = { seasonMovements: s.seasonMovements };
+        // Actualizar acumulados de temporada
+        const updates = { seasonMovements: s.seasonMovements };
 
-            if (type === 'purchase' || type === 'staff_hire') {
-                updates.playerPurchases = (s.playerPurchases || 0) + Math.abs(amount);
-            }
-            if (type === 'sale') {
-                updates.playerSalesIncome = (s.playerSalesIncome || 0) + Math.abs(amount);
-            }
-            if (type === 'compensation' || type === 'staff_compensation') {
-                updates.playerCompensations = (s.playerCompensations || 0) + Math.abs(amount);
-            }
-            if (type === 'renovation') {
-                updates.renovationExpenses = (s.renovationExpenses || 0) + Math.abs(amount);
-            }
-
-            gl.updateGameState(updates);
+        if (type === 'purchase' || type === 'staff_hire') {
+            updates.playerPurchases = (s.playerPurchases || 0) + Math.abs(amount);
+        }
+        if (type === 'sale') {
+            updates.playerSalesIncome = (s.playerSalesIncome || 0) + Math.abs(amount);
+        }
+        if (type === 'compensation' || type === 'staff_compensation') {
+            updates.playerCompensations = (s.playerCompensations || 0) + Math.abs(amount);
+        }
+        if (type === 'renovation') {
+            updates.renovationExpenses = (s.renovationExpenses || 0) + Math.abs(amount);
         }
 
-        window._financeRegisterMovement = registerMovement;
-
-        // --- Parche: hireStaffFromCandidates ---
-        const origHireStaff = gl.hireStaffFromCandidates;
-        if (origHireStaff) {
-            gl.hireStaffFromCandidates = function (candidate) {
-                const sBefore = gl.getGameState();
-                const existingStaff = sBefore.staff[candidate.role];
-
-                const result = origHireStaff.call(this, candidate);
-
-                if (result && result.success) {
-                    // Indemnización del staff despedido
-                    if (existingStaff) {
-                        const indemnization = existingStaff.salary * 52;
-                        registerMovement('staff_compensation',
-                            `Indemnización: ${existingStaff.name} (${existingStaff.role})`,
-                            -indemnization);
-                    }
-                    // Cláusula / coste de contratación
-                    registerMovement('staff_hire',
-                        `Contratación staff: ${candidate.name} (${candidate.role})`,
-                        -candidate.clausula);
-                }
-                return result;
-            };
-        }
-
-        // --- Parche: expandStadium ---
-        const origExpand = gl.expandStadium;
-        if (origExpand) {
-            gl.expandStadium = function (cost = 50000, capacityIncrease = 10000) {
-                const result = origExpand.call(this, cost, capacityIncrease);
-                if (result && result.success) {
-                    registerMovement('renovation',
-                        `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
-                        -cost);
-                }
-                return result;
-            };
-        }
-
-        // --- Parche: improveFacilities ---
-        const origImprove = gl.improveFacilities;
-        if (origImprove) {
-            gl.improveFacilities = function (cost = 30000, trainingLevelIncrease = 1) {
-                const result = origImprove.call(this, cost, trainingLevelIncrease);
-                if (result && result.success) {
-                    registerMovement('renovation',
-                        `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
-                        -cost);
-                }
-                return result;
-            };
-        }
-
-        console.log('[Finances] Transacciones extraordinarias registradas.');
+        gl.updateGameState(updates);
     }
+
+    // Guardar helper global para usar en wrappers
+    window._financeRegisterMovement = registerMovement;
+
+    // --- Wrapper seguro: hireStaffFromCandidates ---
+    const origHireStaff = gl.hireStaffFromCandidates;
+    if (origHireStaff) {
+        // Creamos una función global que envuelve la original sin sobrescribirla
+        window._hireStaffWrapper = function(candidate) {
+            const sBefore = gl.getGameState();
+            const existingStaff = sBefore.staff[candidate.role];
+
+            const result = origHireStaff.call(gl, candidate);
+
+            if (result && result.success) {
+                // Indemnización del staff despedido
+                if (existingStaff) {
+                    const indemnization = existingStaff.salary * 52;
+                    registerMovement('staff_compensation',
+                        `Indemnización: ${existingStaff.name} (${existingStaff.role})`,
+                        -indemnization);
+                }
+                // Cláusula / coste de contratación
+                registerMovement('staff_hire',
+                    `Contratación staff: ${candidate.name} (${candidate.role})`,
+                    -candidate.clausula);
+            }
+
+            return result;
+        };
+    }
+
+    // --- Parche: expandStadium ---
+    const origExpand = gl.expandStadium;
+    if (origExpand) {
+        gl.expandStadium = function(cost = 50000, capacityIncrease = 10000) {
+            const result = origExpand.call(this, cost, capacityIncrease);
+            if (result && result.success) {
+                registerMovement('renovation',
+                    `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
+                    -cost);
+            }
+            return result;
+        };
+    }
+
+    // --- Parche: improveFacilities ---
+    const origImprove = gl.improveFacilities;
+    if (origImprove) {
+        gl.improveFacilities = function(cost = 30000, trainingLevelIncrease = 1) {
+            const result = origImprove.call(this, cost, trainingLevelIncrease);
+            if (result && result.success) {
+                registerMovement('renovation',
+                    `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
+                    -cost);
+            }
+            return result;
+        };
+    }
+
+    console.log('[Finances] Transacciones extraordinarias registradas (wrapper seguro aplicado).');
+}
 
     // ============================================================
     // 4. PARCHE: setupNewSeason — resetear acumulados de temporada
