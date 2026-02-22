@@ -355,7 +355,7 @@
                     <!-- Datos de contrato -->
                     <div style="margin: 10px 0; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 5px;">
                         <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
+                        <div style="display: grid; grid-template-columns: 1fr 40px 1fr 1fr; gap: 5px;">
                             <div>
                                 <small style="color: #e94560;">Tipo</small>
                                 <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
