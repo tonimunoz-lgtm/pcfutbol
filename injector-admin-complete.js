@@ -340,7 +340,7 @@
                 <div class="player-card">
                     <div class="player-card-header">
                         <strong style="color: #e94560;">#${index + 1} - OVR: ${player.overall || calculateOverall(player)}</strong>
-                        <button class="btn" style="background: #c73446; padding: 1px 3px; font-size: 0.6rem;" onclick="window.adminBackend.removePlayer(${index})">🗑️ Eliminar</button>
+                        <button class="btn" style="background: #c73446; padding: 1px 3px; font-size: 0.6rem;" onclick="window.adminBackend.removePlayer(${index})">Eliminar</button>
                     </div>
                     
                     <!-- Datos básicos -->
