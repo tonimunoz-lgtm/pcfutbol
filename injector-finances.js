@@ -249,7 +249,7 @@
         if (!container) return;
 
         container.innerHTML = `
-        <div class="page-header">
+       <div class="page-header">
             <h1>💼 Caja & Finanzas</h1>
             <button class="page-close-btn" onclick="closePage('finance')">✖ CERRAR</button>
         </div>
@@ -397,140 +397,15 @@
         console.log('[Finances] Panel de finanzas construido.');
     }
 
-    // ============================================================
-    // 6. UI: refresco del panel
-    // ============================================================
-    function setupRefresh() {
-function refreshFinancePanel() {
-    if (!window.gameLogic) return;
-    const state = window.gameLogic.getGameState();
-    if (!state || !state.team) return;
+   // ============================================================
+// 6. UI: refresco del panel
+// ============================================================
+function setupRefresh() {
 
-    function setText(id, text, color) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.textContent = text;
-        if (color) el.style.color = color;
-    }
-    function fmt(n) { return Math.round(n).toLocaleString('es-ES'); }
-
-    const balance = state.balance || 0;
-    setText('fin_balance', fmt(balance) + '€', balance < 0 ? '#f44336' : '#fff');
-
-    const wi = state.weeklyIncome || 0;
-    const we = state.weeklyExpenses || 0;
-    const weeklyNet = wi - we;
-    setText('fin_weeklyIncome', fmt(wi) + '€', '#4CAF50');
-    setText('fin_weeklyExpenses', fmt(we) + '€', '#f44336');
-    setText('fin_weeklyResult', (weeklyNet >= 0 ? '+' : '') + fmt(weeklyNet) + '€', weeklyNet >= 0 ? '#4CAF50' : '#f44336');
-
-    // Sliders de precios con valor pendiente
-    let ts = document.getElementById('fin_ticketSlider');
-    const tsVal = document.getElementById('fin_ticketPriceVal');
-    if (ts && tsVal) {
-        ts.value = state.pendingTicketPrice !== null ? state.pendingTicketPrice : state.ticketPrice;
-        tsVal.textContent = ts.value + '€';
-    }
-    let ms = document.getElementById('fin_merchSlider');
-    const msVal = document.getElementById('fin_merchPriceVal');
-    if (ms && msVal) {
-        ms.value = state.pendingMerchandisingPrice !== null ? state.pendingMerchandisingPrice : state.merchandisingPrice;
-        msVal.textContent = ms.value + '€';
-    }
-
-    // --- Ingresos recurrentes ---
-    let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
-    attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
-    const ticketIncome = Math.floor(state.ticketPrice * attendance);
-    const merchRevenue = state.merchandisingRevenue || 0;
-    const baseIncome = state.weeklyIncomeBase || 5000;
-
-    setText('fin_ticketIncome', fmt(ticketIncome) + '€', '#4CAF50');
-    setText('fin_ticketDetail', `— ${fmt(attendance)} espectadores × ${state.ticketPrice}€`);
-    setText('fin_merchIncome', fmt(merchRevenue) + '€', '#4CAF50');
-    setText('fin_merchDetail', `— ${fmt(state.merchandisingItemsSold || 0)} uds × ${state.merchandisingPrice}€`);
-    setText('fin_baseIncome', fmt(baseIncome) + '€', '#4CAF50');
-    setText('fin_totalIncome', fmt(wi) + '€', '#4CAF50');
-
-    // --- Gastos recurrentes ---
-    const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
-    const staffActive = Object.values(state.staff).filter(s => s);
-    const staffSalaries = staffActive.reduce((sum, s) => sum + (s?.salary || 0), 0);
-
-    setText('fin_playerSalaries', fmt(playerSalaries) + '€/sem', '#f44336');
-    setText('fin_playerCount', `— ${state.squad.length} jugadores`);
-    setText('fin_staffSalaries', fmt(staffSalaries) + '€/sem', '#f44336');
-    setText('fin_staffCount', `— ${staffActive.length} miembros del staff`);
-    setText('fin_totalExpenses', fmt(we) + '€/sem', '#f44336');
-
-    // --- Mercado ---
-    const purchases = state.playerPurchases || 0;
-    const sales = state.playerSalesIncome || 0;
-    const compensations = state.playerCompensations || 0;
-    const transferBal = sales - purchases - compensations;
-
-    setText('fin_purchases', fmt(purchases) + '€', '#f44336');
-    setText('fin_sales', fmt(sales) + '€', '#4CAF50');
-    setText('fin_compensations', fmt(compensations) + '€', '#f44336');
-    setText('fin_transferBalance',
-        (transferBal >= 0 ? '+' : '') + fmt(transferBal) + '€',
-        transferBal >= 0 ? '#4CAF50' : '#f44336');
-
-    // --- Remodelaciones ---
-    const movements = state.seasonMovements || [];
-    const renovations = movements.filter(m => m.type === 'renovation');
-    const stadiumRenovCost = renovations
-        .filter(m => m.description.toLowerCase().includes('estadio'))
-        .reduce((sum, m) => sum + Math.abs(m.amount), 0);
-    const trainingRenovCost = renovations
-        .filter(m => m.description.toLowerCase().includes('entrenamiento'))
-        .reduce((sum, m) => sum + Math.abs(m.amount), 0);
-    const totalRenovations = state.renovationExpenses || 0;
-
-    setText('fin_stadiumRenovation', fmt(stadiumRenovCost) + '€', stadiumRenovCost > 0 ? '#f44336' : '#777');
-    setText('fin_stadiumCapacity', `Cap: ${fmt(state.stadiumCapacity)}`);
-    setText('fin_trainingRenovation', fmt(trainingRenovCost) + '€', trainingRenovCost > 0 ? '#f44336' : '#777');
-    setText('fin_trainingLevel', `Nivel: ${state.trainingLevel || 1}`);
-    setText('fin_totalRenovations', fmt(totalRenovations) + '€', totalRenovations > 0 ? '#f44336' : '#777');
-
-    // Lista de remodelaciones
-    const renovList = document.getElementById('fin_renovationsList');
-    if (renovList) {
-        if (renovations.length === 0) {
-            renovList.innerHTML = '<span style="color:#666; font-style:italic;">Sin remodelaciones esta temporada.</span>';
-        } else {
-            renovList.innerHTML = renovations.map(r =>
-                `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222;">
-                    <span>Sem ${r.week} — ${r.description}</span>
-                    <span style="color:#f44336; margin-left:12px;">-${fmt(Math.abs(r.amount))}€</span>
-                </div>`
-            ).join('');
-        }
-    }
-
-    // --- Historial de movimientos ---
-    const movEl = document.getElementById('fin_movementsList');
-    if (movEl) {
-        const nonRenov = movements.filter(m => m.type !== 'renovation');
-        if (nonRenov.length === 0) {
-            movEl.innerHTML = '<span style="color:#666;">Sin movimientos registrados esta temporada.</span>';
-        } else {
-            const icons = {
-                purchase: '💸', sale: '💰', compensation: '🚪',
-                staff_hire: '👔', staff_compensation: '🚫', renovation: '🏗️'
-            };
-            movEl.innerHTML = [...nonRenov].reverse().map(m => {
-                const isPositive = m.amount > 0;
-                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #1a1a1a;">
-                    <span>${icons[m.type] || '•'} <span style="color:#ccc;">Sem ${m.week}</span> — ${m.description}</span>
-                    <span style="font-weight:bold; color:${isPositive ? '#4CAF50' : '#f44336'}; margin-left:12px; white-space:nowrap;">
-                        ${isPositive ? '+' : ''}${fmt(m.amount)}€
-                    </span>
-                </div>`;
-            }).join('');
-        }
-    }
-}
+    function refreshFinancePanel() {
+        if (!window.gameLogic) return;
+        const state = window.gameLogic.getGameState();
+        if (!state || !state.team) return;
 
         function setText(id, text, color) {
             const el = document.getElementById(id);
@@ -538,16 +413,128 @@ function refreshFinancePanel() {
             el.textContent = text;
             if (color) el.style.color = color;
         }
+        function fmt(n) { return Math.round(n).toLocaleString('es-ES'); }
 
-        function fmt(n) {
-            return Math.round(n).toLocaleString('es-ES');
+        // --- Balance e ingresos/gastos ---
+        const balance = state.balance || 0;
+        setText('fin_balance', fmt(balance) + '€', balance < 0 ? '#f44336' : '#fff');
+
+        const wi = state.weeklyIncome || 0;
+        const we = state.weeklyExpenses || 0;
+        const weeklyNet = wi - we;
+        setText('fin_weeklyIncome', fmt(wi) + '€', '#4CAF50');
+        setText('fin_weeklyExpenses', fmt(we) + '€', '#f44336');
+        setText('fin_weeklyResult', (weeklyNet >= 0 ? '+' : '') + fmt(weeklyNet) + '€', weeklyNet >= 0 ? '#4CAF50' : '#f44336');
+
+        // --- Sliders de precios ---
+        let ts = document.getElementById('fin_ticketSlider');
+        const tsVal = document.getElementById('fin_ticketPriceVal');
+        if (ts && tsVal) {
+            ts.value = state.pendingTicketPrice !== null ? state.pendingTicketPrice : state.ticketPrice;
+            tsVal.textContent = ts.value + '€';
+        }
+        let ms = document.getElementById('fin_merchSlider');
+        const msVal = document.getElementById('fin_merchPriceVal');
+        if (ms && msVal) {
+            ms.value = state.pendingMerchandisingPrice !== null ? state.pendingMerchandisingPrice : state.merchandisingPrice;
+            msVal.textContent = ms.value + '€';
         }
 
-        window._financeRefresh = refreshFinancePanel;
-        window.updateFinanceDisplay = refreshFinancePanel;
+        // --- Ingresos recurrentes ---
+        let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
+        attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
+        const ticketIncome = Math.floor(state.ticketPrice * attendance);
+        const merchRevenue = state.merchandisingRevenue || 0;
+        const baseIncome = state.weeklyIncomeBase || 5000;
 
-        console.log('[Finances] Función de refresco configurada.');
+        setText('fin_ticketIncome', fmt(ticketIncome) + '€', '#4CAF50');
+        setText('fin_ticketDetail', `— ${fmt(attendance)} espectadores × ${state.ticketPrice}€`);
+        setText('fin_merchIncome', fmt(merchRevenue) + '€', '#4CAF50');
+        setText('fin_merchDetail', `— ${fmt(state.merchandisingItemsSold || 0)} uds × ${state.merchandisingPrice}€`);
+        setText('fin_baseIncome', fmt(baseIncome) + '€', '#4CAF50');
+        setText('fin_totalIncome', fmt(wi) + '€', '#4CAF50');
+
+        // --- Gastos recurrentes ---
+        const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
+        const staffActive = Object.values(state.staff).filter(s => s);
+        const staffSalaries = staffActive.reduce((sum, s) => sum + (s?.salary || 0), 0);
+
+        setText('fin_playerSalaries', fmt(playerSalaries) + '€/sem', '#f44336');
+        setText('fin_playerCount', `— ${state.squad.length} jugadores`);
+        setText('fin_staffSalaries', fmt(staffSalaries) + '€/sem', '#f44336');
+        setText('fin_staffCount', `— ${staffActive.length} miembros del staff`);
+        setText('fin_totalExpenses', fmt(we) + '€/sem', '#f44336');
+
+        // --- Mercado ---
+        const purchases = state.playerPurchases || 0;
+        const sales = state.playerSalesIncome || 0;
+        const compensations = state.playerCompensations || 0;
+        const transferBal = sales - purchases - compensations;
+
+        setText('fin_purchases', fmt(purchases) + '€', '#f44336');
+        setText('fin_sales', fmt(sales) + '€', '#4CAF50');
+        setText('fin_compensations', fmt(compensations) + '€', '#f44336');
+        setText('fin_transferBalance', (transferBal >= 0 ? '+' : '') + fmt(transferBal) + '€', transferBal >= 0 ? '#4CAF50' : '#f44336');
+
+        // --- Remodelaciones ---
+        const movements = state.seasonMovements || [];
+        const renovations = movements.filter(m => m.type === 'renovation');
+        const stadiumRenovCost = renovations.filter(m => m.description.toLowerCase().includes('estadio'))
+            .reduce((sum, m) => sum + Math.abs(m.amount), 0);
+        const trainingRenovCost = renovations.filter(m => m.description.toLowerCase().includes('entrenamiento'))
+            .reduce((sum, m) => sum + Math.abs(m.amount), 0);
+        const totalRenovations = state.renovationExpenses || 0;
+
+        setText('fin_stadiumRenovation', fmt(stadiumRenovCost) + '€', stadiumRenovCost > 0 ? '#f44336' : '#777');
+        setText('fin_stadiumCapacity', `Cap: ${fmt(state.stadiumCapacity)}`);
+        setText('fin_trainingRenovation', fmt(trainingRenovCost) + '€', trainingRenovCost > 0 ? '#f44336' : '#777');
+        setText('fin_trainingLevel', `Nivel: ${state.trainingLevel || 1}`);
+        setText('fin_totalRenovations', fmt(totalRenovations) + '€', totalRenovations > 0 ? '#f44336' : '#777');
+
+        // Lista de remodelaciones
+        const renovList = document.getElementById('fin_renovationsList');
+        if (renovList) {
+            if (renovations.length === 0) {
+                renovList.innerHTML = '<span style="color:#666; font-style:italic;">Sin remodelaciones esta temporada.</span>';
+            } else {
+                renovList.innerHTML = renovations.map(r =>
+                    `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222;">
+                        <span>Sem ${r.week} — ${r.description}</span>
+                        <span style="color:#f44336; margin-left:12px;">-${fmt(Math.abs(r.amount))}€</span>
+                    </div>`
+                ).join('');
+            }
+        }
+
+        // --- Historial de movimientos ---
+        const movEl = document.getElementById('fin_movementsList');
+        if (movEl) {
+            const nonRenov = movements.filter(m => m.type !== 'renovation');
+            if (nonRenov.length === 0) {
+                movEl.innerHTML = '<span style="color:#666;">Sin movimientos registrados esta temporada.</span>';
+            } else {
+                const icons = {
+                    purchase: '💸', sale: '💰', compensation: '🚪',
+                    staff_hire: '👔', staff_compensation: '🚫', renovation: '🏗️'
+                };
+                movEl.innerHTML = [...nonRenov].reverse().map(m => {
+                    const isPositive = m.amount > 0;
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #1a1a1a;">
+                        <span>${icons[m.type] || '•'} <span style="color:#ccc;">Sem ${m.week}</span> — ${m.description}</span>
+                        <span style="font-weight:bold; color:${isPositive ? '#4CAF50' : '#f44336'}; margin-left:12px; white-space:nowrap;">
+                            ${isPositive ? '+' : ''}${fmt(m.amount)}€
+                        </span>
+                    </div>`;
+                }).join('');
+            }
+        }
     }
+
+    window._financeRefresh = refreshFinancePanel;
+    window.updateFinanceDisplay = refreshFinancePanel;
+
+    console.log('[Finances] Función de refresco configurada.');
+}
 
     // ============================================================
     // 7. Otros parches (dashboard y openPage)
@@ -580,4 +567,11 @@ function refreshFinancePanel() {
         patchTransactions();
         patchNewSeason();
         patchDashboard();
-       
+        patchUpdateWeeklyFinancials();
+        patchAdvanceWeek();
+        hookPageOpen();
+    }
+
+    init();
+
+})();
