@@ -242,13 +242,6 @@
     text-align: center;
 }
 
-/* Contenedor de jugadores con scroll horizontal si hace falta */
-#playersListContainer {
-    max-height: 500px;
-    overflow-y: auto;
-    overflow-x: auto; /* permite scroll horizontal si el grid es muy ancho */
-    padding-right: 10px; 
-}
                 </style>
             `;
             document.body.appendChild(modal);
