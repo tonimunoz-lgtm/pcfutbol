@@ -224,7 +224,7 @@
                     }
                     .player-inputs {
                         display: grid;
-                        grid-template-columns: 100px 60px 60px;
+                        grid-template-columns: 100px 60px 50px;
                         gap: 5px;
                         margin-bottom: 10px;
                     }
@@ -357,7 +357,7 @@
                         <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
                             <div>
-                                <small style="color: #e94560;">Tipo </small>
+                                <small style="color: #e94560;">Tipo</small>
                                 <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
                                     <option value="owned" ${(player.contractType || 'owned') === 'owned' ? 'selected' : ''}>Propiedad</option>
                                     <option value="loaned" ${player.contractType === 'loaned' ? 'selected' : ''}>Cedido</option>
@@ -372,7 +372,7 @@
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="100" value="${player.salary || 1000}" onchange="window.adminBackend.updatePlayer(${index}, 'salary', parseInt(this.value))">
                             </div>
                             <div>
-                                <small style="color: #e94560;">Cláusula r</small>
+                                <small style="color: #e94560;">Cláusula </small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="10000" value="${player.releaseClause || 0}" onchange="window.adminBackend.updatePlayer(${index}, 'releaseClause', parseInt(this.value))">
                             </div>
                         </div>
