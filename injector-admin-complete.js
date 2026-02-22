@@ -192,7 +192,7 @@
                     <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="document.getElementById('adminModal').classList.remove('active')">Cerrar</button>
                 </div>
                 
-                <style>
+                 <style>
                     .admin-tab {
                         flex: 1;
                         padding: 12px;
@@ -222,43 +222,22 @@
                         align-items: center;
                         margin-bottom: 10px;
                     }
-                    /* Contenedor de inputs básicos (Nombre, Posición, Edad) */
-.player-inputs {
-    display: grid;
-    grid-template-columns: 3fr 1.5fr 1fr; /* nombre más ancho, posición intermedia, edad pequeña */
-    gap: 10px;
-}
-
-/* Contenedor de contrato */
-.player-contracts {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1.5fr; /* Tipo | Años | Salario | Cláusula más ancho */
-    gap: 10px;
-}
-
-/* Inputs de contrato */
-.player-contracts input,
-.player-contracts select {
-    width: 100%;
-    min-width: 60px; /* asegura que no se colapse */
-    padding: 5px;
-    box-sizing: border-box;
-}
-
-/* Atributos siguen igual */
-.player-attributes {
-    display: grid;
-    grid-template-columns: repeat(9, 60px);
-    gap: 5px;
-}
-
-.attr-input {
-    width: 100%;
-    min-width: 50px;
-    padding: 5px;
-    text-align: center;
-}
-
+                    .player-inputs {
+                        display: grid;
+                        grid-template-columns: 2fr 1fr 1fr;
+                        gap: 10px;
+                        margin-bottom: 10px;
+                    }
+                    .player-attributes {
+                        display: grid;
+                        grid-template-columns: repeat(9, 1fr);
+                        gap: 5px;
+                    }
+                    .attr-input {
+                        width: 100%;
+                        padding: 5px;
+                        text-align: center;
+                    }
                 </style>
             `;
             document.body.appendChild(modal);
