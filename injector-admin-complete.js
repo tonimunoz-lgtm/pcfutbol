@@ -357,14 +357,14 @@
                         <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
                             <div>
-                                <small style="color: #e94560;">Tipo c</small>
+                                <small style="color: #e94560;">Tipo </small>
                                 <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
                                     <option value="owned" ${(player.contractType || 'owned') === 'owned' ? 'selected' : ''}>Propiedad</option>
                                     <option value="loaned" ${player.contractType === 'loaned' ? 'selected' : ''}>Cedido</option>
                                 </select>
                             </div>
                             <div>
-                                <small style="color: #e94560;">Años </small>
+                                <small style="color: #e94560;">Años</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" max="10" value="${player.contractYears || 3}" onchange="window.adminBackend.updatePlayer(${index}, 'contractYears', parseInt(this.value))">
                             </div>
                             <div>
