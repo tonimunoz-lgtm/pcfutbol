@@ -224,18 +224,18 @@
                     }
                     .player-inputs {
                         display: grid;
-                        grid-template-columns: 2fr 1fr 1fr;
+                        grid-template-columns: 80px 40px 40px;
                         gap: 10px;
                         margin-bottom: 10px;
                     }
                     .player-attributes {
                         display: grid;
-                        grid-template-columns: repeat(9, 35px);
+                        grid-template-columns: repeat(9, 40px);
                         gap: 5px;
                     }
                     .attr-input {
                         width: 100%;
-                        min-width: 30px; /* asegura que el input no se colapse */
+                        min-width: 20px; /* asegura que el input no se colapse */
                         padding: 5px;
                         text-align: center;
                     }
