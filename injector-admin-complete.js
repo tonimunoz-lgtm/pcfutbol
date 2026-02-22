@@ -235,7 +235,7 @@
                     }
                     .attr-input {
                         width: 100%;
-                        min-width: 20px; /* asegura que el input no se colapse */
+                        min-width: 30px; /* asegura que el input no se colapse */
                         padding: 5px;
                         text-align: center;
                     }
