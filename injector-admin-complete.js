@@ -224,7 +224,7 @@
                     }
                     .player-inputs {
                         display: grid;
-                        grid-template-columns: 80px 60px 60px;
+                        grid-template-columns: 100px 70px 70px;
                         gap: 5px;
                         margin-bottom: 10px;
                     }
@@ -364,7 +364,7 @@
                                 </select>
                             </div>
                             <div>
-                                <small style="color: #e94560;">Años cont</small>
+                                <small style="color: #e94560;">Años c</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" max="10" value="${player.contractYears || 3}" onchange="window.adminBackend.updatePlayer(${index}, 'contractYears', parseInt(this.value))">
                             </div>
                             <div>
@@ -372,7 +372,7 @@
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="100" value="${player.salary || 1000}" onchange="window.adminBackend.updatePlayer(${index}, 'salary', parseInt(this.value))">
                             </div>
                             <div>
-                                <small style="color: #e94560;">Cláusula</small>
+                                <small style="color: #e94560;">Cláusula resc</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="10000" value="${player.releaseClause || 0}" onchange="window.adminBackend.updatePlayer(${index}, 'releaseClause', parseInt(this.value))">
                             </div>
                         </div>
