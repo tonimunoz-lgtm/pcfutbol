@@ -357,18 +357,18 @@
                         <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
                             <div>
-                                <small style="color: #e94560;">Tipo</small>
+                                <small style="color: #e94560;">Tipo cont</small>
                                 <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
                                     <option value="owned" ${(player.contractType || 'owned') === 'owned' ? 'selected' : ''}>Propiedad</option>
                                     <option value="loaned" ${player.contractType === 'loaned' ? 'selected' : ''}>Cedido</option>
                                 </select>
                             </div>
                             <div>
-                                <small style="color: #e94560;">Años</small>
+                                <small style="color: #e94560;">Años cont</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" max="10" value="${player.contractYears || 3}" onchange="window.adminBackend.updatePlayer(${index}, 'contractYears', parseInt(this.value))">
                             </div>
                             <div>
-                                <small style="color: #e94560;">Salario/sem</small>
+                                <small style="color: #e94560;">Salario</small>
                                 <input type="number" style="width: 100%; padding: 5px;" min="0" step="100" value="${player.salary || 1000}" onchange="window.adminBackend.updatePlayer(${index}, 'salary', parseInt(this.value))">
                             </div>
                             <div>
@@ -379,9 +379,7 @@
                     </div>
                     
                     <!-- Atributos -->
-                    <div style="margin-bottom: 10px;">
-                        <small style="color: #999;">⚽ Atributos (1-99):</small>
-                    </div>
+                   
                     <div class="player-attributes">
                         ${ATTRIBUTES.map(attr => `
                             <div>
