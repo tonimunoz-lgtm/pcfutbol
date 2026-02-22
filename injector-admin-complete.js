@@ -230,7 +230,7 @@
                     }
                     .player-attributes {
                         display: grid;
-                        grid-template-columns: repeat(9, 1fr);
+                        grid-template-columns: repeat(9, 2fr);
                         gap: 5px;
                     }
                     .attr-input {
