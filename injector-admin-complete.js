@@ -229,18 +229,8 @@
                         margin-bottom: 10px;
                     }
                     /* Ajuste quirúrgico para que los inputs de atributos no se achiquen */
-.player-attributes {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* mínimo 60px, se expande según contenedor */
-    gap: 8px;
-}
-
-.attr-input {
-    width: 100%;
-    min-width: 50px; /* asegura que nunca se colapse */
-    padding: 5px;
-    text-align: center;
-}
+.player-attributes { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; } 
+.attr-input { width: 100%; padding: 5px; text-align: center; }
 
                 </style>
             `;
