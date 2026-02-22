@@ -7,7 +7,6 @@
 
     // ============================================================
     // 1. PARCHE: updateWeeklyFinancials — solo CALCULA, no descuenta
-    //    El descuento real ocurre solo al avanzar semana (ver parche 2)
     // ============================================================
     function patchUpdateWeeklyFinancials() {
         const gl = window.gameLogic;
@@ -35,7 +34,6 @@
 
             const weeklyExpenses = playerSalaries + staffSalaries;
 
-            // Solo actualiza las cifras informativas, SIN tocar el balance
             const patch = {
                 weeklyIncome,
                 weeklyExpenses,
@@ -44,11 +42,9 @@
             };
             Object.assign(window._gameStateInternal || {}, patch);
 
-            // Actualizar internamente vía updateGameState sin doble descuento
             if (gl._rawUpdateState) {
                 gl._rawUpdateState(patch);
             } else {
-                // fallback: actualizar directamente si hay acceso
                 try {
                     const s = gl.getGameState();
                     Object.assign(s, patch);
@@ -61,7 +57,6 @@
 
     // ============================================================
     // 2. PARCHE: avanzar semana — descuenta balance UNA VEZ
-    //    Interceptamos playMatch / advanceWeek
     // ============================================================
     function patchAdvanceWeek() {
         const gl = window.gameLogic;
@@ -74,13 +69,11 @@
             gl[fnName] = function (...args) {
                 const result = original.apply(this, args);
 
-                // Tras avanzar semana, aplicar ingresos y gastos UNA VEZ al balance
                 try {
                     const s = gl.getGameState();
                     const weeklyNet = (s.weeklyIncome || 0) - (s.weeklyExpenses || 0);
                     if (s.team && weeklyNet !== 0) {
                         const newBalance = (s.balance || 0) + weeklyNet;
-                        // Registrar en histórico semanal
                         if (!s.weeklyFinancialHistory) s.weeklyFinancialHistory = [];
                         s.weeklyFinancialHistory.push({
                             week: s.week,
@@ -102,103 +95,84 @@
     }
 
     // ============================================================
-// 3. PARCHE: Registrar TODOS los movimientos extraordinarios
-// ============================================================
-function patchTransactions() {
-    const gl = window.gameLogic;
-    if (!gl) return;
+    // 3. PARCHE: Registrar TODOS los movimientos extraordinarios
+    // ============================================================
+    function patchTransactions() {
+        const gl = window.gameLogic;
+        if (!gl) return;
 
-    // Helper: añadir movimiento al historial de la temporada
-    function registerMovement(type, description, amount) {
-        const s = gl.getGameState();
-        if (!s.seasonMovements) s.seasonMovements = [];
-        s.seasonMovements.push({
-            week: s.week,
-            type,        // 'purchase' | 'sale' | 'compensation' | 'renovation' | 'staff_hire' | 'staff_compensation'
-            description,
-            amount       // positivo = ingreso, negativo = gasto
-        });
+        function registerMovement(type, description, amount) {
+            const s = gl.getGameState();
+            if (!s.seasonMovements) s.seasonMovements = [];
+            s.seasonMovements.push({ week: s.week, type, description, amount });
 
-        // Actualizar acumulados de temporada
-        const updates = { seasonMovements: s.seasonMovements };
+            const updates = { seasonMovements: s.seasonMovements };
 
-        if (type === 'purchase' || type === 'staff_hire') {
-            updates.playerPurchases = (s.playerPurchases || 0) + Math.abs(amount);
-        }
-        if (type === 'sale') {
-            updates.playerSalesIncome = (s.playerSalesIncome || 0) + Math.abs(amount);
-        }
-        if (type === 'compensation' || type === 'staff_compensation') {
-            updates.playerCompensations = (s.playerCompensations || 0) + Math.abs(amount);
-        }
-        if (type === 'renovation') {
-            updates.renovationExpenses = (s.renovationExpenses || 0) + Math.abs(amount);
-        }
-
-        gl.updateGameState(updates);
-    }
-
-    // Guardar helper global para usar en wrappers
-    window._financeRegisterMovement = registerMovement;
-
-    // --- Wrapper seguro: hireStaffFromCandidates ---
-    const origHireStaff = gl.hireStaffFromCandidates;
-    if (origHireStaff) {
-        // Creamos una función global que envuelve la original sin sobrescribirla
-        window._hireStaffWrapper = function(candidate) {
-            const sBefore = gl.getGameState();
-            const existingStaff = sBefore.staff[candidate.role];
-
-            const result = origHireStaff.call(gl, candidate);
-
-            if (result && result.success) {
-                // Indemnización del staff despedido
-                if (existingStaff) {
-                    const indemnization = existingStaff.salary * 52;
-                    registerMovement('staff_compensation',
-                        `Indemnización: ${existingStaff.name} (${existingStaff.role})`,
-                        -indemnization);
-                }
-                // Cláusula / coste de contratación
-                registerMovement('staff_hire',
-                    `Contratación staff: ${candidate.name} (${candidate.role})`,
-                    -candidate.clausula);
+            if (type === 'purchase' || type === 'staff_hire') {
+                updates.playerPurchases = (s.playerPurchases || 0) + Math.abs(amount);
+            }
+            if (type === 'sale') {
+                updates.playerSalesIncome = (s.playerSalesIncome || 0) + Math.abs(amount);
+            }
+            if (type === 'compensation' || type === 'staff_compensation') {
+                updates.playerCompensations = (s.playerCompensations || 0) + Math.abs(amount);
+            }
+            if (type === 'renovation') {
+                updates.renovationExpenses = (s.renovationExpenses || 0) + Math.abs(amount);
             }
 
-            return result;
-        };
+            gl.updateGameState(updates);
+        }
+
+        window._financeRegisterMovement = registerMovement;
+
+        // --- hireStaffFromCandidates ---
+        const origHireStaff = gl.hireStaffFromCandidates;
+        if (origHireStaff) {
+            window._hireStaffWrapper = function(candidate) {
+                const sBefore = gl.getGameState();
+                const existingStaff = sBefore.staff[candidate.role];
+
+                const result = origHireStaff.call(gl, candidate);
+
+                if (result && result.success) {
+                    if (existingStaff) {
+                        const indemnization = existingStaff.salary * 52;
+                        registerMovement('staff_compensation', `Indemnización: ${existingStaff.name} (${existingStaff.role})`, -indemnization);
+                    }
+                    registerMovement('staff_hire', `Contratación staff: ${candidate.name} (${candidate.role})`, -candidate.clausula);
+                }
+
+                return result;
+            };
+        }
+
+        // --- expandStadium ---
+        const origExpand = gl.expandStadium;
+        if (origExpand) {
+            window._expandStadiumWrapper = function(cost = 50000, capacityIncrease = 10000) {
+                const result = origExpand.call(gl, cost, capacityIncrease);
+                if (result && result.success) {
+                    registerMovement('renovation', `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`, -cost);
+                }
+                return result;
+            };
+        }
+
+        // --- improveFacilities ---
+        const origImprove = gl.improveFacilities;
+        if (origImprove) {
+            window._improveFacilitiesWrapper = function(cost = 30000, trainingLevelIncrease = 1) {
+                const result = origImprove.call(gl, cost, trainingLevelIncrease);
+                if (result && result.success) {
+                    registerMovement('renovation', `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`, -cost);
+                }
+                return result;
+            };
+        }
+
+        console.log('[Finances] Transacciones extraordinarias registradas (wrappers seguros aplicados).');
     }
-
-   // Wrapper seguro para expandStadium
-const origExpand = gl.expandStadium;
-if (origExpand) {
-    window._expandStadiumWrapper = function(cost = 50000, capacityIncrease = 10000) {
-        const result = origExpand.call(gl, cost, capacityIncrease);
-        if (result && result.success) {
-            window._financeRegisterMovement('renovation',
-                `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
-                -cost);
-        }
-        return result;
-    };
-}
-
-// Wrapper seguro para improveFacilities
-const origImprove = gl.improveFacilities;
-if (origImprove) {
-    window._improveFacilitiesWrapper = function(cost = 30000, trainingLevelIncrease = 1) {
-        const result = origImprove.call(gl, cost, trainingLevelIncrease);
-        if (result && result.success) {
-            window._financeRegisterMovement('renovation',
-                `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
-                -cost);
-        }
-        return result;
-    };
-}
-
-    console.log('[Finances] Transacciones extraordinarias registradas (wrapper seguro aplicado).');
-}
 
     // ============================================================
     // 4. PARCHE: setupNewSeason — resetear acumulados de temporada
@@ -210,8 +184,6 @@ if (origImprove) {
         const origSetup = gl.setupNewSeason;
         gl.setupNewSeason = function (...args) {
             const result = origSetup.apply(this, args);
-
-            // Resetear acumulados (el balance se MANTIENE)
             gl.updateGameState({
                 playerPurchases: 0,
                 playerSalesIncome: 0,
@@ -220,21 +192,17 @@ if (origImprove) {
                 seasonMovements: [],
                 weeklyFinancialHistory: []
             });
-
-            console.log('[Finances] Acumulados de temporada reseteados para nueva temporada.');
+            console.log('[Finances] Acumulados de temporada reseteados.');
             return result;
         };
     }
 
     // ============================================================
-    // 5. UI: Panel de Finanzas completo en la página #finance
+    // 5. UI: Panel de Finanzas
     // ============================================================
     function buildFinancePanel() {
         const container = document.getElementById('finance');
-        if (!container) {
-            console.warn('[Finances] Elemento #finance no encontrado.');
-            return;
-        }
+        if (!container) return;
 
         container.innerHTML = `
         <div class="page-header">
@@ -394,7 +362,7 @@ if (origImprove) {
     }
 
     // ============================================================
-    // 6. UI: función de refresco del panel
+    // 6. UI: refresco
     // ============================================================
     function setupRefresh() {
         function refreshFinancePanel() {
@@ -402,7 +370,7 @@ if (origImprove) {
             const state = window.gameLogic.getGameState();
             if (!state || !state.team) return;
 
-            // --- Bloque superior ---
+           // --- Bloque superior ---
             const balance = state.balance || 0;
             setText('fin_balance', fmt(balance) + '€', balance < 0 ? '#f44336' : '#fff');
 
@@ -533,17 +501,15 @@ if (origImprove) {
     }
 
     // ============================================================
-    // 7. PARCHE: Dashboard — resumen simplificado
+    // 7. Dashboard
     // ============================================================
     function patchDashboard() {
-        // Guardar la función original de dashboard
         const origUpdate = window.updateDashboardStats;
         if (!origUpdate) return;
 
         window.updateDashboardStats = function (state) {
             origUpdate.call(this, state);
 
-            // Actualizar los campos de transferencias del dashboard
             const purchases = state.playerPurchases || 0;
             const sales = state.playerSalesIncome || 0;
             const compensations = state.playerCompensations || 0;
@@ -569,12 +535,11 @@ if (origImprove) {
     }
 
     // ============================================================
-    // 8. Refrescar panel al abrir la página de finanzas
+    // 8. Hook openPage
     // ============================================================
     function hookPageOpen() {
         const origOpenPage = window.openPage;
         if (!origOpenPage) {
-            // openPage puede no estar aún, reintentar
             setTimeout(hookPageOpen, 400);
             return;
         }
@@ -589,7 +554,7 @@ if (origImprove) {
     }
 
     // ============================================================
-    // INIT: esperar a que el DOM y gameLogic estén listos
+    // INIT
     // ============================================================
     function init() {
         if (!window.gameLogic) {
@@ -603,12 +568,6 @@ if (origImprove) {
         patchNewSeason();
         patchDashboard();
         hookPageOpen();
-
-        // El parche de updateWeeklyFinancials es delicado —
-        // lo dejamos comentado hasta confirmar que el bug de doble descuento
-        // existe en tu versión exacta. Descomenta si lo confirmas:
-        // patchUpdateWeeklyFinancials();
-        // patchAdvanceWeek();
 
         console.log('[Finances] ✅ injector-finances.js cargado correctamente.');
     }
