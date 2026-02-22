@@ -169,33 +169,33 @@ function patchTransactions() {
         };
     }
 
-    // --- Parche: expandStadium ---
-    const origExpand = gl.expandStadium;
-    if (origExpand) {
-        gl.expandStadium = function(cost = 50000, capacityIncrease = 10000) {
-            const result = origExpand.call(this, cost, capacityIncrease);
-            if (result && result.success) {
-                registerMovement('renovation',
-                    `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
-                    -cost);
-            }
-            return result;
-        };
-    }
+   // Wrapper seguro para expandStadium
+const origExpand = gl.expandStadium;
+if (origExpand) {
+    window._expandStadiumWrapper = function(cost = 50000, capacityIncrease = 10000) {
+        const result = origExpand.call(gl, cost, capacityIncrease);
+        if (result && result.success) {
+            window._financeRegisterMovement('renovation',
+                `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
+                -cost);
+        }
+        return result;
+    };
+}
 
-    // --- Parche: improveFacilities ---
-    const origImprove = gl.improveFacilities;
-    if (origImprove) {
-        gl.improveFacilities = function(cost = 30000, trainingLevelIncrease = 1) {
-            const result = origImprove.call(this, cost, trainingLevelIncrease);
-            if (result && result.success) {
-                registerMovement('renovation',
-                    `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
-                    -cost);
-            }
-            return result;
-        };
-    }
+// Wrapper seguro para improveFacilities
+const origImprove = gl.improveFacilities;
+if (origImprove) {
+    window._improveFacilitiesWrapper = function(cost = 30000, trainingLevelIncrease = 1) {
+        const result = origImprove.call(gl, cost, trainingLevelIncrease);
+        if (result && result.success) {
+            window._financeRegisterMovement('renovation',
+                `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
+                -cost);
+        }
+        return result;
+    };
+}
 
     console.log('[Finances] Transacciones extraordinarias registradas (wrapper seguro aplicado).');
 }
