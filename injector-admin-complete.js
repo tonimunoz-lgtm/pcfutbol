@@ -230,12 +230,12 @@
                     }
                     .player-attributes {
                         display: grid;
-                        grid-template-columns: repeat(9, 60px);
+                        grid-template-columns: repeat(9, 40px);
                         gap: 5px;
                     }
                     .attr-input {
                         width: 100%;
-                        min-width: 50px; /* asegura que el input no se colapse */
+                        min-width: 30px; /* asegura que el input no se colapse */
                         padding: 5px;
                         text-align: center;
                     }
