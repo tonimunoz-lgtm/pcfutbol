@@ -340,7 +340,7 @@
                 <div class="player-card">
                     <div class="player-card-header">
                         <strong style="color: #e94560;">#${index + 1} - OVR: ${player.overall || calculateOverall(player)}</strong>
-                        <button class="btn" style="background: #c73446; padding: 5px 10px;" onclick="window.adminBackend.removePlayer(${index})">🗑️ Eliminar</button>
+                        <button class="btn" style="background: #c73446; padding: 2px 6px; font-size: 0.8rem;" onclick="window.adminBackend.removePlayer(${index})">🗑️ Eliminar</button>
                     </div>
                     
                     <!-- Datos básicos -->
@@ -355,7 +355,7 @@
                     <!-- Datos de contrato -->
                     <div style="margin: 10px 0; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 5px;">
                         <small style="color: #999; display: block; margin-bottom: 5px;">📝 Contrato:</small>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
                             <div>
                                 <small style="color: #e94560;">Tipo</small>
                                 <select style="width: 100%; padding: 5px;" onchange="window.adminBackend.updatePlayer(${index}, 'contractType', this.value)">
