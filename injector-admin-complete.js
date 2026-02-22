@@ -228,9 +228,25 @@
                         gap: 10px;
                         margin-bottom: 10px;
                     }
-                    /* Ajuste quirúrgico para que los inputs de atributos no se achiquen */
-.player-attributes { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; } 
-.attr-input { width: 100%; padding: 5px; text-align: center; }
+                    /* Mantener todo horizontal pero inputs más anchos */
+                    .player-attributes {
+                        display: grid;
+                        grid-template-columns: repeat(9, 60px); /* antes era 1fr por cada atributo, ahora fija 60px */
+                        gap: 5px;
+                    }
+
+                    .attr-input {
+                        width: 100%;
+                        min-width: 50px; /* asegura que el input no se colapse */
+                        padding: 5px;
+                        text-align: center;
+                    }
+
+                    /* Contenedor de jugadores igual, solo scroll vertical */
+                    #playersListContainer {
+                        max-height: 500px;
+                        overflow-y: auto;
+                    }
 
                 </style>
             `;
