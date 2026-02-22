@@ -222,31 +222,42 @@
                         align-items: center;
                         margin-bottom: 10px;
                     }
-                   /* Contenedor de inputs básicos (Nombre, Posición, Edad) */
+                    /* Contenedor de inputs básicos (Nombre, Posición, Edad) */
 .player-inputs {
     display: grid;
     grid-template-columns: 3fr 1.5fr 1fr; /* nombre más ancho, posición intermedia, edad pequeña */
     gap: 10px;
 }
-                    /* Mantener todo horizontal pero inputs más anchos */
-                    .player-attributes {
-                        display: grid;
-                        grid-template-columns: repeat(9, 60px); /* antes era 1fr por cada atributo, ahora fija 60px */
-                        gap: 5px;
-                    }
 
-                    .attr-input {
-                        width: 100%;
-                        min-width: 50px; /* asegura que el input no se colapse */
-                        padding: 5px;
-                        text-align: center;
-                    }
+/* Contenedor de contrato */
+.player-contracts {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1.5fr; /* Tipo | Años | Salario | Cláusula más ancho */
+    gap: 10px;
+}
 
-                    /* Contenedor de jugadores igual, solo scroll vertical */
-                    #playersListContainer {
-                        max-height: 500px;
-                        overflow-y: auto;
-                    }
+/* Inputs de contrato */
+.player-contracts input,
+.player-contracts select {
+    width: 100%;
+    min-width: 60px; /* asegura que no se colapse */
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+/* Atributos siguen igual */
+.player-attributes {
+    display: grid;
+    grid-template-columns: repeat(9, 60px);
+    gap: 5px;
+}
+
+.attr-input {
+    width: 100%;
+    min-width: 50px;
+    padding: 5px;
+    text-align: center;
+}
 
                 </style>
             `;
