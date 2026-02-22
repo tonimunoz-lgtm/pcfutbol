@@ -69,7 +69,7 @@
             modal.id = 'adminModal';
             modal.className = 'modal';
             modal.innerHTML = `
-                <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <<div class="modal-content" style="max-width: 1200px; width: 95vw; max-height: 90vh; overflow-y: auto; overflow-x: hidden;">
                     <span class="modal-close" onclick="document.getElementById('adminModal').classList.remove('active')">&times;</span>
                     <h1 style="color: #e94560;">🔧 Panel de Administración</h1>
                     
