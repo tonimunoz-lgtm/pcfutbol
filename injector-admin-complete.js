@@ -228,16 +228,27 @@
                         gap: 10px;
                         margin-bottom: 10px;
                     }
-                    .player-attributes {
-                        display: grid;
-                        grid-template-columns: repeat(9, 1fr);
-                        gap: 5px;
-                    }
-                    .attr-input {
-                        width: 100%;
-                        padding: 5px;
-                        text-align: center;
-                    }
+                    /* Ajuste quirúrgico para que los inputs de atributos no se achiquen */
+.player-attributes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* mínimo 60px, se expande según contenedor */
+    gap: 8px;
+}
+
+.attr-input {
+    width: 100%;
+    min-width: 50px; /* asegura que nunca se colapse */
+    padding: 5px;
+    text-align: center;
+}
+
+/* Contenedor de jugadores con scroll horizontal si hace falta */
+#playersListContainer {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto; /* permite scroll horizontal si el grid es muy ancho */
+    padding-right: 10px; 
+}
                 </style>
             `;
             document.body.appendChild(modal);
