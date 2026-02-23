@@ -1141,35 +1141,6 @@ function calculateTeamEffectiveOverall(lineup, formation = '433') {
     return playerCount > 0 ? totalOverall / playerCount : 40;
 }
   
-function generateInjury(player) {  
-    let injuryProb = BASE_INJURY_PROB_PER_MATCH;  
-    let recoveryMin = BASE_RECOVERY_TIME_WEEKS.min;  
-    let recoveryMax = BASE_RECOVERY_TIME_WEEKS.max;  
-  
-    if (gameState.staff.fisio) {  
-        const fisioLevel = gameState.staff.fisio.level;  
-        const fisioEffect = STAFF_LEVEL_EFFECTS[fisioLevel]?.injuryProb || 1;  
-        injuryProb /= fisioEffect;  
-    }  
-  
-    if (player.form < 60) injuryProb *= 1.5;  
-    if (player.AG > 85) injuryProb *= 1.2;  
-  
-    if (Math.random() < injuryProb) {  
-        player.isInjured = true;  
-        if (gameState.staff.medico) {  
-            const medicoLevel = gameState.staff.medico.level;  
-            const medicoEffect = STAFF_LEVEL_EFFECTS[medicoLevel]?.recoveryTime || 1;  
-            recoveryMin = Math.max(1, Math.round(recoveryMin / medicoEffect));  
-            recoveryMax = Math.max(1, Math.round(recoveryMax / medicoEffect));  
-        }  
-        player.weeksOut = Math.max(1, Math.round(Math.random() * (recoveryMax - recoveryMin) + recoveryMin));  
-  
-        addNews(`¡${player.name} se ha lesionado! Estará de baja ${player.weeksOut} semanas.`, 'warning');  
-        return true;  
-    }  
-    return false;  
-}  
   
 function calculateMatchOutcomeImproved({
     teamOverall,
