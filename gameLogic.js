@@ -613,11 +613,14 @@ function signPlayer(player) {
     
     // ✅ PRESERVAR campos de contrato
     // Si viene de una cesión
+    newPlayer.transferListed = false;
+    newPlayer.loanListed = false;
+
     if (newPlayer.loan === true) {
         newPlayer.contractType = 'loaned';
         newPlayer.contractYears = 1;
-        newPlayer.loanListed = false;
-        newPlayer.transferListed = false;
+    }
+        
     }
     // Si no tiene contractType, asignar
     else if (!newPlayer.contractType) {
@@ -2042,7 +2045,9 @@ function hireStaffFromCandidates(candidate) {
         return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}€/sem.` };  
     }  
   
-    gameState.balance -= candidate.clausula;  
+    gameState.balance -= candidate.clausula;
+    if (!gameState.playerPurchases) gameState.playerPurchases = 0;
+    gameState.playerPurchases += candidate.clausula + indemnization;
     gameState.staff[candidate.role] = candidate;  
     currentStaffCandidates[candidate.role] = null;  
     updateWeeklyFinancials();  
