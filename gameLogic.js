@@ -1958,9 +1958,9 @@ function updateWeeklyFinancials() {
                              Math.floor(gameState.ticketPrice * attendance) +  
                              gameState.merchandisingRevenue;  
   
-    if (gameState.team) {  
-        gameState.balance = gameState.balance + gameState.weeklyIncome - gameState.weeklyExpenses;  
-    }  
+   if (gameState.team && !window._financesSuppressBalance) {
+    gameState.balance = gameState.balance + gameState.weeklyIncome - gameState.weeklyExpenses;
+}
 }  
   
 function expandStadium(cost = 50000, capacityIncrease = 10000) {  
