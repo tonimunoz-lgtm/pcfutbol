@@ -621,7 +621,7 @@ function signPlayer(player) {
         newPlayer.contractYears = 1;
     }
         
-    }
+   // }
     // Si no tiene contractType, asignar
     else if (!newPlayer.contractType) {
         newPlayer.contractType = 'owned';
