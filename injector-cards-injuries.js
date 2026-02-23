@@ -1,3 +1,4 @@
+
 // injector-cards-injuries.js
 
 // CSS para sancionados (sin tocar style.css)
