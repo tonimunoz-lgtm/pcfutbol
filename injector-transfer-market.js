@@ -54,7 +54,7 @@
     }
 
     // =====================================================
-    // BUGFIX indice venta
+    // BUGFIX indice venta - sincronizar con expose-functions
     // =====================================================
     function patchSellPlayerIndex() {
         const originalOpen = window.openSellPlayerModal;
@@ -63,54 +63,16 @@
             const sorted = [...(state.squad || [])].sort((a, b) => b.overall - a.overall);
             if (sorted[playerIndex]) {
                 _sellPlayerName = sorted[playerIndex].name;
+                window._currentSellPlayerName = _sellPlayerName; // sincronizar con expose-functions
             }
             originalOpen(playerIndex);
         };
 
-        window.confirmListPlayer = function() {
-            if (!_sellPlayerName) return;
-            const state = window.gameLogic.getGameState();
-            const player = state.squad.find(p => p.name === _sellPlayerName);
-            if (!player) { alert('Jugador no encontrado'); return; }
-
-            const operationType = document.getElementById('sellOperationType').value;
-
-            if (operationType === 'transfer') {
-                const price = parseInt(document.getElementById('sellTransferPrice').value);
-                if (!price || price <= 0) { alert('Introduce un precio valido'); return; }
-                player.transferListed = true;
-                player.loanListed = false;
-                player.askingPrice = price;
-                player.weeksOnMarket = 0;
-                window.gameLogic.addNews(
-                    'Has puesto a ' + player.name + ' en venta por ' + price.toLocaleString('es-ES') + '\u20ac',
-                    'info'
-                );
-                alert(player.name + ' ha sido puesto en venta por ' + price.toLocaleString('es-ES') + '\u20ac');
-            } else {
-                const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
-                player.transferListed = false;
-                player.loanListed = true;
-                player.loanWageContribution = Math.round(player.salary * ((100 - wagePercent) / 100));
-                player.weeksOnMarket = 0;
-                window.gameLogic.addNews(
-                    'Has puesto a ' + player.name + ' disponible para cesion (asumes ' + wagePercent + '% salario)',
-                    'info'
-                );
-                alert(player.name + ' ha sido puesto disponible para cesion');
-            }
-
-            window.gameLogic.updateGameState(state);
-            window.gameLogic.saveToLocalStorage();
-            window.closeModal('sellPlayer');
-            window.ui.refreshUI(window.gameLogic.getGameState());
-            _sellPlayerName = null;
-        };
-
         window.updateLoanCostPreview = function() {
-            if (!_sellPlayerName) return;
+            const name = _sellPlayerName || window._currentSellPlayerName;
+            if (!name) return;
             const state = window.gameLogic.getGameState();
-            const player = state.squad.find(p => p.name === _sellPlayerName);
+            const player = state.squad.find(p => p.name === name);
             if (!player) return;
             const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
             const ourCost = Math.round(player.salary * (wagePercent / 100));
