@@ -1,215 +1,148 @@
 // ============================================================
-// injector-finances.js
-// Sistema de finanzas completo para PC Fútbol Manager
+// injector-finances.js  v2
+// Sistema de finanzas completo — PC Fútbol Manager
 // ============================================================
 (function () {
     'use strict';
 
     // ============================================================
-    // 1. PARCHE: updateWeeklyFinancials — solo CALCULA, no descuenta
-    //    El descuento real ocurre solo al avanzar semana (ver parche 2)
+    // UTILIDADES
     // ============================================================
-    function patchUpdateWeeklyFinancials() {
-        const gl = window.gameLogic;
-        if (!gl || !gl.updateWeeklyFinancials) {
-            console.warn('[Finances] gameLogic.updateWeeklyFinancials no disponible aún, reintentando...');
-            setTimeout(patchUpdateWeeklyFinancials, 500);
+    function fmt(n) {
+        return Math.round(n || 0).toLocaleString('es-ES');
+    }
+    function setText(id, text, color) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        if (color !== undefined) el.style.color = color;
+    }
+    function gl() { return window.gameLogic; }
+    function gs() { return gl() && gl().getGameState(); }
+
+    // ============================================================
+    // REGISTRO DE MOVIMIENTOS EXTRAORDINARIOS
+    // ============================================================
+    function registerMovement(type, description, amount) {
+        const state = gs();
+        if (!state) return;
+        const movements = state.seasonMovements || [];
+        movements.push({ week: state.week, type, description, amount });
+
+        const updates = { seasonMovements: movements };
+
+        if (type === 'purchase' || type === 'staff_hire') {
+            updates.playerPurchases = (state.playerPurchases || 0) + Math.abs(amount);
+        }
+        if (type === 'sale') {
+            updates.playerSalesIncome = (state.playerSalesIncome || 0) + Math.abs(amount);
+        }
+        if (type === 'compensation' || type === 'staff_compensation') {
+            updates.playerCompensations = (state.playerCompensations || 0) + Math.abs(amount);
+        }
+        if (type === 'renovation') {
+            updates.renovationExpenses = (state.renovationExpenses || 0) + Math.abs(amount);
+        }
+
+        gl().updateGameState(updates);
+    }
+
+    window._financeRegisterMovement = registerMovement;
+
+    // ============================================================
+    // INTERCEPTAR window.expandStadium y window.improveFacilities
+    // Estos ya son funciones window definidas en index.html.
+    // Las parcheamos para registrar el movimiento en el historial.
+    // ============================================================
+    function patchFacilities() {
+        if (typeof window.expandStadium !== 'function') {
+            setTimeout(patchFacilities, 200);
             return;
         }
 
-        gl.updateWeeklyFinancials = function () {
-            const state = gl.getGameState();
-
-            const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
-            const staffSalaries = Object.values(state.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);
-
-            let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
-            attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
-
-            const merchandisingItemsSold = Math.floor(state.fanbase * (state.popularity / 500) * (0.01 + 0.01));
-            const merchandisingRevenue = merchandisingItemsSold * state.merchandisingPrice;
-
-            const weeklyIncome = (state.weeklyIncomeBase || 5000) +
-                Math.floor(state.ticketPrice * attendance) +
-                merchandisingRevenue;
-
-            const weeklyExpenses = playerSalaries + staffSalaries;
-
-            // Solo actualiza las cifras informativas, SIN tocar el balance
-            const patch = {
-                weeklyIncome,
-                weeklyExpenses,
-                merchandisingItemsSold,
-                merchandisingRevenue
-            };
-            Object.assign(window._gameStateInternal || {}, patch);
-
-            // Actualizar internamente vía updateGameState sin doble descuento
-            if (gl._rawUpdateState) {
-                gl._rawUpdateState(patch);
-            } else {
-                // fallback: actualizar directamente si hay acceso
-                try {
-                    const s = gl.getGameState();
-                    Object.assign(s, patch);
-                } catch (e) {}
+        const origExpand = window.expandStadium;
+        window.expandStadium = function () {
+            const result = origExpand.apply(this, arguments);
+            if (result && result.success) {
+                registerMovement('renovation', 'Ampliacion estadio (+10.000 asientos)', -50000);
+                if (window._financeRefresh) window._financeRefresh();
             }
+            return result;
         };
 
-        console.log('[Finances] updateWeeklyFinancials parcheada — solo calcula, no descuenta.');
+        const origImprove = window.improveFacilities;
+        window.improveFacilities = function () {
+            const result = origImprove.apply(this, arguments);
+            if (result && result.success) {
+                const lvl = (gs() || {}).trainingLevel || '?';
+                registerMovement('renovation', `Mejora centro de entrenamiento (nivel ${lvl})`, -30000);
+                if (window._financeRefresh) window._financeRefresh();
+            }
+            return result;
+        };
+
+        console.log('[Finances] Remodelaciones parcheadas.');
     }
 
     // ============================================================
-    // 2. PARCHE: avanzar semana — descuenta balance UNA VEZ
-    //    Interceptamos playMatch / advanceWeek
+    // INTERCEPTAR window.hireStaffConfirm
     // ============================================================
-    function patchAdvanceWeek() {
-        const gl = window.gameLogic;
-        if (!gl) return;
+    function patchHireStaff() {
+        if (typeof window.hireStaffConfirm !== 'function') {
+            setTimeout(patchHireStaff, 200);
+            return;
+        }
 
-        ['playMatch', 'advancePreseasonWeek', 'advanceWeek'].forEach(fnName => {
-            const original = gl[fnName];
-            if (!original) return;
+        const origHire = window.hireStaffConfirm;
+        window.hireStaffConfirm = function (encodedCandidateJson) {
+            const stateBefore = gs();
+            const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));
+            const existingStaff = stateBefore ? stateBefore.staff[candidate.role] : null;
 
-            gl[fnName] = function (...args) {
-                const result = original.apply(this, args);
+            origHire.apply(this, arguments);
 
-                // Tras avanzar semana, aplicar ingresos y gastos UNA VEZ al balance
-                try {
-                    const s = gl.getGameState();
-                    const weeklyNet = (s.weeklyIncome || 0) - (s.weeklyExpenses || 0);
-                    if (s.team && weeklyNet !== 0) {
-                        const newBalance = (s.balance || 0) + weeklyNet;
-                        // Registrar en histórico semanal
-                        if (!s.weeklyFinancialHistory) s.weeklyFinancialHistory = [];
-                        s.weeklyFinancialHistory.push({
-                            week: s.week,
-                            income: s.weeklyIncome,
-                            expenses: s.weeklyExpenses,
-                            net: weeklyNet
-                        });
-                        gl.updateGameState({ balance: newBalance, weeklyFinancialHistory: s.weeklyFinancialHistory });
-                    }
-                } catch (e) {
-                    console.warn('[Finances] Error al aplicar balance semanal:', e);
+            const stateAfter = gs();
+            if (!stateAfter) return;
+            const newStaff = stateAfter.staff[candidate.role];
+
+            if (newStaff && newStaff.name === candidate.name) {
+                if (existingStaff) {
+                    const ind = existingStaff.salary * 52;
+                    registerMovement('staff_compensation',
+                        `Indemnizacion staff: ${existingStaff.name} (${candidate.role})`, -ind);
                 }
+                registerMovement('staff_hire',
+                    `Contratacion staff: ${candidate.name} (${candidate.role})`, -candidate.clausula);
+            }
 
-                return result;
-            };
-        });
+            if (window._financeRefresh) window._financeRefresh();
+        };
 
-        console.log('[Finances] Avance de semana parcheado — balance se aplica una sola vez.');
+        console.log('[Finances] hireStaffConfirm parcheado.');
     }
 
     // ============================================================
-    // 3. PARCHE: Registrar TODOS los movimientos extraordinarios
+    // DETECTAR LOCAL / VISITANTE
     // ============================================================
-    function patchTransactions() {
-        const gl = window.gameLogic;
-        if (!gl) return;
-
-        // Helper: añadir movimiento al historial de la temporada
-        function registerMovement(type, description, amount) {
-            const s = gl.getGameState();
-            if (!s.seasonMovements) s.seasonMovements = [];
-            s.seasonMovements.push({
-                week: s.week,
-                type,        // 'purchase' | 'sale' | 'compensation' | 'renovation' | 'staff_hire' | 'staff_compensation'
-                description,
-                amount       // positivo = ingreso, negativo = gasto
-            });
-
-            // Actualizar acumulados de temporada
-            const updates = { seasonMovements: s.seasonMovements };
-
-            if (type === 'purchase' || type === 'staff_hire') {
-                updates.playerPurchases = (s.playerPurchases || 0) + Math.abs(amount);
-            }
-            if (type === 'sale') {
-                updates.playerSalesIncome = (s.playerSalesIncome || 0) + Math.abs(amount);
-            }
-            if (type === 'compensation' || type === 'staff_compensation') {
-                updates.playerCompensations = (s.playerCompensations || 0) + Math.abs(amount);
-            }
-            if (type === 'renovation') {
-                updates.renovationExpenses = (s.renovationExpenses || 0) + Math.abs(amount);
-            }
-
-            gl.updateGameState(updates);
-        }
-
-        window._financeRegisterMovement = registerMovement;
-
-        // --- Parche: hireStaffFromCandidates ---
-        const origHireStaff = gl.hireStaffFromCandidates;
-        if (origHireStaff) {
-            gl.hireStaffFromCandidates = function (candidate) {
-                const sBefore = gl.getGameState();
-                const existingStaff = sBefore.staff[candidate.role];
-
-                const result = origHireStaff.call(this, candidate);
-
-                if (result && result.success) {
-                    // Indemnización del staff despedido
-                    if (existingStaff) {
-                        const indemnization = existingStaff.salary * 52;
-                        registerMovement('staff_compensation',
-                            `Indemnización: ${existingStaff.name} (${existingStaff.role})`,
-                            -indemnization);
-                    }
-                    // Cláusula / coste de contratación
-                    registerMovement('staff_hire',
-                        `Contratación staff: ${candidate.name} (${candidate.role})`,
-                        -candidate.clausula);
-                }
-                return result;
-            };
-        }
-
-        // --- Parche: expandStadium ---
-        const origExpand = gl.expandStadium;
-        if (origExpand) {
-            gl.expandStadium = function (cost = 50000, capacityIncrease = 10000) {
-                const result = origExpand.call(this, cost, capacityIncrease);
-                if (result && result.success) {
-                    registerMovement('renovation',
-                        `Ampliación estadio (+${capacityIncrease.toLocaleString('es-ES')} asientos)`,
-                        -cost);
-                }
-                return result;
-            };
-        }
-
-        // --- Parche: improveFacilities ---
-        const origImprove = gl.improveFacilities;
-        if (origImprove) {
-            gl.improveFacilities = function (cost = 30000, trainingLevelIncrease = 1) {
-                const result = origImprove.call(this, cost, trainingLevelIncrease);
-                if (result && result.success) {
-                    registerMovement('renovation',
-                        `Mejora centro de entrenamiento (nivel +${trainingLevelIncrease})`,
-                        -cost);
-                }
-                return result;
-            };
-        }
-
-        console.log('[Finances] Transacciones extraordinarias registradas.');
+    function isNextMatchHome() {
+        const state = gs();
+        if (!state || !state.seasonCalendar || !state.team) return null;
+        const nextWeek = state.week + 1;
+        const matches = state.seasonCalendar.filter(m => m.week === nextWeek);
+        const myMatch = matches.find(m => m.home === state.team || m.away === state.team);
+        if (!myMatch) return null;
+        return myMatch.home === state.team;
     }
 
     // ============================================================
-    // 4. PARCHE: setupNewSeason — resetear acumulados de temporada
+    // DETECTAR CAMBIO DE TEMPORADA Y RESETEAR ACUMULADOS
     // ============================================================
-    function patchNewSeason() {
-        const gl = window.gameLogic;
-        if (!gl || !gl.setupNewSeason) return;
-
-        const origSetup = gl.setupNewSeason;
-        gl.setupNewSeason = function (...args) {
-            const result = origSetup.apply(this, args);
-
-            // Resetear acumulados (el balance se MANTIENE)
-            gl.updateGameState({
+    let lastSeason = null;
+    function checkSeasonChange() {
+        const state = gs();
+        if (!state || !state.currentSeason) return;
+        if (lastSeason && lastSeason !== state.currentSeason) {
+            gl().updateGameState({
                 playerPurchases: 0,
                 playerSalesIncome: 0,
                 playerCompensations: 0,
@@ -217,397 +150,402 @@
                 seasonMovements: [],
                 weeklyFinancialHistory: []
             });
-
-            console.log('[Finances] Acumulados de temporada reseteados para nueva temporada.');
-            return result;
-        };
+            console.log('[Finances] Nueva temporada — acumulados reseteados.');
+        }
+        lastSeason = state.currentSeason;
     }
 
     // ============================================================
-    // 5. UI: Panel de Finanzas completo en la página #finance
+    // CONSTRUIR PANEL HTML
     // ============================================================
     function buildFinancePanel() {
         const container = document.getElementById('finance');
-        if (!container) {
-            console.warn('[Finances] Elemento #finance no encontrado.');
-            return;
-        }
+        if (!container) { console.warn('[Finances] #finance no encontrado.'); return; }
 
         container.innerHTML = `
         <div class="page-header">
-            <h1>💼 Caja & Finanzas</h1>
+            <h1>💼 Caja &amp; Finanzas</h1>
             <button class="page-close-btn" onclick="closePage('finance')">✖ CERRAR</button>
         </div>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- BLOQUE SUPERIOR: Balance y flujo semanal   -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px;">
-            <div class="data-box" style="text-align:center;">
+        <!-- RESUMEN SUPERIOR -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+            <div class="data-box" style="text-align:center; padding:14px;">
                 <div class="data-label">💰 Balance en Caja</div>
-                <div class="data-value" id="fin_balance" style="font-size:1.4em; font-weight:bold;">0€</div>
+                <div class="data-value" id="fin_balance" style="font-size:1.5em; font-weight:bold;">0€</div>
             </div>
-            <div class="data-box" style="text-align:center;">
-                <div class="data-label">📈 Ingresos/semana</div>
-                <div class="data-value" id="fin_weeklyIncome" style="color:#4CAF50;">0€</div>
+            <div class="data-box" style="text-align:center; padding:14px;">
+                <div class="data-label">📈 Ingresos estimados/jornada</div>
+                <div class="data-value" id="fin_weeklyIncome" style="color:#4CAF50; font-size:1.2em;">0€</div>
+                <div id="fin_homeAwayBadge" style="font-size:0.75em; margin-top:4px; color:#aaa;"></div>
             </div>
-            <div class="data-box" style="text-align:center;">
-                <div class="data-label">📉 Gastos/semana</div>
-                <div class="data-value" id="fin_weeklyExpenses" style="color:#f44336;">0€</div>
+            <div class="data-box" style="text-align:center; padding:14px;">
+                <div class="data-label">📉 Gastos recurrentes/sem</div>
+                <div class="data-value" id="fin_weeklyExpenses" style="color:#f44336; font-size:1.2em;">0€</div>
             </div>
         </div>
-
-        <!-- Resultado semanal -->
-        <div style="text-align:center; margin-bottom:20px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;">
-            <span style="color:#aaa; font-size:0.9em;">Resultado semanal estimado: </span>
-            <span id="fin_weeklyResult" style="font-weight:bold; font-size:1.1em;">0€</span>
+        <div style="text-align:center; margin-bottom:22px; padding:8px 16px; background:rgba(255,255,255,0.04); border-radius:8px;">
+            <span style="color:#aaa; font-size:0.9em;">Resultado estimado próxima jornada: </span>
+            <span id="fin_weeklyResult" style="font-weight:bold; font-size:1.15em;">0€</span>
         </div>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- INGRESOS RECURRENTES                               -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <h2 style="border-bottom:1px solid #333; padding-bottom:6px; margin-bottom:10px;">📊 Ingresos recurrentes (semanal)</h2>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <!-- INGRESOS RECURRENTES -->
+        <h2 style="border-bottom:1px solid #2a2a2a; padding-bottom:6px; margin-bottom:10px; font-size:1em; color:#ccc; text-transform:uppercase; letter-spacing:1px;">
+            📊 Ingresos recurrentes <span style="font-weight:normal; font-size:0.85em; color:#555;">(proyección próxima jornada)</span>
+        </h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.92em;">
             <tr>
                 <td style="padding:6px 4px; color:#aaa;">🎟️ Taquilla</td>
-                <td style="text-align:right; color:#4CAF50;" id="fin_ticketIncome">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_ticketDetail">— 0 espectadores × 0€</td>
+                <td style="text-align:right; min-width:90px;" id="fin_ticketIncome">0€</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_ticketDetail">—</td>
+            </tr>
+            <tr id="fin_awayWarningRow" style="display:none;">
+                <td colspan="3" style="padding:4px 4px 4px 16px; color:#f5a623; font-size:0.82em;">
+                    ✈️ Partido visitante — sin ingresos de taquilla ni merchandising en campo rival
+                </td>
             </tr>
             <tr>
                 <td style="padding:6px 4px; color:#aaa;">🛍️ Merchandising</td>
-                <td style="text-align:right; color:#4CAF50;" id="fin_merchIncome">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_merchDetail">— 0 uds × 0€</td>
+                <td style="text-align:right;" id="fin_merchIncome">0€</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_merchDetail">—</td>
             </tr>
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">📺 Derechos / Otros</td>
+                <td style="padding:6px 4px; color:#aaa;">📺 Derechos TV / patrocinios</td>
                 <td style="text-align:right; color:#4CAF50;" id="fin_baseIncome">0€</td>
                 <td></td>
             </tr>
-            <tr style="border-top:1px solid #333;">
-                <td style="padding:8px 4px; font-weight:bold;">Total ingresos</td>
-                <td style="text-align:right; font-weight:bold; color:#4CAF50;" id="fin_totalIncome">0€</td>
+            <tr style="border-top:1px solid #2a2a2a;">
+                <td style="padding:8px 4px; font-weight:bold;">Total ingresos estimados</td>
+                <td style="text-align:right; font-weight:bold; color:#4CAF50;" id="fin_totalIncomeRow">0€</td>
                 <td></td>
             </tr>
         </table>
 
-        <!-- Controles de precio (compactos) -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:22px;">
-            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                <div style="font-size:0.85em; color:#aaa; margin-bottom:6px;">Precio Entrada: <strong id="fin_ticketPriceVal">0€</strong></div>
+        <!-- Controles precio -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0 22px;">
+            <div style="background:rgba(255,255,255,0.04); padding:12px; border-radius:8px;">
+                <div style="font-size:0.85em; color:#aaa; margin-bottom:6px;">
+                    Precio Entrada: <strong id="fin_ticketPriceVal">0€</strong>
+                    <span style="color:#555; font-size:0.78em;"> — efecto desde próxima jornada</span>
+                </div>
                 <input type="range" id="fin_ticketSlider" min="5" max="100" value="20"
-                    style="width:100%;"
-                    oninput="document.getElementById('fin_ticketPriceVal').textContent=this.value+'€'"
-                    onchange="window.setTicketPriceFromSlider && window.setTicketPriceFromSlider(this.value); window._financeRefresh && window._financeRefresh();">
+                    style="width:100%; cursor:pointer;"
+                    oninput="document.getElementById('fin_ticketPriceVal').textContent=this.value+'€'; window._financePreviewPrice('ticket',this.value);"
+                    onchange="window.setTicketPriceFromSlider && window.setTicketPriceFromSlider(this.value);">
             </div>
-            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                <div style="font-size:0.85em; color:#aaa; margin-bottom:6px;">Precio Merch: <strong id="fin_merchPriceVal">0€</strong></div>
+            <div style="background:rgba(255,255,255,0.04); padding:12px; border-radius:8px;">
+                <div style="font-size:0.85em; color:#aaa; margin-bottom:6px;">
+                    Precio Merch: <strong id="fin_merchPriceVal">0€</strong>
+                    <span style="color:#555; font-size:0.78em;"> — efecto desde próxima jornada</span>
+                </div>
                 <input type="range" id="fin_merchSlider" min="1" max="50" value="10"
-                    style="width:100%;"
-                    oninput="document.getElementById('fin_merchPriceVal').textContent=this.value+'€'"
-                    onchange="window.setMerchandisingPriceFromSlider && window.setMerchandisingPriceFromSlider(this.value); window._financeRefresh && window._financeRefresh();">
+                    style="width:100%; cursor:pointer;"
+                    oninput="document.getElementById('fin_merchPriceVal').textContent=this.value+'€'; window._financePreviewPrice('merch',this.value);"
+                    onchange="window.setMerchandisingPriceFromSlider && window.setMerchandisingPriceFromSlider(this.value);">
             </div>
         </div>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- GASTOS RECURRENTES (salarios)                      -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <h2 style="border-bottom:1px solid #333; padding-bottom:6px; margin-bottom:10px;">💸 Gastos recurrentes (semanal)</h2>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <!-- GASTOS RECURRENTES -->
+        <h2 style="border-bottom:1px solid #2a2a2a; padding-bottom:6px; margin-bottom:10px; font-size:1em; color:#ccc; text-transform:uppercase; letter-spacing:1px;">
+            💸 Gastos recurrentes <span style="font-weight:normal; font-size:0.85em; color:#555;">(semanal)</span>
+        </h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:22px; font-size:0.92em;">
             <tr>
                 <td style="padding:6px 4px; color:#aaa;">⚽ Salarios plantilla</td>
-                <td style="text-align:right; color:#f44336;" id="fin_playerSalaries">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_playerCount">— 0 jugadores</td>
+                <td style="text-align:right; color:#f44336;" id="fin_playerSalaries">0€/sem</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_playerCount">—</td>
             </tr>
             <tr>
                 <td style="padding:6px 4px; color:#aaa;">👔 Salarios staff técnico</td>
-                <td style="text-align:right; color:#f44336;" id="fin_staffSalaries">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_staffCount">— 0 miembros</td>
+                <td style="text-align:right; color:#f44336;" id="fin_staffSalaries">0€/sem</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_staffCount">—</td>
             </tr>
-            <tr style="border-top:1px solid #333;">
+            <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px; font-weight:bold;">Total gastos recurrentes</td>
-                <td style="text-align:right; font-weight:bold; color:#f44336;" id="fin_totalExpenses">0€</td>
+                <td style="text-align:right; font-weight:bold; color:#f44336;" id="fin_totalExpensesRow">0€/sem</td>
                 <td></td>
             </tr>
         </table>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- OPERACIONES DE MERCADO (temporada)                 -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <h2 style="border-bottom:1px solid #333; padding-bottom:6px; margin-bottom:10px;">🔄 Mercado de fichajes <span style="font-size:0.7em; color:#666;">(temporada actual)</span></h2>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <!-- MERCADO DE FICHAJES -->
+        <h2 style="border-bottom:1px solid #2a2a2a; padding-bottom:6px; margin-bottom:10px; font-size:1em; color:#ccc; text-transform:uppercase; letter-spacing:1px;">
+            🔄 Mercado de fichajes <span style="font-weight:normal; font-size:0.85em; color:#555;">(temporada actual)</span>
+        </h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:22px; font-size:0.92em;">
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">💸 Inversión en fichajes</td>
-                <td style="text-align:right; color:#f44336;" id="fin_purchases">0€</td>
+                <td style="padding:6px 4px; color:#aaa;">💸 Inversion en fichajes</td>
+                <td style="text-align:right;" id="fin_purchases">0€</td>
             </tr>
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">💰 Ingresos por ventas</td>
-                <td style="text-align:right; color:#4CAF50;" id="fin_sales">0€</td>
+                <td style="padding:6px 4px; color:#aaa;">👔 Contratacion staff (clausulas)</td>
+                <td style="text-align:right;" id="fin_staffHireCost">0€</td>
             </tr>
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">🚪 Indemnizaciones pagadas</td>
-                <td style="text-align:right; color:#f44336;" id="fin_compensations">0€</td>
+                <td style="padding:6px 4px; color:#aaa;">💰 Ingresos por ventas de jugadores</td>
+                <td style="text-align:right;" id="fin_sales">0€</td>
             </tr>
-            <tr style="border-top:1px solid #333;">
+            <tr>
+                <td style="padding:6px 4px; color:#aaa;">🚪 Indemnizaciones jugadores</td>
+                <td style="text-align:right;" id="fin_compensations">0€</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 4px; color:#aaa;">🚫 Indemnizaciones staff</td>
+                <td style="text-align:right;" id="fin_staffCompensations">0€</td>
+            </tr>
+            <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px; font-weight:bold;">Balance de mercado</td>
                 <td style="text-align:right; font-weight:bold;" id="fin_transferBalance">0€</td>
             </tr>
         </table>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- REMODELACIONES (temporada)                         -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <h2 style="border-bottom:1px solid #333; padding-bottom:6px; margin-bottom:10px;">🏗️ Remodelaciones <span style="font-size:0.7em; color:#666;">(temporada actual)</span></h2>
-        <div id="fin_renovationsList" style="margin-bottom:10px; min-height:30px; color:#777; font-size:0.9em; font-style:italic;">
-            Sin remodelaciones esta temporada.
-        </div>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:22px;">
+        <!-- REMODELACIONES -->
+        <h2 style="border-bottom:1px solid #2a2a2a; padding-bottom:6px; margin-bottom:10px; font-size:1em; color:#ccc; text-transform:uppercase; letter-spacing:1px;">
+            🏗️ Remodelaciones <span style="font-weight:normal; font-size:0.85em; color:#555;">(temporada actual)</span>
+        </h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.92em;">
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">🏟️ Estadio</td>
-                <td style="text-align:right; color:#f44336;" id="fin_stadiumRenovation">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_stadiumCapacity">Cap: 0</td>
+                <td style="padding:6px 4px; color:#aaa;">🏟️ Ampliaciones de estadio</td>
+                <td style="text-align:right;" id="fin_stadiumRenov">0€</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_stadiumCap">—</td>
             </tr>
             <tr>
-                <td style="padding:6px 4px; color:#aaa;">🏋️ Centro de entrenamiento</td>
-                <td style="text-align:right; color:#f44336;" id="fin_trainingRenovation">0€</td>
-                <td style="padding-left:16px; color:#777; font-size:0.82em;" id="fin_trainingLevel">Nivel: 1</td>
+                <td style="padding:6px 4px; color:#aaa;">🏋️ Mejoras centro entrenamiento</td>
+                <td style="text-align:right;" id="fin_trainingRenov">0€</td>
+                <td style="padding-left:14px; color:#666; font-size:0.82em;" id="fin_trainingLvl">—</td>
             </tr>
-            <tr style="border-top:1px solid #333;">
+            <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px; font-weight:bold;">Total remodelaciones</td>
-                <td style="text-align:right; font-weight:bold; color:#f44336;" id="fin_totalRenovations">0€</td>
+                <td style="text-align:right; font-weight:bold; color:#f44336;" id="fin_totalRenov">0€</td>
                 <td></td>
             </tr>
         </table>
+        <div id="fin_renovList" style="margin-bottom:22px; font-size:0.85em; color:#555; font-style:italic;">
+            Sin remodelaciones esta temporada.
+        </div>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- HISTORIAL DE MOVIMIENTOS                          -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <h2 style="border-bottom:1px solid #333; padding-bottom:6px; margin-bottom:10px;">📋 Historial de movimientos</h2>
-        <div id="fin_movementsList" style="max-height:240px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; font-size:0.85em;">
-            <span style="color:#666;">Sin movimientos registrados esta temporada.</span>
+        <!-- HISTORIAL -->
+        <h2 style="border-bottom:1px solid #2a2a2a; padding-bottom:6px; margin-bottom:10px; font-size:1em; color:#ccc; text-transform:uppercase; letter-spacing:1px;">
+            📋 Historial de movimientos
+        </h2>
+        <div id="fin_movList" style="max-height:260px; overflow-y:auto; background:rgba(0,0,0,0.25); border-radius:8px; padding:10px; font-size:0.84em;">
+            <span style="color:#555;">Sin movimientos registrados esta temporada.</span>
         </div>
         `;
 
-        console.log('[Finances] Panel de finanzas construido.');
+        console.log('[Finances] Panel construido.');
     }
 
     // ============================================================
-    // 6. UI: función de refresco del panel
+    // PREVISUALIZAR precio al mover slider (sin aplicar al balance)
     // ============================================================
-    function setupRefresh() {
-        function refreshFinancePanel() {
-            if (!window.gameLogic) return;
-            const state = window.gameLogic.getGameState();
-            if (!state || !state.team) return;
+    window._financePreviewPrice = function (type, value) {
+        const state = gs();
+        if (!state) return;
+        value = parseInt(value);
+        const isHome = isNextMatchHome();
 
-            // --- Bloque superior ---
-            const balance = state.balance || 0;
-            setText('fin_balance', fmt(balance) + '€', balance < 0 ? '#f44336' : '#fff');
-
-            const wi = state.weeklyIncome || 0;
-            const we = state.weeklyExpenses || 0;
-            const weeklyNet = wi - we;
-            setText('fin_weeklyIncome', fmt(wi) + '€', '#4CAF50');
-            setText('fin_weeklyExpenses', fmt(we) + '€', '#f44336');
-            setText('fin_weeklyResult',
-                (weeklyNet >= 0 ? '+' : '') + fmt(weeklyNet) + '€',
-                weeklyNet >= 0 ? '#4CAF50' : '#f44336');
-
-            // --- Ingresos recurrentes ---
-            let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (state.ticketPrice / 100)));
-            attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
-            const ticketIncome = Math.floor(state.ticketPrice * attendance);
-            const merchRevenue = state.merchandisingRevenue || 0;
-            const baseIncome = state.weeklyIncomeBase || 5000;
-
-            setText('fin_ticketIncome', fmt(ticketIncome) + '€', '#4CAF50');
-            setText('fin_ticketDetail', `— ${fmt(attendance)} espectadores × ${state.ticketPrice}€`);
-            setText('fin_merchIncome', fmt(merchRevenue) + '€', '#4CAF50');
-            setText('fin_merchDetail', `— ${fmt(state.merchandisingItemsSold || 0)} uds × ${state.merchandisingPrice}€`);
-            setText('fin_baseIncome', fmt(baseIncome) + '€', '#4CAF50');
-            setText('fin_totalIncome', fmt(wi) + '€', '#4CAF50');
-
-            // Sliders de precio
-            const ts = document.getElementById('fin_ticketSlider');
-            if (ts) { ts.value = state.ticketPrice; document.getElementById('fin_ticketPriceVal').textContent = state.ticketPrice + '€'; }
-            const ms = document.getElementById('fin_merchSlider');
-            if (ms) { ms.value = state.merchandisingPrice; document.getElementById('fin_merchPriceVal').textContent = state.merchandisingPrice + '€'; }
-
-            // --- Gastos recurrentes ---
-            const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
-            const staffActive = Object.values(state.staff).filter(s => s);
-            const staffSalaries = staffActive.reduce((sum, s) => sum + (s?.salary || 0), 0);
-
-            setText('fin_playerSalaries', fmt(playerSalaries) + '€/sem', '#f44336');
-            setText('fin_playerCount', `— ${state.squad.length} jugadores`);
-            setText('fin_staffSalaries', fmt(staffSalaries) + '€/sem', '#f44336');
-            setText('fin_staffCount', `— ${staffActive.length} miembros del staff`);
-            setText('fin_totalExpenses', fmt(we) + '€/sem', '#f44336');
-
-            // --- Mercado ---
-            const purchases = state.playerPurchases || 0;
-            const sales = state.playerSalesIncome || 0;
-            const compensations = state.playerCompensations || 0;
-            const transferBal = sales - purchases - compensations;
-
-            setText('fin_purchases', fmt(purchases) + '€', '#f44336');
-            setText('fin_sales', fmt(sales) + '€', '#4CAF50');
-            setText('fin_compensations', fmt(compensations) + '€', '#f44336');
-            setText('fin_transferBalance',
-                (transferBal >= 0 ? '+' : '') + fmt(transferBal) + '€',
-                transferBal >= 0 ? '#4CAF50' : '#f44336');
-
-            // --- Remodelaciones ---
-            const movements = state.seasonMovements || [];
-            const renovations = movements.filter(m => m.type === 'renovation');
-            const stadiumRenovCost = renovations
-                .filter(m => m.description.toLowerCase().includes('estadio'))
-                .reduce((sum, m) => sum + Math.abs(m.amount), 0);
-            const trainingRenovCost = renovations
-                .filter(m => m.description.toLowerCase().includes('entrenamiento'))
-                .reduce((sum, m) => sum + Math.abs(m.amount), 0);
-            const totalRenovations = state.renovationExpenses || 0;
-
-            setText('fin_stadiumRenovation', fmt(stadiumRenovCost) + '€', stadiumRenovCost > 0 ? '#f44336' : '#777');
-            setText('fin_stadiumCapacity', `Cap: ${fmt(state.stadiumCapacity)}`);
-            setText('fin_trainingRenovation', fmt(trainingRenovCost) + '€', trainingRenovCost > 0 ? '#f44336' : '#777');
-            setText('fin_trainingLevel', `Nivel: ${state.trainingLevel || 1}`);
-            setText('fin_totalRenovations', fmt(totalRenovations) + '€', totalRenovations > 0 ? '#f44336' : '#777');
-
-            // Lista de remodelaciones
-            const renovList = document.getElementById('fin_renovationsList');
-            if (renovList) {
-                if (renovations.length === 0) {
-                    renovList.innerHTML = '<span style="color:#666; font-style:italic;">Sin remodelaciones esta temporada.</span>';
-                } else {
-                    renovList.innerHTML = renovations.map(r =>
-                        `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222;">
-                            <span>Sem ${r.week} — ${r.description}</span>
-                            <span style="color:#f44336; margin-left:12px;">-${fmt(Math.abs(r.amount))}€</span>
-                        </div>`
-                    ).join('');
-                }
-            }
-
-            // --- Historial de movimientos ---
-            const movEl = document.getElementById('fin_movementsList');
-            if (movEl) {
-                const nonRenov = movements.filter(m => m.type !== 'renovation');
-                if (nonRenov.length === 0) {
-                    movEl.innerHTML = '<span style="color:#666;">Sin movimientos registrados esta temporada.</span>';
-                } else {
-                    const icons = {
-                        purchase: '💸', sale: '💰', compensation: '🚪',
-                        staff_hire: '👔', staff_compensation: '🚫', renovation: '🏗️'
-                    };
-                    movEl.innerHTML = [...nonRenov].reverse().map(m => {
-                        const isPositive = m.amount > 0;
-                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #1a1a1a;">
-                            <span>${icons[m.type] || '•'} <span style="color:#ccc;">Sem ${m.week}</span> — ${m.description}</span>
-                            <span style="font-weight:bold; color:${isPositive ? '#4CAF50' : '#f44336'}; margin-left:12px; white-space:nowrap;">
-                                ${isPositive ? '+' : ''}${fmt(m.amount)}€
-                            </span>
-                        </div>`;
-                    }).join('');
-                }
+        if (type === 'ticket') {
+            let att = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (value / 100)));
+            att = Math.max(0, Math.min(state.stadiumCapacity, att));
+            if (isHome === false) {
+                setText('fin_ticketIncome', '0€', '#aaa');
+                setText('fin_ticketDetail', '— Partido visitante');
+            } else {
+                setText('fin_ticketIncome', fmt(Math.floor(value * att)) + '€', '#4CAF50');
+                setText('fin_ticketDetail', `— ${fmt(att)} espectadores estimados x ${value}€`);
             }
         }
+        if (type === 'merch') {
+            const items = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
+            if (isHome === false) {
+                setText('fin_merchIncome', '0€', '#aaa');
+                setText('fin_merchDetail', '— Partido visitante');
+            } else {
+                setText('fin_merchIncome', fmt(items * value) + '€', '#4CAF50');
+                setText('fin_merchDetail', `— ${fmt(items)} uds estimadas x ${value}€`);
+            }
+        }
+    };
 
-        function setText(id, text, color) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.textContent = text;
-            if (color) el.style.color = color;
+    // ============================================================
+    // REFRESCO COMPLETO DEL PANEL
+    // ============================================================
+    function refreshFinancePanel() {
+        if (!gl()) return;
+        const state = gs();
+        if (!state || !state.team) return;
+
+        checkSeasonChange();
+
+        // Balance
+        const balance = state.balance || 0;
+        setText('fin_balance', fmt(balance) + '€', balance < 0 ? '#f44336' : '#fff');
+
+        // Local/visitante
+        const isHome = isNextMatchHome();
+        setText('fin_homeAwayBadge',
+            isHome === true ? '🏟️ Proxima jornada: LOCAL' :
+            isHome === false ? '✈️ Proxima jornada: VISITANTE' : '—',
+            isHome === true ? '#4CAF50' : isHome === false ? '#f5a623' : '#666');
+
+        const awayRow = document.getElementById('fin_awayWarningRow');
+        if (awayRow) awayRow.style.display = isHome === false ? '' : 'none';
+
+        // Calcular ingresos estimados
+        const ticketPrice = state.ticketPrice || 20;
+        const merchPrice = state.merchandisingPrice || 10;
+        let attendance = Math.floor(state.stadiumCapacity * (0.5 + (state.popularity / 200) - (ticketPrice / 100)));
+        attendance = Math.max(0, Math.min(state.stadiumCapacity, attendance));
+        const ticketIncome = isHome === false ? 0 : Math.floor(ticketPrice * attendance);
+        const items = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
+        const merchIncome = isHome === false ? 0 : items * merchPrice;
+        const baseIncome = state.weeklyIncomeBase || 5000;
+        const totalIncome = ticketIncome + merchIncome + baseIncome;
+
+        // Gastos recurrentes
+        const playerSalaries = state.squad.reduce((sum, p) => sum + (p.salary || 0), 0);
+        const staffActive = Object.values(state.staff).filter(Boolean);
+        const staffSalaries = staffActive.reduce((sum, s) => sum + (s.salary || 0), 0);
+        const totalExpenses = playerSalaries + staffSalaries;
+
+        const weeklyNet = totalIncome - totalExpenses;
+
+        setText('fin_weeklyIncome', fmt(totalIncome) + '€', '#4CAF50');
+        setText('fin_weeklyExpenses', fmt(totalExpenses) + '€', '#f44336');
+        setText('fin_weeklyResult',
+            (weeklyNet >= 0 ? '+' : '') + fmt(weeklyNet) + '€',
+            weeklyNet >= 0 ? '#4CAF50' : '#f44336');
+
+        // Ingresos detalle
+        setText('fin_ticketIncome', fmt(ticketIncome) + '€', isHome === false ? '#aaa' : '#4CAF50');
+        setText('fin_ticketDetail', isHome === false ? '— Partido visitante' : `— ${fmt(attendance)} espectadores estimados x ${ticketPrice}€`);
+        setText('fin_merchIncome', fmt(merchIncome) + '€', isHome === false ? '#aaa' : '#4CAF50');
+        setText('fin_merchDetail', isHome === false ? '— Partido visitante' : `— ${fmt(items)} uds estimadas x ${merchPrice}€`);
+        setText('fin_baseIncome', fmt(baseIncome) + '€', '#4CAF50');
+        setText('fin_totalIncomeRow', fmt(totalIncome) + '€', '#4CAF50');
+
+        // Sliders
+        const ts = document.getElementById('fin_ticketSlider');
+        if (ts) { ts.value = ticketPrice; setText('fin_ticketPriceVal', ticketPrice + '€'); }
+        const ms = document.getElementById('fin_merchSlider');
+        if (ms) { ms.value = merchPrice; setText('fin_merchPriceVal', merchPrice + '€'); }
+
+        // Gastos detalle
+        setText('fin_playerSalaries', fmt(playerSalaries) + '€/sem', '#f44336');
+        setText('fin_playerCount', `— ${state.squad.length} jugadores`);
+        setText('fin_staffSalaries', fmt(staffSalaries) + '€/sem', '#f44336');
+        setText('fin_staffCount', `— ${staffActive.length} miembro${staffActive.length !== 1 ? 's' : ''} del staff`);
+        setText('fin_totalExpensesRow', fmt(totalExpenses) + '€/sem', '#f44336');
+
+        // Mercado
+        const movements = state.seasonMovements || [];
+        const purchases = state.playerPurchases || 0;
+        const sales = state.playerSalesIncome || 0;
+        const compensations = state.playerCompensations || 0;
+        const staffHireCost = movements.filter(m => m.type === 'staff_hire').reduce((s, m) => s + Math.abs(m.amount), 0);
+        const staffCompCost = movements.filter(m => m.type === 'staff_compensation').reduce((s, m) => s + Math.abs(m.amount), 0);
+        const transferBal = sales - purchases - compensations - staffHireCost - staffCompCost;
+
+        setText('fin_purchases', fmt(purchases) + '€', purchases > 0 ? '#f44336' : '#777');
+        setText('fin_staffHireCost', fmt(staffHireCost) + '€', staffHireCost > 0 ? '#f44336' : '#777');
+        setText('fin_sales', fmt(sales) + '€', sales > 0 ? '#4CAF50' : '#777');
+        setText('fin_compensations', fmt(compensations) + '€', compensations > 0 ? '#f44336' : '#777');
+        setText('fin_staffCompensations', fmt(staffCompCost) + '€', staffCompCost > 0 ? '#f44336' : '#777');
+        setText('fin_transferBalance',
+            (transferBal >= 0 ? '+' : '') + fmt(transferBal) + '€',
+            transferBal >= 0 ? '#4CAF50' : '#f44336');
+
+        // Remodelaciones
+        const renovations = movements.filter(m => m.type === 'renovation');
+        const stadiumRenov = renovations.filter(m => m.description.toLowerCase().includes('estadio') || m.description.toLowerCase().includes('asiento')).reduce((s, m) => s + Math.abs(m.amount), 0);
+        const trainingRenov = renovations.filter(m => m.description.toLowerCase().includes('entrenamiento')).reduce((s, m) => s + Math.abs(m.amount), 0);
+        const totalRenov = state.renovationExpenses || 0;
+
+        setText('fin_stadiumRenov', fmt(stadiumRenov) + '€', stadiumRenov > 0 ? '#f44336' : '#777');
+        setText('fin_stadiumCap', `Capacidad actual: ${fmt(state.stadiumCapacity)}`);
+        setText('fin_trainingRenov', fmt(trainingRenov) + '€', trainingRenov > 0 ? '#f44336' : '#777');
+        setText('fin_trainingLvl', `Nivel actual: ${state.trainingLevel || 1}`);
+        setText('fin_totalRenov', fmt(totalRenov) + '€', totalRenov > 0 ? '#f44336' : '#777');
+
+        const renovEl = document.getElementById('fin_renovList');
+        if (renovEl) {
+            renovEl.innerHTML = renovations.length === 0
+                ? '<span style="color:#555; font-style:italic;">Sin remodelaciones esta temporada.</span>'
+                : renovations.map(r =>
+                    `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #1e1e1e;">
+                        <span>Sem ${r.week} — ${r.description}</span>
+                        <span style="color:#f44336; margin-left:16px; white-space:nowrap;">-${fmt(Math.abs(r.amount))}€</span>
+                    </div>`).join('');
         }
 
-        function fmt(n) {
-            return Math.round(n).toLocaleString('es-ES');
+        // Historial
+        const movEl = document.getElementById('fin_movList');
+        if (movEl) {
+            const nonRenov = movements.filter(m => m.type !== 'renovation');
+            if (nonRenov.length === 0) {
+                movEl.innerHTML = '<span style="color:#555;">Sin movimientos registrados esta temporada.</span>';
+            } else {
+                const icons = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫' };
+                movEl.innerHTML = [...nonRenov].reverse().map(m => {
+                    const pos = m.amount > 0;
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #1a1a1a;">
+                        <span>${icons[m.type] || '•'} <span style="color:#888;">Sem ${m.week}</span> — ${m.description}</span>
+                        <span style="font-weight:bold; color:${pos ? '#4CAF50' : '#f44336'}; margin-left:12px; white-space:nowrap;">
+                            ${pos ? '+' : ''}${fmt(m.amount)}€
+                        </span>
+                    </div>`;
+                }).join('');
+            }
         }
-
-        window._financeRefresh = refreshFinancePanel;
-        window.updateFinanceDisplay = refreshFinancePanel;
-
-        console.log('[Finances] Función de refresco configurada.');
     }
 
+    window._financeRefresh = refreshFinancePanel;
+    window.updateFinanceDisplay = refreshFinancePanel;
+
     // ============================================================
-    // 7. PARCHE: Dashboard — resumen simplificado
+    // PATCH DASHBOARD
     // ============================================================
     function patchDashboard() {
-        // Guardar la función original de dashboard
-        const origUpdate = window.updateDashboardStats;
-        if (!origUpdate) return;
-
+        const orig = window.updateDashboardStats;
+        if (!orig) return;
         window.updateDashboardStats = function (state) {
-            origUpdate.call(this, state);
-
-            // Actualizar los campos de transferencias del dashboard
-            const purchases = state.playerPurchases || 0;
-            const sales = state.playerSalesIncome || 0;
-            const compensations = state.playerCompensations || 0;
-            const transferBalance = sales - purchases - compensations;
-
-            const els = {
-                dashPurchases: purchases.toLocaleString('es-ES') + '€',
-                dashSales: sales.toLocaleString('es-ES') + '€',
-                dashCompensations: compensations.toLocaleString('es-ES') + '€',
-            };
-
-            Object.entries(els).forEach(([id, val]) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = val;
-            });
-
+            orig.call(this, state);
+            if (!state) return;
+            const p = state.playerPurchases || 0;
+            const s = state.playerSalesIncome || 0;
+            const c = state.playerCompensations || 0;
+            const tb = s - p - c;
+            [['dashPurchases', fmt(p) + '€'], ['dashSales', fmt(s) + '€'], ['dashCompensations', fmt(c) + '€']]
+                .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
             const tbEl = document.getElementById('dashTransferBalance');
-            if (tbEl) {
-                tbEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + '€';
-                tbEl.style.color = transferBalance >= 0 ? '#4CAF50' : '#f44336';
-            }
+            if (tbEl) { tbEl.textContent = (tb >= 0 ? '+' : '') + fmt(tb) + '€'; tbEl.style.color = tb >= 0 ? '#4CAF50' : '#f44336'; }
         };
     }
 
     // ============================================================
-    // 8. Refrescar panel al abrir la página de finanzas
+    // HOOK openPage
     // ============================================================
-    function hookPageOpen() {
-        const origOpenPage = window.openPage;
-        if (!origOpenPage) {
-            // openPage puede no estar aún, reintentar
-            setTimeout(hookPageOpen, 400);
-            return;
-        }
+    function hookOpenPage() {
+        const orig = window.openPage;
+        if (!orig) { setTimeout(hookOpenPage, 300); return; }
         window.openPage = function (pageId, ...args) {
-            const result = origOpenPage.call(this, pageId, ...args);
-            if (pageId === 'finance' && window._financeRefresh) {
-                setTimeout(window._financeRefresh, 50);
-            }
-            return result;
+            const r = orig.call(this, pageId, ...args);
+            if (pageId === 'finance') setTimeout(refreshFinancePanel, 60);
+            return r;
         };
-        console.log('[Finances] Hook openPage configurado.');
     }
 
     // ============================================================
-    // INIT: esperar a que el DOM y gameLogic estén listos
+    // INIT
     // ============================================================
     function init() {
-        if (!window.gameLogic) {
-            setTimeout(init, 300);
-            return;
-        }
-
+        if (!window.gameLogic) { setTimeout(init, 300); return; }
         buildFinancePanel();
-        setupRefresh();
-        patchTransactions();
-        patchNewSeason();
+        patchFacilities();
+        patchHireStaff();
         patchDashboard();
-        hookPageOpen();
-
-        // El parche de updateWeeklyFinancials es delicado —
-        // lo dejamos comentado hasta confirmar que el bug de doble descuento
-        // existe en tu versión exacta. Descomenta si lo confirmas:
-        // patchUpdateWeeklyFinancials();
-        // patchAdvanceWeek();
-
-        console.log('[Finances] ✅ injector-finances.js cargado correctamente.');
+        hookOpenPage();
+        console.log('[Finances] ✅ injector-finances.js v2 listo.');
     }
 
     if (document.readyState === 'loading') {
