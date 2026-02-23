@@ -524,7 +524,6 @@ window.openSellPlayerModal = function(playerIndex) {
     }
     
     currentSellPlayerIndex = playerIndex;
-    window._currentSellPlayerName = player.name; // guardar nombre para uso robusto
     
     // Rellenar información
     document.getElementById('sellPlayerName').textContent = player.name;
@@ -586,14 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
 window.confirmListPlayer = function() {
     const state = window.gameLogic.getGameState();
     const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
-    // Usar nombre si está disponible (más robusto), sino caer al índice
-    let player;
-    if (window._currentSellPlayerName) {
-        player = state.squad.find(p => p.name === window._currentSellPlayerName);
-    }
-    if (!player) {
-        player = sorted[currentSellPlayerIndex];
-    }
+    const player = sorted[currentSellPlayerIndex];
     
     if (!player) {
         alert('Error: Jugador no encontrado');
@@ -640,11 +632,10 @@ window.confirmListPlayer = function() {
         alert(`${player.name} ha sido puesto disponible para cesión`);
     }
     
-    // ✅ GUARDAR CAMBIOS
+    // ✅ GUARDAR CAMBIOS - ESTO ES LO QUE FALTABA
     window.gameLogic.updateGameState(state);
     window.gameLogic.saveToLocalStorage();
     
-    window._currentSellPlayerName = null; // limpiar nombre
     window.closeModal('sellPlayer');
     
     // ✅ Refrescar con estado actualizado
