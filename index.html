@@ -2253,12 +2253,12 @@ window.onclick = function(event) {
 <!-- MODAL: Ofertas Recibidas -->
 <div id="offersModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
-        <span class="modal-close" onclick="window.closeModal('offersModal')">&times;</span>
+        <span class="modal-close" onclick="document.getElementById('offersModal').classList.remove('active')">&times;</span>
         <div id="offersList">
             <!-- Aquí se renderizan las ofertas -->
         </div>
         <div style="text-align: center; margin-top: 20px;">
-            <button class="btn" onclick="window.closeModal('offersModal')">Cerrar</button>
+            <button class="btn" onclick="document.getElementById('offersModal').classList.remove('active')">Cerrar</button>
         </div>
     </div>
 </div>
