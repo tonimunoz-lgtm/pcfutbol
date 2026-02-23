@@ -1347,6 +1347,8 @@ async function processMatch(homeTeam, awayTeam, gameState) {
                 player.form = Math.max(40, player.form - Math.floor(Math.random() * 3));
             }
             
+            // Generar posibles lesiones
+            generateInjury(player);
         });
         
         // Actualizar popularidad
