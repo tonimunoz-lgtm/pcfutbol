@@ -690,6 +690,20 @@
         patchPriceFunctions();
         patchDashboard();
         hookOpenPage();
+
+        // Ocultar filas de finanzas del dashboard
+    setTimeout(() => {
+    ['dashIncome','dashExpenses','dashWeekly','dashPurchases','dashSales','dashCompensations','dashTransferBalance']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.closest('tr').style.display = 'none';
+        });
+    // Ocultar también el título "Estado Financiero" y "Balance Transferencias"
+    document.querySelectorAll('#dashboard h2').forEach(h => {
+        if (h.textContent.includes('Estado Financiero')) h.style.display = 'none';
+    });
+}, 500);
+        
         console.log('[Finances] ✅ v7 listo.');
     }
 
