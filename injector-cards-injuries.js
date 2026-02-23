@@ -427,28 +427,21 @@ function hookSimulateWeek() {
             const newsAdded = newsAfterProcessing - newsBeforeProcessing;
             console.log(`📰 Noticias añadidas: ${newsAdded} (antes: ${newsBeforeProcessing}, después: ${newsAfterProcessing})`);
             
-            // Refrescar UI completa para que aparezcan las nuevas noticias, badges, etc.
             setTimeout(() => {
+                const feed = document.getElementById('newsFeed');
                 const currentState = window.gameLogic.getGameState();
-
-                // Opción 1: usar ui.refreshUI si está disponible (actualiza todo)
-                if (window.ui && window.ui.refreshUI) {
-                    console.log('🔄 Refrescando UI completa con tarjetas/lesiones...');
-                    window.ui.refreshUI(currentState);
+                
+                if (feed && currentState.newsFeed && currentState.newsFeed.length > 0) {
+                    console.log(`🔄 Actualizando feed con ${currentState.newsFeed.length} noticias`);
+                    
+                    feed.innerHTML = currentState.newsFeed.slice(0, 20).map(n => `
+                        <div class="alert ${n.type === 'error' ? 'alert-error' : n.type === 'warning' ? 'alert-warning' : n.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">
+                            <strong>S${n.week}:</strong> ${n.message}
+                        </div>
+                    `).join('');
+                    console.log('✅ Feed actualizado en DOM');
                 } else {
-                    // Opción 2: fallback - actualizar solo el feed de noticias directamente
-                    const feed = document.getElementById('newsFeed');
-                    if (feed && currentState.newsFeed && currentState.newsFeed.length > 0) {
-                        console.log(`🔄 Actualizando feed con ${currentState.newsFeed.length} noticias`);
-                        feed.innerHTML = currentState.newsFeed.slice(0, 20).map(n => `
-                            <div class="alert ${n.type === 'error' ? 'alert-error' : n.type === 'warning' ? 'alert-warning' : n.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">
-                                <strong>S${n.week}:</strong> ${n.message}
-                            </div>
-                        `).join('');
-                        console.log('✅ Feed actualizado en DOM (fallback)');
-                    } else {
-                        console.warn('⚠️ Feed no encontrado o sin noticias');
-                    }
+                    console.warn('⚠️ Feed no encontrado o sin noticias');
                 }
             }, 800);
             
