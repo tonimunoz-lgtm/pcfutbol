@@ -257,37 +257,44 @@
 
     // ── Fichajes ─────────────────────────────────────────────────
     function patchTransfers() {
-        if (typeof window.submitTransferOffer !== 'function') { setTimeout(patchTransfers, 200); return; }
+    // Sobreescribir SIEMPRE con setTimeout para ganar la race contra
+    // el <script type="module"> de index.html que redefine submitTransferOffer
+    const applyPatch = () => {
         const origT = window.submitTransferOffer;
+        if (typeof origT !== 'function') { setTimeout(applyPatch, 200); return; }
         window.submitTransferOffer = function () {
             const sb = gs();
+            const offerAmount = parseInt(document.getElementById('offerAmount')?.value || 0);
             origT.apply(this, arguments);
             const sa = gs();
             if (!sb || !sa) return;
             const diff = (sa.playerPurchases || 0) - (sb.playerPurchases || 0);
             if (diff > 0) {
                 const newP = sa.squad.find(p => !sb.squad.some(q => q.name === p.name));
-                registerMovement('purchase', `Fichaje: ${newP ? newP.name : 'Jugador'}`, -diff);
+                registerMovement('purchase', `Fichaje: ${newP ? newP.name : 'Jugador'} (oferta: ${fmt(offerAmount)}€)`, -diff);
                 if (window._financeRefresh) window._financeRefresh();
             }
         };
-        if (typeof window.submitLoanOffer === 'function') {
-            const origL = window.submitLoanOffer;
-            window.submitLoanOffer = function () {
-                const sb = gs();
-                origL.apply(this, arguments);
-                const sa = gs();
-                if (!sb || !sa) return;
-                const newP = sa.squad.find(p =>
-                    !sb.squad.some(q => q.name === p.name) && p.contractType === 'loaned');
-                if (newP) {
-                    registerMovement('purchase', `Cesion: ${newP.name}`, 0);
-                    if (window._financeRefresh) window._financeRefresh();
-                }
-            };
-        }
-        console.log('[Finances] submitTransferOffer ✓');
+    };
+    setTimeout(applyPatch, 800); // después del módulo ES
+
+    if (typeof window.submitLoanOffer === 'function') {
+        const origL = window.submitLoanOffer;
+        window.submitLoanOffer = function () {
+            const sb = gs();
+            origL.apply(this, arguments);
+            const sa = gs();
+            if (!sb || !sa) return;
+            const newP = sa.squad.find(p =>
+                !sb.squad.some(q => q.name === p.name) && p.contractType === 'loaned');
+            if (newP) {
+                registerMovement('purchase', `Cesion: ${newP.name}`, 0);
+                if (window._financeRefresh) window._financeRefresh();
+            }
+        };
     }
+    console.log('[Finances] submitTransferOffer (con retry tardío) ✓');
+}
 
     // ── Precios: no deben modificar lastWeekFinance ───────────────
     function patchPriceFunctions() {
