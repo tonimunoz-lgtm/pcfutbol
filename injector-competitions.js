@@ -1,1714 +1,1137 @@
 // ============================================================
-// injector-competitions.js
+// injector-competitions.js  v2.0
 // Sistema de Competiciones: Champions, Europa League,
 // Conference League, Copa del Rey + Colores Clasificación
+// + Playoff Segunda División + Playoff Ascenso RFEF
+// ============================================================
+//
+// DATOS REALES LaLiga 2024-25 (clasificación final):
+//  1. FC Barcelona          → Champions League 2025-26
+//  2. Real Madrid CF        → Champions League 2025-26
+//  3. Atlético de Madrid    → Champions League 2025-26
+//  4. Athletic Club         → Champions League 2025-26
+//  5. Villarreal CF         → Champions League 2025-26 (plaza extra rendimiento UEFA)
+//  6. Real Betis Balompié   → Europa League 2025-26
+//  7. RC Celta de Vigo      → Europa League 2025-26 (Barcelona ganó Copa, ya en UCL → plaza baja a 7º)
+//  8. Rayo Vallecano        → Conference League 2025-26
+// Descendidos: CD Leganés, UD Las Palmas, Real Valladolid
+//
+// Segunda División 2024-25:
+//  Pos 1-2: Ascenso directo (Levante UD, Elche CF)
+//  Pos 3-6: Playoff eliminatorio real (3ºvs6º y 4ºvs5º → final a doble partido)
+//           Ganador: Real Oviedo
+//  Pos 19-22: Descenso a Primera RFEF
 // ============================================================
 
-console.log('🏆 Sistema de Competiciones cargando...');
+console.log('🏆 Sistema de Competiciones v2.0 cargando...');
 
 // ============================================================
-// CONFIGURACIÓN DE PLAZAS EUROPEAS (LaLiga)
-// Pos 1-4: Champions League
-// Pos 5:   Europa League
-// Pos 6:   Conference League
-// Pos 18-20: Descenso a Segunda
-// Copa del Rey ganador → Europa League (si ya clasificado, baja al 7º)
+// TABLA HISTÓRICA REAL — LaLiga 2024-25
+// Usada para detectar clasificaciones europeas al inicio de partida
+// si se elige un equipo de Primera y la temporada es 2025/2026
 // ============================================================
+const LALIGA_2024_25_FINAL = {
+    'FC Barcelona':        { pos: 1,  european: 'champions' },
+    'Real Madrid CF':      { pos: 2,  european: 'champions' },
+    'Real Madrid':         { pos: 2,  european: 'champions' },  // alias
+    'Atlético de Madrid':  { pos: 3,  european: 'champions' },
+    'Athletic Club':       { pos: 4,  european: 'champions' },
+    'Villarreal CF':       { pos: 5,  european: 'champions' },
+    'Villarreal':          { pos: 5,  european: 'champions' },  // alias
+    'Real Betis Balompié': { pos: 6,  european: 'europaLeague' },
+    'Real Betis':          { pos: 6,  european: 'europaLeague' }, // alias
+    'RC Celta de Vigo':    { pos: 7,  european: 'europaLeague' },
+    'Celta de Vigo':       { pos: 7,  european: 'europaLeague' }, // alias
+    'Rayo Vallecano':      { pos: 8,  european: 'conferenceLague' },
+    'Real Sociedad':       { pos: 9,  european: null },
+    'Girona FC':           { pos: 10, european: null },
+    'Girona':              { pos: 10, european: null },
+    'Sevilla FC':          { pos: 11, european: null },
+    'Sevilla':             { pos: 11, european: null },
+    'RCD Espanyol':        { pos: 12, european: null },
+    'Espanyol':            { pos: 12, european: null },
+    'Getafe CF':           { pos: 13, european: null },
+    'Getafe':              { pos: 13, european: null },
+    'Deportivo Alavés':    { pos: 14, european: null },
+    'Alavés':              { pos: 14, european: null },
+    'RCD Mallorca':        { pos: 15, european: null },
+    'Mallorca':            { pos: 15, european: null },
+    'CA Osasuna':          { pos: 16, european: null },
+    'Osasuna':             { pos: 16, european: null },
+    'Valencia CF':         { pos: 17, european: null },
+    'Valencia':            { pos: 17, european: null },
+    'CD Leganés':          { pos: 18, european: null, relegated: true },
+    'Leganés':             { pos: 18, european: null, relegated: true },
+    'UD Las Palmas':       { pos: 19, european: null, relegated: true },
+    'Las Palmas':          { pos: 19, european: null, relegated: true },
+    'Real Valladolid':     { pos: 20, european: null, relegated: true },
+    'Valladolid':          { pos: 20, european: null, relegated: true },
+};
 
+// ============================================================
+// CONFIGURACIÓN DE ZONAS POR DIVISIÓN
+// España 2025-26: 5 plazas UCL (rendimiento europeo), 2 UEL, 1 UECL
+// ============================================================
 const COMPETITION_CONFIG = {
     primera: {
-        champions: [1, 2, 3, 4],
-        europaLeague: [5],
-        conferenceLague: [6],
-        relegate: 3,       // últimos 3 descienden
-        promote: 0
+        champions:        [1, 2, 3, 4, 5],
+        europaLeague:     [6, 7],
+        conferenceLague:  [8],
+        relegate:         3,
     },
     segunda: {
-        promoteAuto: [1, 2],
-        promotePlayoff: [3, 4, 5, 6], // playoff entre 3º-6º
-        relegate: 4,
-        promote: 3  // 2 directos + 1 playoff
+        promoteAuto:    [1, 2],
+        promotePlayoff: [3, 4, 5, 6],
+        relegate:       4,
     },
     rfef_grupo1: {
-        promoteAuto: [1],           // 1º asciende directo
-        promotePlayoff: [2, 3, 4, 5], // 2º-5º van a playoff de ascenso
-        relegate: 0                 // No marcamos descenso (no implementado)
+        promoteAuto:    [1],
+        promotePlayoff: [2, 3, 4, 5],
+        relegate:       0
     },
     rfef_grupo2: {
-        promoteAuto: [1],
+        promoteAuto:    [1],
         promotePlayoff: [2, 3, 4, 5],
-        relegate: 0
+        relegate:       0
     }
 };
 
 // ============================================================
-// SISTEMA DE PLAYOFF DE ASCENSO - PRIMERA RFEF
+// COLORES DE ZONA
 // ============================================================
-// Estructura:
-//   1º Grupo 1 → Ascenso directo a Segunda
-//   1º Grupo 2 → Ascenso directo a Segunda
-//   2º-5º Grupo 1 (4 equipos) + 2º-5º Grupo 2 (4 equipos)
-//   → 2 mini-ligas de 4 equipos (round-robin, 6 partidos c/u)
-//   → 1º de cada mini-liga asciende a Segunda
-//   Total: 4 ascensos. Segunda baja 4, 2 a cada grupo RFEF.
-// ============================================================
-
-const PLAYOFF_STORAGE_KEY = 'rfef_playoff_state';
-
-function getPlayoffState() {
-    try {
-        const raw = localStorage.getItem(PLAYOFF_STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch(e) { return null; }
-}
-
-function savePlayoffState(state) {
-    try {
-        localStorage.setItem(PLAYOFF_STORAGE_KEY, JSON.stringify(state));
-    } catch(e) {}
-}
-
-function clearPlayoffState() {
-    localStorage.removeItem(PLAYOFF_STORAGE_KEY);
-}
-
-/**
- * Inicializar playoff de ascenso al fin de temporada RFEF.
- * Recibe los standings ordenados de ambos grupos.
- */
-function initRFEFPlayoff(myTeam, myDivision, sortedGroup1, sortedGroup2, season) {
-    // Los 4 equipos pos 2-5 de cada grupo
-    const pool1 = sortedGroup1.slice(1, 5).map(([name]) => name); // pos 2,3,4,5 grupo1
-    const pool2 = sortedGroup2.slice(1, 5).map(([name]) => name); // pos 2,3,4,5 grupo2
-
-    // Mini-liga A: 1ºG2 del pool1 + 1ºG1 del pool2 (cruzado para más drama)
-    // Convención: mini-liga A = pool1[0], pool2[1], pool1[2], pool2[3]
-    //             mini-liga B = pool1[1], pool2[0], pool1[3], pool2[2]
-    const miniA = [pool1[0], pool2[1], pool1[2], pool2[3]].filter(Boolean);
-    const miniB = [pool1[1], pool2[0], pool1[3], pool2[2]].filter(Boolean);
-
-    const myMiniLeague = miniA.includes(myTeam) ? 'A' : miniB.includes(myTeam) ? 'B' : null;
-
-    const playoff = {
-        season,
-        myTeam,
-        myDivision,
-        // Ascensos directos
-        directAscent1: sortedGroup1[0]?.[0] || null,
-        directAscent2: sortedGroup2[0]?.[0] || null,
-        // Mini-ligas
-        miniA: {
-            teams: miniA,
-            standings: initMiniLeagueStandings(miniA),
-            matches: generateMiniLeagueMatches(miniA),
-            simulated: false
-        },
-        miniB: {
-            teams: miniB,
-            standings: initMiniLeagueStandings(miniB),
-            matches: generateMiniLeagueMatches(miniB),
-            simulated: false
-        },
-        myMiniLeague,
-        // Resultados finales
-        playoffWinnerA: null,
-        playoffWinnerB: null,
-        myResult: null, // 'promoted_direct' | 'promoted_playoff' | 'eliminated' | 'not_qualified'
-        phase: 'pending' // 'pending' | 'simulating' | 'done'
-    };
-
-    // Si el equipo ascendió directo
-    if (myTeam === playoff.directAscent1 || myTeam === playoff.directAscent2) {
-        playoff.myResult = 'promoted_direct';
-        playoff.phase = 'done';
-    } else if (!myMiniLeague) {
-        // No llegó al top 5
-        playoff.myResult = 'not_qualified';
-        playoff.phase = 'done';
-    }
-
-    savePlayoffState(playoff);
-    return playoff;
-}
-
-function initMiniLeagueStandings(teams) {
-    const st = {};
-    teams.forEach(t => { st[t] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }; });
-    return st;
-}
-
-function generateMiniLeagueMatches(teams) {
-    // Round-robin: todos vs todos x2 (ida y vuelta)
-    const matches = [];
-    for (let i = 0; i < teams.length; i++) {
-        for (let j = i + 1; j < teams.length; j++) {
-            matches.push({ home: teams[i], away: teams[j], played: false, homeGoals: null, awayGoals: null });
-            matches.push({ home: teams[j], away: teams[i], played: false, homeGoals: null, awayGoals: null });
-        }
-    }
-    return matches;
-}
-
-/**
- * Simula todos los partidos de una mini-liga.
- * Si myTeam está en ella, sus partidos usan el rating real.
- */
-function simulateMiniLeague(miniLeague, myTeam, myRating) {
-    const st = miniLeague.standings;
-
-    miniLeague.matches.forEach(match => {
-        if (match.played) return;
-
-        let homeGoals, awayGoals;
-
-        const homeIsMe = match.home === myTeam;
-        const awayIsMe = match.away === myTeam;
-
-        if (homeIsMe || awayIsMe) {
-            // Partido real: usar rating del jugador
-            const oppRating = 68 + Math.floor(Math.random() * 14); // 68-82
-            const ratingDiff = (myRating - oppRating) / 100;
-            const myWinProb = Math.max(0.15, Math.min(0.80, 0.48 + ratingDiff + (homeIsMe ? 0.05 : -0.03)));
-            const rand = Math.random();
-            let myG, oppG;
-            if (rand < myWinProb) {
-                myG = Math.floor(Math.random() * 3) + 1;
-                oppG = Math.max(0, myG - 1 - Math.floor(Math.random() * 2));
-            } else if (rand < myWinProb + 0.22) {
-                myG = Math.floor(Math.random() * 2) + 1;
-                oppG = myG;
-            } else {
-                oppG = Math.floor(Math.random() * 3) + 1;
-                myG = Math.max(0, oppG - 1 - Math.floor(Math.random() * 2));
-            }
-            homeGoals = homeIsMe ? myG : oppG;
-            awayGoals = awayIsMe ? myG : oppG;
-        } else {
-            // Partido IA vs IA
-            homeGoals = Math.floor(Math.random() * 3);
-            awayGoals = Math.floor(Math.random() * 3);
-        }
-
-        match.played = true;
-        match.homeGoals = homeGoals;
-        match.awayGoals = awayGoals;
-
-        // Actualizar standings
-        if (!st[match.home]) st[match.home] = { pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0 };
-        if (!st[match.away]) st[match.away] = { pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0 };
-
-        st[match.home].pj++;
-        st[match.home].gf += homeGoals;
-        st[match.home].gc += awayGoals;
-        st[match.away].pj++;
-        st[match.away].gf += awayGoals;
-        st[match.away].gc += homeGoals;
-
-        if (homeGoals > awayGoals) {
-            st[match.home].g++; st[match.home].pts += 3; st[match.away].p++;
-        } else if (homeGoals === awayGoals) {
-            st[match.home].e++; st[match.home].pts++; st[match.away].e++; st[match.away].pts++;
-        } else {
-            st[match.away].g++; st[match.away].pts += 3; st[match.home].p++;
-        }
-    });
-
-    miniLeague.simulated = true;
-    return miniLeague;
-}
-
-function getSortedMiniLeague(standings) {
-    return Object.entries(standings).sort((a, b) => {
-        const ptsDiff = b[1].pts - a[1].pts;
-        if (ptsDiff !== 0) return ptsDiff;
-        const gdB = b[1].gf - b[1].gc;
-        const gdA = a[1].gf - a[1].gc;
-        return gdB - gdA;
-    });
-}
-
-/**
- * Ejecutar el playoff completo y determinar resultados.
- * Se llama desde el hook de fin de temporada.
- */
-function runRFEFPlayoff(myTeam) {
-    const playoff = getPlayoffState();
-    if (!playoff || playoff.phase === 'done') return playoff;
-
-    const myRating = getMyRating();
-    playoff.phase = 'simulating';
-
-    // Simular mini-liga A
-    playoff.miniA = simulateMiniLeague(playoff.miniA, myTeam, myRating);
-    const sortedA = getSortedMiniLeague(playoff.miniA.standings);
-    playoff.playoffWinnerA = sortedA[0]?.[0];
-
-    // Simular mini-liga B
-    playoff.miniB = simulateMiniLeague(playoff.miniB, myTeam, myRating);
-    const sortedB = getSortedMiniLeague(playoff.miniB.standings);
-    playoff.playoffWinnerB = sortedB[0]?.[0];
-
-    playoff.phase = 'done';
-
-    // Determinar resultado personal
-    if (playoff.myResult === 'promoted_direct') {
-        // ya asignado
-    } else if (myTeam === playoff.playoffWinnerA || myTeam === playoff.playoffWinnerB) {
-        playoff.myResult = 'promoted_playoff';
-    } else {
-        playoff.myResult = 'eliminated';
-    }
-
-    savePlayoffState(playoff);
-    return playoff;
-}
-
-/**
- * Panel de playoff de ascenso en la UI.
- * Genera HTML completo para mostrar en la sección de clasificación.
- */
-function renderRFEFPlayoffPanel() {
-    const playoff = getPlayoffState();
-    if (!playoff) return '<p style="color:rgba(255,255,255,0.5);padding:20px;text-align:center;">No hay datos de playoff de ascenso.</p>';
-
-    const myTeam = playoff.myTeam;
-    let html = `<div style="margin-top:8px;">`;
-    html += `<h3 style="color:#FFD700;margin-bottom:12px;">⬆️ Playoff de Ascenso — Primera RFEF ${playoff.season}</h3>`;
-
-    // Ascensos directos
-    html += `<div style="background:rgba(50,200,50,0.15);border-radius:8px;padding:10px 14px;margin-bottom:12px;border-left:4px solid #32C832;">
-        <div style="color:#32C832;font-size:0.85em;font-weight:bold;margin-bottom:4px;">✅ ASCENSOS DIRECTOS</div>
-        <div style="color:white;">1º Grupo 1: <strong>${playoff.directAscent1 || '—'}</strong>${playoff.directAscent1 === myTeam ? ' <span style="color:#FFD700;">(TÚ)</span>' : ''}</div>
-        <div style="color:white;">1º Grupo 2: <strong>${playoff.directAscent2 || '—'}</strong>${playoff.directAscent2 === myTeam ? ' <span style="color:#FFD700;">(TÚ)</span>' : ''}</div>
-    </div>`;
-
-    // Estado del playoff
-    if (playoff.phase !== 'done' || (!playoff.miniA.simulated && !playoff.miniB.simulated)) {
-        html += `<div style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">⏳ Playoff pendiente de disputarse...</div>`;
-    } else {
-        // Mini-liga A
-        html += renderMiniLeagueHTML('A', playoff.miniA, myTeam, playoff.playoffWinnerA);
-        // Mini-liga B
-        html += renderMiniLeagueHTML('B', playoff.miniB, myTeam, playoff.playoffWinnerB);
-
-        // Resultado del jugador
-        if (playoff.myResult === 'promoted_direct') {
-            html += `<div style="background:rgba(50,200,50,0.2);border-radius:8px;padding:14px;text-align:center;margin-top:12px;border:2px solid #32C832;">
-                <div style="font-size:1.5em;">🏆</div>
-                <div style="color:#32C832;font-weight:bold;font-size:1.1em;">¡HAS ASCENDIDO DIRECTAMENTE A SEGUNDA DIVISIÓN!</div>
-            </div>`;
-        } else if (playoff.myResult === 'promoted_playoff') {
-            html += `<div style="background:rgba(50,200,50,0.2);border-radius:8px;padding:14px;text-align:center;margin-top:12px;border:2px solid #32C832;">
-                <div style="font-size:1.5em;">🎉</div>
-                <div style="color:#32C832;font-weight:bold;font-size:1.1em;">¡HAS ASCENDIDO VÍA PLAYOFF A SEGUNDA DIVISIÓN!</div>
-            </div>`;
-        } else if (playoff.myResult === 'eliminated') {
-            html += `<div style="background:rgba(200,40,40,0.15);border-radius:8px;padding:14px;text-align:center;margin-top:12px;border:2px solid #C82828;">
-                <div style="font-size:1.5em;">😞</div>
-                <div style="color:#f44336;font-weight:bold;font-size:1.1em;">Eliminado en el playoff de ascenso. Permaneces en Primera RFEF.</div>
-            </div>`;
-        } else if (playoff.myResult === 'not_qualified') {
-            html += `<div style="color:rgba(255,255,255,0.5);text-align:center;padding:10px;">Tu equipo no clasificó para el playoff (no alcanzó el top 5 de su grupo).</div>`;
-        }
-    }
-
-    html += `</div>`;
-    return html;
-}
-
-function renderMiniLeagueHTML(letter, miniLeague, myTeam, winner) {
-    const sorted = getSortedMiniLeague(miniLeague.standings);
-    let html = `<div style="margin-bottom:14px;">
-        <div style="color:#FFD700;font-size:0.9em;font-weight:bold;margin-bottom:6px;">Mini-Liga ${letter}</div>
-        <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
-            <thead><tr style="color:rgba(255,255,255,0.6);">
-                <th style="padding:5px;text-align:center;">Pos</th>
-                <th style="padding:5px;text-align:left;">Equipo</th>
-                <th style="padding:5px;text-align:center;">PJ</th>
-                <th style="padding:5px;text-align:center;">G</th>
-                <th style="padding:5px;text-align:center;">E</th>
-                <th style="padding:5px;text-align:center;">P</th>
-                <th style="padding:5px;text-align:center;">GD</th>
-                <th style="padding:5px;text-align:center;">Pts</th>
-            </tr></thead>
-            <tbody>`;
-
-    sorted.forEach(([name, st], idx) => {
-        const isMe = name === myTeam;
-        const isWinner = name === winner;
-        const bg = isWinner ? 'background:rgba(50,200,50,0.2);' : isMe ? 'background:rgba(233,69,96,0.15);' : '';
-        const bold = (isMe || isWinner) ? 'font-weight:bold;' : '';
-        const tag = isWinner ? ' 🔺' : '';
-        html += `<tr style="${bg}border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:5px;text-align:center;color:white;">${idx + 1}</td>
-            <td style="padding:5px;color:white;${bold}">${name}${tag}${isMe ? ' ⭐' : ''}</td>
-            <td style="padding:5px;text-align:center;color:white;">${st.pj}</td>
-            <td style="padding:5px;text-align:center;color:white;">${st.g}</td>
-            <td style="padding:5px;text-align:center;color:white;">${st.e}</td>
-            <td style="padding:5px;text-align:center;color:white;">${st.p}</td>
-            <td style="padding:5px;text-align:center;color:white;">${st.gf - st.gc > 0 ? '+' : ''}${st.gf - st.gc}</td>
-            <td style="padding:5px;text-align:center;color:white;font-weight:bold;">${st.pts}</td>
-        </tr>`;
-    });
-
-    html += `</tbody></table>`;
-
-    // Resultados del mini-liga
-    if (miniLeague.matches.some(m => m.played)) {
-        const myMatches = miniLeague.matches.filter(m => m.played && (m.home === myTeam || m.away === myTeam));
-        if (myMatches.length > 0) {
-            html += `<div style="margin-top:6px;">`;
-            myMatches.forEach(m => {
-                const isHome = m.home === myTeam;
-                const myG = isHome ? m.homeGoals : m.awayGoals;
-                const oppG = isHome ? m.awayGoals : m.homeGoals;
-                const opp = isHome ? m.away : m.home;
-                const win = myG > oppG, draw = myG === oppG;
-                const color = win ? '#4CAF50' : draw ? '#FFD700' : '#f44336';
-                const icon = win ? '✅' : draw ? '🤝' : '❌';
-                html += `<div style="color:${color};font-size:0.82em;padding:2px 0;">${icon} vs ${opp}: ${myG}-${oppG} ${isHome ? '(casa)' : '(fuera)'}</div>`;
-            });
-            html += `</div>`;
-        }
-    }
-
-    html += `</div>`;
-    return html;
-}
+const ZONE_COLORS = {
+    champions:       { bg: 'rgba(30,90,200,0.25)',  border: '#1E5AC8', label: '🔵 Champions League' },
+    europaLeague:    { bg: 'rgba(255,140,0,0.22)',  border: '#FF8C00', label: '🟠 Europa League' },
+    conferenceLague: { bg: 'rgba(0,180,100,0.22)',  border: '#00B464', label: '🟢 Conference League' },
+    promoteAuto:     { bg: 'rgba(50,200,50,0.25)',  border: '#32C832', label: '⬆️ Ascenso directo' },
+    promotePlayoff:  { bg: 'rgba(180,150,0,0.22)',  border: '#B49600', label: '⭐ Playoff ascenso' },
+    relegate:        { bg: 'rgba(200,40,40,0.25)',  border: '#C82828', label: '⬇️ Descenso' }
+};
 
 // ============================================================
-// EQUIPOS EUROPEOS FICTICIOS PARA COMPETICIONES
+// STORAGE
 // ============================================================
+const COMP_KEY    = 'comps_v2';
+const PLAYOFF_KEY = 'playoff_v2';
 
-const EUROPEAN_TEAMS = {
-    champions_group_A: [
-        { name: 'Bayern München', country: '🇩🇪', rating: 88 },
-        { name: 'Paris Saint-Germain', country: '🇫🇷', rating: 87 },
-        { name: 'Manchester City', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 89 },
-        { name: 'Inter de Milán', country: '🇮🇹', rating: 85 }
+const store = {
+    getComp:      () => { try{ return JSON.parse(localStorage.getItem(COMP_KEY));    }catch(e){ return null; } },
+    saveComp:     (s) => { try{ localStorage.setItem(COMP_KEY, JSON.stringify(s));   }catch(e){} },
+    clearComp:    () => localStorage.removeItem(COMP_KEY),
+    getPlayoff:   () => { try{ return JSON.parse(localStorage.getItem(PLAYOFF_KEY)); }catch(e){ return null; } },
+    savePlayoff:  (s) => { try{ localStorage.setItem(PLAYOFF_KEY, JSON.stringify(s));}catch(e){} },
+    clearPlayoff: () => localStorage.removeItem(PLAYOFF_KEY)
+};
+
+// ============================================================
+// EQUIPOS EUROPEOS FICTICIOS
+// ============================================================
+const EU_TEAMS = {
+    elite: [
+        { name: 'Bayern München',       country: '🇩🇪', rating: 88 },
+        { name: 'Paris Saint-Germain',  country: '🇫🇷', rating: 87 },
+        { name: 'Manchester City',      country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 89 },
+        { name: 'Inter de Milán',       country: '🇮🇹', rating: 85 },
+        { name: 'Arsenal FC',           country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 84 },
+        { name: 'Borussia Dortmund',    country: '🇩🇪', rating: 82 },
+        { name: 'Juventus',             country: '🇮🇹', rating: 81 },
+        { name: 'Liverpool FC',         country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 84 },
+        { name: 'Benfica',              country: '🇵🇹', rating: 80 },
+        { name: 'Ajax',                 country: '🇳🇱', rating: 79 },
     ],
-    champions_group_B: [
-        { name: 'Real Madrid', country: '🇪🇸', rating: 91 },
-        { name: 'Arsenal FC', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 84 },
-        { name: 'Borussia Dortmund', country: '🇩🇪', rating: 82 },
-        { name: 'Benfica', country: '🇵🇹', rating: 80 }
+    mid: [
+        { name: 'AS Roma',              country: '🇮🇹', rating: 79 },
+        { name: 'Bayer Leverkusen',     country: '🇩🇪', rating: 80 },
+        { name: 'Feyenoord',            country: '🇳🇱', rating: 76 },
+        { name: 'Tottenham Hotspur',    country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 78 },
+        { name: 'Lazio',                country: '🇮🇹', rating: 77 },
+        { name: 'Eintracht Frankfurt',  country: '🇩🇪', rating: 76 },
+        { name: 'Sporting CP',          country: '🇵🇹', rating: 75 },
     ],
-    champions_group_C: [
-        { name: 'FC Barcelona', country: '🇪🇸', rating: 86 },
-        { name: 'Atlético de Madrid', country: '🇪🇸', rating: 83 },
-        { name: 'Juventus', country: '🇮🇹', rating: 81 },
-        { name: 'Ajax', country: '🇳🇱', rating: 79 }
-    ],
-    europa_group_A: [
-        { name: 'Liverpool FC', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 84 },
-        { name: 'AS Roma', country: '🇮🇹', rating: 79 },
-        { name: 'Bayer Leverkusen', country: '🇩🇪', rating: 80 },
-        { name: 'Feyenoord', country: '🇳🇱', rating: 76 }
-    ],
-    europa_group_B: [
-        { name: 'Tottenham Hotspur', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rating: 78 },
-        { name: 'Lazio', country: '🇮🇹', rating: 77 },
-        { name: 'Eintracht Frankfurt', country: '🇩🇪', rating: 76 },
-        { name: 'Sporting CP', country: '🇵🇹', rating: 75 }
-    ],
-    conference_group_A: [
-        { name: 'Fiorentina', country: '🇮🇹', rating: 74 },
-        { name: 'Club Bruges', country: '🇧🇪', rating: 73 },
-        { name: 'PAOK', country: '🇬🇷', rating: 70 },
-        { name: 'Braga', country: '🇵🇹', rating: 71 }
+    small: [
+        { name: 'Fiorentina',           country: '🇮🇹', rating: 74 },
+        { name: 'Club Bruges',          country: '🇧🇪', rating: 73 },
+        { name: 'PAOK',                 country: '🇬🇷', rating: 70 },
+        { name: 'Braga',                country: '🇵🇹', rating: 71 },
+        { name: 'Fenerbahçe',           country: '🇹🇷', rating: 72 },
     ]
 };
 
-// Jugadores ficticios para equipos europeos
-const EUROPEAN_PLAYER_NAMES = {
-    '🇩🇪': ['Müller', 'Kimmich', 'Sané', 'Goretzka', 'Gnabry', 'Pavard', 'Upamecano', 'de Ligt'],
-    '🇫🇷': ['Mbappé', 'Dembélé', 'Verratti', 'Hakimi', 'Marquinhos', 'Neymar', 'Vitinha', 'Ugarte'],
-    '🏴󠁧󠁢󠁥󠁮󠁧󠁿': ['Kane', 'Saka', 'Rashford', 'Rice', 'Bellingham', 'Trippier', 'Walker', 'Foden'],
-    '🇮🇹': ['Lautaro', 'Barella', 'Calhanoglu', 'Bastoni', 'Dybala', 'Chiesa', 'Pellegrini', 'Zaccagni'],
-    '🇪🇸': ['Modrić', 'Kroos', 'Vinícius', 'Benzema', 'Pedri', 'Gavi', 'Yamal', 'Torres'],
-    '🇵🇹': ['Di María', 'João Mário', 'Coates', 'Kokçu', 'Cabral', 'Nkounkou', 'Bah', 'Trincão'],
-    '🇳🇱': ['van Dijk', 'de Jong', 'Bergwijn', 'Taylor', 'Gimenez', 'Timber', 'Zirkzee', 'Reijnders'],
-    '🇧🇪': ['De Bruyne', 'Hazard', 'Lukaku', 'Vanaken', 'Mignolet', 'Skov Olsen', 'Jutgla', 'Orban'],
-    '🇬🇷': ['Tzolas', 'Konstantelias', 'Misić', 'Esiti', 'Murg', 'Schwab', 'Lyratzis', 'Kotarski'],
-    default: ['García', 'Silva', 'Martínez', 'López', 'Fernández', 'Costa', 'Rodrigues', 'Santos']
+function getEUPool(comp) {
+    if (comp === 'champions')      return [...EU_TEAMS.elite];
+    if (comp === 'europaLeague')   return [...EU_TEAMS.elite.slice(5), ...EU_TEAMS.mid];
+    return [...EU_TEAMS.mid.slice(3), ...EU_TEAMS.small];
+}
+
+// ============================================================
+// COPA DEL REY — POOLS DE RIVALES
+// ============================================================
+const COPA_POOLS = {
+    primera: ['Real Madrid CF','Atlético de Madrid','Athletic Club','Villarreal CF','Real Sociedad',
+              'Real Betis Balompié','Sevilla FC','Valencia CF','RC Celta de Vigo','RCD Espanyol',
+              'Girona FC','Rayo Vallecano','CA Osasuna','Getafe CF','RCD Mallorca'],
+    segunda: ['UD Almería','Real Zaragoza','Burgos CF','Cádiz CF','SD Eibar','Málaga CF',
+              'Córdoba CF','CD Castellón','Levante UD','Elche CF','Real Oviedo'],
+    rfef:    ['CD Lugo','CF Talavera','Racing de Ferrol','SD Ponferradina','Zamora CF',
+              'AD Mérida','Unionistas CF','CD Arenteiro']
 };
 
-function getEuropeanPlayerNames(country) {
-    return EUROPEAN_PLAYER_NAMES[country] || EUROPEAN_PLAYER_NAMES.default;
-}
-
-// ============================================================
-// STORAGE: Estado de competiciones (localStorage)
-// ============================================================
-
-const COMP_STORAGE_KEY = 'competitions_state';
-
-function getCompState() {
-    try {
-        const raw = localStorage.getItem(COMP_STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch(e) { return null; }
-}
-
-function saveCompState(state) {
-    try {
-        localStorage.setItem(COMP_STORAGE_KEY, JSON.stringify(state));
-    } catch(e) { console.error('Error guardando estado competiciones:', e); }
-}
-
-function clearCompState() {
-    localStorage.removeItem(COMP_STORAGE_KEY);
-}
-
-// ============================================================
-// INICIALIZACIÓN DE COMPETICIONES AL INICIO DE TEMPORADA
-// ============================================================
-
-function initCompetitionsForSeason(myTeam, myPosition, division, season) {
-    const existing = getCompState();
-    // Si ya está inicializado para esta temporada, no reiniciar
-    if (existing && existing.season === season && existing.team === myTeam) {
-        console.log('🏆 Competiciones ya inicializadas para', season);
-        return existing;
-    }
-
-    const compState = {
-        team: myTeam,
-        season: season,
-        division: division,
-        // Europeas
-        europeanComp: null,  // 'champions' | 'europaLeague' | 'conferenceLague' | null
-        europeanPhase: null, // 'groups' | 'round16' | 'quarterfinals' | 'semifinals' | 'final' | 'eliminated'
-        europeanGroup: null,
-        europeanGroupStandings: null,
-        europeanResults: [],
-        europeanKnockout: [],
-        // Copa del Rey
-        copaQualified: false,  // Siempre participan 1ª y 2ª
-        copaPhase: null, // 'round1' | 'round32' | 'round16' | 'quarters' | 'semis' | 'final' | 'champion' | 'eliminated'
-        copaResults: [],
-        copaOpponents: {},
-    };
-
-    // Determinar si clasifica a Europa (solo Primera)
-    if (division === 'primera') {
-        const cfg = COMPETITION_CONFIG.primera;
-        if (cfg.champions.includes(myPosition)) {
-            compState.europeanComp = 'champions';
-        } else if (cfg.europaLeague.includes(myPosition)) {
-            compState.europeanComp = 'europaLeague';
-        } else if (cfg.conferenceLague.includes(myPosition)) {
-            compState.europeanComp = 'conferenceLague';
-        }
-
-        if (compState.europeanComp) {
-            compState.europeanPhase = 'groups';
-            compState.europeanGroup = buildEuropeanGroup(compState.europeanComp, myTeam);
-            compState.europeanGroupStandings = initGroupStandings(compState.europeanGroup);
-        }
-    }
-
-    // Copa del Rey: participan equipos de Primera y Segunda
-    if (division === 'primera' || division === 'segunda') {
-        compState.copaQualified = true;
-        compState.copaPhase = division === 'primera' ? 'round32' : 'round1';
-        compState.copaOpponents = buildCopaOpponents(division);
-    }
-
-    saveCompState(compState);
-    console.log('🏆 Competiciones inicializadas:', compState.europeanComp || 'ninguna europea', '| Copa:', compState.copaPhase);
-    return compState;
-}
-
-// ============================================================
-// CONSTRUCCIÓN DE GRUPO EUROPEO
-// ============================================================
-
-function buildEuropeanGroup(comp, myTeam) {
-    let pool;
-    if (comp === 'champions') {
-        // Seleccionar 3 rivales aleatorios de distintos grupos
-        const allEuro = [
-            ...EUROPEAN_TEAMS.champions_group_A,
-            ...EUROPEAN_TEAMS.champions_group_B,
-            ...EUROPEAN_TEAMS.champions_group_C
-        ].filter(t => t.name !== myTeam);
-        const shuffled = allEuro.sort(() => Math.random() - 0.5);
-        pool = shuffled.slice(0, 3);
-    } else if (comp === 'europaLeague') {
-        const allEuro = [
-            ...EUROPEAN_TEAMS.europa_group_A,
-            ...EUROPEAN_TEAMS.europa_group_B
-        ].filter(t => t.name !== myTeam);
-        const shuffled = allEuro.sort(() => Math.random() - 0.5);
-        pool = shuffled.slice(0, 3);
-    } else { // conference
-        const allEuro = [...EUROPEAN_TEAMS.conference_group_A];
-        const shuffled = allEuro.sort(() => Math.random() - 0.5);
-        pool = shuffled.slice(0, 3);
-    }
-
-    // Añadir nuestro equipo
-    return [
-        { name: myTeam, country: '🇪🇸', rating: 80, isPlayer: true },
-        ...pool
-    ];
-}
-
-function initGroupStandings(group) {
-    const standings = {};
-    group.forEach(t => {
-        standings[t.name] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 };
-    });
-    return standings;
-}
-
-// ============================================================
-// CONSTRUCCIÓN DE RIVALES COPA DEL REY
-// ============================================================
+function pickFrom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
 function buildCopaOpponents(division) {
-    const rounds = {};
-
-    if (division === 'primera') {
-        // Primera entra desde 16avos
-        rounds.round32 = generateCopaMockOpponent('segunda');
-        rounds.round16 = generateCopaMockOpponent('primera');
-        rounds.quarters = generateCopaMockOpponent('primera');
-        rounds.semis = generateCopaMockOpponent('primera');
-        rounds.final = generateCopaMockOpponent('primera');
-    } else {
-        // Segunda entra desde 1ª ronda
-        rounds.round1 = generateCopaMockOpponent('rfef_grupo1');
-        rounds.round32 = generateCopaMockOpponent('primera');
-        rounds.round16 = generateCopaMockOpponent('primera');
-        rounds.quarters = generateCopaMockOpponent('primera');
-        rounds.semis = generateCopaMockOpponent('primera');
-        rounds.final = generateCopaMockOpponent('primera');
-    }
-
-    return rounds;
-}
-
-function generateCopaMockOpponent(fromDivision) {
-    const pools = {
-        primera: ['Real Madrid CF', 'FC Barcelona', 'Atlético de Madrid', 'Athletic Club', 'Villarreal CF', 'Real Sociedad', 'Real Betis Balompié', 'Sevilla FC', 'Valencia CF', 'Celta de Vigo'],
-        segunda: ['UD Almería', 'UD Las Palmas', 'Real Zaragoza', 'Burgos CF', 'Cádiz CF', 'SD Eibar', 'Málaga CF', 'Córdoba CF'],
-        rfef_grupo1: ['CD Lugo', 'CF Talavera', 'Racing Ferrol', 'Ponferradina', 'Zamora CF', 'AD Mérida']
+    if (division === 'primera') return {
+        round32: pickFrom(COPA_POOLS.segunda),
+        round16:  pickFrom(COPA_POOLS.primera),
+        quarters: pickFrom(COPA_POOLS.primera),
+        semis:    pickFrom(COPA_POOLS.primera),
+        final:    pickFrom(COPA_POOLS.primera)
     };
-    const pool = pools[fromDivision] || pools.primera;
-    return pool[Math.floor(Math.random() * pool.length)];
+    return {
+        round1:   pickFrom(COPA_POOLS.rfef),
+        round32:  pickFrom(COPA_POOLS.primera),
+        round16:  pickFrom(COPA_POOLS.primera),
+        quarters: pickFrom(COPA_POOLS.primera),
+        semis:    pickFrom(COPA_POOLS.primera),
+        final:    pickFrom(COPA_POOLS.primera)
+    };
 }
 
 // ============================================================
-// SIMULACIÓN DE PARTIDO EUROPEO
+// HELPERS: NOMBRES Y SIMULACIÓN
 // ============================================================
-
-function simulateEuropeanMatch(myTeam, myRating, opponent) {
-    const ratingDiff = (myRating - opponent.rating) / 100;
-    const homeBonus = 0.05;
-    const myWinProb = Math.max(0.1, Math.min(0.85, 0.45 + ratingDiff + homeBonus));
-
-    const rand = Math.random();
-    let myGoals, oppGoals;
-
-    if (rand < myWinProb) {
-        myGoals = Math.floor(Math.random() * 3) + 1;
-        oppGoals = Math.max(0, myGoals - 1 - Math.floor(Math.random() * 2));
-    } else if (rand < myWinProb + 0.2) {
-        myGoals = Math.floor(Math.random() * 2) + 1;
-        oppGoals = myGoals;
-    } else {
-        oppGoals = Math.floor(Math.random() * 3) + 1;
-        myGoals = Math.max(0, oppGoals - 1 - Math.floor(Math.random() * 2));
-    }
-
-    return { myGoals, oppGoals };
-}
+function compName(c)  { return { champions:'Champions League', europaLeague:'Europa League', conferenceLague:'Conference League' }[c] || 'Europa'; }
+function compEmoji(c) { return { champions:'⭐', europaLeague:'🟠', conferenceLague:'🟢' }[c] || '🌍'; }
+function phaseName(p) { return { round1:'1ª Ronda Copa', round32:'Dieciseisavos Copa', round16:'Octavos', quarters:'Cuartos', semis:'Semifinales', final:'Final', champion:'CAMPEÓN', quarterfinals:'Cuartos de final', semifinals:'Semifinales de Europa' }[p] || p; }
 
 function getMyRating() {
     try {
-        const state = window.gameLogic?.getGameState();
-        if (!state?.squad) return 75;
-        const vals = state.squad.map(p => p.overall || 70);
-        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+        const sq = window.gameLogic?.getGameState()?.squad || [];
+        if (!sq.length) return 75;
+        return Math.round(sq.reduce((a,b) => a+(b.overall||70), 0) / sq.length);
     } catch(e) { return 75; }
 }
 
-function simulateGroupPhase(comp, myTeam) {
-    const compState = getCompState();
-    if (!compState || !compState.europeanGroup) return;
+function simMatch(myR, oppR, homeBonus=0.04) {
+    const diff = (myR - oppR) / 100;
+    const prob = Math.max(0.12, Math.min(0.82, 0.46 + diff + homeBonus));
+    const r = Math.random();
+    let mg, og;
+    if (r < prob) {
+        mg = Math.floor(Math.random()*3)+1; og = Math.max(0, mg-1-Math.floor(Math.random()*2));
+    } else if (r < prob+0.22) {
+        mg = Math.floor(Math.random()*2)+1; og = mg;
+    } else {
+        og = Math.floor(Math.random()*3)+1; mg = Math.max(0, og-1-Math.floor(Math.random()*2));
+    }
+    return { myGoals: mg, oppGoals: og };
+}
 
-    const group = compState.europeanGroup;
-    const standings = compState.europeanGroupStandings;
-    const myRating = getMyRating();
+function updateSt(st, a, b, ga, gb) {
+    [a,b].forEach(n => { if(!st[n]) st[n]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; });
+    st[a].pj++; st[a].gf+=ga; st[a].gc+=gb;
+    st[b].pj++; st[b].gf+=gb; st[b].gc+=ga;
+    if(ga>gb){ st[a].g++; st[a].pts+=3; st[b].p++; }
+    else if(ga===gb){ st[a].e++; st[a].pts++; st[b].e++; st[b].pts++; }
+    else{ st[b].g++; st[b].pts+=3; st[a].p++; }
+}
 
-    // Simular 6 jornadas (home+away vs cada rival)
-    const rivals = group.filter(t => !t.isPlayer);
+function sortSt(st) {
+    return Object.entries(st).sort((a,b)=>{
+        const pd = b[1].pts-a[1].pts; if(pd!==0) return pd;
+        return (b[1].gf-b[1].gc)-(a[1].gf-a[1].gc);
+    });
+}
+
+// ============================================================
+// DETECTAR COMPETICIÓN EUROPEA AL INICIO
+// ============================================================
+function detectInitialEuropean(teamName, division, season) {
+    if (division !== 'primera') return null;
+    if (season === '2025/2026') {
+        const data = LALIGA_2024_25_FINAL[teamName];
+        if (data?.european) return data.european;
+    }
+    return null;
+}
+
+// ============================================================
+// INICIALIZAR COMPETICIONES PARA UNA TEMPORADA
+// ============================================================
+function initCompetitionsForSeason(myTeam, division, season, forceEuropean) {
+    const existing = store.getComp();
+    if (existing && existing.season === season && existing.team === myTeam) return existing;
+
+    const europeanComp = forceEuropean !== undefined
+        ? forceEuropean
+        : detectInitialEuropean(myTeam, division, season);
+
+    const copaQualified = division === 'primera' || division === 'segunda';
+
+    const comp = {
+        team: myTeam, season, division,
+        europeanComp,
+        europeanPhase:          europeanComp ? 'groups' : null,
+        europeanGroup:          europeanComp ? buildEUGroup(europeanComp, myTeam) : null,
+        europeanGroupStandings: null,
+        europeanResults:        [],
+        europeanKnockout:       [],
+        copaQualified,
+        copaPhase:     copaQualified ? (division === 'primera' ? 'round32' : 'round1') : null,
+        copaResults:   [],
+        copaOpponents: copaQualified ? buildCopaOpponents(division) : {}
+    };
+
+    if (comp.europeanGroup) {
+        comp.europeanGroupStandings = initGroupSt(comp.europeanGroup);
+    }
+
+    store.saveComp(comp);
+    console.log(`🏆 Comp init: ${myTeam} | Europa: ${europeanComp||'—'} | Copa: ${comp.copaPhase||'—'}`);
+    return comp;
+}
+
+// ============================================================
+// GRUPOS EUROPEOS
+// ============================================================
+function buildEUGroup(comp, myTeam) {
+    const pool = getEUPool(comp).filter(t => t.name !== myTeam);
+    return [{ name: myTeam, country: '🇪🇸', rating: 80, isPlayer: true },
+            ...pool.sort(()=>Math.random()-0.5).slice(0,3)];
+}
+
+function initGroupSt(group) {
+    const s = {}; group.forEach(t=>{ s[t.name]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; }); return s;
+}
+
+function simulateGroupPhase(myTeam) {
+    const comp = store.getComp();
+    if (!comp?.europeanGroup) return;
+    const rivals = comp.europeanGroup.filter(t=>!t.isPlayer);
+    const myR = getMyRating();
     const results = [];
 
     rivals.forEach(rival => {
-        // Jornada ida
-        const r1 = simulateEuropeanMatch(myTeam, myRating, rival);
-        updateGroupStandings(standings, myTeam, rival.name, r1.myGoals, r1.oppGoals);
-        results.push({ jornada: 'ida', rival: rival.name, myGoals: r1.myGoals, oppGoals: r1.oppGoals });
-
-        // Jornada vuelta
-        const r2 = simulateEuropeanMatch(myTeam, myRating, rival);
-        updateGroupStandings(standings, myTeam, rival.name, r2.myGoals, r2.oppGoals);
-        results.push({ jornada: 'vuelta', rival: rival.name, myGoals: r2.myGoals, oppGoals: r2.oppGoals });
-
-        // Partidos entre rivales
-        const otherRivals = rivals.filter(r => r.name !== rival.name);
-        otherRivals.forEach(other => {
-            if (rival.name < other.name) { // evitar duplicados
-                const rRivals = simulateEuropeanMatch(rival.name, rival.rating, other);
-                updateGroupStandings(standings, rival.name, other.name, rRivals.myGoals, rRivals.oppGoals);
+        const r1 = simMatch(myR, rival.rating, 0.05);
+        updateSt(comp.europeanGroupStandings, myTeam, rival.name, r1.myGoals, r1.oppGoals);
+        results.push({ jornada:'ida', rival:rival.name, myGoals:r1.myGoals, oppGoals:r1.oppGoals });
+        const r2 = simMatch(myR, rival.rating, -0.02);
+        updateSt(comp.europeanGroupStandings, myTeam, rival.name, r2.myGoals, r2.oppGoals);
+        results.push({ jornada:'vuelta', rival:rival.name, myGoals:r2.myGoals, oppGoals:r2.oppGoals });
+        rivals.forEach(other => {
+            if (rival.name < other.name) {
+                const rr = simMatch(rival.rating, other.rating);
+                updateSt(comp.europeanGroupStandings, rival.name, other.name, rr.myGoals, rr.oppGoals);
             }
         });
     });
 
-    compState.europeanGroupStandings = standings;
-    compState.europeanResults = results;
-
-    // Determinar si clasificamos
-    const sorted = Object.entries(standings).sort((a, b) => {
-        const ptsDiff = b[1].pts - a[1].pts;
-        if (ptsDiff !== 0) return ptsDiff;
-        return (b[1].gf - b[1].gc) - (a[1].gf - a[1].gc);
-    });
-
-    const myPos = sorted.findIndex(([n]) => n === myTeam) + 1;
-
-    if (myPos <= 2) {
-        compState.europeanPhase = 'round16';
-        window.gameLogic?.addNews(`🏆 ¡Clasificados para los octavos de final de la ${getCompName(comp)}! (${myPos}º del grupo)`, 'success');
-    } else {
-        compState.europeanPhase = 'eliminated';
-        window.gameLogic?.addNews(`😞 Eliminados en la fase de grupos de la ${getCompName(comp)}. (${myPos}º del grupo)`, 'error');
-    }
-
-    saveCompState(compState);
-    return compState;
-}
-
-function updateGroupStandings(standings, teamA, teamB, goalsA, goalsB) {
-    if (!standings[teamA]) standings[teamA] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 };
-    if (!standings[teamB]) standings[teamB] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 };
-
-    standings[teamA].pj++;
-    standings[teamA].gf += goalsA;
-    standings[teamA].gc += goalsB;
-    standings[teamB].pj++;
-    standings[teamB].gf += goalsB;
-    standings[teamB].gc += goalsA;
-
-    if (goalsA > goalsB) {
-        standings[teamA].g++;
-        standings[teamA].pts += 3;
-        standings[teamB].p++;
-    } else if (goalsA === goalsB) {
-        standings[teamA].e++;
-        standings[teamA].pts += 1;
-        standings[teamB].e++;
-        standings[teamB].pts += 1;
-    } else {
-        standings[teamB].g++;
-        standings[teamB].pts += 3;
-        standings[teamA].p++;
-    }
-}
-
-// ============================================================
-// SIMULACIÓN COPA DEL REY
-// ============================================================
-
-function simulateCopaDraw(myTeam, phase) {
-    const compState = getCompState();
-    if (!compState) return;
-
-    const opponent = compState.copaOpponents[phase] || generateCopaMockOpponent('primera');
-    const myRating = getMyRating();
-    const oppRating = 75 + Math.floor(Math.random() * 15);
-
-    const result = simulateEuropeanMatch(myTeam, myRating, { rating: oppRating });
-
-    compState.copaResults.push({
-        phase: phase,
-        opponent: opponent,
-        myGoals: result.myGoals,
-        oppGoals: result.oppGoals,
-        advanced: result.myGoals > result.oppGoals
-    });
-
-    const phaseOrder = ['round1', 'round32', 'round16', 'quarters', 'semis', 'final'];
-    const currentIdx = phaseOrder.indexOf(phase);
-
-    if (result.myGoals > result.oppGoals) {
-        const nextPhase = phaseOrder[currentIdx + 1];
-        compState.copaPhase = nextPhase || 'champion';
-        if (compState.copaPhase === 'champion') {
-            window.gameLogic?.addNews(`🏆 ¡¡CAMPEONES DE LA COPA DEL REY!! ¡Histórico!`, 'success');
-        } else {
-            window.gameLogic?.addNews(`✅ Copa del Rey: Clasificados para ${getPhaseName(nextPhase)}. Ganamos ${result.myGoals}-${result.oppGoals} al ${opponent}`, 'success');
-        }
-    } else {
-        compState.copaPhase = 'eliminated';
-        window.gameLogic?.addNews(`❌ Copa del Rey: Eliminados en ${getPhaseName(phase)}. Perdimos ${result.myGoals}-${result.oppGoals} ante ${opponent}`, 'error');
-    }
-
-    saveCompState(compState);
-    return compState;
-}
-
-function getCompName(comp) {
-    const names = {
-        champions: 'Champions League',
-        europaLeague: 'Europa League',
-        conferenceLague: 'Conference League'
-    };
-    return names[comp] || 'Competición Europea';
-}
-
-function getPhaseName(phase) {
-    const names = {
-        round1: 'Primera Ronda',
-        round32: 'Dieciseisavos',
-        round16: 'Octavos de Final',
-        quarters: 'Cuartos de Final',
-        semis: 'Semifinales',
-        final: 'Final',
-        champion: 'CAMPEÓN'
-    };
-    return names[phase] || phase;
-}
-
-// ============================================================
-// HOOK EN endSeason: INICIALIZAR COMPETICIONES NUEVA TEMPORADA
-// ============================================================
-
-function hookEndSeason() {
-    const originalEndSeason = window.gameLogic?.endSeason;
-    if (!originalEndSeason || window._endSeasonHooked) return;
-
-    // Interceptar después del fin de temporada
-    // No podemos hook la función en módulo ES6 directamente,
-    // así que enganchamos el setupNewSeason que se llama desde endSeason
-    // y usamos un observer en el gameState.week para detectar reset
-    console.log('🏆 Hook de fin de temporada instalado (via observer)');
-    window._endSeasonHooked = true;
-}
-
-// Detectar inicio de nueva temporada (week vuelve a 1 y seasonType='preseason')
-let _lastWeek = -1;
-let _lastSeasonType = '';
-
-function checkSeasonTransition() {
-    const state = window.gameLogic?.getGameState();
-    if (!state) return;
-
-    const currentWeek = state.week;
-    const currentSeasonType = state.seasonType;
-    const currentSeason = state.currentSeason;
-
-    // Detectar nueva pretemporada (transición)
-    if (currentSeasonType === 'preseason' && _lastSeasonType === 'regular') {
-        console.log('🏆 Nueva temporada detectada! Reiniciando competiciones...');
-        // Limpiar estado anterior
-        clearCompState();
-    }
-
-    _lastWeek = currentWeek;
-    _lastSeasonType = currentSeasonType;
-}
-
-// ============================================================
-// HOOK EN simulateWeek: PROCESAR COMPETICIONES INTEGRADAS
-// ============================================================
-
-function hookSimulateWeekForCompetitions() {
-    const originalSimulate = window.simulateWeek;
-    if (!originalSimulate || window._compHooked) {
-        if (!originalSimulate) setTimeout(hookSimulateWeekForCompetitions, 500);
-        return;
-    }
-
-    window._compHooked = true;
-    console.log('🏆 Hook de competiciones instalado en simulateWeek');
-
-    window.simulateWeek = async function() {
-        const state = window.gameLogic?.getGameState();
-        checkSeasonTransition();
-
-        // Llamar a la simulación original
-        const result = await originalSimulate.apply(this, arguments);
-
-        // Después de simular, procesar competiciones si corresponde
-        if (state && state.seasonType === 'regular') {
-            processCompetitionsAfterWeek(state);
-        }
-
-        return result;
-    };
-}
-
-function processCompetitionsAfterWeek(state) {
-    const compState = getCompState();
-    if (!compState || compState.season !== state.currentSeason) return;
-
-    const week = state.week;
-    const totalWeeks = state.maxSeasonWeeks || 38;
-
-    // Simular grupos europeos a mitad de temporada (semana ~12)
-    if (compState.europeanComp && compState.europeanPhase === 'groups' && week === Math.floor(totalWeeks * 0.3)) {
-        console.log('🏆 Simulando fase de grupos europea...');
-        simulateGroupPhase(compState.europeanComp, state.team);
-        if (window.renderCompetitionsInStandings) window.renderCompetitionsInStandings();
-    }
-
-    // Simular rondas eliminatorias europeas progresivamente
-    if (compState.europeanComp && compState.europeanPhase === 'round16' && week === Math.floor(totalWeeks * 0.5)) {
-        simulateEuropeanKnockoutRound('round16', state.team);
-    }
-    if (compState.europeanComp && compState.europeanPhase === 'quarterfinals' && week === Math.floor(totalWeeks * 0.65)) {
-        simulateEuropeanKnockoutRound('quarterfinals', state.team);
-    }
-    if (compState.europeanComp && compState.europeanPhase === 'semifinals' && week === Math.floor(totalWeeks * 0.78)) {
-        simulateEuropeanKnockoutRound('semifinals', state.team);
-    }
-    if (compState.europeanComp && compState.europeanPhase === 'final' && week === Math.floor(totalWeeks * 0.9)) {
-        simulateEuropeanKnockoutRound('final', state.team);
-    }
-
-    // Copa del Rey: rondas progresivas
-    if (compState.copaPhase && !['eliminated', 'champion'].includes(compState.copaPhase)) {
-        const phaseWeeks = {
-            round1: Math.floor(totalWeeks * 0.15),
-            round32: Math.floor(totalWeeks * 0.25),
-            round16: Math.floor(totalWeeks * 0.4),
-            quarters: Math.floor(totalWeeks * 0.55),
-            semis: Math.floor(totalWeeks * 0.7),
-            final: Math.floor(totalWeeks * 0.85)
-        };
-        const targetWeek = phaseWeeks[compState.copaPhase];
-        if (targetWeek && week === targetWeek) {
-            console.log('🏆 Simulando Copa del Rey:', compState.copaPhase);
-            simulateCopaDraw(state.team, compState.copaPhase);
-            if (window.renderCompetitionsInStandings) window.renderCompetitionsInStandings();
-        }
-    }
-}
-
-function simulateEuropeanKnockoutRound(phase, myTeam) {
-    const compState = getCompState();
-    if (!compState) return;
-
-    const group = compState.europeanGroup;
-    const myRating = getMyRating();
-
-    // Generar rival aleatorio de los equipos europeos
-    let rivals;
-    if (compState.europeanComp === 'champions') {
-        rivals = [...EUROPEAN_TEAMS.champions_group_A, ...EUROPEAN_TEAMS.champions_group_B, ...EUROPEAN_TEAMS.champions_group_C];
-    } else if (compState.europeanComp === 'europaLeague') {
-        rivals = [...EUROPEAN_TEAMS.europa_group_A, ...EUROPEAN_TEAMS.europa_group_B];
-    } else {
-        rivals = [...EUROPEAN_TEAMS.conference_group_A];
-    }
-
-    const rival = rivals[Math.floor(Math.random() * rivals.length)];
-    const result = simulateEuropeanMatch(myTeam, myRating, rival);
-
-    compState.europeanKnockout.push({
-        phase,
-        rival: rival.name,
-        myGoals: result.myGoals,
-        oppGoals: result.oppGoals
-    });
-
-    const phaseOrder = ['round16', 'quarterfinals', 'semifinals', 'final'];
-    const idx = phaseOrder.indexOf(phase);
-
-    if (result.myGoals > result.oppGoals) {
-        const next = phaseOrder[idx + 1];
-        compState.europeanPhase = next || 'winner';
-        if (!next) {
-            window.gameLogic?.addNews(`🏆 ¡¡CAMPEONES DE LA ${getCompName(compState.europeanComp).toUpperCase()}!! ¡Leyendas!`, 'success');
-        } else {
-            window.gameLogic?.addNews(`✅ ${getCompName(compState.europeanComp)}: Superamos al ${rival.name} ${result.myGoals}-${result.oppGoals}. A ${getPhaseName(next)}`, 'success');
-        }
-    } else {
-        compState.europeanPhase = 'eliminated';
-        window.gameLogic?.addNews(`❌ ${getCompName(compState.europeanComp)}: Eliminados en ${getPhaseName(phase)} por ${rival.name} ${result.myGoals}-${result.oppGoals}`, 'error');
-    }
-
-    saveCompState(compState);
-}
-
-// ============================================================
-// HOOK EN endSeason: CALCULAR CLASIFICACIÓN Y ASIGNAR PLAZAS
-// ============================================================
-
-function hookEndSeasonForCompetitions() {
-    if (window._endSeasonCompHooked) return;
-
-    // Enganchamos en el momento en que se llama injectMatchSummary
-    // y detectamos fin de temporada via week > maxSeasonWeeks
-    // Lo hacemos observando el estado tras cada simulación
-    const origSimulate = window.simulateWeek;
-    if (origSimulate && !window._compSeasonHooked) {
-        window._compSeasonHooked = true;
-
-        const hookedSimulate = window.simulateWeek;
-        window.simulateWeek = async function() {
-            const before = window.gameLogic?.getGameState();
-            const result = await hookedSimulate.apply(this, arguments);
-            const after = window.gameLogic?.getGameState();
-
-            // Detectar cambio de temporada
-            if (before && after && before.currentSeason !== after.currentSeason) {
-                console.log('🏆 Temporada terminada, inicializando competiciones para', after.currentSeason);
-                onSeasonEnd(before, after);
-            }
-
-            return result;
-        };
-    }
-
-    window._endSeasonCompHooked = true;
-}
-
-function onSeasonEnd(beforeState, afterState) {
-    const standings = beforeState.standings;
-    const division = beforeState.division;
-    if (!standings) return;
-
-    const sorted = Object.entries(standings).sort((a, b) => {
-        const ptsDiff = (b[1].pts || 0) - (a[1].pts || 0);
-        if (ptsDiff !== 0) return ptsDiff;
-        return ((b[1].gf || 0) - (b[1].gc || 0)) - ((a[1].gf || 0) - (a[1].gc || 0));
-    });
-
-    const myPos = sorted.findIndex(([n]) => n === beforeState.team) + 1;
-    const newDivision = afterState.division;
-    const newSeason = afterState.currentSeason;
-
-    // ── PLAYOFF RFEF ──────────────────────────────────────────
-    if (division === 'rfef_grupo1' || division === 'rfef_grupo2') {
-        handleRFEFSeasonEnd(beforeState, afterState, sorted, myPos);
-        return; // el resto lo gestiona esa función
-    }
-
-    // ── PRIMERA / SEGUNDA: inicializar competiciones normales ─
-    setTimeout(() => {
-        clearPlayoffState();
-        const newComp = initCompetitionsForSeason(afterState.team, myPos, newDivision, newSeason);
-        if (newComp.europeanComp) {
-            window.gameLogic?.addNews(`🏆 ¡Has clasificado para la ${getCompName(newComp.europeanComp)}! Temporada ${newSeason}`, 'success');
-        }
-        if (newComp.copaQualified) {
-            window.gameLogic?.addNews(`🏆 Tu equipo participará en la Copa del Rey ${newSeason}`, 'info');
-        }
-        renderCompetitionsInStandings();
-        updateStandingsColors();
-    }, 2000);
-}
-
-/**
- * Gestionar fin de temporada para equipos en Primera RFEF.
- * Detecta ambos grupos, construye playoff y lo simula.
- */
-function handleRFEFSeasonEnd(beforeState, afterState, sortedMyGroup, myPos) {
-    const myTeam = beforeState.team;
-    const myDivision = beforeState.division;
-    const season = beforeState.currentSeason;
-
-    // El grupo rival no está en el standings del jugador.
-    // Lo simulamos con standings ficticios de 20 equipos.
-    const otherGroupKey = myDivision === 'rfef_grupo1' ? 'rfef_grupo2' : 'rfef_grupo1';
-    const TEAMS_DATA = window._teamsDataForPlayoff || [];
-
-    // Intentar obtener el otro grupo del gameState global (si estuviera disponible)
-    // Como solo tenemos nuestro grupo, simulamos el otro grupo con equipos ficticios
-    const otherGroupTeams = generateFakeOtherGroupStandings(otherGroupKey);
-
-    // Playoff
-    const playoff = initRFEFPlayoff(myTeam, myDivision, sortedMyGroup, otherGroupTeams, season);
-
-    setTimeout(() => {
-        // Si el equipo está en el playoff, simularlo
-        if (playoff.myResult === null || playoff.myResult === undefined) {
-            const result = runRFEFPlayoff(myTeam);
-            notifyPlayoffResult(result, myTeam, afterState);
-        } else {
-            notifyPlayoffResult(playoff, myTeam, afterState);
-        }
-
-        // Actualizar UI
-        if (document.getElementById('standings')?.style.display !== 'none') {
-            injectPlayoffTabIfRFEF();
-            renderPlayoffTab();
-        }
-
-        clearCompState(); // limpiar competiciones europeas anteriores
-    }, 1500);
-}
-
-/**
- * Genera standings ficticios para el grupo rival
- * (usados cuando el jugador no pertenece a ese grupo).
- */
-function generateFakeOtherGroupStandings(groupKey) {
-    // Intentar leer de config.js si está expuesto
-    let teams = [];
-    try {
-        const cfgTeams = window.TEAMS_DATA_EXPORT?.[groupKey];
-        if (cfgTeams) teams = cfgTeams;
-    } catch(e) {}
-
-    // Fallback: 20 equipos genéricos
-    if (!teams.length) {
-        teams = Array.from({length: 20}, (_, i) => `Equipo-${groupKey.slice(-1)}${i+1}`);
-    }
-
-    // Crear standings simulados con puntos aleatorios decrecientes
-    let pts = 55 + Math.floor(Math.random() * 10);
-    return teams.map(name => {
-        const p = pts;
-        pts -= 2 + Math.floor(Math.random() * 3);
-        const pj = 38;
-        const gf = 30 + Math.floor(Math.random() * 30);
-        const gc = 20 + Math.floor(Math.random() * 25);
-        return [name, { pj, pts: p, gf, gc, g: Math.floor(p/3), e: p%3, p: pj - Math.floor(p/3) - (p%3) }];
-    });
-}
-
-function notifyPlayoffResult(playoff, myTeam, afterState) {
-    if (!playoff) return;
+    comp.europeanResults = results;
+    const sorted = sortSt(comp.europeanGroupStandings);
+    const myPos = sorted.findIndex(([n])=>n===myTeam)+1;
+    comp.europeanPhase = myPos <= 2 ? 'round16' : 'eliminated';
     const gl = window.gameLogic;
-    const div = afterState.division;
+    if (myPos<=2) gl?.addNews(`🏆 ¡Clasificados para Octavos de la ${compName(comp.europeanComp)}! (${myPos}º grupo)`, 'success');
+    else gl?.addNews(`😞 Eliminados fase grupos ${compName(comp.europeanComp)} (${myPos}º)`, 'error');
+    store.saveComp(comp);
+}
 
-    if (playoff.myResult === 'promoted_direct') {
-        gl?.addNews(`🏆 ¡Ascenso DIRECTO a Segunda División! Fuiste 1º de tu grupo.`, 'success');
-    } else if (playoff.myResult === 'promoted_playoff') {
-        gl?.addNews(`🎉 ¡Ascenso vía PLAYOFF a Segunda División! Ganaste tu mini-liga.`, 'success');
-    } else if (playoff.myResult === 'eliminated') {
-        gl?.addNews(`😞 Eliminado en el playoff de ascenso. Permaneces en Primera RFEF la próxima temporada.`, 'error');
-    } else if (playoff.myResult === 'not_qualified') {
-        gl?.addNews(`📊 Tu equipo terminó fuera del top 5 y no participó en el playoff de ascenso.`, 'info');
+function simulateEUKnockout(phase, myTeam) {
+    const comp = store.getComp();
+    if (!comp) return;
+    const pool = getEUPool(comp.europeanComp);
+    const rival = pool[Math.floor(Math.random()*pool.length)];
+    const r = simMatch(getMyRating(), rival.rating);
+    comp.europeanKnockout.push({ phase, rival:rival.name, myGoals:r.myGoals, oppGoals:r.oppGoals });
+    const order = ['round16','quarterfinals','semifinals','final'];
+    const idx = order.indexOf(phase);
+    const win = r.myGoals > r.oppGoals;
+    if (win) {
+        const next = order[idx+1];
+        comp.europeanPhase = next || 'winner';
+        window.gameLogic?.addNews(next
+            ? `✅ ${compName(comp.europeanComp)}: Pasamos vs ${rival.name} ${r.myGoals}-${r.oppGoals}. ¡A ${phaseName(next)}!`
+            : `🏆 ¡¡CAMPEONES DE LA ${compName(comp.europeanComp).toUpperCase()}!!`, 'success');
+    } else {
+        comp.europeanPhase = 'eliminated';
+        window.gameLogic?.addNews(`❌ ${compName(comp.europeanComp)}: Eliminados en ${phaseName(phase)} vs ${rival.name} ${r.myGoals}-${r.oppGoals}`, 'error');
     }
-
-    // Anunciar ganadores del playoff
-    if (playoff.playoffWinnerA) gl?.addNews(`⬆️ Mini-Liga A: ${playoff.playoffWinnerA} asciende a Segunda.`, 'info');
-    if (playoff.playoffWinnerB) gl?.addNews(`⬆️ Mini-Liga B: ${playoff.playoffWinnerB} asciende a Segunda.`, 'info');
+    store.saveComp(comp);
 }
 
 // ============================================================
-// MODIFICAR CLASIFICACIÓN: COLORES POR POSICIÓN
+// COPA DEL REY
 // ============================================================
+function simulateCopa(myTeam, phase) {
+    const comp = store.getComp();
+    if (!comp) return;
+    const opponent = comp.copaOpponents?.[phase] || pickFrom(COPA_POOLS.primera);
+    const r = simMatch(getMyRating(), 70+Math.floor(Math.random()*16));
+    comp.copaResults.push({ phase, opponent, myGoals:r.myGoals, oppGoals:r.oppGoals, advanced:r.myGoals>r.oppGoals });
+    const order = ['round1','round32','round16','quarters','semis','final'];
+    const idx = order.indexOf(phase);
+    const win = r.myGoals > r.oppGoals;
+    if (win) {
+        const next = order[idx+1];
+        comp.copaPhase = next || 'champion';
+        if (!next) window.gameLogic?.addNews('🏆 ¡¡CAMPEONES DE LA COPA DEL REY!!', 'success');
+        else window.gameLogic?.addNews(`✅ Copa: ¡A ${phaseName(next)}! Ganamos ${r.myGoals}-${r.oppGoals} al ${opponent}`, 'success');
+    } else {
+        comp.copaPhase = 'eliminated';
+        window.gameLogic?.addNews(`❌ Copa del Rey: Eliminados en ${phaseName(phase)} vs ${opponent} ${r.myGoals}-${r.oppGoals}`, 'error');
+    }
+    store.saveComp(comp);
+}
 
-const ZONE_COLORS = {
-    champions: { bg: 'rgba(30, 90, 200, 0.25)', border: '#1E5AC8', label: '🔵 UCL' },
-    europaLeague: { bg: 'rgba(255, 140, 0, 0.2)', border: '#FF8C00', label: '🟠 UEL' },
-    conferenceLague: { bg: 'rgba(0, 180, 100, 0.2)', border: '#00B464', label: '🟢 UECL' },
-    playoff: { bg: 'rgba(180, 150, 0, 0.2)', border: '#B49600', label: '⭐ Playoff' },
-    promoteAuto: { bg: 'rgba(50, 200, 50, 0.25)', border: '#32C832', label: '⬆️ Ascenso' },
-    relegate: { bg: 'rgba(200, 40, 40, 0.25)', border: '#C82828', label: '⬇️ Descenso' }
-};
+// ============================================================
+// PLAYOFF SEGUNDA DIVISIÓN → PRIMERA
+// Formato real: 3ºvs6º y 4ºvs5º → ganadores se enfrentan en final
+// Todas las eliminatorias a doble partido. Sin penaltis, si hay empate
+// en global gana el mejor clasificado en liga.
+// ============================================================
+function initSegundaPlayoff(myTeam, sortedAll, season) {
+    const p3 = sortedAll[2]?.[0], p4 = sortedAll[3]?.[0],
+          p5 = sortedAll[4]?.[0], p6 = sortedAll[5]?.[0];
+    const inPlayoff = [p3,p4,p5,p6].includes(myTeam);
+    const myPos = sortedAll.findIndex(([n])=>n===myTeam)+1;
 
+    const po = {
+        type: 'segunda', season, myTeam, myPos,
+        directAscent: [sortedAll[0]?.[0], sortedAll[1]?.[0]],
+        pos3:p3, pos4:p4, pos5:p5, pos6:p6,
+        // SF: pos3 (mejor) vs pos6 (peor) — ida en campo del peor
+        sf1: { teamA: p3, teamB: p6 }, // teamA = mejor posición
+        sf2: { teamA: p4, teamB: p5 },
+        sf1Result: null, sf2Result: null,
+        finalResult: null, winner: null,
+        myResult: myPos<=2 ? 'promoted_direct' : inPlayoff ? null : 'not_qualified',
+        phase: (myPos<=2||!inPlayoff) ? 'done' : 'pending',
+        simulated: false
+    };
+
+    store.savePlayoff(po);
+    return po;
+}
+
+function simDoubleLeg(tA, tB, myTeam, myR) {
+    // Ida en campo del peor (teamB). Vuelta en campo del mejor (teamA).
+    function oneMatch(home, away) {
+        const isMyHome = home===myTeam, isMyAway = away===myTeam;
+        if (isMyHome||isMyAway) {
+            const r = simMatch(myR, 68+Math.floor(Math.random()*14), isMyHome?0.04:-0.02);
+            return { hg: isMyHome?r.myGoals:r.oppGoals, ag: isMyHome?r.oppGoals:r.myGoals };
+        }
+        return { hg: Math.floor(Math.random()*3), ag: Math.floor(Math.random()*3) };
+    }
+    const leg1 = oneMatch(tB, tA); // ida en campo del "peor" (tB)
+    const leg2 = oneMatch(tA, tB); // vuelta en campo del "mejor" (tA)
+    // Global: goles de tA = leg1.ag + leg2.hg; goles de tB = leg1.hg + leg2.ag
+    const totalA = leg1.ag + leg2.hg;
+    const totalB = leg1.hg + leg2.ag;
+    // Si empate global, avanza el mejor clasificado (tA)
+    const winner = totalA >= totalB ? tA : tB;
+    return { leg1, leg2, totalA, totalB, winner, teamA:tA, teamB:tB };
+}
+
+function runSegundaPlayoff(myTeam) {
+    const po = store.getPlayoff();
+    if (!po || po.type!=='segunda') return po;
+    const myR = getMyRating();
+
+    po.sf1Result = simDoubleLeg(po.sf1.teamA, po.sf1.teamB, myTeam, myR);
+    po.sf2Result = simDoubleLeg(po.sf2.teamA, po.sf2.teamB, myTeam, myR);
+    po.finalResult = simDoubleLeg(po.sf1Result.winner, po.sf2Result.winner, myTeam, myR);
+    po.winner = po.finalResult.winner;
+    po.simulated = true; po.phase = 'done';
+
+    if (!po.myResult) {
+        const inFinal = [po.sf1Result.winner, po.sf2Result.winner].includes(myTeam);
+        if (po.winner === myTeam) po.myResult = 'promoted_playoff';
+        else if (inFinal) po.myResult = 'lost_final';
+        else po.myResult = 'eliminated_sf';
+    }
+
+    store.savePlayoff(po);
+    return po;
+}
+
+// ============================================================
+// PLAYOFF RFEF → SEGUNDA
+// Mini-ligas cruzadas round-robin (ida y vuelta)
+// ============================================================
+function initRFEFPlayoff(myTeam, sortedMyGroup, sortedOtherGroup, season) {
+    const pool1 = sortedMyGroup.slice(1,5).map(([n])=>n);
+    const pool2 = sortedOtherGroup.slice(1,5).map(([n])=>n);
+    const miniA = [pool1[0], pool2[1], pool1[2], pool2[3]].filter(Boolean);
+    const miniB = [pool1[1], pool2[0], pool1[3], pool2[2]].filter(Boolean);
+    const myMini = miniA.includes(myTeam)?'A': miniB.includes(myTeam)?'B':null;
+
+    const isDirectA = sortedMyGroup[0]?.[0]===myTeam || sortedOtherGroup[0]?.[0]===myTeam;
+
+    const po = {
+        type:'rfef', season, myTeam,
+        directAscent1: sortedMyGroup[0]?.[0],
+        directAscent2: sortedOtherGroup[0]?.[0],
+        miniA: { teams:miniA, standings:initMiniSt(miniA), matches:genMiniMatches(miniA), simulated:false },
+        miniB: { teams:miniB, standings:initMiniSt(miniB), matches:genMiniMatches(miniB), simulated:false },
+        myMini,
+        winnerA:null, winnerB:null,
+        myResult: isDirectA ? 'promoted_direct' : myMini ? null : 'not_qualified',
+        phase: (isDirectA||!myMini) ? 'done' : 'pending',
+        simulated: false
+    };
+
+    store.savePlayoff(po);
+    return po;
+}
+
+function initMiniSt(teams) {
+    const s={}; teams.forEach(t=>{ s[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; }); return s;
+}
+
+function genMiniMatches(teams) {
+    const m=[];
+    for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) {
+        m.push({home:teams[i],away:teams[j],played:false,hg:null,ag:null});
+        m.push({home:teams[j],away:teams[i],played:false,hg:null,ag:null});
+    }
+    return m;
+}
+
+function simMiniLeague(mini, myTeam, myR) {
+    mini.matches.forEach(m=>{
+        if(m.played) return;
+        let hg,ag;
+        const isMe = m.home===myTeam||m.away===myTeam;
+        if(isMe) {
+            const isH=m.home===myTeam;
+            const r=simMatch(myR, 68+Math.floor(Math.random()*14), isH?0.04:-0.02);
+            hg=isH?r.myGoals:r.oppGoals; ag=isH?r.oppGoals:r.myGoals;
+        } else { hg=Math.floor(Math.random()*3); ag=Math.floor(Math.random()*3); }
+        m.played=true; m.hg=hg; m.ag=ag;
+        updateSt(mini.standings, m.home, m.away, hg, ag);
+    });
+    mini.simulated=true; return mini;
+}
+
+function runRFEFPlayoff(myTeam) {
+    const po = store.getPlayoff();
+    if(!po||po.type!=='rfef') return po;
+    const myR = getMyRating();
+    po.miniA = simMiniLeague(po.miniA, myTeam, myR);
+    po.miniB = simMiniLeague(po.miniB, myTeam, myR);
+    po.winnerA = sortSt(po.miniA.standings)[0]?.[0];
+    po.winnerB = sortSt(po.miniB.standings)[0]?.[0];
+    po.simulated=true; po.phase='done';
+    if(!po.myResult)
+        po.myResult = (myTeam===po.winnerA||myTeam===po.winnerB) ? 'promoted_playoff' : 'eliminated';
+    store.savePlayoff(po);
+    return po;
+}
+
+function generateFakeOtherGroup(groupKey) {
+    const FAKE = {
+        rfef_grupo1: ['AD Mérida','Arenas Club','Athletic Club B','Barakaldo CF','CA Osasuna B','CD Arenteiro','CD Guadalajara','CD Lugo','CD Tenerife','CF Talavera de la Reina','CP Cacereño','Ourense CF','Pontevedra CF','Racing Club de Ferrol','RC Celta Fortuna','Real Avilés Industrial','Real Madrid Castilla','SD Ponferradina','Unionistas de Salamanca CF','Zamora CF'],
+        rfef_grupo2: ['AD Alcorcón','Algeciras CF','Atlético Sanluqueño CF','Antequera CF','Betis Deportivo Balompié','Atlético de Madrid B','CD Eldense','CD Teruel','CE Europa','CE Sabadell FC','FC Cartagena','Gimnàstic de Tarragona','Hércules CF','UD Ibiza','Marbella FC','Real Murcia CF','SD Tarazona','Sevilla Atlético','CD Castellón B','Villarreal CF B']
+    };
+    const teams = FAKE[groupKey] || [];
+    let pts=55;
+    return teams.map(name=>{
+        const p=pts; pts-=2+Math.floor(Math.random()*3);
+        const gf=30+Math.floor(Math.random()*30), gc=20+Math.floor(Math.random()*25);
+        return [name,{pj:38,pts:p,gf,gc,g:Math.floor(p/3),e:p%3,p:38-Math.floor(p/3)-(p%3)}];
+    });
+}
+
+// ============================================================
+// COLOREADO DE TABLA DE CLASIFICACIÓN
+// ============================================================
 function updateStandingsColors() {
     const state = window.gameLogic?.getGameState();
-    if (!state) return;
-
+    if (!state?.standings) return;
     const division = state.division;
-    const standings = state.standings;
-    if (!standings) return;
-
-    const sorted = Object.entries(standings).sort((a, b) => {
-        const ptsDiff = (b[1].pts || 0) - (a[1].pts || 0);
-        if (ptsDiff !== 0) return ptsDiff;
-        return ((b[1].gf || 0) - (b[1].gc || 0)) - ((a[1].gf || 0) - (a[1].gc || 0));
-    });
-
-    const totalTeams = sorted.length;
     const cfg = COMPETITION_CONFIG[division] || {};
+    const total = Object.keys(state.standings).length;
 
-    // Eliminar leyenda anterior
-    const oldLegend = document.getElementById('standings-zone-legend');
-    if (oldLegend) oldLegend.remove();
-
-    const rows = document.querySelectorAll('#standingsTable tr');
-
+    const rows = document.querySelectorAll('#standingsTable tr, .standings-table tbody tr');
     rows.forEach((row, idx) => {
-        const pos = idx + 1;
+        const pos = idx+1;
+        row.style.background = ''; row.style.borderLeft = '';
+        const apply = zone => {
+            row.style.background  = ZONE_COLORS[zone].bg;
+            row.style.borderLeft  = `4px solid ${ZONE_COLORS[zone].border}`;
+        };
+        if (division==='primera') {
+            if (cfg.champions?.includes(pos))        apply('champions');
+            else if (cfg.europaLeague?.includes(pos)) apply('europaLeague');
+            else if (cfg.conferenceLague?.includes(pos)) apply('conferenceLague');
+            else if (cfg.relegate && pos > total-cfg.relegate) apply('relegate');
+        } else if (division==='segunda') {
+            if (cfg.promoteAuto?.includes(pos))       apply('promoteAuto');
+            else if (cfg.promotePlayoff?.includes(pos)) apply('promotePlayoff');
+            else if (cfg.relegate && pos > total-cfg.relegate) apply('relegate');
+        } else if (division==='rfef_grupo1'||division==='rfef_grupo2') {
+            if (cfg.promoteAuto?.includes(pos))       apply('promoteAuto');
+            else if (cfg.promotePlayoff?.includes(pos)) apply('promotePlayoff');
+        }
+    });
+    addLegend(division, cfg, total);
+}
 
-        // Reset
-        row.style.background = '';
-        row.style.borderLeft = '';
+function addLegend(division, cfg, total) {
+    const page = document.getElementById('standings');
+    if (!page) return;
+    document.getElementById('comp-legend')?.remove();
+    const div = document.createElement('div');
+    div.id = 'comp-legend';
+    div.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:.82em;';
+    const items = [];
+    if (division==='primera') {
+        const n = cfg.champions?.length||0;
+        const eu = cfg.europaLeague?.length||0;
+        const co = cfg.conferenceLague?.length||0;
+        if(n)  items.push({...ZONE_COLORS.champions,       text:`Pos 1-${n}: ${ZONE_COLORS.champions.label}`});
+        if(eu) items.push({...ZONE_COLORS.europaLeague,    text:`Pos ${n+1}-${n+eu}: ${ZONE_COLORS.europaLeague.label}`});
+        if(co) items.push({...ZONE_COLORS.conferenceLague, text:`Pos ${n+eu+1}: ${ZONE_COLORS.conferenceLague.label}`});
+        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${ZONE_COLORS.relegate.label}`});
+    } else if (division==='segunda') {
+        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1-2: ${ZONE_COLORS.promoteAuto.label}`});
+        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 3-6: ${ZONE_COLORS.promotePlayoff.label}`});
+        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${ZONE_COLORS.relegate.label}`});
+    } else {
+        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1: ${ZONE_COLORS.promoteAuto.label}`});
+        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 2-5: ${ZONE_COLORS.promotePlayoff.label}`});
+    }
+    items.forEach(item => {
+        const s = document.createElement('span');
+        s.style.cssText = `background:${item.bg};border-left:3px solid ${item.border};padding:4px 10px;border-radius:4px;color:#fff;`;
+        s.textContent = item.text; div.appendChild(s);
+    });
+    const tbl = page.querySelector('table');
+    if (tbl) tbl.insertAdjacentElement('afterend', div);
+    else page.appendChild(div);
+}
 
-        if (division === 'primera') {
-            if (cfg.champions?.includes(pos)) {
-                row.style.background = ZONE_COLORS.champions.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.champions.border}`;
-            } else if (cfg.europaLeague?.includes(pos)) {
-                row.style.background = ZONE_COLORS.europaLeague.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.europaLeague.border}`;
-            } else if (cfg.conferenceLague?.includes(pos)) {
-                row.style.background = ZONE_COLORS.conferenceLague.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.conferenceLague.border}`;
-            } else if (pos > totalTeams - cfg.relegate && cfg.relegate > 0) {
-                row.style.background = ZONE_COLORS.relegate.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.relegate.border}`;
-            }
-        } else if (division === 'segunda') {
-            if (cfg.promoteAuto?.includes(pos)) {
-                row.style.background = ZONE_COLORS.promoteAuto.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.promoteAuto.border}`;
-            } else if (cfg.promotePlayoff?.includes(pos)) {
-                row.style.background = ZONE_COLORS.playoff.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.playoff.border}`;
-            } else if (pos > totalTeams - cfg.relegate && cfg.relegate > 0) {
-                row.style.background = ZONE_COLORS.relegate.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.relegate.border}`;
-            }
-        } else if (division === 'rfef_grupo1' || division === 'rfef_grupo2') {
-            if (cfg.promoteAuto?.includes(pos)) {
-                row.style.background = ZONE_COLORS.promoteAuto.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.promoteAuto.border}`;
-            } else if (cfg.promotePlayoff?.includes(pos)) {
-                row.style.background = ZONE_COLORS.playoff.bg;
-                row.style.borderLeft = `4px solid ${ZONE_COLORS.playoff.border}`;
-            }
+// ============================================================
+// UI: INYECCIÓN DE TABS EN CLASIFICACIÓN
+// ============================================================
+function injectCompUI() {
+    const page = document.getElementById('standings');
+    if (!page || document.getElementById('comp-tabs')) return;
+
+    const state  = window.gameLogic?.getGameState();
+    const division = state?.division || '';
+    const isRFEF    = division.includes('rfef');
+    const isSegunda = division === 'segunda';
+    const hasPO     = isRFEF || isSegunda;
+    const hasEU     = !isRFEF;
+
+    const tabs = document.createElement('div');
+    tabs.id = 'comp-tabs';
+    tabs.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px;';
+
+    let html = `<button class="ctab active" id="ctab-liga" onclick="window.showCompTab('liga')">⚽ Liga</button>`;
+    if (hasPO) html += `<button class="ctab" id="ctab-playoff" onclick="window.showCompTab('playoff')">⬆️ Playoff Ascenso</button>`;
+    if (hasEU) html += `<button class="ctab" id="ctab-europa" onclick="window.showCompTab('europa')">🏆 Europa</button>`;
+    if (hasEU) html += `<button class="ctab" id="ctab-copa" onclick="window.showCompTab('copa')">🥇 Copa del Rey</button>`;
+    tabs.innerHTML = html;
+
+    const header = page.querySelector('.page-header');
+    if (header) header.appendChild(tabs);
+    else page.insertBefore(tabs, page.firstChild);
+
+    // CSS
+    if (!document.getElementById('comp-css')) {
+        const s = document.createElement('style');
+        s.id = 'comp-css';
+        s.textContent = `
+            .ctab{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.85em;transition:all .2s}
+            .ctab:hover{background:rgba(255,255,255,.2)}
+            .ctab.active{background:rgba(233,69,96,.6);border-color:#e94560}
+            #comp-europa-panel,#comp-copa-panel,#comp-playoff-panel{display:none;padding:4px 0}
+            #comp-europa-panel.on,#comp-copa-panel.on,#comp-playoff-panel.on{display:block}
+            .cg-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.88em}
+            .cg-table th,.cg-table td{padding:7px;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);color:#fff}
+            .cg-table th{color:#FFD700;font-size:.8em;text-transform:uppercase}
+            .ccard{background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;margin:8px 0;border-left:3px solid #e94560}
+            .ccard .ctitle{color:#FFD700;font-size:.82em;font-weight:bold;margin-bottom:4px}
+            .cwin{color:#4CAF50}.cdraw{color:#FFD700}.closs{color:#f44336}
+            .po-wrap{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+            .po-match{background:rgba(255,255,255,.07);border-radius:8px;padding:10px 14px;border-left:3px solid #B49600}
+            .po-match .pm-title{color:#B49600;font-size:.8em;font-weight:bold;margin-bottom:6px}
+            .po-row{display:flex;justify-content:space-between;padding:3px 0;font-size:.9em;color:#fff}
+            .po-row.winner{color:#4CAF50;font-weight:bold}
+            .po-row.loser{color:rgba(255,255,255,.4)}
+            .po-info{color:#FFD700;font-size:.82em;margin-top:4px}
+            .result-banner{border-radius:8px;padding:14px;text-align:center;margin-top:14px;border-width:2px;border-style:solid}
+        `;
+        document.head.appendChild(s);
+    }
+
+    // Paneles
+    ['comp-europa-panel','comp-copa-panel','comp-playoff-panel'].forEach(id=>{
+        if(!document.getElementById(id)){
+            const p=document.createElement('div'); p.id=id; page.appendChild(p);
         }
     });
 
-    // Añadir leyenda
-    addStandingsLegend(division, cfg, totalTeams);
-}
-
-function addStandingsLegend(division, cfg, totalTeams) {
-    const standingsPage = document.getElementById('standings');
-    if (!standingsPage) return;
-
-    let oldLegend = document.getElementById('standings-zone-legend');
-    if (oldLegend) oldLegend.remove();
-
-    const legend = document.createElement('div');
-    legend.id = 'standings-zone-legend';
-    legend.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:0.85em;padding:8px 0;';
-
-    const items = [];
-
-    if (division === 'primera') {
-        if (cfg.champions?.length) items.push({ ...ZONE_COLORS.champions, text: `Pos ${cfg.champions.join(', ')}: Champions League` });
-        if (cfg.europaLeague?.length) items.push({ ...ZONE_COLORS.europaLeague, text: `Pos ${cfg.europaLeague.join(', ')}: Europa League` });
-        if (cfg.conferenceLague?.length) items.push({ ...ZONE_COLORS.conferenceLague, text: `Pos ${cfg.conferenceLague.join(', ')}: Conference League` });
-        if (cfg.relegate) items.push({ ...ZONE_COLORS.relegate, text: `Pos ${totalTeams - cfg.relegate + 1}-${totalTeams}: Descenso` });
-    } else if (division === 'segunda') {
-        if (cfg.promoteAuto?.length) items.push({ ...ZONE_COLORS.promoteAuto, text: `Pos ${cfg.promoteAuto.join(', ')}: Ascenso directo` });
-        if (cfg.promotePlayoff?.length) items.push({ ...ZONE_COLORS.playoff, text: `Pos ${cfg.promotePlayoff[0]}-${cfg.promotePlayoff[cfg.promotePlayoff.length-1]}: Playoff ascenso` });
-        if (cfg.relegate) items.push({ ...ZONE_COLORS.relegate, text: `Pos ${totalTeams - cfg.relegate + 1}-${totalTeams}: Descenso` });
-    } else if (division === 'rfef_grupo1' || division === 'rfef_grupo2') {
-        if (cfg.promoteAuto?.length) items.push({ ...ZONE_COLORS.promoteAuto, text: `Pos ${cfg.promoteAuto[0]}: Ascenso directo a Segunda` });
-        if (cfg.promotePlayoff?.length) items.push({ ...ZONE_COLORS.playoff, text: `Pos ${cfg.promotePlayoff[0]}-${cfg.promotePlayoff[cfg.promotePlayoff.length-1]}: Playoff de ascenso` });
-    }
-
-    items.forEach(item => {
-        const span = document.createElement('span');
-        span.style.cssText = `background:${item.bg};border-left:3px solid ${item.border};padding:4px 8px;border-radius:4px;color:#fff;`;
-        span.textContent = item.text;
-        legend.appendChild(span);
-    });
-
-    // Insertar después de la tabla
-    const table = standingsPage.querySelector('table');
-    if (table) {
-        table.insertAdjacentElement('afterend', legend);
-    }
-}
-
-// ============================================================
-// UI: PANEL DE COMPETICIONES EN LA PÁGINA DE CLASIFICACIÓN
-// ============================================================
-
-function injectCompetitionsUI() {
-    const standingsPage = document.getElementById('standings');
-    if (!standingsPage) return;
-
-    const header = standingsPage.querySelector('.page-header');
-    if (!header || document.getElementById('comp-tabs-container')) return;
-
-    const state = window.gameLogic?.getGameState();
-    const division = state?.division || '';
-    const isRFEF = division === 'rfef_grupo1' || division === 'rfef_grupo2';
-
-    const tabsContainer = document.createElement('div');
-    tabsContainer.id = 'comp-tabs-container';
-    tabsContainer.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;';
-
-    if (isRFEF) {
-        tabsContainer.innerHTML = `
-            <button id="tab-liga" class="comp-tab active" onclick="window.showCompTab('liga')">
-                ⚽ Liga
-            </button>
-            <button id="tab-playoff" class="comp-tab" onclick="window.showCompTab('playoff')">
-                ⬆️ Playoff Ascenso
-            </button>
-        `;
-    } else {
-        tabsContainer.innerHTML = `
-            <button id="tab-liga" class="comp-tab active" onclick="window.showCompTab('liga')">
-                ⚽ Liga
-            </button>
-            <button id="tab-europa" class="comp-tab" onclick="window.showCompTab('europa')">
-                🏆 Europa
-            </button>
-            <button id="tab-copa" class="comp-tab" onclick="window.showCompTab('copa')">
-                🥇 Copa del Rey
-            </button>
-        `;
-    }
-
-    header.appendChild(tabsContainer);
-
-    // Estilos
-    if (!document.getElementById('comp-tabs-style')) {
-        const style = document.createElement('style');
-        style.id = 'comp-tabs-style';
-        style.textContent = `
-            .comp-tab {
-                background: rgba(255,255,255,0.1);
-                border: 1px solid rgba(255,255,255,0.2);
-                color: white;
-                padding: 6px 14px;
-                border-radius: 20px;
-                cursor: pointer;
-                font-size: 0.85em;
-                transition: all 0.2s;
-            }
-            .comp-tab:hover { background: rgba(255,255,255,0.2); }
-            .comp-tab.active {
-                background: rgba(233, 69, 96, 0.6);
-                border-color: #e94560;
-            }
-            #comp-europa-panel, #comp-copa-panel, #comp-playoff-panel { display: none; }
-            #comp-europa-panel.active, #comp-copa-panel.active, #comp-playoff-panel.active { display: block; }
-
-            .europa-group-table { width:100%; border-collapse:collapse; margin:10px 0; }
-            .europa-group-table th, .europa-group-table td { padding:8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); color:#fff; font-size:0.9em; }
-            .europa-group-table th { color:#FFD700; font-size:0.8em; text-transform:uppercase; }
-            .copa-round { background:rgba(255,255,255,0.05); border-radius:8px; padding:10px; margin:8px 0; border-left:3px solid #e94560; }
-            .copa-round .round-name { color:#FFD700; font-size:0.85em; font-weight:bold; margin-bottom:4px; }
-            .copa-result { font-size:1em; color:white; }
-            .copa-win { color:#4CAF50; }
-            .copa-loss { color:#f44336; }
-            .copa-pending { color:rgba(255,255,255,0.5); font-style:italic; }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // Crear paneles
-    const ligaTable = standingsPage.querySelector('table');
-    if (ligaTable && !ligaTable.id) ligaTable.id = 'comp-liga-content';
-
-    if (!document.getElementById('comp-europa-panel')) {
-        const europaPanel = document.createElement('div');
-        europaPanel.id = 'comp-europa-panel';
-        standingsPage.appendChild(europaPanel);
-    }
-
-    if (!document.getElementById('comp-copa-panel')) {
-        const copaPanel = document.createElement('div');
-        copaPanel.id = 'comp-copa-panel';
-        standingsPage.appendChild(copaPanel);
-    }
-
-    if (!document.getElementById('comp-playoff-panel')) {
-        const playoffPanel = document.createElement('div');
-        playoffPanel.id = 'comp-playoff-panel';
-        standingsPage.appendChild(playoffPanel);
-    }
+    // ID a la tabla
+    const tbl = page.querySelector('table');
+    if (tbl && !tbl.id) tbl.id = 'comp-liga-tbl';
 }
 
 window.showCompTab = function(tab) {
-    document.querySelectorAll('.comp-tab').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById('tab-' + tab);
-    if (activeBtn) activeBtn.classList.add('active');
+    document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('ctab-'+tab)?.classList.add('active');
 
-    const ligaTable = document.getElementById('comp-liga-content');
-    const legendEl = document.getElementById('standings-zone-legend');
-    const europaPanel = document.getElementById('comp-europa-panel');
-    const copaPanel = document.getElementById('comp-copa-panel');
-    const playoffPanel = document.getElementById('comp-playoff-panel');
+    const ligaTbl = document.getElementById('comp-liga-tbl');
+    const legend  = document.getElementById('comp-legend');
+    ['comp-europa-panel','comp-copa-panel','comp-playoff-panel'].forEach(id=>{
+        document.getElementById(id)?.classList.remove('on');
+    });
 
-    // Ocultar todo
-    [europaPanel, copaPanel, playoffPanel].forEach(p => p?.classList.remove('active'));
-    if (ligaTable) ligaTable.style.display = 'none';
-    if (legendEl) legendEl.style.display = 'none';
-
-    if (tab === 'liga') {
-        if (ligaTable) ligaTable.style.display = '';
-        if (legendEl) legendEl.style.display = '';
+    if (tab==='liga') {
+        if(ligaTbl) ligaTbl.style.display='';
+        if(legend)  legend.style.display='';
         updateStandingsColors();
-    } else if (tab === 'europa') {
-        europaPanel?.classList.add('active');
-        renderEuropaPanel();
-    } else if (tab === 'copa') {
-        copaPanel?.classList.add('active');
-        renderCopaPanel();
-    } else if (tab === 'playoff') {
-        playoffPanel?.classList.add('active');
-        renderPlayoffTab();
+    } else {
+        if(ligaTbl) ligaTbl.style.display='none';
+        if(legend)  legend.style.display='none';
+        if(tab==='europa')  { document.getElementById('comp-europa-panel')?.classList.add('on');  renderEuropa(); }
+        if(tab==='copa')    { document.getElementById('comp-copa-panel')?.classList.add('on');    renderCopa(); }
+        if(tab==='playoff') { document.getElementById('comp-playoff-panel')?.classList.add('on'); renderPlayoff(); }
     }
 };
 
 // ============================================================
-// RENDERIZAR PANEL EUROPEO
+// RENDER: EUROPA
 // ============================================================
-
-function renderEuropaPanel() {
+function renderEuropa() {
     const panel = document.getElementById('comp-europa-panel');
     if (!panel) return;
-
-    const compState = getCompState();
+    const comp  = store.getComp();
     const state = window.gameLogic?.getGameState();
 
-    if (!compState || !compState.europeanComp) {
-        panel.innerHTML = `
-            <div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">
-                <div style="font-size:3em;margin-bottom:10px;">🌍</div>
-                <div style="font-size:1.1em;">Tu equipo no está clasificado para competición europea esta temporada.</div>
-                <div style="font-size:0.9em;margin-top:8px;color:rgba(255,255,255,0.3);">
-                    Clasifica entre los 6 primeros de Primera División para acceder a Europa.
-                </div>
-            </div>
-        `;
-        return;
+    if (!comp?.europeanComp) {
+        panel.innerHTML = `<div style="text-align:center;padding:40px;color:rgba(255,255,255,.5)">
+            <div style="font-size:3em">🌍</div>
+            <div style="margin-top:10px;font-size:1em">Tu equipo no está clasificado para competición europea esta temporada.</div>
+            <div style="font-size:.82em;margin-top:8px;color:rgba(255,255,255,.3)">Clasifica entre los 8 primeros de Primera División.</div>
+        </div>`; return;
     }
 
-    const compName = getCompName(compState.europeanComp);
-    const phase = compState.europeanPhase;
-    let html = `<h3 style="color:#FFD700;margin:15px 0 10px;">${getCompEmoji(compState.europeanComp)} ${compName} — ${state?.currentSeason || ''}</h3>`;
+    const cn=compName(comp.europeanComp), ce=compEmoji(comp.europeanComp);
+    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">${ce} ${cn} — ${state?.currentSeason||''}</h3>`;
 
-    if (phase === 'groups' && compState.europeanGroupStandings) {
-        html += renderGroupStandingsHTML(compState);
-    } else if (phase === 'eliminated') {
-        html += renderKnockoutHistoryHTML(compState);
-        html += `<div style="text-align:center;padding:20px;color:#f44336;font-size:1.1em;">😞 Eliminados de la ${compName}</div>`;
-    } else if (phase === 'winner') {
-        html += renderKnockoutHistoryHTML(compState);
-        html += `<div style="text-align:center;padding:20px;color:#FFD700;font-size:1.3em;font-weight:bold;">🏆 ¡CAMPEONES DE LA ${compName.toUpperCase()}!</div>`;
-    } else {
-        // Fase eliminatoria activa
-        html += renderGroupStandingsHTML(compState);
-        html += renderKnockoutHistoryHTML(compState);
-        html += `<div style="text-align:center;padding:10px;color:#4CAF50;">✅ Clasificados para: ${getPhaseName(phase)}</div>`;
+    // Grupos
+    if (comp.europeanGroupStandings) {
+        const sorted=sortSt(comp.europeanGroupStandings);
+        const myTeam=comp.team;
+        html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:6px">Fase de Grupos</div>
+        <table class="cg-table"><thead><tr><th>Pos</th><th style="text-align:left">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>`;
+        sorted.forEach(([n,s],i)=>{
+            const me=n===myTeam, q=i<2;
+            const bg=me?'background:rgba(233,69,96,.2);':q?'background:rgba(30,90,200,.15);':'';
+            html+=`<tr style="${bg}"><td>${i+1}</td><td style="text-align:left;${me?'font-weight:bold':''}">${me?'⭐ ':''}${n}</td><td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td><td>${s.gf}</td><td>${s.gc}</td><td><strong>${s.pts}</strong></td></tr>`;
+        });
+        html+=`</tbody></table>`;
+        if (comp.europeanResults?.length) {
+            html+=`<div style="color:rgba(255,255,255,.6);font-size:.8em;margin:8px 0 4px">Tus resultados de grupo</div>`;
+            comp.europeanResults.forEach(r=>{
+                const w=r.myGoals>r.oppGoals, d=r.myGoals===r.oppGoals;
+                const cls=w?'cwin':d?'cdraw':'closs';
+                html+=`<div class="${cls}" style="font-size:.88em;padding:2px 0">${w?'✅':d?'🤝':'❌'} (${r.jornada==='ida'?'🏠':'✈️'}) vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div>`;
+            });
+        }
     }
 
-    panel.innerHTML = html;
-}
-
-function getCompEmoji(comp) {
-    return comp === 'champions' ? '⭐' : comp === 'europaLeague' ? '🟠' : '🟢';
-}
-
-function renderGroupStandingsHTML(compState) {
-    if (!compState.europeanGroupStandings) return '';
-
-    const sorted = Object.entries(compState.europeanGroupStandings).sort((a, b) => {
-        const ptsDiff = b[1].pts - a[1].pts;
-        if (ptsDiff !== 0) return ptsDiff;
-        return (b[1].gf - b[1].gc) - (a[1].gf - a[1].gc);
-    });
-
-    const myTeam = compState.team;
-
-    let html = `<div style="margin-bottom:15px;">
-        <div style="color:rgba(255,255,255,0.6);font-size:0.85em;margin-bottom:8px;">Fase de Grupos</div>
-        <table class="europa-group-table">
-            <thead><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead>
-            <tbody>`;
-
-    sorted.forEach(([name, stats], idx) => {
-        const isMe = name === myTeam;
-        const bg = isMe ? 'background:rgba(233,69,96,0.2);' : (idx < 2 ? 'background:rgba(30,90,200,0.15);' : '');
-        const bold = isMe ? 'font-weight:bold;' : '';
-        html += `<tr style="${bg}${bold}">
-            <td>${idx + 1}</td>
-            <td style="text-align:left;">${isMe ? '⭐ ' : ''}${name}</td>
-            <td>${stats.pj}</td><td>${stats.g}</td><td>${stats.e}</td><td>${stats.p}</td>
-            <td>${stats.gf}</td><td>${stats.gc}</td>
-            <td><strong>${stats.pts}</strong></td>
-        </tr>`;
-    });
-
-    html += '</tbody></table>';
-
-    // Resultados del grupo
-    if (compState.europeanResults?.length > 0) {
-        html += `<div style="color:rgba(255,255,255,0.6);font-size:0.8em;margin:10px 0 5px;">Resultados</div>`;
-        compState.europeanResults.forEach(r => {
-            const win = r.myGoals > r.oppGoals;
-            const draw = r.myGoals === r.oppGoals;
-            const icon = win ? '✅' : draw ? '🤝' : '❌';
-            const color = win ? '#4CAF50' : draw ? '#FFD700' : '#f44336';
-            html += `<div style="color:${color};font-size:0.9em;padding:3px 0;">${icon} ${r.jornada === 'ida' ? '(Casa)' : '(Fuera)'} vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div>`;
+    // Knockout
+    if (comp.europeanKnockout?.length) {
+        html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin:12px 0 6px">Fase Eliminatoria</div>`;
+        comp.europeanKnockout.forEach(r=>{
+            const win=r.myGoals>r.oppGoals;
+            html+=`<div class="ccard" style="border-color:${win?'#4CAF50':'#f44336'}"><div class="ctitle">${phaseName(r.phase)}</div><div class="${win?'cwin':'closs'}">${win?'✅':'❌'} vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div></div>`;
         });
     }
 
-    html += '</div>';
-    return html;
-}
+    if (comp.europeanPhase==='winner') {
+        html+=`<div class="result-banner" style="background:rgba(255,215,0,.15);border-color:#FFD700"><div style="font-size:1.8em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.2em">¡CAMPEONES DE LA ${cn.toUpperCase()}!</div></div>`;
+    } else if (comp.europeanPhase==='eliminated') {
+        html+=`<div style="text-align:center;color:#f44336;padding:12px;margin-top:8px">😞 Eliminados de la ${cn}</div>`;
+    } else if (comp.europeanPhase && comp.europeanPhase!=='groups') {
+        html+=`<div style="color:#4CAF50;padding:10px;text-align:center">✅ Clasificados — próxima fase: ${phaseName(comp.europeanPhase)}</div>`;
+    }
 
-function renderKnockoutHistoryHTML(compState) {
-    if (!compState.europeanKnockout?.length) return '';
-
-    let html = `<div style="margin-top:10px;"><div style="color:rgba(255,255,255,0.6);font-size:0.85em;margin-bottom:8px;">Fase Eliminatoria</div>`;
-    compState.europeanKnockout.forEach(r => {
-        const win = r.myGoals > r.oppGoals;
-        const color = win ? '#4CAF50' : '#f44336';
-        const icon = win ? '✅' : '❌';
-        html += `<div class="copa-round">
-            <div class="round-name">${getPhaseName(r.phase)}</div>
-            <div class="copa-result" style="color:${color};">${icon} vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div>
-        </div>`;
-    });
-    html += '</div>';
-    return html;
+    panel.innerHTML = html;
 }
 
 // ============================================================
-// RENDERIZAR PANEL COPA DEL REY
+// RENDER: COPA
 // ============================================================
-
-function renderCopaPanel() {
+function renderCopa() {
     const panel = document.getElementById('comp-copa-panel');
     if (!panel) return;
-
-    const compState = getCompState();
+    const comp  = store.getComp();
     const state = window.gameLogic?.getGameState();
 
-    if (!compState || !compState.copaQualified) {
-        panel.innerHTML = `
-            <div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">
-                <div style="font-size:3em;margin-bottom:10px;">🥇</div>
-                <div style="font-size:1.1em;">Tu equipo no participa en la Copa del Rey esta temporada.</div>
-                <div style="font-size:0.9em;margin-top:8px;color:rgba(255,255,255,0.3);">
-                    Solo equipos de Primera y Segunda División participan.
-                </div>
-            </div>
-        `;
+    if (!comp?.copaQualified) {
+        panel.innerHTML=`<div style="text-align:center;padding:40px;color:rgba(255,255,255,.5)"><div style="font-size:3em">🥇</div><div style="margin-top:10px">Tu equipo no participa en la Copa del Rey esta temporada.</div></div>`;
         return;
     }
 
-    const phaseOrder = ['round1', 'round32', 'round16', 'quarters', 'semis', 'final'];
-    const currentPhase = compState.copaPhase;
-    const myTeam = compState.team;
+    const phase=comp.copaPhase;
+    const order=['round1','round32','round16','quarters','semis','final'];
+    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">🥇 Copa del Rey — ${state?.currentSeason||''}</h3>`;
 
-    let html = `<h3 style="color:#FFD700;margin:15px 0 10px;">🥇 Copa del Rey — ${state?.currentSeason || ''}</h3>`;
-
-    // Estado actual
-    if (currentPhase === 'eliminated') {
-        const lastResult = compState.copaResults?.[compState.copaResults.length - 1];
-        html += `<div style="background:rgba(244,67,54,0.15);border-radius:8px;padding:12px;margin-bottom:15px;border-left:3px solid #f44336;">
-            <strong style="color:#f44336;">❌ ELIMINADO</strong>
-            ${lastResult ? `<br><span style="color:rgba(255,255,255,0.7);font-size:0.9em;">en ${getPhaseName(lastResult.phase)} vs ${lastResult.opponent} (${lastResult.myGoals}-${lastResult.oppGoals})</span>` : ''}
-        </div>`;
-    } else if (currentPhase === 'champion') {
-        html += `<div style="background:rgba(255,215,0,0.2);border-radius:8px;padding:15px;margin-bottom:15px;text-align:center;border:2px solid #FFD700;">
-            <div style="font-size:2em;">🏆</div>
-            <strong style="color:#FFD700;font-size:1.2em;">¡CAMPEÓN DE LA COPA DEL REY!</strong>
-        </div>`;
+    if (phase==='champion') {
+        html+=`<div class="result-banner" style="background:rgba(255,215,0,.2);border-color:#FFD700;margin-bottom:12px"><div style="font-size:1.8em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.1em">¡CAMPEÓN DE LA COPA DEL REY!</div></div>`;
+    } else if (phase==='eliminated') {
+        const last=comp.copaResults?.[comp.copaResults.length-1];
+        html+=`<div style="background:rgba(244,67,54,.12);border-left:3px solid #f44336;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#f44336">❌ ELIMINADO</strong>${last?` <span style="color:rgba(255,255,255,.7);font-size:.88em">en ${phaseName(last.phase)} vs ${last.opponent} (${last.myGoals}-${last.oppGoals})</span>`:''}</div>`;
     } else {
-        const nextOpponent = compState.copaOpponents?.[currentPhase];
-        html += `<div style="background:rgba(76,175,80,0.15);border-radius:8px;padding:12px;margin-bottom:15px;border-left:3px solid #4CAF50;">
-            <strong style="color:#4CAF50;">✅ EN COMPETICIÓN</strong>
-            <br><span style="color:rgba(255,255,255,0.7);font-size:0.9em;">Próxima ronda: <strong>${getPhaseName(currentPhase)}</strong></span>
-            ${nextOpponent ? `<br><span style="color:rgba(255,255,255,0.5);font-size:0.85em;">Posible rival: ${nextOpponent}</span>` : ''}
-        </div>`;
+        const nextOpp=comp.copaOpponents?.[phase];
+        html+=`<div style="background:rgba(76,175,80,.12);border-left:3px solid #4CAF50;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#4CAF50">✅ EN COMPETICIÓN</strong> <span style="color:rgba(255,255,255,.8);font-size:.88em;margin-left:8px">Próxima: <strong>${phaseName(phase)}</strong>${nextOpp?` · Rival posible: ${nextOpp}`:''}</span></div>`;
     }
 
-    // Historial de rondas
-    html += `<div style="color:rgba(255,255,255,0.6);font-size:0.85em;margin-bottom:8px;">Historial</div>`;
-
-    phaseOrder.forEach(phase => {
-        const result = compState.copaResults?.find(r => r.phase === phase);
-        const opponent = compState.copaOpponents?.[phase];
-        const isCurrent = phase === currentPhase && !['eliminated', 'champion'].includes(currentPhase);
-        const isPast = phaseOrder.indexOf(phase) < phaseOrder.indexOf(currentPhase) || ['eliminated', 'champion'].includes(currentPhase);
-
-        html += `<div class="copa-round" style="${isCurrent ? 'border-color:#FFD700;' : ''}">
-            <div class="round-name">${getPhaseName(phase)}</div>`;
-
-        if (result) {
-            const win = result.myGoals > result.oppGoals;
-            html += `<div class="copa-result ${win ? 'copa-win' : 'copa-loss'}">
-                ${win ? '✅' : '❌'} vs ${result.opponent}: <strong>${result.myGoals}-${result.oppGoals}</strong>
-            </div>`;
-        } else if (isCurrent) {
-            html += `<div class="copa-pending">⏳ Pendiente${opponent ? ` · Rival: ${opponent}` : ''}</div>`;
-        } else if (!isPast) {
-            html += `<div class="copa-pending">— No alcanzado aún</div>`;
+    order.forEach(p=>{
+        const res=comp.copaResults?.find(r=>r.phase===p);
+        const opp=comp.copaOpponents?.[p];
+        const isCurrent=p===phase&&!['eliminated','champion'].includes(phase);
+        html+=`<div class="ccard" style="${isCurrent?'border-color:#FFD700':''}"><div class="ctitle">${phaseName(p)}</div>`;
+        if(res){
+            const w=res.myGoals>res.oppGoals;
+            html+=`<div class="${w?'cwin':'closs'}">${w?'✅':'❌'} vs ${res.opponent}: <strong>${res.myGoals}-${res.oppGoals}</strong></div>`;
+        } else if(isCurrent){
+            html+=`<div style="color:rgba(255,255,255,.5);font-style:italic;font-size:.88em">⏳ Pendiente${opp?` — Rival: ${opp}`:''}</div>`;
+        } else {
+            html+=`<div style="color:rgba(255,255,255,.3);font-size:.85em">— No alcanzado</div>`;
         }
-
-        html += `</div>`;
+        html+=`</div>`;
     });
 
     panel.innerHTML = html;
 }
 
 // ============================================================
-// RENDERIZAR PANEL PLAYOFF
+// RENDER: PLAYOFF
 // ============================================================
-
-function renderPlayoffTab() {
+function renderPlayoff() {
     const panel = document.getElementById('comp-playoff-panel');
     if (!panel) return;
-    panel.innerHTML = renderRFEFPlayoffPanel();
+    const po = store.getPlayoff();
+    const state = window.gameLogic?.getGameState();
+
+    if (!po) {
+        panel.innerHTML=`<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5)"><div style="font-size:2em">⬆️</div><div style="margin-top:10px">El playoff de ascenso se disputará al final de la temporada regular.</div></div>`;
+        return;
+    }
+
+    if (po.type==='segunda') renderSegundaPlayoff(panel, po);
+    else if (po.type==='rfef') renderRFEFPlayoff(panel, po);
 }
 
-function injectPlayoffTabIfRFEF() {
-    // Si la pestaña de playoff no existe pero estamos en RFEF, recrear tabs
-    if (!document.getElementById('tab-playoff')) {
-        const tabsContainer = document.getElementById('comp-tabs-container');
-        if (tabsContainer) {
-            tabsContainer.remove();
+function renderSegundaPlayoff(panel, po) {
+    const myTeam=po.myTeam;
+    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Primera — ${po.season}</h3>`;
+
+    // Ascensos directos
+    html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+        <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS</div>
+        ${(po.directAscent||[]).map(t=>`<div style="color:#fff">🥇 <strong>${t}</strong>${t===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>`).join('')}
+    </div>`;
+
+    // Bracket
+    html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:8px">Playoff — Pos 3 vs 6 y Pos 4 vs 5 (doble partido)</div>`;
+    html+=`<div class="po-wrap">`;
+    if (!po.simulated) {
+        html+=matchPending('Semifinal 1',`${po.pos3} <span style="opacity:.5">(3º)</span>`,`${po.pos6} <span style="opacity:.5">(6º)</span>`);
+        html+=matchPending('Semifinal 2',`${po.pos4} <span style="opacity:.5">(4º)</span>`,`${po.pos5} <span style="opacity:.5">(5º)</span>`);
+        html+=matchPending('Final','Ganador SF1','Ganador SF2','#FFD700');
+    } else {
+        html+=matchResult('Semifinal 1', po.sf1Result, myTeam);
+        html+=matchResult('Semifinal 2', po.sf2Result, myTeam);
+        html+=matchResult('⭐ FINAL', po.finalResult, myTeam, '#FFD700');
+    }
+    html+=`</div>`;
+    html+=resultBanner(po.myResult);
+    panel.innerHTML=html;
+}
+
+function renderRFEFPlayoff(panel, po) {
+    const myTeam=po.myTeam;
+    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Segunda — ${po.season}</h3>`;
+    html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+        <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS (1º de cada grupo)</div>
+        <div style="color:#fff">🥇 Grupo 1: <strong>${po.directAscent1||'—'}</strong>${po.directAscent1===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+        <div style="color:#fff">🥇 Grupo 2: <strong>${po.directAscent2||'—'}</strong>${po.directAscent2===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+    </div>`;
+
+    if (!po.simulated) {
+        html+=`<div style="color:rgba(255,255,255,.5);text-align:center;padding:20px">⏳ Mini-ligas de playoff aún no disputadas...</div>`;
+    } else {
+        html+=miniLeagueTable('A', po.miniA, myTeam, po.winnerA);
+        html+=miniLeagueTable('B', po.miniB, myTeam, po.winnerB);
+    }
+    html+=resultBanner(po.myResult);
+    panel.innerHTML=html;
+}
+
+// Helper: partido pendiente en bracket
+function matchPending(title, t1, t2, borderColor='#B49600') {
+    return `<div class="po-match" style="border-color:${borderColor}"><div class="pm-title">${title}</div>
+        <div class="po-row">${t1}</div><div class="po-row">${t2}</div>
+        <div class="po-info">⏳ Pendiente</div></div>`;
+}
+
+// Helper: partido ya simulado
+function matchResult(title, res, myTeam, borderColor='#B49600') {
+    if (!res) return matchPending(title,'—','—',borderColor);
+    const { teamA, teamB, leg1, leg2, totalA, totalB, winner } = res;
+    const winA=winner===teamA, winB=winner===teamB;
+    const meA=teamA===myTeam, meB=teamB===myTeam;
+    return `<div class="po-match" style="border-color:${borderColor}"><div class="pm-title">${title}</div>
+        <div class="po-row ${winA?'winner':winB?'loser':''}">${teamA}${meA?' ⭐':''} <span>${totalA}</span></div>
+        <div class="po-row ${winB?'winner':winA?'loser':''}">${teamB}${meB?' ⭐':''} <span>${totalB}</span></div>
+        <div class="po-info">Ida: ${leg1.hg}-${leg1.ag} · Vuelta: ${leg2.hg}-${leg2.ag} · Pasa: <strong>${winner}</strong></div>
+    </div>`;
+}
+
+// Helper: tabla mini-liga RFEF
+function miniLeagueTable(letter, mini, myTeam, winner) {
+    const sorted=sortSt(mini.standings);
+    let html=`<div style="margin-bottom:14px"><div style="color:#B49600;font-size:.88em;font-weight:bold;margin-bottom:6px">Mini-Liga ${letter}</div>
+    <table class="cg-table"><thead><tr><th>Pos</th><th style="text-align:left">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GD</th><th>Pts</th></tr></thead><tbody>`;
+    sorted.forEach(([n,s],i)=>{
+        const me=n===myTeam, w=n===winner;
+        const bg=w?'background:rgba(50,200,50,.2);':me?'background:rgba(233,69,96,.15);':'';
+        html+=`<tr style="${bg}border-bottom:1px solid rgba(255,255,255,.08)"><td>${i+1}</td>
+            <td style="text-align:left;${(me||w)?'font-weight:bold':''}">${n}${w?' 🔺':''}${me?' ⭐':''}</td>
+            <td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td>
+            <td>${s.gf-s.gc>0?'+':''}${s.gf-s.gc}</td><td><strong>${s.pts}</strong></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    const myM=mini.matches.filter(m=>m.played&&(m.home===myTeam||m.away===myTeam));
+    if(myM.length){
+        html+=`<div style="font-size:.8em;margin-top:4px">`;
+        myM.forEach(m=>{
+            const h=m.home===myTeam, mg=h?m.hg:m.ag, og=h?m.ag:m.hg, opp=h?m.away:m.home;
+            html+=`<div class="${mg>og?'cwin':mg===og?'cdraw':'closs'}" style="padding:2px 0">${mg>og?'✅':mg===og?'🤝':'❌'} vs ${opp}: ${mg}-${og} ${h?'(🏠)':'(✈️)'}</div>`;
+        });
+        html+=`</div>`;
+    }
+    html+=`</div>`; return html;
+}
+
+// Helper: banner de resultado final para el jugador
+function resultBanner(result) {
+    const cfg = {
+        promoted_direct:  { bg:'rgba(50,200,50,.2)',  border:'#32C832', icon:'🏆', text:'¡HAS ASCENDIDO DIRECTAMENTE!' },
+        promoted_playoff: { bg:'rgba(50,200,50,.2)',  border:'#32C832', icon:'🎉', text:'¡HAS ASCENDIDO VÍA PLAYOFF!' },
+        lost_final:       { bg:'rgba(255,150,0,.15)', border:'#FF8C00', icon:'😤', text:'Eliminado en la FINAL del playoff. Tan cerca...' },
+        eliminated_sf:    { bg:'rgba(200,40,40,.15)', border:'#C82828', icon:'😞', text:'Eliminado en Semifinales del playoff.' },
+        eliminated:       { bg:'rgba(200,40,40,.15)', border:'#C82828', icon:'😞', text:'Eliminado en el playoff. Permaneces en tu división.' },
+        not_qualified:    { bg:'rgba(255,255,255,.05)',border:'#888',   icon:'📊', text:'Tu equipo no clasificó para el playoff.' },
+    }[result] || { bg:'rgba(255,255,255,.05)',border:'#888',icon:'⏳',text:'Resultado pendiente.' };
+    return `<div class="result-banner" style="background:${cfg.bg};border-color:${cfg.border}"><div style="font-size:1.5em">${cfg.icon}</div><div style="color:#fff;font-weight:bold;margin-top:4px">${cfg.text}</div></div>`;
+}
+
+// ============================================================
+// SIMULAR COMPETICIONES PROGRESIVAMENTE DURANTE TEMPORADA
+// ============================================================
+function processWeeklyComps(state) {
+    const comp = store.getComp();
+    if (!comp || comp.season !== state.currentSeason) return;
+    const w=state.week, total=state.maxSeasonWeeks||38, myTeam=state.team;
+
+    // Grupos Europa ~30% temporada
+    if (comp.europeanComp && comp.europeanPhase==='groups' && w===Math.round(total*0.30)) {
+        simulateGroupPhase(myTeam);
+    }
+    // Knockouts Europa
+    [['round16',0.48],['quarterfinals',0.62],['semifinals',0.76],['final',0.90]].forEach(([phase,frac])=>{
+        if (comp.europeanPhase===phase && w===Math.round(total*frac)) simulateEUKnockout(phase,myTeam);
+    });
+    // Copa
+    const copaW={ round1:0.14,round32:0.25,round16:0.38,quarters:0.52,semis:0.68,final:0.84 };
+    if (comp.copaPhase && !['eliminated','champion'].includes(comp.copaPhase)) {
+        const tw=Math.round(total*(copaW[comp.copaPhase]||0));
+        if (tw && w===tw) simulateCopa(myTeam, comp.copaPhase);
+    }
+    // Playoff Segunda — semana penúltima
+    if (state.division==='segunda' && w===total-1) {
+        const po=store.getPlayoff();
+        if(po&&po.type==='segunda'&&!po.simulated){
+            const res=runSegundaPlayoff(myTeam);
+            notifySegundaPO(res);
         }
-        injectCompetitionsUI();
+    }
+    // Playoff RFEF
+    if ((state.division==='rfef_grupo1'||state.division==='rfef_grupo2') && w===total-1) {
+        const po=store.getPlayoff();
+        if(po&&po.type==='rfef'&&!po.simulated){
+            const res=runRFEFPlayoff(myTeam);
+            notifyRFEFPO(res);
+        }
+    }
+}
+
+function notifySegundaPO(po) {
+    const gl=window.gameLogic;
+    if(po.sf1Result) gl?.addNews(`⬆️ Playoff SF1: ${po.sf1Result.winner} pasa a la final`, 'info');
+    if(po.sf2Result) gl?.addNews(`⬆️ Playoff SF2: ${po.sf2Result.winner} pasa a la final`, 'info');
+    if(po.winner) gl?.addNews(`🏆 Final playoff: ${po.winner} asciende a Primera División`, 'success');
+    const msgs={promoted_playoff:'🎉 ¡HAS ASCENDIDO VÍA PLAYOFF!',lost_final:'😤 Eliminado en la FINAL del playoff. Permaneces en Segunda.',eliminated_sf:'😞 Eliminado en Semifinales del playoff.'};
+    if(msgs[po.myResult]) gl?.addNews(msgs[po.myResult], po.myResult==='promoted_playoff'?'success':'error');
+}
+
+function notifyRFEFPO(po) {
+    const gl=window.gameLogic;
+    if(po.winnerA) gl?.addNews(`⬆️ Mini-Liga A: ${po.winnerA} asciende a Segunda División`, 'info');
+    if(po.winnerB) gl?.addNews(`⬆️ Mini-Liga B: ${po.winnerB} asciende a Segunda División`, 'info');
+    const msgs={promoted_playoff:'🎉 ¡HAS ASCENDIDO VÍA PLAYOFF A SEGUNDA!',eliminated:'😞 Eliminado en el playoff de ascenso. Permaneces en Primera RFEF.'};
+    if(msgs[po.myResult]) gl?.addNews(msgs[po.myResult], po.myResult==='promoted_playoff'?'success':'error');
+}
+
+// ============================================================
+// HOOK DE FIN DE TEMPORADA
+// ============================================================
+let _prevSeason = '';
+
+function hookSimulateWeek() {
+    const orig = window.simulateWeek;
+    if (!orig || window._compHooked) { if(!orig) setTimeout(hookSimulateWeek,800); return; }
+    window._compHooked=true;
+
+    window.simulateWeek = async function() {
+        const before = window.gameLogic?.getGameState();
+        const res = await orig.apply(this, arguments);
+        const after = window.gameLogic?.getGameState();
+
+        if (before && after) {
+            if (before.currentSeason !== after.currentSeason) {
+                onNewSeason(before, after);
+            } else if (after.seasonType==='regular') {
+                processWeeklyComps(after);
+            }
+        }
+        return res;
+    };
+}
+
+function onNewSeason(before, after) {
+    const sorted = Object.entries(before.standings||{}).sort((a,b)=>{
+        const pd=(b[1].pts||0)-(a[1].pts||0); return pd!==0?pd:((b[1].gf||0)-(b[1].gc||0))-((a[1].gf||0)-(a[1].gc||0));
+    });
+    const myPos = sorted.findIndex(([n])=>n===before.team)+1;
+    const newDiv=after.division, newSeason=after.currentSeason;
+
+    setTimeout(()=>{
+        store.clearComp(); store.clearPlayoff();
+
+        // Competición europea según posición final
+        let euroComp=null;
+        if(newDiv==='primera'){
+            const cfg=COMPETITION_CONFIG.primera;
+            if(cfg.champions?.includes(myPos)) euroComp='champions';
+            else if(cfg.europaLeague?.includes(myPos)) euroComp='europaLeague';
+            else if(cfg.conferenceLague?.includes(myPos)) euroComp='conferenceLague';
+        }
+
+        const comp=initCompetitionsForSeason(after.team, newDiv, newSeason, euroComp);
+        if(comp.europeanComp) window.gameLogic?.addNews(`🏆 ¡Clasificados para la ${compName(comp.europeanComp)} ${newSeason}!`,'success');
+        if(comp.copaQualified) window.gameLogic?.addNews(`🥇 Participaréis en la Copa del Rey ${newSeason}`,'info');
+
+        // Init playoff para la nueva división
+        initPlayoffForDiv(after, sorted, newSeason);
+        updateStandingsColors();
+    }, 1500);
+}
+
+function initPlayoffForDiv(state, sorted, season) {
+    const div=state.division;
+    if(div==='segunda') initSegundaPlayoff(state.team, sorted, season);
+    else if(div==='rfef_grupo1'||div==='rfef_grupo2'){
+        const otherKey=div==='rfef_grupo1'?'rfef_grupo2':'rfef_grupo1';
+        initRFEFPlayoff(state.team, sorted, generateFakeOtherGroup(otherKey), season);
     }
 }
 
 // ============================================================
-// RENDERIZAR COMPETICIONES EN CLASIFICACIÓN
+// HOOK APERTURA DE CLASIFICACIÓN
 // ============================================================
-
-window.renderCompetitionsInStandings = function() {
-    updateStandingsColors();
-    renderEuropaPanel();
-    renderCopaPanel();
-    renderPlayoffTab();
-};
-
-// ============================================================
-// HOOK EN APERTURA DE PÁGINA DE CLASIFICACIÓN
-// ============================================================
-
-function hookStandingsPage() {
-    // Observar clics en el botón de clasificación
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('[onclick*="standings"]') || e.target.closest('.classification-icon');
-        if (btn) {
-            setTimeout(() => {
-                injectCompetitionsUI();
-                updateStandingsColors();
-                // Asegurar que la tabla de liga tenga ID
-                const table = document.querySelector('#standings table');
-                if (table && !table.id) table.id = 'comp-liga-content';
-            }, 400);
-        }
-    });
-
-    // También interceptar openPage si existe
-    const originalOpenPage = window.openPage;
-    if (originalOpenPage && !window._standingsHooked) {
-        window._standingsHooked = true;
-        window.openPage = function(pageId, ...args) {
-            originalOpenPage.call(this, pageId, ...args);
-            if (pageId === 'standings') {
-                setTimeout(() => {
-                    injectCompetitionsUI();
-                    updateStandingsColors();
-                    const table = document.querySelector('#standings table');
-                    if (table && !table.id) table.id = 'comp-liga-content';
-                }, 300);
-            }
+function hookStandingsOpen() {
+    if (window._standingsHooked) return;
+    const origOpen = window.openPage;
+    if (origOpen) {
+        window._standingsHooked=true;
+        window.openPage = function(pageId,...args) {
+            origOpen.call(this, pageId,...args);
+            if(pageId==='standings') setTimeout(()=>{ injectCompUI(); updateStandingsColors(); },300);
         };
     }
+    document.addEventListener('click', e=>{
+        const btn=e.target.closest('[onclick*="standings"],.nav-item,.bottom-nav-item');
+        if(btn && btn.textContent?.toLowerCase().includes('clasif'))
+            setTimeout(()=>{ injectCompUI(); updateStandingsColors(); },350);
+    });
 }
 
 // ============================================================
-// DETECTAR INICIO DE JUEGO Y CARGAR COMPETICIONES EXISTENTES
+// INICIALIZACIÓN AL CARGAR PARTIDA
 // ============================================================
-
-function initOnGameLoad() {
+function initOnLoad() {
     const state = window.gameLogic?.getGameState();
-    if (!state?.team) return;
+    if (!state?.team) { setTimeout(initOnLoad, 1000); return; }
 
-    const compState = getCompState();
-    if (compState && compState.team === state.team && compState.season === state.currentSeason) {
-        console.log('🏆 Competiciones existentes cargadas:', compState.europeanComp || 'ninguna');
-        return;
+    _prevSeason = state.currentSeason;
+    let comp = store.getComp();
+
+    // Si no existe estado o es de otro equipo/temporada
+    if (!comp || comp.team!==state.team || comp.season!==state.currentSeason) {
+        const euroComp = detectInitialEuropean(state.team, state.division, state.currentSeason);
+        comp = initCompetitionsForSeason(state.team, state.division, state.currentSeason, euroComp);
+        if(euroComp) console.log(`🏆 ${state.team} → ${compName(euroComp)} ${state.currentSeason}`);
     }
 
-    // Si es inicio de partida nueva, calcular posición actual y ver si aplica
-    if (state.division === 'primera' || state.division === 'segunda') {
-        const standings = state.standings;
-        if (standings && Object.keys(standings).length > 0) {
-            const sorted = Object.entries(standings).sort((a, b) => (b[1].pts || 0) - (a[1].pts || 0));
-            const myPos = sorted.findIndex(([n]) => n === state.team) + 1;
-            if (myPos > 0) {
-                initCompetitionsForSeason(state.team, myPos, state.division, state.currentSeason);
-            }
-        }
+    // Init playoff si no existe
+    const po = store.getPlayoff();
+    if (!po || po.season!==state.currentSeason) {
+        const sorted = Object.entries(state.standings||{}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
+        initPlayoffForDiv(state, sorted, state.currentSeason);
     }
 }
 
 // ============================================================
-// INICIALIZACIÓN PRINCIPAL
+// BOOTSTRAP
 // ============================================================
+function boot() {
+    if (!window.gameLogic) { setTimeout(boot, 800); return; }
+    console.log('🏆 Iniciando competiciones v2.0...');
 
-setTimeout(() => {
-    if (!window.gameLogic) {
-        console.warn('⚠️ gameLogic no disponible aún');
-        setTimeout(initCompetitionsSystem, 2000);
-        return;
-    }
-    initCompetitionsSystem();
-}, 2000);
+    initOnLoad();
+    hookStandingsOpen();
+    hookSimulateWeek();
 
-function initCompetitionsSystem() {
-    console.log('🏆 Iniciando sistema de competiciones...');
-    initOnGameLoad();
-    hookStandingsPage();
-    hookSimulateWeekForCompetitions();
+    // Escuchar también cuando se abre clasificación desde el menú de navegación
+    const origNav = window.showPage || window.navigateTo;
 
-    // Exponer funciones globales
     window.CompetitionsSystem = {
-        getState: getCompState,
-        getPlayoffState: getPlayoffState,
-        reset: () => { clearCompState(); clearPlayoffState(); initOnGameLoad(); },
-        initForSeason: initCompetitionsForSeason,
-        simulateGroups: simulateGroupPhase,
-        simulateCopa: simulateCopaDraw,
-        renderEuropa: renderEuropaPanel,
-        renderCopa: renderCopaPanel,
-        renderPlayoff: renderPlayoffTab,
+        getComp:     store.getComp,
+        getPlayoff:  store.getPlayoff,
+        reset: ()=>{store.clearComp(); store.clearPlayoff(); initOnLoad();},
         updateColors: updateStandingsColors,
-        // Forzar playoff RFEF manualmente (para testing)
-        runPlayoff: runRFEFPlayoff
+        renderEuropa, renderCopa, renderPlayoff,
+        runSegundaPlayoff, runRFEFPlayoff
     };
 
-    console.log('✅ Sistema de competiciones listo');
+    // Inyectar CSS básico para las filas
+    if(!document.getElementById('comp-row-css')){
+        const s=document.createElement('style'); s.id='comp-row-css';
+        s.textContent=`#standingsTable tr,table.standings-table tbody tr{transition:background .3s, border-left .3s}`;
+        document.head.appendChild(s);
+    }
+
+    console.log('✅ Sistema de competiciones v2.0 listo');
 }
 
-// ============================================================
-// ESTILOS CSS ADICIONALES PARA FILAS DE CLASIFICACIÓN
-// ============================================================
-
-(function addCompStyles() {
-    const style = document.createElement('style');
-    style.id = 'comp-zone-styles';
-    style.textContent = `
-        #standingsTable tr {
-            transition: background 0.3s;
-        }
-        #standingsTable tr:hover {
-            filter: brightness(1.2);
-        }
-    `;
-    if (!document.getElementById('comp-zone-styles')) {
-        document.head.appendChild(style);
-    }
-})();
-
-console.log('✅ injector-competitions.js cargado');
+setTimeout(boot, 2000);
+console.log('✅ injector-competitions.js v2.0 parseado');
