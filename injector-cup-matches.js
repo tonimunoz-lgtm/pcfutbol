@@ -775,9 +775,9 @@ ${banner}
 // ============================================================
 // HOOK PRINCIPAL — interceptar window.simulateWeek
 // ============================================================
-function hookSimulateWeek(){
+function hookCupSimulateWeek(){
     const orig=window.simulateWeek;
-    if(!orig||window._cupsHookedV4){if(!orig){setTimeout(hookSimulateWeek,500);return;}return;}
+    if(!orig||window._cupsHookedV4){if(!orig){setTimeout(hookCupSimulateWeek,500);return;}return;}
     window._cupsHookedV4=true;
     console.log('🏆 Cup-matches hook v4 activo (gameState, sin localStorage)');
 
@@ -906,7 +906,7 @@ function boot(){
                 if(gs) gs.cupData = {};
                 initCupCalendar();
                 // Delay extra para ser el último hook (finances, cards ya instalaron los suyos)
-                setTimeout(()=>{ hookSimulateWeek(); }, 1000);
+                setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
             }, 800);
             return result;
         };
@@ -930,7 +930,7 @@ function boot(){
                 console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
             // Delay para ser el último en la cadena de hooks (finances, cards, etc instalan antes)
-            setTimeout(()=>{ hookSimulateWeek(); }, 1500);
+            setTimeout(()=>{ hookCupSimulateWeek(); }, 1500);
             console.log('✅ injector-cup-matches.js v4 LISTO');
         } else if(n < 20){
             // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
