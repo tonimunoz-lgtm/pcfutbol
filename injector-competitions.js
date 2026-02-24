@@ -1298,14 +1298,18 @@ function hookStandingsOpen() {
 // ============================================================
 // INICIALIZACIÓN AL CARGAR PARTIDA
 // ============================================================
-function initOnLoad() {
+function initOnLoad(retries=0) {
     const state = window.gameLogic?.getGameState();
-    if (!state?.team) { setTimeout(initOnLoad, 1000); return; }
+    // Solo reintentar si hay sesión activa (currentUser) pero el gameState aún no tiene equipo
+    if (!state?.team) {
+        if (retries < 10 && window.currentUser) { setTimeout(()=>initOnLoad(retries+1), 500); }
+        return;
+    }
 
     _prevSeason = state.currentSeason;
     let comp = store.getComp();
 
-    // Si no existe estado o es de otro equipo/temporada
+    // Si no existe estado o es de otro equipo/temporada, regenerar
     if (!comp || comp.team!==state.team || comp.season!==state.currentSeason) {
         const euroComp = detectInitialEuropean(state.team, state.division, state.currentSeason);
         comp = initCompetitionsForSeason(state.team, state.division, state.currentSeason, euroComp);
@@ -1319,8 +1323,9 @@ function initOnLoad() {
         initPlayoffForDiv(state, sorted, state.currentSeason);
     }
 
-    // Notificar a cup-matches que las competiciones están listas (compsData ya en gameState)
-    window.dispatchEvent(new CustomEvent('competitionsReady', { detail: { team: state.team, comp: store.getComp() } }));
+    // Notificar a cup-matches — incluir comp en el evento para que no tenga que releer gameState
+    const finalComp = store.getComp();
+    window.dispatchEvent(new CustomEvent('competitionsReady', { detail: { team: state.team, comp: finalComp } }));
 }
 
 // ============================================================
