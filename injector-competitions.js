@@ -111,16 +111,14 @@ const ZONE_COLORS = {
 // ============================================================
 // STORAGE
 // ============================================================
-const COMP_KEY    = 'comps_v2';
-const PLAYOFF_KEY = 'playoff_v2';
-
+// Store: todo en gameState (Firebase) — sin localStorage
 const store = {
-    getComp:      () => { try{ return JSON.parse(localStorage.getItem(COMP_KEY));    }catch(e){ return null; } },
-    saveComp:     (s) => { try{ localStorage.setItem(COMP_KEY, JSON.stringify(s));   }catch(e){} },
-    clearComp:    () => localStorage.removeItem(COMP_KEY),
-    getPlayoff:   () => { try{ return JSON.parse(localStorage.getItem(PLAYOFF_KEY)); }catch(e){ return null; } },
-    savePlayoff:  (s) => { try{ localStorage.setItem(PLAYOFF_KEY, JSON.stringify(s));}catch(e){} },
-    clearPlayoff: () => localStorage.removeItem(PLAYOFF_KEY)
+    getComp:      () => window.gameLogic?.getGameState()?.compsData || null,
+    saveComp:     (s) => { const gs = window.gameLogic?.getGameState(); if(gs) gs.compsData = s; },
+    clearComp:    () => { const gs = window.gameLogic?.getGameState(); if(gs) gs.compsData = null; },
+    getPlayoff:   () => window.gameLogic?.getGameState()?.playoffData || null,
+    savePlayoff:  (s) => { const gs = window.gameLogic?.getGameState(); if(gs) gs.playoffData = s; },
+    clearPlayoff: () => { const gs = window.gameLogic?.getGameState(); if(gs) gs.playoffData = null; }
 };
 
 // ============================================================
@@ -1329,19 +1327,39 @@ function boot() {
     if (!window.gameLogic) { setTimeout(boot, 800); return; }
     console.log('🏆 Iniciando competiciones v2.0...');
 
-    // Hook en selectTeamWithInitialSquad para reinicializar al seleccionar equipo tras login
+    // Hook en selectTeamWithInitialSquad (nueva partida) y updateGameState (carga desde nube)
+    // Ambos pueden cambiar el equipo activo y requieren reinicializar las competiciones
+
     const origSelect = window.gameLogic.selectTeamWithInitialSquad;
     if (origSelect && !window._compSelectHooked) {
         window._compSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
             const result = await origSelect.apply(this, args);
+            store.clearComp();
+            store.clearPlayoff();
             setTimeout(() => {
                 console.log('🏆 Competitions: reiniciando tras selección de equipo...');
-                store.clearComp();
-                store.clearPlayoff();
                 initOnLoad();
-            }, 600);
+            }, 100);
             return result;
+        };
+    }
+
+    // Hook updateGameState: para carga de partida desde la nube
+    const origUpdate = window.gameLogic.updateGameState;
+    if (origUpdate && !window._compUpdateHooked) {
+        window._compUpdateHooked = true;
+        let _pending = false;
+        window.gameLogic.updateGameState = function(newState) {
+            origUpdate.call(this, newState);
+            // Solo actuar en cargas completas (tienen standings) y sin reinicio ya pendiente
+            if (newState?.team && newState.team !== 'null' && newState?.standings && !_pending) {
+                const existing = store.getComp();
+                if (!existing || existing.team !== newState.team) {
+                    _pending = true;
+                    setTimeout(() => { _pending = false; initOnLoad(); }, 300);
+                }
+            }
         };
     }
 
