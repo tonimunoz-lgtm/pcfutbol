@@ -928,26 +928,28 @@ function boot(){
     // Listener permanente para competitionsReady — registrado inmediatamente al arrancar
     // Cubre todos los casos: login, nueva partida, carga desde nube
     const onCompetitionsReady = (e) => {
-        const gs2 = getGS();
-        // Usar comp del evento (ya disponible) o fallback a gameState
-        const comp2 = e.detail?.comp || getCompState();
-        if (!gs2?.team || !comp2) {
-            console.warn('⚠️ CupMatches: competitionsReady sin gs/comp válido');
+        const comp2 = e.detail?.comp;
+        const team  = e.detail?.team;
+        if (!comp2 || !team) {
+            console.warn('⚠️ CupMatches: competitionsReady sin datos válidos', e.detail);
             return;
         }
         // Evitar doble init si ya existe calendario para este equipo/temporada
         const existing = getCupData();
-        if (existing.calTeam === gs2.team && existing.calSeason === comp2.season && (existing.calendar||[]).length > 0) {
-            console.log('📅 CupMatches: calendario ya existe, ignorando competitionsReady');
-            hookCupSimulateWeek();
+        if (existing.calTeam === team && existing.calSeason === comp2.season && (existing.calendar||[]).length > 0) {
+            console.log('📅 CupMatches: calendario ya existe para', team);
+            setTimeout(()=>{ hookCupSimulateWeek(); }, 500);
             return;
         }
-        console.log('🏆 CupMatches: competitionsReady recibido, iniciando para', gs2.team, '| euComp:', comp2.europeanComp);
+        console.log('🏆 CupMatches: iniciando calendario para', team, '| euComp:', comp2.europeanComp);
+        // Escribir comp en gameState para que initCupCalendar lo encuentre vía getCompState()
+        const gs2 = getGS();
+        if (gs2) {
+            gs2.compsData = comp2;
+            gs2.cupData = {};
+        }
         window._cupsHookedV4 = false;
         _cupData = {};
-        gs2.cupData = {};
-        // Guardar comp en gameState para que initCupCalendar lo encuentre
-        gs2.compsData = comp2;
         initCupCalendar();
         setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
     };
