@@ -18,29 +18,66 @@ window.injectMatchSummary = function(matchResult) {
     // ========================================
     // GENERAR GOLEADORES CON MINUTOS REALISTAS
     // ========================================
+
+    // Obtener estado del juego para usar jugadores reales
+    const _gameState = window.gameLogic ? window.gameLogic.getGameState() : null;
+    const _myTeam = _gameState ? _gameState.team : null;
+
+    // Jugadores de nuestro equipo aptos para marcar (excluir portero)
+    const _getMyTeamScorers = () => {
+        if (!_gameState || !_gameState.lineup || _gameState.lineup.length === 0) return null;
+        return _gameState.lineup.filter(p => p && p.position !== 'POR').map(p => p.name);
+    };
+
+    // Jugadores del equipo rival desde localStorage (si fueron cargados en admin)
+    const _getRivalScorers = (rivalName) => {
+        try {
+            const stored = localStorage.getItem('team_data_' + rivalName);
+            if (stored) {
+                const data = JSON.parse(stored);
+                if (data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
+                    return data.squad.filter(p => p.position !== 'POR').map(p => p.name);
+                }
+            }
+        } catch(e) {}
+        return null;
+    };
+
+    // Pool de nombres genéricos de respaldo
+    const _genericNames = [
+        'García', 'Martínez', 'López', 'Sánchez', 'González',
+        'Pérez', 'Rodríguez', 'Fernández', 'Jiménez', 'Romero',
+        'Torres', 'Varela', 'Moreno', 'Ruiz', 'Herrera',
+        'Díaz', 'Ortiz', 'Castro', 'Vega', 'Molina'
+    ];
+
     const generateGoalScorers = (team, numGoals, isHome) => {
         const scorers = [];
         const usedMinutes = new Set();
-        
+
+        // Determinar pool de nombres
+        let namePool = null;
+        if (team === _myTeam) {
+            namePool = _getMyTeamScorers();
+        } else {
+            namePool = _getRivalScorers(team);
+        }
+        if (!namePool || namePool.length === 0) namePool = _genericNames;
+
         for (let i = 0; i < numGoals; i++) {
             let minute;
             do {
                 minute = Math.floor(Math.random() * 90) + 1;
             } while (usedMinutes.has(minute));
             usedMinutes.add(minute);
-            
-            const playerNames = [
-                'Griezmann', 'Morata', 'Llorente', 'Koke', 'De Paul',
-                'Correa', 'Carrasco', 'Saúl', 'Lemar', 'João Félix'
-            ];
-            
+
             scorers.push({
-                name: playerNames[Math.floor(Math.random() * playerNames.length)],
+                name: namePool[Math.floor(Math.random() * namePool.length)],
                 minute: minute,
                 team: team
             });
         }
-        
+
         return scorers.sort((a, b) => a.minute - b.minute);
     };
     
