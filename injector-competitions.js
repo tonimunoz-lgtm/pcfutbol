@@ -703,7 +703,7 @@ window.showCompTab = function(tab) {
 };
 
 // ============================================================
-// RENDER: EUROPA
+// RENDER: EUROPA — formato real 2025-26 (fase liga 36 equipos)
 // ============================================================
 function renderEuropa() {
     const panel = document.getElementById('comp-europa-panel');
@@ -719,46 +719,173 @@ function renderEuropa() {
         </div>`; return;
     }
 
-    const cn=compName(comp.europeanComp), ce=compEmoji(comp.europeanComp);
-    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">${ce} ${cn} — ${state?.currentSeason||''}</h3>`;
+    const cn  = compName(comp.europeanComp);
+    const ce  = compEmoji(comp.europeanComp);
+    const isConf = comp.europeanComp === 'conferenceLague';
+    const totalMd = isConf ? 6 : 8;
+    const myTeam  = comp.team;
 
-    // Grupos
-    if (comp.europeanGroupStandings) {
-        const sorted=sortSt(comp.europeanGroupStandings);
-        const myTeam=comp.team;
-        html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:6px">Fase de Grupos</div>
-        <table class="cg-table"><thead><tr><th>Pos</th><th style="text-align:left">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>`;
-        sorted.forEach(([n,s],i)=>{
-            const me=n===myTeam, q=i<2;
-            const bg=me?'background:rgba(233,69,96,.2);':q?'background:rgba(30,90,200,.15);':'';
-            html+=`<tr style="${bg}"><td>${i+1}</td><td style="text-align:left;${me?'font-weight:bold':''}">${me?'⭐ ':''}${n}</td><td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td><td>${s.gf}</td><td>${s.gc}</td><td><strong>${s.pts}</strong></td></tr>`;
+    // Leer la tabla de fase liga desde cupData (guardado en gameState por injector-cup-matches)
+    const cupData   = state?.cupData || {};
+    const field     = cupData.leagueField || null;
+    const calendar  = cupData.calendar    || [];
+    const mdJugadas = calendar.filter(m => m.type === comp.europeanComp && m.isGroup && m.played).length;
+
+    let html = `<h3 style="color:#FFD700;margin:10px 0 4px">${ce} ${cn}</h3>`;
+
+    // ── FASE LIGA (nuevo formato real) ──────────────────────
+    const phaseLabel = comp.europeanLeaguePos
+        ? `Fase Liga — Terminada (${mdJugadas}/${totalMd} jornadas)`
+        : `Fase Liga — Jornada ${mdJugadas}/${totalMd}`;
+
+    html += `<div style="color:rgba(255,255,255,.65);font-size:.82em;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>📊 ${phaseLabel}</span>
+        <span style="font-size:.78em;color:rgba(255,255,255,.4)">36 equipos</span>
+    </div>`;
+
+    // Leyenda de clasificación
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:.75em">
+        <span style="background:rgba(30,90,200,.3);border-left:3px solid #1E5AC8;padding:3px 8px;border-radius:4px;color:#fff">1-8: Octavos directos</span>
+        <span style="background:rgba(255,140,0,.2);border-left:3px solid #FF8C00;padding:3px 8px;border-radius:4px;color:#fff">9-24: Play-off</span>
+        <span style="background:rgba(244,67,54,.15);border-left:3px solid #f44336;padding:3px 8px;border-radius:4px;color:#fff">25-36: Eliminados</span>
+    </div>`;
+
+    if (field?.table) {
+        // Tabla con todos los equipos ordenados por puntos
+        const sorted = Object.values(field.table).sort((a,b) => {
+            const pd = b.pts - a.pts; if(pd!==0) return pd;
+            return (b.gf-b.gc) - (a.gf-a.gc);
         });
-        html+=`</tbody></table>`;
-        if (comp.europeanResults?.length) {
-            html+=`<div style="color:rgba(255,255,255,.6);font-size:.8em;margin:8px 0 4px">Tus resultados de grupo</div>`;
-            comp.europeanResults.forEach(r=>{
-                const w=r.myGoals>r.oppGoals, d=r.myGoals===r.oppGoals;
-                const cls=w?'cwin':d?'cdraw':'closs';
-                html+=`<div class="${cls}" style="font-size:.88em;padding:2px 0">${w?'✅':d?'🤝':'❌'} (${r.jornada==='ida'?'🏠':'✈️'}) vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div>`;
-            });
+
+        // Mostrar top 10 + posición del jugador si está fuera
+        const myPos  = sorted.findIndex(t=>t.isPlayer) + 1;
+        const showFull = sorted.length <= 10;
+        const display  = showFull ? sorted : sorted.slice(0, 10);
+        const myInTop  = myPos <= 10;
+
+        html += `<table class="cg-table"><thead><tr>
+            <th>Pos</th><th style="text-align:left">Equipo</th>
+            <th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+        </tr></thead><tbody>`;
+
+        display.forEach((t, i) => {
+            const pos   = i + 1;
+            const me    = t.isPlayer;
+            const top8  = pos <= 8;
+            const po    = pos <= 24 && pos > 8;
+            const elim  = pos > 24;
+            const rowBg = me
+                ? 'background:rgba(233,69,96,.25);'
+                : top8 ? 'background:rgba(30,90,200,.12);'
+                : po   ? 'background:rgba(255,140,0,.08);'
+                : '';
+            const posIcon = top8 ? '🔵' : po ? '🟠' : '🔴';
+            html += `<tr style="${rowBg}">
+                <td style="font-size:.82em">${posIcon}${pos}</td>
+                <td style="text-align:left;${me?'font-weight:bold;color:#FFD700':''}">${me?'⭐ ':''}${t.name}</td>
+                <td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
+                <td>${t.gf}</td><td>${t.gc}</td>
+                <td style="${(t.gf-t.gc)>=0?'color:#4CAF50':'color:#f44336'}">${t.gf-t.gc>0?'+':''}${t.gf-t.gc}</td>
+                <td><strong>${t.pts}</strong></td>
+            </tr>`;
+        });
+
+        // Si el jugador no está en el top 10, mostrar su posición al final
+        if (!myInTop && !showFull) {
+            const mt = sorted[myPos-1];
+            html += `<tr style="border-top:2px dashed rgba(255,255,255,.2)"><td colspan="10" style="color:rgba(255,255,255,.4);font-size:.78em;padding:4px">... ${myPos-10} equipos ...</td></tr>`;
+            html += `<tr style="background:rgba(233,69,96,.25)">
+                <td style="font-size:.82em">${myPos<=8?'🔵':myPos<=24?'🟠':'🔴'}${myPos}</td>
+                <td style="text-align:left;font-weight:bold;color:#FFD700">⭐ ${mt.name}</td>
+                <td>${mt.pj}</td><td>${mt.g}</td><td>${mt.e}</td><td>${mt.p}</td>
+                <td>${mt.gf}</td><td>${mt.gc}</td>
+                <td style="${(mt.gf-mt.gc)>=0?'color:#4CAF50':'color:#f44336'}">${mt.gf-mt.gc>0?'+':''}${mt.gf-mt.gc}</td>
+                <td><strong>${mt.pts}</strong></td>
+            </tr>`;
         }
+        html += `</tbody></table>`;
+        if (!showFull) {
+            html += `<div style="font-size:.75em;color:rgba(255,255,255,.35);text-align:center;margin-top:2px">Mostrando top 10 de 36 equipos · Tú: ${myPos}º</div>`;
+        }
+    } else {
+        // Aún no hay datos (no se ha jugado ninguna jornada)
+        html += `<div style="text-align:center;padding:20px;color:rgba(255,255,255,.4);font-size:.9em">
+            📅 La fase liga comienza en la jornada 3.<br>
+            <span style="font-size:.82em">Cada semana europea se intercala entre las jornadas de liga.</span>
+        </div>`;
     }
 
-    // Knockout
-    if (comp.europeanKnockout?.length) {
-        html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin:12px 0 6px">Fase Eliminatoria</div>`;
-        comp.europeanKnockout.forEach(r=>{
-            const win=r.myGoals>r.oppGoals;
-            html+=`<div class="ccard" style="border-color:${win?'#4CAF50':'#f44336'}"><div class="ctitle">${phaseName(r.phase)}</div><div class="${win?'cwin':'closs'}">${win?'✅':'❌'} vs ${r.rival}: <strong>${r.myGoals}-${r.oppGoals}</strong></div></div>`;
+    // ── TUS RESULTADOS EN FASE LIGA ─────────────────────────
+    if (comp.europeanResults?.length) {
+        html += `<div style="color:rgba(255,255,255,.65);font-size:.82em;font-weight:bold;margin:14px 0 6px">📋 Tus partidos jugados</div>`;
+        comp.europeanResults.forEach(r => {
+            const w = r.myGoals > r.oppGoals, d = r.myGoals === r.oppGoals;
+            const icon = w ? '✅' : d ? '🤝' : '❌';
+            const loc  = r.md % 2 === 1 ? '🏟️' : '✈️';
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;margin-bottom:3px;background:rgba(255,255,255,.05);font-size:.86em">
+                <span style="color:rgba(255,255,255,.5);min-width:28px">J${r.md} ${loc}</span>
+                <span style="flex:1;color:rgba(255,255,255,.8)">vs ${r.rival}</span>
+                <span style="${w?'color:#4CAF50':d?'color:#FFD700':'color:#f44336'};font-weight:bold">${icon} ${r.myGoals}-${r.oppGoals}</span>
+            </div>`;
         });
     }
 
-    if (comp.europeanPhase==='winner') {
-        html+=`<div class="result-banner" style="background:rgba(255,215,0,.15);border-color:#FFD700"><div style="font-size:1.8em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.2em">¡CAMPEONES DE LA ${cn.toUpperCase()}!</div></div>`;
+    // ── PRÓXIMOS PARTIDOS ───────────────────────────────────
+    const pendingEu = calendar.filter(m => m.type===comp.europeanComp && !m.played && !m.eliminated && !m.locked).slice(0,3);
+    if (pendingEu.length) {
+        html += `<div style="color:rgba(255,255,255,.65);font-size:.82em;font-weight:bold;margin:14px 0 6px">📅 Próximos partidos</div>`;
+        const phNames = {groups_md1:'Fase Liga J1',groups_md2:'Fase Liga J2',groups_md3:'Fase Liga J3',groups_md4:'Fase Liga J4',groups_md5:'Fase Liga J5',groups_md6:'Fase Liga J6',groups_md7:'Fase Liga J7',groups_md8:'Fase Liga J8',round16:'Octavos',quarterfinals:'Cuartos',semifinals:'Semis',final:'Final',playoff_leg1:'Play-off Ida',playoff_leg2:'Play-off Vuelta'};
+        pendingEu.forEach(m => {
+            const loc = m.isHome ? '🏟️ Casa' : '✈️ Fuera';
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;margin-bottom:3px;background:rgba(255,255,255,.05);font-size:.86em">
+                <span style="color:rgba(255,255,255,.5);min-width:28px">J${m.afterLigaWeek}</span>
+                <span style="flex:1;color:#fff">vs ${m.opponent||'?'}</span>
+                <span style="color:rgba(255,255,255,.4);font-size:.82em">${loc}</span>
+            </div>`;
+        });
+    }
+
+    // ── FASE ELIMINATORIA ───────────────────────────────────
+    const hasKO = comp.europeanKO && Object.keys(comp.europeanKO).length > 0;
+    if (hasKO) {
+        html += `<div style="color:rgba(255,255,255,.65);font-size:.82em;font-weight:bold;margin:14px 0 6px">⚔️ Fase Eliminatoria</div>`;
+        const koNames = {round16:'Octavos de Final',quarterfinals:'Cuartos de Final',semifinals:'Semifinales'};
+        Object.entries(comp.europeanKO).forEach(([phase, data]) => {
+            const l1=data.leg1, l2=data.leg2;
+            const name=koNames[phase]||phase;
+            html += `<div class="ccard" style="border-color:${data.leg2?.advances?'#4CAF50':'#f44336'}">
+                <div class="ctitle">⚔️ ${name} — vs ${data.opponent}</div>`;
+            if(l1) html+=`<div style="font-size:.86em;color:rgba(255,255,255,.7)">Ida: <strong style="${l1.myGoals>l1.oppGoals?'color:#4CAF50':l1.myGoals<l1.oppGoals?'color:#f44336':'color:#FFD700'}">${l1.myGoals}-${l1.oppGoals}</strong></div>`;
+            if(l2){
+                const totMy=(l1?.myGoals||0)+l2.myGoals, totOp=(l1?.oppGoals||0)+l2.oppGoals;
+                html+=`<div style="font-size:.86em;color:rgba(255,255,255,.7)">Vuelta: <strong>${l2.myGoals}-${l2.oppGoals}</strong> · Global: <strong style="${totMy>totOp?'color:#4CAF50':'color:#f44336'}">${totMy}-${totOp}</strong></div>`;
+                html+=`<div style="margin-top:4px;font-weight:bold;${l2.advances?'color:#4CAF50':'color:#f44336'}">${l2.advances?'✅ AVANZAMOS':'❌ ELIMINADOS'}</div>`;
+            }else if(l1){
+                html+=`<div style="font-size:.8em;color:rgba(255,255,255,.4);margin-top:4px">⏳ Vuelta pendiente</div>`;
+            }
+            html += `</div>`;
+        });
+    }
+
+    // ── PLAY-OFF ────────────────────────────────────────────
+    if (cupData.playoff) {
+        const po=cupData.playoff;
+        html+=`<div class="ccard" style="border-color:#FF8C00">
+            <div class="ctitle">⚔️ Play-off acceso a Octavos</div>`;
+        if(po.leg1) html+=`<div style="font-size:.86em;color:rgba(255,255,255,.7)">Ida: <strong>${po.leg1.myGoals}-${po.leg1.oppGoals}</strong></div>`;
+        if(po.leg2){
+            const totMy=(po.leg1?.myGoals||0)+po.leg2.myGoals,totOp=(po.leg1?.oppGoals||0)+po.leg2.oppGoals;
+            html+=`<div style="font-size:.86em;color:rgba(255,255,255,.7)">Vuelta: <strong>${po.leg2.myGoals}-${po.leg2.oppGoals}</strong> · Global: <strong style="${totMy>totOp?'color:#4CAF50':'color:#f44336'}">${totMy}-${totOp}</strong></div>`;
+            html+=`<div style="font-weight:bold;${po.leg2.advances?'color:#4CAF50':'color:#f44336'}">${po.leg2.advances?'✅ PASAMOS A OCTAVOS':'❌ ELIMINADOS'}</div>`;
+        }else if(po.leg1){html+=`<div style="font-size:.8em;color:rgba(255,255,255,.4)">⏳ Vuelta pendiente</div>`;}
+        html+=`</div>`;
+    }
+
+    // ── BANNER FINAL ────────────────────────────────────────
+    if (comp.europeanPhase==='champion') {
+        html+=`<div class="result-banner" style="background:rgba(255,215,0,.15);border-color:#FFD700"><div style="font-size:2em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.2em">¡CAMPEONES DE LA ${cn.toUpperCase()}!</div></div>`;
     } else if (comp.europeanPhase==='eliminated') {
         html+=`<div style="text-align:center;color:#f44336;padding:12px;margin-top:8px">😞 Eliminados de la ${cn}</div>`;
-    } else if (comp.europeanPhase && comp.europeanPhase!=='groups') {
-        html+=`<div style="color:#4CAF50;padding:10px;text-align:center">✅ Clasificados — próxima fase: ${phaseName(comp.europeanPhase)}</div>`;
     }
 
     panel.innerHTML = html;
