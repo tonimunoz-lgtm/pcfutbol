@@ -748,8 +748,8 @@ function renderEuropa() {
     const totalMd = isConf ? 6 : 8;
     const myTeam  = comp.team;
 
-    // Leer la tabla de fase liga desde cupData (guardado en gameState por injector-cup-matches)
-    const cupData   = state?.cupData || {};
+    // Leer cupData: primero desde CupMatches (fuente directa), luego desde gameState (partida guardada)
+    const cupData   = window.CupMatches?.getData() || state?.cupData || {};
     const field     = cupData.leagueField || null;
     const calendar  = cupData.calendar    || [];
     const mdJugadas = calendar.filter(m => m.type === comp.europeanComp && m.isGroup && m.played).length;
