@@ -342,6 +342,7 @@ function hookSimulateWeek() {
                 
                 const cardResult = simulateMatchCards(squadPlayer);
                 if (cardResult) {
+                    cardResult.minute = Math.floor(Math.random() * 90) + 1;
                     matchCards.push(cardResult);
                     
                     let newsText;
@@ -359,6 +360,7 @@ function hookSimulateWeek() {
                 
                 const injuryResult = simulateMatchInjuries(squadPlayer, newState.staff);
                 if (injuryResult) {
+                    injuryResult.minute = Math.floor(Math.random() * 90) + 1;
                     matchInjuries.push(injuryResult);
                     const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
                     
@@ -559,6 +561,7 @@ setTimeout(() => {
                                         ${data.cards.map(card => `
                                             <div class="card-item home">
                                                 <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
+                                                <span class="card-minute">${card.minute || '?'}'</span>
                                                 <span class="card-player">${card.player}</span>
                                                 ${card.suspension > 0 ? `<span class="card-team">(Sanción: ${card.suspension} partidos)</span>` : ''}
                                             </div>
@@ -577,6 +580,7 @@ setTimeout(() => {
                                     <div class="injuries-list">
                                         ${data.injuries.map(inj => `
                                             <div class="injury-item">
+                                                <span class="injury-minute">${inj.minute || '?'}'</span>
                                                 <span class="injury-player">${inj.player}</span>
                                                 <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
                                             </div>
