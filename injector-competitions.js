@@ -1320,7 +1320,7 @@ function initOnLoad() {
     }
 
     // Notificar a cup-matches que las competiciones están listas (compsData ya en gameState)
-    window.dispatchEvent(new CustomEvent('competitionsReady', { detail: { team: state.team } }));
+    window.dispatchEvent(new CustomEvent('competitionsReady', { detail: { team: state.team, comp: store.getComp() } }));
 }
 
 // ============================================================
