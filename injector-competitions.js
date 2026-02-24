@@ -1,6 +1,5 @@
 // ============================================================
 // injector-competitions.js  v2.0
-
 // Sistema de Competiciones: Champions, Europa League,
 // Conference League, Copa del Rey + Colores Clasificación
 // + Playoff Segunda División + Playoff Ascenso RFEF
@@ -997,21 +996,41 @@ function renderPlayoff() {
 }
 
 function renderSegundaPlayoff(panel, po) {
-    const myTeam=po.myTeam;
-    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Primera — ${po.season}</h3>`;
+    const myTeam = po.myTeam;
+    const state  = window.gameLogic?.getGameState();
+    let html = `<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Primera — ${po.season}</h3>`;
 
-    // Ascensos directos
-    html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
-        <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS</div>
-        ${(po.directAscent||[]).map(t=>`<div style="color:#fff">🥇 <strong>${t}</strong>${t===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>`).join('')}
+    // Posición real del jugador en los standings actuales
+    const sorted = Object.entries(state?.standings||{}).sort((a,b)=>(b[1].pts-a[1].pts)||((b[1].gf-b[1].gc)-(a[1].gf-a[1].gc)));
+    const myPos  = sorted.findIndex(([n])=>n===myTeam) + 1;
+    const myPts  = sorted.find(([n])=>n===myTeam)?.[1]?.pts ?? '?';
+    const posColor = myPos<=2?'#32C832':myPos<=6?'#B49600':'rgba(255,255,255,.4)';
+    const posLabel = myPos<=2?'🥇 ASCENSO DIRECTO':myPos<=6?`🏅 ${myPos}º — Zona Playoff`:`📍 ${myPos}º — Fuera del playoff`;
+
+    html += `<div style="background:rgba(255,255,255,.07);border-left:4px solid ${posColor};border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:#FFD700;font-weight:bold">⭐ ${myTeam}</span>
+        <span style="color:${posColor};font-weight:bold">${posLabel} · ${myPts} pts</span>
     </div>`;
 
-    // Bracket
+    // Ascensos directos — recalculados desde standings actuales
+    const direct1 = sorted[0]?.[0], direct2 = sorted[1]?.[0];
+    html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+        <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS</div>
+        <div style="color:#fff">🥇 1º: <strong>${direct1||'—'}</strong>${direct1===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+        <div style="color:#fff">🥇 2º: <strong>${direct2||'—'}</strong>${direct2===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+    </div>`;
+
+    // Zona playoff — recalculada desde standings actuales
+    const p3=sorted[2]?.[0],p4=sorted[3]?.[0],p5=sorted[4]?.[0],p6=sorted[5]?.[0];
     html+=`<div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:8px">Playoff — Pos 3 vs 6 y Pos 4 vs 5 (doble partido)</div>`;
     html+=`<div class="po-wrap">`;
     if (!po.simulated) {
-        html+=matchPending('Semifinal 1',`${po.pos3} <span style="opacity:.5">(3º)</span>`,`${po.pos6} <span style="opacity:.5">(6º)</span>`);
-        html+=matchPending('Semifinal 2',`${po.pos4} <span style="opacity:.5">(4º)</span>`,`${po.pos5} <span style="opacity:.5">(5º)</span>`);
+        html+=matchPending('Semifinal 1',
+            `${p3||'?'} <span style="opacity:.5">(3º)</span>${p3===myTeam?' <span style="color:#FFD700">⭐</span>':''}`,
+            `${p6||'?'} <span style="opacity:.5">(6º)</span>${p6===myTeam?' <span style="color:#FFD700">⭐</span>':''}`);
+        html+=matchPending('Semifinal 2',
+            `${p4||'?'} <span style="opacity:.5">(4º)</span>${p4===myTeam?' <span style="color:#FFD700">⭐</span>':''}`,
+            `${p5||'?'} <span style="opacity:.5">(5º)</span>${p5===myTeam?' <span style="color:#FFD700">⭐</span>':''}`);
         html+=matchPending('Final','Ganador SF1','Ganador SF2','#FFD700');
     } else {
         html+=matchResult('Semifinal 1', po.sf1Result, myTeam);
@@ -1024,16 +1043,52 @@ function renderSegundaPlayoff(panel, po) {
 }
 
 function renderRFEFPlayoff(panel, po) {
-    const myTeam=po.myTeam;
-    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Segunda — ${po.season}</h3>`;
-    html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+    const myTeam = po.myTeam;
+    const state  = window.gameLogic?.getGameState();
+    let html = `<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Segunda — ${po.season}</h3>`;
+
+    // Recalcular posición real del jugador en los standings actuales
+    const sorted = Object.entries(state?.standings||{}).sort((a,b)=>(b[1].pts-a[1].pts)||((b[1].gf-b[1].gc)-(a[1].gf-a[1].gc)));
+    const myPos  = sorted.findIndex(([n])=>n===myTeam) + 1;
+    const myPts  = sorted.find(([n])=>n===myTeam)?.[1]?.pts ?? '?';
+
+    // Banner con posición real del jugador
+    const posColor = myPos===1?'#32C832':myPos<=5?'#B49600':'rgba(255,255,255,.4)';
+    const posLabel = myPos===1?'🥇 ASCENSO DIRECTO':myPos<=5?`🏅 ${myPos}º — Zona Playoff`:`📍 ${myPos}º — Fuera del playoff`;
+    html += `<div style="background:rgba(255,255,255,.07);border-left:4px solid ${posColor};border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:#FFD700;font-weight:bold">⭐ ${myTeam}</span>
+        <span style="color:${posColor};font-weight:bold">${posLabel} · ${myPts} pts</span>
+    </div>`;
+
+    // Clasificación del grupo (top 7)
+    html += `<div style="color:rgba(255,255,255,.6);font-size:.82em;font-weight:bold;margin-bottom:6px">📊 Clasificación tu grupo</div>`;
+    html += `<table class="cg-table"><thead><tr><th>Pos</th><th style="text-align:left">Equipo</th><th>PJ</th><th>Pts</th><th>DG</th></tr></thead><tbody>`;
+    sorted.slice(0, 7).forEach(([name, st], i) => {
+        const p = i+1;
+        const isMe = name===myTeam;
+        const bg = isMe?'background:rgba(233,69,96,.25);':p===1?'background:rgba(50,200,50,.1);':p<=5?'background:rgba(180,150,0,.08);':'';
+        const icon = p===1?'🥇':p<=5?'🏅':'';
+        html += `<tr style="${bg}"><td>${icon}${p}</td><td style="text-align:left;${isMe?'font-weight:bold;color:#FFD700':''}">${isMe?'⭐ ':''}${name}</td><td>${st.pj}</td><td><strong>${st.pts}</strong></td><td>${st.gf-st.gc>0?'+':''}${st.gf-st.gc}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px;font-size:.75em">
+        <span style="background:rgba(50,200,50,.15);border-left:3px solid #32C832;padding:2px 8px;border-radius:4px;color:#fff">1º: Ascenso directo</span>
+        <span style="background:rgba(180,150,0,.15);border-left:3px solid #B49600;padding:2px 8px;border-radius:4px;color:#fff">2º-5º: Playoff</span>
+    </div>`;
+
+    // Ascensos directos
+    html += `<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
         <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS (1º de cada grupo)</div>
-        <div style="color:#fff">🥇 Grupo 1: <strong>${po.directAscent1||'—'}</strong>${po.directAscent1===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
-        <div style="color:#fff">🥇 Grupo 2: <strong>${po.directAscent2||'—'}</strong>${po.directAscent2===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+        <div style="color:#fff">🥇 Tu grupo: <strong>${po.directAscent1||'—'}</strong>${po.directAscent1===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
+        <div style="color:#fff">🥇 Otro grupo: <strong>${po.directAscent2||'—'}</strong>${po.directAscent2===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>
     </div>`;
 
     if (!po.simulated) {
-        html+=`<div style="color:rgba(255,255,255,.5);text-align:center;padding:20px">⏳ Mini-ligas de playoff aún no disputadas...</div>`;
+        if (myPos>=2 && myPos<=5) {
+            html+=`<div style="background:rgba(180,150,0,.12);border-left:4px solid #B49600;border-radius:6px;padding:10px 14px;text-align:center;color:#B49600;font-weight:bold">⏳ Estás en zona playoff — Mini-ligas se disputarán al final de temporada</div>`;
+        } else if (myPos>5) {
+            html+=`<div style="background:rgba(244,67,54,.1);border-left:4px solid #f44336;border-radius:6px;padding:10px 14px;text-align:center;color:#f44336">❌ Fuera del playoff — Necesitas subir a top 5</div>`;
+        }
     } else {
         html+=miniLeagueTable('A', po.miniA, myTeam, po.winnerA);
         html+=miniLeagueTable('B', po.miniB, myTeam, po.winnerB);
@@ -1273,6 +1328,22 @@ function initOnLoad() {
 function boot() {
     if (!window.gameLogic) { setTimeout(boot, 800); return; }
     console.log('🏆 Iniciando competiciones v2.0...');
+
+    // Hook en selectTeamWithInitialSquad para reinicializar al seleccionar equipo tras login
+    const origSelect = window.gameLogic.selectTeamWithInitialSquad;
+    if (origSelect && !window._compSelectHooked) {
+        window._compSelectHooked = true;
+        window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
+            const result = await origSelect.apply(this, args);
+            setTimeout(() => {
+                console.log('🏆 Competitions: reiniciando tras selección de equipo...');
+                store.clearComp();
+                store.clearPlayoff();
+                initOnLoad();
+            }, 600);
+            return result;
+        };
+    }
 
     initOnLoad();
     hookStandingsOpen();
