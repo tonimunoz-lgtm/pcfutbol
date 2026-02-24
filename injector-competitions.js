@@ -1247,9 +1247,9 @@ function initOnLoad() {
         if(euroComp) console.log(`🏆 ${state.team} → ${compName(euroComp)} ${state.currentSeason}`);
     }
 
-    // Init playoff si no existe
+    // Init playoff si no existe O si es de otro equipo
     const po = store.getPlayoff();
-    if (!po || po.season!==state.currentSeason) {
+    if (!po || po.season!==state.currentSeason || po.myTeam!==state.team) {
         const sorted = Object.entries(state.standings||{}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
         initPlayoffForDiv(state, sorted, state.currentSeason);
     }
