@@ -111,7 +111,7 @@ const ZONE_COLORS = {
 // ============================================================
 // STORAGE
 // ============================================================
-// Store: todo en gameState (Firebase) — sin localStorage
+// Store: todo en gameState (persistido en Firebase)
 const store = {
     getComp:      () => window.gameLogic?.getGameState()?.compsData || null,
     saveComp:     (s) => { const gs = window.gameLogic?.getGameState(); if(gs) gs.compsData = s; },
@@ -1318,6 +1318,9 @@ function initOnLoad() {
         const sorted = Object.entries(state.standings||{}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
         initPlayoffForDiv(state, sorted, state.currentSeason);
     }
+
+    // Notificar a cup-matches que las competiciones están listas (compsData ya en gameState)
+    window.dispatchEvent(new CustomEvent('competitionsReady', { detail: { team: state.team } }));
 }
 
 // ============================================================
