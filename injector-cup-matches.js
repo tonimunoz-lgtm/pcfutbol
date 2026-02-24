@@ -843,8 +843,24 @@ window.CupMatches = {
         if(cal.length===0) console.warn('⚠️  Calendario vacío — llama CupMatches.reinit()');
     },
     reinit: ()=>{
+        // Limpiar cupData en gameState
         const d=getCupData();
-        if(d){d.calendar=[];d.calSeason=null;d.calTeam=null;d.leagueField=null;}
+        if(d){d.calendar=[];d.calSeason=null;d.calTeam=null;d.leagueField=null;d.playoff=null;}
+        const gs=getGS(); if(gs) gs.cupData={};
+        _cupData={};
+        // Limpiar también los resultados europeos/copa en comps_v2
+        const comp=getCompState();
+        if(comp){
+            comp.europeanResults=[];
+            comp.europeanKnockout=[];
+            comp.europeanLeaguePos=null;
+            comp.europeanPhase=comp.europeanComp?'groups':null;
+            comp.copaResults=[];
+            if(comp.copaPhase&&comp.copaPhase!=='eliminated'&&comp.copaPhase!=='champion'){
+                comp.copaPhase='round32'; // reset a primera ronda
+            }
+            saveCompState(comp);
+        }
         setTimeout(()=>{ initCupCalendar(); console.log('🔄 Reiniciado. Partidos:', getCal().length); }, 200);
     },
     // Test desde consola:
