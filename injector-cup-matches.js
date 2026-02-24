@@ -929,18 +929,25 @@ function boot(){
     // Cubre todos los casos: login, nueva partida, carga desde nube
     const onCompetitionsReady = (e) => {
         const gs2 = getGS();
-        const comp2 = getCompState();
-        if (!gs2?.team || !comp2) return;
+        // Usar comp del evento (ya disponible) o fallback a gameState
+        const comp2 = e.detail?.comp || getCompState();
+        if (!gs2?.team || !comp2) {
+            console.warn('⚠️ CupMatches: competitionsReady sin gs/comp válido');
+            return;
+        }
         // Evitar doble init si ya existe calendario para este equipo/temporada
         const existing = getCupData();
         if (existing.calTeam === gs2.team && existing.calSeason === comp2.season && (existing.calendar||[]).length > 0) {
             console.log('📅 CupMatches: calendario ya existe, ignorando competitionsReady');
+            hookCupSimulateWeek();
             return;
         }
-        console.log('🏆 CupMatches: competitionsReady recibido, iniciando calendario para', gs2.team);
+        console.log('🏆 CupMatches: competitionsReady recibido, iniciando para', gs2.team, '| euComp:', comp2.europeanComp);
         window._cupsHookedV4 = false;
         _cupData = {};
         gs2.cupData = {};
+        // Guardar comp en gameState para que initCupCalendar lo encuentre
+        gs2.compsData = comp2;
         initCupCalendar();
         setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
     };
