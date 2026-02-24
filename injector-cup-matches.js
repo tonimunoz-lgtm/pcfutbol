@@ -827,6 +827,11 @@ function hookSimulateWeek(){
 // API PÚBLICA
 // ============================================================
 window.CupMatches = {
+    // Acceso directo al cupData interno (para que renderEuropa lo lea aunque gameState no lo tenga aún)
+    getData: ()=> _cupData || getCupData(),
+    getCalendar: ()=> getCal(),
+    getLeagueField: ()=> getField(),
+    
     status: ()=>{
         const d=getCupData();
         const cal=getCal();
