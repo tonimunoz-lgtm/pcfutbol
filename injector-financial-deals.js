@@ -1,5 +1,6 @@
 // ============================================================
 // injector-financial-deals.js  v1.0
+
 //
 // MÓDULO: Préstamos bancarios + Patrocinios + Derechos TV
 //
