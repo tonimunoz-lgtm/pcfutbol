@@ -573,6 +573,29 @@ function updateStandingsColors() {
             if (cfg.promoteAuto?.includes(pos))       apply('promoteAuto');
             else if (cfg.promotePlayoff?.includes(pos)) apply('promotePlayoff');
         }
+
+        // ── RESALTAR EQUIPO DEL JUGADOR ──────────────────────
+        if (row.classList.contains('my-team-row')) {
+            // Preservar el color de zona pero añadir borde izquierdo doble y fondo más intenso
+            const currentBg = row.style.background;
+            if (currentBg && currentBg !== '') {
+                // Hay zona de color — intensificar fondo y añadir borde derecho
+                row.style.background = currentBg.replace(/[\d.]+\)$/, '0.45)');
+            } else {
+                row.style.background = 'rgba(233,69,96,0.22)';
+            }
+            row.style.borderLeft   = '4px solid #e94560';
+            row.style.borderRight  = '3px solid rgba(233,69,96,0.6)';
+            row.style.fontWeight   = 'bold';
+            // Añadir ⭐ al nombre si no lo tiene ya
+            const nameCell = row.querySelector('.team-name, td:nth-child(2)');
+            if (nameCell && !nameCell.textContent.includes('⭐')) {
+                nameCell.innerHTML = '⭐ ' + nameCell.innerHTML;
+            }
+        } else {
+            row.style.borderRight = '';
+            row.style.fontWeight  = '';
+        }
     });
     addLegend(division, cfg, total);
 }
@@ -816,9 +839,14 @@ function renderEuropa() {
     }
 
     // ── TUS RESULTADOS EN FASE LIGA ─────────────────────────
-    if (comp.europeanResults?.length) {
+    // Solo mostrar resultados que correspondan a jornadas realmente jugadas en el calendario actual
+    const jugadas = calendar.filter(m => m.type === comp.europeanComp && m.isGroup && m.played);
+    const jugadasMd = new Set(jugadas.map(m => m.matchday));
+    const resultadosValidos = (comp.europeanResults||[]).filter(r => jugadasMd.has(r.md));
+
+    if (resultadosValidos.length > 0) {
         html += `<div style="color:rgba(255,255,255,.65);font-size:.82em;font-weight:bold;margin:14px 0 6px">📋 Tus partidos jugados</div>`;
-        comp.europeanResults.forEach(r => {
+        resultadosValidos.forEach(r => {
             const w = r.myGoals > r.oppGoals, d = r.myGoals === r.oppGoals;
             const icon = w ? '✅' : d ? '🤝' : '❌';
             const loc  = r.md % 2 === 1 ? '🏟️' : '✈️';
@@ -1253,7 +1281,15 @@ function boot() {
     // Inyectar CSS básico para las filas
     if(!document.getElementById('comp-row-css')){
         const s=document.createElement('style'); s.id='comp-row-css';
-        s.textContent=`#standingsTable tr,table.standings-table tbody tr{transition:background .3s, border-left .3s}`;
+        s.textContent=`
+            #standingsTable tr, table.standings-table tbody tr { transition: background .3s, border-left .3s; }
+            #standingsTable tr.my-team-row, table.standings-table tbody tr.my-team-row {
+                background: rgba(233,69,96,0.22) !important;
+                border-left: 4px solid #e94560 !important;
+                border-right: 3px solid rgba(233,69,96,0.5) !important;
+                font-weight: bold !important;
+            }
+        `;
         document.head.appendChild(s);
     }
 
