@@ -156,12 +156,12 @@ function getGS() {
 }
 
 function getCompState() {
-    // Lee de gameState.compsData (gestionado por injector-competitions.js, persistido en Firebase)
-    return window.gameLogic?.getGameState()?.compsData || null;
+    // comps_v2 sigue en localStorage (lo gestiona injector-competitions.js)
+    try { return JSON.parse(localStorage.getItem('comps_v2')); }
+    catch(e) { return null; }
 }
 function saveCompState(c) {
-    const gs = window.gameLogic?.getGameState();
-    if (gs) gs.compsData = c;
+    try { localStorage.setItem('comps_v2', JSON.stringify(c)); } catch(e) {}
 }
 
 // ============================================================
@@ -897,65 +897,26 @@ function boot(){
         window._cupsSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args){
             const result = await origSelect.apply(this, args);
-            // Esperar el evento de competitions (garantiza que comps_v2 está listo)
-            // con fallback a 1500ms por si competitions no dispara el evento
-            let _cupsInitDone = false;
-            const onCompReady = () => {
-                if (_cupsInitDone) return;
-                _cupsInitDone = true;
-                window.removeEventListener('competitionsReady', onCompReady);
-                console.log('🏆 CupMatches: competitionsReady recibido, iniciando calendario...');
-                window._cupsHookedV4 = false;
+            // Esperar competitionsReady para que comps_v2 esté listo antes de initCupCalendar
+            let _done = false;
+            const onReady = () => {
+                if (_done) return; _done = true;
+                window.removeEventListener('competitionsReady', onReady);
+                console.log('🏆 CupMatches: nueva partida, iniciando calendario...');
                 _cupData = {};
                 const gs = getGS();
-                if(gs) gs.cupData = {};
+                if (gs) gs.cupData = {};
                 initCupCalendar();
-                setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
+                setTimeout(()=>{ hookCupSimulateWeek(); }, 800);
             };
-            window.addEventListener('competitionsReady', onCompReady);
-            // Fallback si el evento no llega
-            setTimeout(()=>{
-                if (!_cupsInitDone) {
-                    console.log('🏆 CupMatches: fallback init (sin evento competitionsReady)...');
-                    onCompReady();
-                }
-            }, 1500);
+            window.addEventListener('competitionsReady', onReady);
+            setTimeout(()=>{ if (!_done) { console.log('🏆 CupMatches: fallback init...'); onReady(); } }, 2000);
             return result;
         };
         console.log('🏆 CupMatches: hook selectTeam instalado');
     }
 
-    // Listener permanente para competitionsReady — registrado inmediatamente al arrancar
-    // Cubre todos los casos: login, nueva partida, carga desde nube
-    const onCompetitionsReady = (e) => {
-        const comp2 = e.detail?.comp;
-        const team  = e.detail?.team;
-        if (!comp2 || !team) {
-            console.warn('⚠️ CupMatches: competitionsReady sin datos válidos', e.detail);
-            return;
-        }
-        // Evitar doble init si ya existe calendario para este equipo/temporada
-        const existing = getCupData();
-        if (existing.calTeam === team && existing.calSeason === comp2.season && (existing.calendar||[]).length > 0) {
-            console.log('📅 CupMatches: calendario ya existe para', team);
-            setTimeout(()=>{ hookCupSimulateWeek(); }, 500);
-            return;
-        }
-        console.log('🏆 CupMatches: iniciando calendario para', team, '| euComp:', comp2.europeanComp);
-        // Escribir comp en gameState para que initCupCalendar lo encuentre vía getCompState()
-        const gs2 = getGS();
-        if (gs2) {
-            gs2.compsData = comp2;
-            gs2.cupData = {};
-        }
-        window._cupsHookedV4 = false;
-        _cupData = {};
-        initCupCalendar();
-        setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
-    };
-    window.addEventListener('competitionsReady', onCompetitionsReady);
-
-    // Init si ya hay partida cargada (recarga F5 con sesión activa)
+    // Init si ya hay partida cargada (recarga de página o carga desde Firebase)
     const tryInit=(n=0)=>{
         const gs   = getGS();
         const comp = getCompState();
@@ -971,13 +932,23 @@ function boot(){
             } else {
                 console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
-            setTimeout(()=>{ hookCupSimulateWeek(); }, 1500);
+            hookCupSimulateWeek();
             console.log('✅ injector-cup-matches.js v4 LISTO');
         } else if(n < 20){
+            // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
             setTimeout(()=>tryInit(n+1), 500);
         } else {
-            // Sin partida activa — el listener competitionsReady se encargará
+            // Sin equipo = pantalla login. Registrar listener permanente para competitionsReady.
             console.log('📋 CupMatches: sin partida activa — esperando competitionsReady...');
+            window.addEventListener('competitionsReady', function onReady(){
+                window.removeEventListener('competitionsReady', onReady);
+                const gs2 = getGS(); const comp2 = getCompState();
+                if (!gs2?.team || !comp2) return;
+                console.log('🏆 CupMatches: competitionsReady recibido, iniciando para', gs2.team);
+                _cupData = {}; if (gs2) gs2.cupData = {};
+                initCupCalendar();
+                setTimeout(()=>{ hookCupSimulateWeek(); }, 800);
+            });
         }
     };
     tryInit();
