@@ -100,34 +100,57 @@ const EU_POOLS = {
 
 // ============================================================
 // ACCESO AL ESTADO — todo en gameState.cupData
+//
+// IMPORTANTE: getGameState() devuelve una COPIA (JSON.parse).
+// Para escribir hay que usar updateGameState({cupData: ...}).
+// Para leer se puede usar getGameState() o el objeto interno.
+//
+// Usamos un objeto en memoria _cupData sincronizado con
+// updateGameState en cada escritura.
 // ============================================================
-function getGS() {
-    return window.gameLogic?.getGameState();
-}
+
+// Cache en memoria — se sincroniza con gameState en cada save
+let _cupData = null;
 
 function getCupData() {
-    const gs = getGS();
-    if (!gs) return null;
-    if (!gs.cupData) gs.cupData = {};
-    return gs.cupData;
+    if (_cupData) return _cupData;
+    // Intentar cargar desde gameState (por si se cargó una partida guardada)
+    const gs = window.gameLogic?.getGameState();
+    if (gs?.cupData) {
+        _cupData = gs.cupData;
+    } else {
+        _cupData = {};
+    }
+    return _cupData;
+}
+
+function flushCupData() {
+    // Persiste _cupData en el gameState real via updateGameState
+    if (_cupData) {
+        window.gameLogic?.updateGameState({ cupData: _cupData });
+    }
 }
 
 function getCal() {
-    return getCupData()?.calendar || [];
+    return getCupData().calendar || [];
 }
 
 function saveCal(cal) {
-    const d = getCupData();
-    if (d) d.calendar = cal;
+    getCupData().calendar = cal;
+    flushCupData();
 }
 
 function getField() {
-    return getCupData()?.leagueField || null;
+    return getCupData().leagueField || null;
 }
 
 function saveField(f) {
-    const d = getCupData();
-    if (d) d.leagueField = f;
+    getCupData().leagueField = f;
+    flushCupData();
+}
+
+function getGS() {
+    return window.gameLogic?.getGameState();
 }
 
 function getCompState() {
@@ -158,6 +181,9 @@ function initCupCalendar() {
     const division = gs.division;
     const season   = comp.season;
     const cal      = [];
+
+    // Debug info
+    console.log(`🔍 Init copa: team=${myTeam}, division=${division}, euComp=${comp.europeanComp}, copaPhase=${comp.copaPhase}`);
 
     // ── EUROPA: SOLO si el equipo está clasificado ─────────
     const euComp = comp.europeanComp; // null si no clasificado
@@ -219,8 +245,9 @@ function initCupCalendar() {
     }
 
     // ── COPA DEL REY: solo primera/segunda ─────────────────
+    // Copa: generar si es primera/segunda (aunque copaPhase no esté inicializada aún)
     const copaOk = (division==='primera'||division==='segunda') &&
-                   comp.copaPhase && comp.copaPhase!=='eliminated';
+                   comp.copaPhase !== 'eliminated' && comp.copaPhase !== 'champion';
     if (copaOk) {
         const isPrimera = division === 'primera';
         const rounds = isPrimera
@@ -250,14 +277,19 @@ function initCupCalendar() {
             m.opponent = getCopaRival(division);
         });
         console.log(`🥇 Copa del Rey calendario OK (${division})`);
-    } else if (division!=='primera'&&division!=='segunda') {
-        console.log(`❌ ${division} no participa en Copa del Rey`);
+    } else {
+        if (division!=='primera'&&division!=='segunda') {
+            console.log(`❌ ${division} no participa en Copa del Rey`);
+        } else {
+            console.log(`⚠️ Copa: division=${division} copaPhase=${comp.copaPhase} → no se generan partidos copa`);
+        }
     }
 
     cal.sort((a,b)=>a.afterLigaWeek-b.afterLigaWeek);
     d.calendar  = cal;
     d.calSeason = season;
     d.calTeam   = myTeam;
+    flushCupData(); // CRÍTICO: persiste en gameState real
     console.log(`📅 Total: ${cal.length} partidos.`, cal.slice(0,3).map(m=>`${m.type}@J${m.afterLigaWeek}`).join(', ')+'...');
 }
 
@@ -789,24 +821,25 @@ function hookSimulateWeek(){
 // API PÚBLICA
 // ============================================================
 window.CupMatches = {
-    // Diagnóstico
     status: ()=>{
         const d=getCupData();
         const cal=getCal();
         const gs=getGS();
+        const comp=getCompState();
         console.log('📋 CupMatches status:');
-        console.log('  gameState.week:', gs?.week);
-        console.log('  cupData.calSeason:', d?.calSeason, '| calTeam:', d?.calTeam);
+        console.log('  week:', gs?.week, '| team:', gs?.team);
+        console.log('  calSeason:', d?.calSeason, '| calTeam:', d?.calTeam);
         console.log('  calendar entries:', cal.length);
-        console.log('  próximos partidos:', cal.filter(m=>!m.played&&!m.eliminated&&!m.locked).slice(0,3).map(m=>`${m.type}/${m.phase}@J${m.afterLigaWeek}`));
+        const pending=cal.filter(m=>!m.played&&!m.eliminated&&!m.locked);
+        console.log('  pendientes:', pending.slice(0,5).map(m=>`${m.type}/${m.phase}@J${m.afterLigaWeek}`));
         console.log('  leagueField:', !!d?.leagueField);
-        console.log('  comps_v2.europeanComp:', getCompState()?.europeanComp);
+        console.log('  europeanComp:', comp?.europeanComp, '| copaPhase:', comp?.copaPhase);
+        if(cal.length===0) console.warn('⚠️  Calendario vacío — llama CupMatches.reinit()');
     },
     reinit: ()=>{
         const d=getCupData();
         if(d){d.calendar=[];d.calSeason=null;d.calTeam=null;d.leagueField=null;}
-        initCupCalendar();
-        console.log('🔄 Calendario reiniciado');
+        setTimeout(()=>{ initCupCalendar(); console.log('🔄 Reiniciado. Partidos:', getCal().length); }, 200);
     },
     // Test desde consola:
     // CupMatches.test("champions","groups_md1","Bayern München")
@@ -829,13 +862,43 @@ window.CupMatches = {
 // ============================================================
 function boot(){
     if(!window.gameLogic){setTimeout(boot,700);return;}
-    // Esperar a que injector-competitions.js haya inicializado comps_v2
+
+    // Hook en updateGameState para detectar cuando Firebase/localStorage carga la partida
+    const origUpdate = window.gameLogic.updateGameState;
+    window.gameLogic.updateGameState = function(newState) {
+        origUpdate.call(this, newState);
+        // Si el nuevo estado tiene cupData (carga desde Firebase), actualizar cache
+        if (newState?.cupData) {
+            _cupData = newState.cupData;
+        }
+        // Detectar cambio de equipo/temporada
+        setTimeout(() => {
+            const gs = getGS();
+            const comp = getCompState();
+            if (!gs?.team || !comp) return;
+            // Si gameState tiene cupData de Firebase, usarlo
+            if (gs.cupData?.calendar?.length && gs.cupData.calTeam === gs.team) {
+                _cupData = gs.cupData;
+                return;
+            }
+            const d = getCupData();
+            if (!d?.calendar?.length || d.calSeason !== comp.season || d.calTeam !== gs.team) {
+                console.log('🔄 CupMatches: regenerando calendario para', gs.team);
+                _cupData = {};
+                initCupCalendar();
+            }
+        }, 600);
+    };
+
+    // También hookear simulateWeek
+    hookSimulateWeek();
+
+    // Init inicial (por si el gameState ya está listo desde localStorage)
     const waitComp=(n=0)=>{
         const comp=getCompState();
         const gs=getGS();
         if((comp&&gs?.team)||n>30){
             initCupCalendar();
-            hookSimulateWeek();
             console.log('✅ injector-cup-matches.js v4 LISTO (Firebase-compatible)');
             console.log('   Estado: CupMatches.status()');
             console.log('   Test:   CupMatches.test("champions","groups_md1","Bayern München")');
