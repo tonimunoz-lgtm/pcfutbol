@@ -1,5 +1,6 @@
 // ============================================================
 // injector-competitions.js  v2.0
+
 // Sistema de Competiciones: Champions, Europa League,
 // Conference League, Copa del Rey + Colores Clasificación
 // + Playoff Segunda División + Playoff Ascenso RFEF
