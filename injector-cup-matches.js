@@ -156,12 +156,12 @@ function getGS() {
 }
 
 function getCompState() {
-    // comps_v2 sigue en localStorage (lo gestiona injector-competitions.js)
-    try { return JSON.parse(localStorage.getItem('comps_v2')); }
-    catch(e) { return null; }
+    // Lee de gameState.compsData (gestionado por injector-competitions.js, persistido en Firebase)
+    return window.gameLogic?.getGameState()?.compsData || null;
 }
 function saveCompState(c) {
-    try { localStorage.setItem('comps_v2', JSON.stringify(c)); } catch(e) {}
+    const gs = window.gameLogic?.getGameState();
+    if (gs) gs.compsData = c;
 }
 
 // ============================================================
@@ -897,17 +897,29 @@ function boot(){
         window._cupsSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args){
             const result = await origSelect.apply(this, args);
-            setTimeout(()=>{
-                console.log('🏆 CupMatches: nueva partida, iniciando calendario...');
-                // Reset hook flag para reinstalar sobre la cadena actual de hooks
+            // Esperar el evento de competitions (garantiza que comps_v2 está listo)
+            // con fallback a 1500ms por si competitions no dispara el evento
+            let _cupsInitDone = false;
+            const onCompReady = () => {
+                if (_cupsInitDone) return;
+                _cupsInitDone = true;
+                window.removeEventListener('competitionsReady', onCompReady);
+                console.log('🏆 CupMatches: competitionsReady recibido, iniciando calendario...');
                 window._cupsHookedV4 = false;
                 _cupData = {};
                 const gs = getGS();
                 if(gs) gs.cupData = {};
                 initCupCalendar();
-                // Delay extra para ser el último hook (finances, cards ya instalaron los suyos)
                 setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
-            }, 800);
+            };
+            window.addEventListener('competitionsReady', onCompReady);
+            // Fallback si el evento no llega
+            setTimeout(()=>{
+                if (!_cupsInitDone) {
+                    console.log('🏆 CupMatches: fallback init (sin evento competitionsReady)...');
+                    onCompReady();
+                }
+            }, 1500);
             return result;
         };
         console.log('🏆 CupMatches: hook selectTeam instalado');
