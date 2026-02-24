@@ -168,25 +168,70 @@ function getEUPool(comp) {
 // COPA DEL REY — POOLS DE RIVALES
 // ============================================================
 const COPA_POOLS = {
-    primera: ['Real Madrid CF','Atlético de Madrid','Athletic Club','Villarreal CF','Real Sociedad',
+    primera: ['Atlético de Madrid','Athletic Club','Villarreal CF','Real Sociedad',
               'Real Betis Balompié','Sevilla FC','Valencia CF','RC Celta de Vigo','RCD Espanyol',
-              'Girona FC','Rayo Vallecano','CA Osasuna','Getafe CF','RCD Mallorca'],
+              'Girona FC','Rayo Vallecano','CA Osasuna','Getafe CF','RCD Mallorca','Real Betis'],
     segunda: ['UD Almería','Real Zaragoza','Burgos CF','Cádiz CF','SD Eibar','Málaga CF',
-              'Córdoba CF','CD Castellón','Levante UD','Elche CF','Real Oviedo'],
-    rfef:    ['CD Lugo','CF Talavera','Racing de Ferrol','SD Ponferradina','Zamora CF',
-              'AD Mérida','Unionistas CF','CD Arenteiro']
+              'Córdoba CF','CD Castellón','Levante UD','Elche CF','Real Oviedo','SD Huesca',
+              'FC Andorra','Racing de Santander','Mirandés','Real Valladolid'],
+    rfef:    ['CD Lugo','CF Talavera de la Reina','Racing de Ferrol','SD Ponferradina','Zamora CF',
+              'AD Mérida','Unionistas de Salamanca CF','CD Arenteiro','Pontevedra CF','CD Tenerife',
+              'Ourense CF','Real Avilés','CA Osasuna B','Real Madrid Castilla','Atlético de Madrid B'],
+    segunda_rfef: ['CD Ebro','Extremadura UD','Lorca Deportiva','UD Poblense','CF Badalona',
+                   'Atlético Baleares','CD Numancia','Navalcarnero','CF Intercity','UD San Fernando']
 };
 
 function pickFrom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
 function buildCopaOpponents(division) {
-    if (division === 'primera') return {
-        round32: pickFrom(COPA_POOLS.segunda),
-        round16:  pickFrom(COPA_POOLS.primera),
-        quarters: pickFrom(COPA_POOLS.primera),
-        semis:    pickFrom(COPA_POOLS.primera),
-        final:    pickFrom(COPA_POOLS.primera)
-    };
+    const isRFEF = division === 'rfef_grupo1' || division === 'rfef_grupo2';
+    const SUPERCOPA = ['FC Barcelona','Real Madrid CF','Atlético de Madrid','Athletic Club'];
+    const isSupercopa = SUPERCOPA.includes(window.gameLogic?.getGameState()?.team);
+
+    if (division === 'primera' && isSupercopa) {
+        // Supercopa teams: entran en dieciseisavos directamente
+        return {
+            round32:  pickFrom(COPA_POOLS.segunda),
+            round16:  pickFrom(COPA_POOLS.primera),
+            quarters: pickFrom(COPA_POOLS.primera),
+            semis:    pickFrom(COPA_POOLS.primera),
+            final:    pickFrom(COPA_POOLS.primera)
+        };
+    }
+    if (division === 'primera') {
+        // Primera División normal: entra en 1ª eliminatoria vs equipo de categoría inferior
+        return {
+            round1:   pickFrom(COPA_POOLS.rfef),
+            round32:  pickFrom(COPA_POOLS.segunda),
+            round16:  pickFrom(COPA_POOLS.primera),
+            quarters: pickFrom(COPA_POOLS.primera),
+            semis:    pickFrom(COPA_POOLS.primera),
+            final:    pickFrom(COPA_POOLS.primera)
+        };
+    }
+    if (division === 'segunda') {
+        // Segunda División: entra en 1ª eliminatoria vs equipo de Primera RFEF o inferior
+        return {
+            round1:   pickFrom(COPA_POOLS.rfef),
+            round32:  pickFrom(COPA_POOLS.segunda),
+            round16:  pickFrom(COPA_POOLS.primera),
+            quarters: pickFrom(COPA_POOLS.primera),
+            semis:    pickFrom(COPA_POOLS.primera),
+            final:    pickFrom(COPA_POOLS.primera)
+        };
+    }
+    if (isRFEF) {
+        // Primera RFEF (top 5): entra en 1ª eliminatoria vs Segunda RFEF o Tercera RFEF
+        return {
+            round1:   pickFrom(COPA_POOLS.segunda_rfef),
+            round32:  pickFrom(COPA_POOLS.segunda),
+            round16:  pickFrom(COPA_POOLS.segunda),
+            quarters: pickFrom(COPA_POOLS.primera),
+            semis:    pickFrom(COPA_POOLS.primera),
+            final:    pickFrom(COPA_POOLS.primera)
+        };
+    }
+    // Fallback
     return {
         round1:   pickFrom(COPA_POOLS.rfef),
         round32:  pickFrom(COPA_POOLS.primera),
@@ -266,7 +311,37 @@ function initCompetitionsForSeason(myTeam, division, season, forceEuropean) {
         ? forceEuropean
         : detectInitialEuropean(myTeam, division, season);
 
-    const copaQualified = division === 'primera' || division === 'segunda';
+    // Copa del Rey 2025-26:
+    // - Primera División: todos participan desde 1ª eliminatoria
+    //   (salvo top 4 Supercopa: Barça, Madrid, Atlético, Athletic → entran en dieciseisavos)
+    // - Segunda División: todos desde 1ª eliminatoria
+    // - Primera RFEF: solo los 5 primeros de cada grupo (top 10 total) desde 1ª eliminatoria
+    //   → en el juego lo representamos como clasificado si el equipo está entre los top 5 del grupo
+    const SUPERCOPA_TEAMS = ['FC Barcelona','Real Madrid CF','Atlético de Madrid','Athletic Club'];
+    const isSupercopa = SUPERCOPA_TEAMS.includes(myTeam);
+    const isRFEF = division === 'rfef_grupo1' || division === 'rfef_grupo2';
+
+    // Para Primera RFEF: clasificado si está en top 5 de su grupo en la clasificación actual
+    let rfefCopaQualified = false;
+    if (isRFEF) {
+        const state = window.gameLogic?.getGameState();
+        const standings = state?.standings || {};
+        const sorted = Object.entries(standings).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
+        const myPos = sorted.findIndex(([n])=>n===myTeam) + 1;
+        // Si no hay clasificación aún (inicio de temporada), asumir clasificado si el equipo
+        // era top 5 la temporada anterior — simplificación: clasificar siempre para juego fluido
+        rfefCopaQualified = myPos <= 5 || myPos === 0;
+    }
+
+    const copaQualified = division === 'primera' || division === 'segunda' || rfefCopaQualified;
+
+    // Fase de entrada según categoría y condición de Supercopa
+    let copaPhase = null;
+    if (copaQualified) {
+        if (division === 'primera' && isSupercopa) copaPhase = 'round32'; // dieciseisavos
+        else if (division === 'primera') copaPhase = 'round1';            // 1ª eliminatoria
+        else copaPhase = 'round1';                                         // segunda y rfef: 1ª eliminatoria
+    }
 
     const comp = {
         team: myTeam, season, division,
@@ -277,7 +352,7 @@ function initCompetitionsForSeason(myTeam, division, season, forceEuropean) {
         europeanResults:        [],
         europeanKnockout:       [],
         copaQualified,
-        copaPhase:     copaQualified ? (division === 'primera' ? 'round32' : 'round1') : null,
+        copaPhase,
         copaResults:   [],
         copaOpponents: copaQualified ? buildCopaOpponents(division) : {}
     };
@@ -648,6 +723,7 @@ function injectCompUI() {
     const isSegunda = division === 'segunda';
     const hasPO     = isRFEF || isSegunda;
     const hasEU     = !isRFEF;
+    const hasCopa   = comp?.copaQualified || hasEU;
 
     const tabs = document.createElement('div');
     tabs.id = 'comp-tabs';
@@ -656,7 +732,7 @@ function injectCompUI() {
     let html = `<button class="ctab active" id="ctab-liga" onclick="window.showCompTab('liga')">⚽ Liga</button>`;
     if (hasPO) html += `<button class="ctab" id="ctab-playoff" onclick="window.showCompTab('playoff')">⬆️ Playoff Ascenso</button>`;
     if (hasEU) html += `<button class="ctab" id="ctab-europa" onclick="window.showCompTab('europa')">🏆 Europa</button>`;
-    if (hasEU) html += `<button class="ctab" id="ctab-copa" onclick="window.showCompTab('copa')">🥇 Copa del Rey</button>`;
+    if (hasCopa) html += `<button class="ctab" id="ctab-copa" onclick="window.showCompTab('copa')">🥇 Copa del Rey</button>`;
     tabs.innerHTML = html;
 
     const header = page.querySelector('.page-header');
