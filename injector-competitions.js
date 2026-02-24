@@ -1338,10 +1338,11 @@ function boot() {
         window._compSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
             const result = await origSelect.apply(this, args);
-            store.clearComp();
-            store.clearPlayoff();
             setTimeout(() => {
                 console.log('🏆 Competitions: reiniciando tras selección de equipo...');
+                // Forzar regeneración completa: nueva partida siempre reinicia competiciones
+                const gs = window.gameLogic?.getGameState();
+                if (gs) { gs.compsData = null; gs.playoffData = null; }
                 initOnLoad();
             }, 100);
             return result;
