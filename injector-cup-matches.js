@@ -191,9 +191,10 @@ function initCupCalendar() {
         const isConf = euComp === 'conferenceLague';
         const numMd  = isConf ? 6 : 8;
         // Semanas de liga española en que caen las jornadas europeas
+        // (la liga regular empieza en semana 1, las europeas en septiembre = ~jornada 4)
         const mdWeeks = isConf
-            ? [3, 5, 8, 10, 13, 15]
-            : [3, 5, 8, 10, 13, 15, 18, 21];
+            ? [4, 6, 9, 11, 14, 16]
+            : [4, 6, 9, 11, 14, 17, 20, 23];
 
         // Fase liga: 8 (o 6) jornadas
         for (let md = 1; md <= numMd; md++) {
@@ -211,16 +212,16 @@ function initCupCalendar() {
         }
 
         // Play-off de acceso a octavos (para equipos 9-24, se desbloquea tras fase liga)
-        cal.push({ id:'eu_playoff_1', type:euComp, phase:'playoff_leg1', afterLigaWeek:23, isPlayoff:true, isHome:false, opponent:null, played:false, eliminated:false, locked:true });
-        cal.push({ id:'eu_playoff_2', type:euComp, phase:'playoff_leg2', afterLigaWeek:24, isPlayoff:true, isHome:true,  opponent:null, played:false, eliminated:false, locked:true });
+        cal.push({ id:'eu_playoff_1', type:euComp, phase:'playoff_leg1', afterLigaWeek:25, isPlayoff:true, isHome:false, opponent:null, played:false, eliminated:false, locked:true });
+        cal.push({ id:'eu_playoff_2', type:euComp, phase:'playoff_leg2', afterLigaWeek:26, isPlayoff:true, isHome:true,  opponent:null, played:false, eliminated:false, locked:true });
 
         // Eliminatorias: octavos, cuartos, semis (ida+vuelta) y final
-        const rounds = [{p:'round16',w:26},{p:'quarterfinals',w:29},{p:'semifinals',w:32}];
+        const rounds = [{p:'round16',w:28},{p:'quarterfinals',w:31},{p:'semifinals',w:34}];
         rounds.forEach(({p,w}) => {
             cal.push({ id:`eu_${p}_1`, type:euComp, phase:p, afterLigaWeek:w,   isKnockout:true, isHome:false, leg:1, opponent:null, played:false, eliminated:false, locked:true });
             cal.push({ id:`eu_${p}_2`, type:euComp, phase:p, afterLigaWeek:w+1, isKnockout:true, isHome:true,  leg:2, opponent:null, played:false, eliminated:false, locked:true });
         });
-        cal.push({ id:'eu_final', type:euComp, phase:'final', afterLigaWeek:36, isKnockout:true, isFinal:true, isHome:false, opponent:null, played:false, eliminated:false, locked:true });
+        cal.push({ id:'eu_final', type:euComp, phase:'final', afterLigaWeek:37, isKnockout:true, isFinal:true, isHome:false, opponent:null, played:false, eliminated:false, locked:true });
 
         // Tabla de 36 equipos para la fase liga
         const pool = [...(EU_POOLS[euComp]||EU_POOLS.europaLeague)].filter(n=>n!==myTeam);
@@ -251,19 +252,19 @@ function initCupCalendar() {
     if (copaOk) {
         const isPrimera = division === 'primera';
         const rounds = isPrimera
-            ? [{id:'copa_r32',  p:'copa_r32', w:6,  h:true},
-               {id:'copa_r16',  p:'copa_r16', w:11, h:false},
-               {id:'copa_qf',   p:'copa_qf',  w:16, h:true},
-               {id:'copa_sf_1', p:'copa_sf',  w:22, h:false},
-               {id:'copa_sf_2', p:'copa_sf',  w:24, h:true},
-               {id:'copa_final',p:'copa_final',w:35, h:false, isFinal:true}]
-            : [{id:'copa_r1',   p:'copa_r1',  w:4,  h:true},
-               {id:'copa_r32',  p:'copa_r32', w:8,  h:false},
-               {id:'copa_r16',  p:'copa_r16', w:13, h:true},
-               {id:'copa_qf',   p:'copa_qf',  w:18, h:false},
-               {id:'copa_sf_1', p:'copa_sf',  w:23, h:true},
-               {id:'copa_sf_2', p:'copa_sf',  w:25, h:false},
-               {id:'copa_final',p:'copa_final',w:35, h:false, isFinal:true}];
+            ? [{id:'copa_r32',  p:'copa_r32', w:8,  h:true},
+               {id:'copa_r16',  p:'copa_r16', w:13, h:false},
+               {id:'copa_qf',   p:'copa_qf',  w:18, h:true},
+               {id:'copa_sf_1', p:'copa_sf',  w:24, h:false},
+               {id:'copa_sf_2', p:'copa_sf',  w:26, h:true},
+               {id:'copa_final',p:'copa_final',w:36, h:false, isFinal:true}]
+            : [{id:'copa_r1',   p:'copa_r1',  w:6,  h:true},
+               {id:'copa_r32',  p:'copa_r32', w:10, h:false},
+               {id:'copa_r16',  p:'copa_r16', w:15, h:true},
+               {id:'copa_qf',   p:'copa_qf',  w:20, h:false},
+               {id:'copa_sf_1', p:'copa_sf',  w:25, h:true},
+               {id:'copa_sf_2', p:'copa_sf',  w:27, h:false},
+               {id:'copa_final',p:'copa_final',w:36, h:false, isFinal:true}];
         rounds.forEach(r => {
             cal.push({
                 id:r.id, type:'copa', phase:r.p,
@@ -781,6 +782,9 @@ function hookSimulateWeek(){
     window.simulateWeek=async function(){
         const gs=getGS();
         if(!gs) return orig.apply(this,arguments);
+
+        // Solo durante la temporada regular (no pretemporada)
+        if(gs.seasonType !== 'regular') return orig.apply(this,arguments);
 
         const pending=getPendingMatch(gs.week);
         if(!pending) return orig.apply(this,arguments);
