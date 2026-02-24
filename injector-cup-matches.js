@@ -890,16 +890,34 @@ window.CupMatches = {
 function boot(){
     if(!window.gameLogic){setTimeout(boot,700);return;}
 
-    const waitComp=(n=0)=>{
+    // Hook en selectTeamWithInitialSquad para detectar nueva partida
+    // Garantiza que CupMatches se inicializa DESPUÉS de que el equipo esté listo
+    const origSelect = window.gameLogic.selectTeamWithInitialSquad;
+    if(origSelect && !window._cupsSelectHooked){
+        window._cupsSelectHooked = true;
+        window.gameLogic.selectTeamWithInitialSquad = async function(...args){
+            const result = await origSelect.apply(this, args);
+            setTimeout(()=>{
+                console.log('🏆 CupMatches: nueva partida, iniciando calendario...');
+                _cupData = {};
+                const gs = getGS();
+                if(gs) gs.cupData = {};
+                initCupCalendar();
+            }, 800);
+            return result;
+        };
+        console.log('🏆 CupMatches: hook selectTeam instalado');
+    }
+
+    // Init si ya hay partida cargada (recarga de página o carga desde Firebase)
+    const tryInit=(n=0)=>{
         const gs   = getGS();
         const comp = getCompState();
         const teamOk = gs?.team && gs.team !== 'null' && gs.team !== null;
 
         if(teamOk && comp){
-            // Leer fresco desde gameState (puede haber datos de Firebase ya cargados)
             _cupData = gs.cupData || null;
             const existing = getCupData();
-
             if(!existing.calendar?.length || existing.calTeam !== gs.team || existing.calSeason !== comp.season){
                 console.log('🔄 CupMatches: init para', gs.team);
                 _cupData = {};
@@ -909,16 +927,16 @@ function boot(){
             }
             hookSimulateWeek();
             console.log('✅ injector-cup-matches.js v4 LISTO');
-            console.log('   CupMatches.status() | CupMatches.reinit() | CupMatches.test(...)');
-
-        } else if(n < 40){
-            if(n===0) console.log('⏳ CupMatches: esperando gameState con equipo...');
-            setTimeout(()=>waitComp(n+1), 500);
+        } else if(n < 20){
+            // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
+            setTimeout(()=>tryInit(n+1), 500);
         } else {
-            console.warn('⚠️ CupMatches: timeout — gs.team='+getGS()?.team+' comp='+!!getCompState());
+            // Sin equipo = pantalla de selección. El hook de selectTeam se encargará después.
+            hookSimulateWeek();
+            console.log('📋 CupMatches: sin partida activa — esperando selección de equipo');
         }
     };
-    waitComp();
+    tryInit();
 }
 
 boot();
