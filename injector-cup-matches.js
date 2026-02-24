@@ -125,9 +125,11 @@ function getCupData() {
 }
 
 function flushCupData() {
-    // Persiste _cupData en el gameState real via updateGameState
+    // Escribe directamente en el objeto gameState sin pasar por updateGameState
+    // (evita bucles infinitos si updateGameState está hookeado)
     if (_cupData) {
-        window.gameLogic?.updateGameState({ cupData: _cupData });
+        const gs = window.gameLogic?.getGameState();
+        if (gs) gs.cupData = _cupData;
     }
 }
 
@@ -867,47 +869,32 @@ window.CupMatches = {
 function boot(){
     if(!window.gameLogic){setTimeout(boot,700);return;}
 
-    // Hook en updateGameState para detectar cuando Firebase/localStorage carga la partida
-    const origUpdate = window.gameLogic.updateGameState;
-    window.gameLogic.updateGameState = function(newState) {
-        origUpdate.call(this, newState);
-        // Si el nuevo estado tiene cupData (carga desde Firebase), actualizar cache
-        if (newState?.cupData) {
-            _cupData = newState.cupData;
-        }
-        // Detectar cambio de equipo/temporada
-        setTimeout(() => {
-            const gs = getGS();
-            const comp = getCompState();
-            if (!gs?.team || !comp) return;
-            // Si gameState tiene cupData de Firebase, usarlo
-            if (gs.cupData?.calendar?.length && gs.cupData.calTeam === gs.team) {
-                _cupData = gs.cupData;
-                return;
-            }
-            const d = getCupData();
-            if (!d?.calendar?.length || d.calSeason !== comp.season || d.calTeam !== gs.team) {
-                console.log('🔄 CupMatches: regenerando calendario para', gs.team);
+    const waitComp=(n=0)=>{
+        const gs   = getGS();
+        const comp = getCompState();
+        const teamOk = gs?.team && gs.team !== 'null' && gs.team !== null;
+
+        if(teamOk && comp){
+            // Leer fresco desde gameState (puede haber datos de Firebase ya cargados)
+            _cupData = gs.cupData || null;
+            const existing = getCupData();
+
+            if(!existing.calendar?.length || existing.calTeam !== gs.team || existing.calSeason !== comp.season){
+                console.log('🔄 CupMatches: init para', gs.team);
                 _cupData = {};
                 initCupCalendar();
+            } else {
+                console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
-        }, 600);
-    };
+            hookSimulateWeek();
+            console.log('✅ injector-cup-matches.js v4 LISTO');
+            console.log('   CupMatches.status() | CupMatches.reinit() | CupMatches.test(...)');
 
-    // También hookear simulateWeek
-    hookSimulateWeek();
-
-    // Init inicial (por si el gameState ya está listo desde localStorage)
-    const waitComp=(n=0)=>{
-        const comp=getCompState();
-        const gs=getGS();
-        if((comp&&gs?.team)||n>30){
-            initCupCalendar();
-            console.log('✅ injector-cup-matches.js v4 LISTO (Firebase-compatible)');
-            console.log('   Estado: CupMatches.status()');
-            console.log('   Test:   CupMatches.test("champions","groups_md1","Bayern München")');
-        }else{
-            setTimeout(()=>waitComp(n+1),400);
+        } else if(n < 40){
+            if(n===0) console.log('⏳ CupMatches: esperando gameState con equipo...');
+            setTimeout(()=>waitComp(n+1), 500);
+        } else {
+            console.warn('⚠️ CupMatches: timeout — gs.team='+getGS()?.team+' comp='+!!getCompState());
         }
     };
     waitComp();
