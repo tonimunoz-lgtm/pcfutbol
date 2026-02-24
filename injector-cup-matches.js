@@ -948,8 +948,23 @@ function boot(){
             // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
             setTimeout(()=>tryInit(n+1), 500);
         } else {
-            // Sin equipo = pantalla de selección. El hook de selectTeam se encargará cuando se elija equipo.
-            console.log('📋 CupMatches: sin partida activa — esperando selección de equipo');
+            // Sin equipo tras timeout = pantalla de selección o login pendiente.
+            // Escuchar competitionsReady como fallback por si el hook selectTeam no se disparó
+            console.log('📋 CupMatches: sin partida activa — escuchando competitionsReady...');
+            const onReady = (e) => {
+                window.removeEventListener('competitionsReady', onReady);
+                const gs2 = getGS();
+                const comp2 = getCompState();
+                if (gs2?.team && comp2) {
+                    console.log('🏆 CupMatches: competitionsReady recibido (fallback), iniciando calendario...');
+                    window._cupsHookedV4 = false;
+                    _cupData = {};
+                    if(gs2) gs2.cupData = {};
+                    initCupCalendar();
+                    setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
+                }
+            };
+            window.addEventListener('competitionsReady', onReady);
         }
     };
     tryInit();
