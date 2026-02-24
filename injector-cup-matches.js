@@ -925,7 +925,28 @@ function boot(){
         console.log('🏆 CupMatches: hook selectTeam instalado');
     }
 
-    // Init si ya hay partida cargada (recarga de página o carga desde Firebase)
+    // Listener permanente para competitionsReady — registrado inmediatamente al arrancar
+    // Cubre todos los casos: login, nueva partida, carga desde nube
+    const onCompetitionsReady = (e) => {
+        const gs2 = getGS();
+        const comp2 = getCompState();
+        if (!gs2?.team || !comp2) return;
+        // Evitar doble init si ya existe calendario para este equipo/temporada
+        const existing = getCupData();
+        if (existing.calTeam === gs2.team && existing.calSeason === comp2.season && (existing.calendar||[]).length > 0) {
+            console.log('📅 CupMatches: calendario ya existe, ignorando competitionsReady');
+            return;
+        }
+        console.log('🏆 CupMatches: competitionsReady recibido, iniciando calendario para', gs2.team);
+        window._cupsHookedV4 = false;
+        _cupData = {};
+        gs2.cupData = {};
+        initCupCalendar();
+        setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
+    };
+    window.addEventListener('competitionsReady', onCompetitionsReady);
+
+    // Init si ya hay partida cargada (recarga F5 con sesión activa)
     const tryInit=(n=0)=>{
         const gs   = getGS();
         const comp = getCompState();
@@ -941,30 +962,13 @@ function boot(){
             } else {
                 console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
-            // Delay para ser el último en la cadena de hooks (finances, cards, etc instalan antes)
             setTimeout(()=>{ hookCupSimulateWeek(); }, 1500);
             console.log('✅ injector-cup-matches.js v4 LISTO');
         } else if(n < 20){
-            // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
             setTimeout(()=>tryInit(n+1), 500);
         } else {
-            // Sin equipo tras timeout = pantalla de selección o login pendiente.
-            // Escuchar competitionsReady como fallback por si el hook selectTeam no se disparó
-            console.log('📋 CupMatches: sin partida activa — escuchando competitionsReady...');
-            const onReady = (e) => {
-                window.removeEventListener('competitionsReady', onReady);
-                const gs2 = getGS();
-                const comp2 = getCompState();
-                if (gs2?.team && comp2) {
-                    console.log('🏆 CupMatches: competitionsReady recibido (fallback), iniciando calendario...');
-                    window._cupsHookedV4 = false;
-                    _cupData = {};
-                    if(gs2) gs2.cupData = {};
-                    initCupCalendar();
-                    setTimeout(()=>{ hookCupSimulateWeek(); }, 1000);
-                }
-            };
-            window.addEventListener('competitionsReady', onReady);
+            // Sin partida activa — el listener competitionsReady se encargará
+            console.log('📋 CupMatches: sin partida activa — esperando competitionsReady...');
         }
     };
     tryInit();
