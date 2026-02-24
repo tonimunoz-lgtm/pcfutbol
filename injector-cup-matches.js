@@ -882,62 +882,31 @@ function hookSimulateWeekForCups() {
 // ============================================================
 // BOOTSTRAP
 // ============================================================
-
-// ── Exponer CupMatches INMEDIATAMENTE para poder usar testMatch
-//    desde consola aunque el calendario aún no esté inicializado
-// ──────────────────────────────────────────────────────────────
-window.CupMatches = {
-    getCalendar:   getCupCalendar,
-    clearCalendar: clearCupCalendar,
-    reinit: () => { clearCupCalendar(); initCupCalendar(); },
-
-    // Para testing desde consola del navegador:
-    // CupMatches.testMatch("champions", "round16", "Bayern München")
-    // CupMatches.testMatch("copa", "final", "Real Madrid CF")
-    // CupMatches.testMatch("europaLeague", "groups_md1", "Roma")
-    testMatch: async (type, phase, opponent) => {
-        const state = window.gameLogic?.getGameState();
-        const myTeam = state?.team || 'Mi Equipo';
-        const fake = {
-            id: 'test_' + Date.now(),
-            type,
-            phase,
-            opponent: opponent || 'Bayern München',
-            isGroup:   phase.startsWith('groups'),
-            isKnockout: !phase.startsWith('groups') && type !== 'copa',
-            matchday: parseInt(phase.replace('groups_md','')) || 1,
-            played: false
-        };
-        console.log('🧪 Test partido:', fake);
-        await showMatchAnnouncementModal(fake);
-        const r = simulateCupMatch(fake, myTeam);
-        await showCupResultModal(fake, r, r.win);
-    }
-};
-
 function bootCupMatches() {
-    // Si gameLogic no está listo, reintentar
-    if (!window.gameLogic) {
-        console.log('⏳ CupMatches esperando gameLogic...');
-        setTimeout(bootCupMatches, 800);
-        return;
-    }
+    if (!window.gameLogic) { setTimeout(bootCupMatches, 900); return; }
 
-    // Esperar a que injector-competitions.js también haya terminado su init
-    // (ese tiene un setTimeout de 2000ms en su boot)
-    const waitForComps = (attempts = 0) => {
-        const comp = getCompState();
-        if (!comp && attempts < 15) {
-            setTimeout(() => waitForComps(attempts + 1), 500);
-            return;
-        }
+    // Esperar un poco más para que injector-competitions.js también haya inicializado
+    setTimeout(() => {
         initCupCalendar();
         hookSimulateWeekForCups();
-        console.log('✅ injector-cup-matches.js LISTO');
-        console.log('   Prueba: CupMatches.testMatch("champions", "round16", "Bayern München")');
-    };
 
-    waitForComps();
+        // Exponer API
+        window.CupMatches = {
+            getCalendar: getCupCalendar,
+            clearCalendar: clearCupCalendar,
+            reinit: () => { clearCupCalendar(); initCupCalendar(); },
+            // Para testing: forzar un partido concreto
+            testMatch: async (type, phase, opponent) => {
+                const fake = { id:'test', type, phase, opponent: opponent||'Bayern München', isGroup: phase.startsWith('groups'), isKnockout: !phase.startsWith('groups') && type!=='copa', matchday:1, played:false };
+                await showMatchAnnouncementModal(fake);
+                const r = simulateCupMatch(fake, window.gameLogic.getGameState().team);
+                await showCupResultModal(fake, r, r.win);
+            }
+        };
+
+        console.log('✅ injector-cup-matches.js listo. Partidos de copa intercalados activos.');
+        console.log('   Para probar: CupMatches.testMatch("champions", "round16", "Bayern München")');
+    }, 3000);
 }
 
 bootCupMatches();
