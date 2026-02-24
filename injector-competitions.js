@@ -723,6 +723,7 @@ function injectCompUI() {
     const isSegunda = division === 'segunda';
     const hasPO     = isRFEF || isSegunda;
     const hasEU     = !isRFEF;
+    const comp      = store.getComp();
     const hasCopa   = comp?.copaQualified || hasEU;
 
     const tabs = document.createElement('div');
