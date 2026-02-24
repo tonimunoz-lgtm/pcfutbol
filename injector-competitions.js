@@ -972,9 +972,20 @@ function renderCopa() {
 function renderPlayoff() {
     const panel = document.getElementById('comp-playoff-panel');
     if (!panel) return;
-    const po = store.getPlayoff();
     const state = window.gameLogic?.getGameState();
+    if (!state) return;
 
+    // Regenerar con standings actuales SOLO si el playoff no se ha jugado todavía
+    const existing = store.getPlayoff();
+    const alreadySimulated = existing?.simulated === true;
+    if (!alreadySimulated) {
+        const sorted = Object.entries(state.standings||{}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
+        if (sorted.length > 0) {
+            initPlayoffForDiv(state, sorted, state.currentSeason);
+        }
+    }
+
+    const po = store.getPlayoff();
     if (!po) {
         panel.innerHTML=`<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5)"><div style="font-size:2em">⬆️</div><div style="margin-top:10px">El playoff de ascenso se disputará al final de la temporada regular.</div></div>`;
         return;
