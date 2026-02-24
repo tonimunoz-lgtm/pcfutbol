@@ -899,10 +899,14 @@ function boot(){
             const result = await origSelect.apply(this, args);
             setTimeout(()=>{
                 console.log('🏆 CupMatches: nueva partida, iniciando calendario...');
+                // Reset hook flag para reinstalar sobre la cadena actual de hooks
+                window._cupsHookedV4 = false;
                 _cupData = {};
                 const gs = getGS();
                 if(gs) gs.cupData = {};
                 initCupCalendar();
+                // Delay extra para ser el último hook (finances, cards ya instalaron los suyos)
+                setTimeout(()=>{ hookSimulateWeek(); }, 1000);
             }, 800);
             return result;
         };
@@ -925,14 +929,14 @@ function boot(){
             } else {
                 console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
-            hookSimulateWeek();
+            // Delay para ser el último en la cadena de hooks (finances, cards, etc instalan antes)
+            setTimeout(()=>{ hookSimulateWeek(); }, 1500);
             console.log('✅ injector-cup-matches.js v4 LISTO');
         } else if(n < 20){
             // 10 segundos máximo — si no hay equipo es pantalla de selección (normal)
             setTimeout(()=>tryInit(n+1), 500);
         } else {
-            // Sin equipo = pantalla de selección. El hook de selectTeam se encargará después.
-            hookSimulateWeek();
+            // Sin equipo = pantalla de selección. El hook de selectTeam se encargará cuando se elija equipo.
             console.log('📋 CupMatches: sin partida activa — esperando selección de equipo');
         }
     };
