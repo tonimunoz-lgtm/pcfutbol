@@ -155,32 +155,34 @@
     function addLoanRowToFinances() {
         const staffRow = document.getElementById('fin_sSal')?.closest('tr');
         if (!staffRow) return;
+        const totRow  = document.getElementById('fin_totExp')?.closest('tr');
+        if (!totRow) return;
         const d = getD();
 
-        // ── Fila cuotas préstamos ─────────────────────────────────
+        // ── Fila cuotas préstamos (insertar antes del Total) ──────
         let loanRow = document.getElementById('fd-fin-loanrow');
         if (!loanRow) {
             loanRow = document.createElement('tr');
             loanRow.id = 'fd-fin-loanrow';
-            staffRow.after(loanRow);
+            totRow.before(loanRow);
         }
         const activeLoans = d.loans.filter(l => l.weeksLeft > 0);
         if (activeLoans.length) {
-            const total = activeLoans.reduce((s, l) => s + l.weeklyPayment, 0);
+            const lTotal = activeLoans.reduce((s, l) => s + l.weeklyPayment, 0);
             loanRow.innerHTML = `
                 <td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
-                <td style="text-align:right;color:#f44336;">${fmt(total)}€/sem</td>
+                <td style="text-align:right;color:#f44336;">${fmt(lTotal)}€/sem</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;">— ${activeLoans.length} préstamo${activeLoans.length!==1?'s':''}</td>`;
         } else {
             loanRow.innerHTML = '';
         }
 
-        // ── Fila prima activa ─────────────────────────────────────
+        // ── Fila prima activa (insertar antes del Total) ──────────
         let bonusRow = document.getElementById('fd-fin-bonusrow');
         if (!bonusRow) {
             bonusRow = document.createElement('tr');
             bonusRow.id = 'fd-fin-bonusrow';
-            loanRow.after(bonusRow);
+            totRow.before(bonusRow);
         }
         if (d.bonus > 0) {
             bonusRow.innerHTML = `
@@ -191,12 +193,15 @@
             bonusRow.innerHTML = '';
         }
 
-        // Actualizar total
+        // ── Actualizar Total incluyendo cuotas (sobreescribir el valor de finances) ──
+        const s = gs();
+        const salaries  = (s?.squad  || []).reduce((sum, p) => sum + (p.salary || 0), 0);
+        const staffSal  = Object.values(s?.staff  || {}).filter(Boolean)
+                                .reduce((sum, x) => sum + (x.salary || 0), 0);
+        const loanPay   = activeLoans.reduce((sum, l) => sum + l.weeklyPayment, 0);
+        const realTotal = salaries + staffSal + loanPay;
         const totEl = document.getElementById('fin_totExp');
-        if (totEl) {
-            const s = gs();
-            totEl.textContent = fmt(s?.weeklyExpenses || 0) + '€/sem';
-        }
+        if (totEl) totEl.textContent = fmt(realTotal) + '€/sem';
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -891,7 +896,36 @@
             addLoanRowToFinances();
         }, 2500);
 
-        window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
+        // Parchear _financeRefresh: wrappear para corregir total DESPUÉS de que finances lo sobreescriba
+    function patchFinanceRefresh() {
+        if (!window._financeRefresh) { setTimeout(patchFinanceRefresh, 300); return; }
+        if (window._fdRefreshPatched) return;
+        window._fdRefreshPatched = true;
+        const orig = window._financeRefresh;
+        window._financeRefresh = function() {
+            orig();
+            // Después de que finances sobreescriba fin_totExp, lo corregimos
+            const s = gs();
+            if (!s) return;
+            const d = getD();
+            const salaries = (s.squad  || []).reduce((sum, p) => sum + (p.salary || 0), 0);
+            const staffSal = Object.values(s.staff || {}).filter(Boolean)
+                                   .reduce((sum, x) => sum + (x.salary || 0), 0);
+            const loanPay  = d.loans.filter(l => l.weeksLeft > 0)
+                                    .reduce((sum, l) => sum + l.weeklyPayment, 0);
+            const realTotal = salaries + staffSal + loanPay;
+            const totEl = document.getElementById('fin_totExp');
+            if (totEl) totEl.textContent = fmt(realTotal) + '€/sem';
+            // También corregir fin_pExp (proyección)
+            const projEl = document.getElementById('fin_pExp');
+            if (projEl) projEl.textContent = fmt(realTotal) + '€';
+        };
+        // También reemplazar updateFinanceDisplay que es el alias
+        window.updateFinanceDisplay = window._financeRefresh;
+    }
+    setTimeout(patchFinanceRefresh, 1500);
+
+    window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
         console.log('[FinDeals] ✅ v3.0 listo');
     }
 
