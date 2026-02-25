@@ -151,30 +151,47 @@
         if (changed) { saveD(d); recalcWeekly(); }
     }
 
-    // Añadir / actualizar fila de cuotas en el panel Caja (injector-finances)
+    // Añadir / actualizar filas de cuotas y prima en Gastos Recurrentes (Caja)
     function addLoanRowToFinances() {
-        const table = document.querySelector('#finance-panel table');
-        if (!table) return;
-        // Buscar o crear fila de cuotas
-        let row = document.getElementById('fd-fin-loanrow');
-        if (!row) {
-            // Insertar tras la fila de salarios staff (fin_sSal)
-            const staffRow = document.getElementById('fin_sSal')?.closest('tr');
-            if (!staffRow) return;
-            row = document.createElement('tr');
-            row.id = 'fd-fin-loanrow';
-            staffRow.after(row);
-        }
+        const staffRow = document.getElementById('fin_sSal')?.closest('tr');
+        if (!staffRow) return;
         const d = getD();
-        const active = d.loans.filter(l => l.weeksLeft > 0);
-        if (!active.length) { row.innerHTML = ''; return; }
-        const total = active.reduce((s, l) => s + l.weeklyPayment, 0);
-        row.innerHTML = `
-            <td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
-            <td style="text-align:right;color:#f44336;">${fmt(total)}€/sem</td>
-            <td style="padding-left:14px;color:#666;font-size:.82em;">— ${active.length} préstamo${active.length!==1?'s':''} activo${active.length!==1?'s':''}</td>`;
 
-        // Actualizar total de gastos recurrentes
+        // ── Fila cuotas préstamos ─────────────────────────────────
+        let loanRow = document.getElementById('fd-fin-loanrow');
+        if (!loanRow) {
+            loanRow = document.createElement('tr');
+            loanRow.id = 'fd-fin-loanrow';
+            staffRow.after(loanRow);
+        }
+        const activeLoans = d.loans.filter(l => l.weeksLeft > 0);
+        if (activeLoans.length) {
+            const total = activeLoans.reduce((s, l) => s + l.weeklyPayment, 0);
+            loanRow.innerHTML = `
+                <td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;">${fmt(total)}€/sem</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;">— ${activeLoans.length} préstamo${activeLoans.length!==1?'s':''}</td>`;
+        } else {
+            loanRow.innerHTML = '';
+        }
+
+        // ── Fila prima activa ─────────────────────────────────────
+        let bonusRow = document.getElementById('fd-fin-bonusrow');
+        if (!bonusRow) {
+            bonusRow = document.createElement('tr');
+            bonusRow.id = 'fd-fin-bonusrow';
+            loanRow.after(bonusRow);
+        }
+        if (d.bonus > 0) {
+            bonusRow.innerHTML = `
+                <td style="padding:6px 4px;color:#aaa;">💰 Prima jugadores (próx. partido)</td>
+                <td style="text-align:right;color:#FF8F00;">${fmt(d.bonus)}€</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;">— ya descontada del balance</td>`;
+        } else {
+            bonusRow.innerHTML = '';
+        }
+
+        // Actualizar total
         const totEl = document.getElementById('fin_totExp');
         if (totEl) {
             const s = gs();
@@ -222,6 +239,27 @@
         return d.bonus || 0;
     };
     window._fdConsumeBonus = consumeBonus;
+
+    // Hook en calculateMatchOutcomeImproved para aplicar bonus como mejora de teamForm
+    function hookMatchEngine() {
+        if (typeof window.calculateMatchOutcomeImproved !== 'function') {
+            setTimeout(hookMatchEngine, 400); return;
+        }
+        if (window._fdMatchHooked) return;
+        window._fdMatchHooked = true;
+        const origCalc = window.calculateMatchOutcomeImproved;
+        window.calculateMatchOutcomeImproved = function(params) {
+            const bonus = window._fdGetMatchBonus() || 0;
+            if (bonus > 0) {
+                // Escalar bonus: 50k€ → +2 form, 250k€ → +8 form, 1M€ → +18 form (máx +25)
+                const boost = Math.min(25, Math.round(Math.sqrt(bonus / 50000) * 2));
+                params = { ...params, teamForm: Math.min(100, (params.teamForm || 75) + boost) };
+                console.log(`[FinDeals] Prima ${Math.round(bonus/1000)}k€ → boost form +${boost}`);
+            }
+            return origCalc.call(this, params);
+        };
+        console.log('[FinDeals] hook matchEngine ✓');
+    }
 
     // ─────────────────────────────────────────────────────────────
     // PREMIOS ECONÓMICOS
@@ -843,6 +881,7 @@
         hookOpenPage();
         hookSelectTeam();
         hookCompetitionsForPrizes();
+        hookMatchEngine();
 
         setTimeout(() => {
             recalcWeekly();
