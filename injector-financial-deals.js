@@ -1,3 +1,4 @@
+
 // ============================================================
 // injector-financial-deals.js  v3.0
 //
@@ -824,24 +825,18 @@
         window._fdHooked = true;
         let _lastSeason = null;
 
-        let _lastWeek = null;
         const orig = window.simulateWeek;
         window.simulateWeek = async function (...args) {
             const result = await orig.apply(this, args);
             const s = gs();
             if (!s) return result;
 
-            // Detectar nueva partida: week retrocede a 1 (o va a 1) con season nueva
-            const isNewGame = _lastWeek !== null && _lastWeek > 1 && s.week === 1;
+            // Detectar cambio de temporada REAL: currentSeason cambia (fin de liga, ascenso/descenso)
+            // NO detectar week==1 como nueva partida — eso ocurre también en la transición
+            // pretemporada→liga (semana 4→1) y resetearia los deals aceptados en pretemporada.
+            const isNewSeason = _lastSeason !== null && s.currentSeason && _lastSeason !== s.currentSeason;
 
-            // Cambio de temporada o nueva partida
-            if (isNewGame || (_lastSeason && s.currentSeason && _lastSeason !== s.currentSeason)) {
-                if (isNewGame) {
-                    // Reset completo de deals para nueva partida
-                    save({ fd_loans:[], fd_sponsor:null, fd_tv:null, fd_pending:null,
-                           fd_bonus:0, fd_prizes:[], fd_baseOrig:null });
-                    console.log('[FinDeals] Nueva partida detectada — deals reseteados');
-                }
+            if (isNewSeason) {
                 processNewSeason();
                 save({ fd_baseOrig: null });
                 setTimeout(() => { recalcWeekly(); maybeGenerateOffers(); }, 700);
@@ -849,7 +844,6 @@
                 maybeGenerateOffers();
             }
             _lastSeason = s.currentSeason;
-            _lastWeek   = s.week;
 
             // Consumir prima (ya gastada del balance en setBonus)
             consumeBonus();
