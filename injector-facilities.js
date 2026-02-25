@@ -333,9 +333,10 @@
         });
         saveFac(d);
 
-        // Registrar en finanzas
+        // Registrar en finanzas con prefijo de categoría para que injector-finances lo clasifique bien
         if (window._financeRegisterMovement) {
-            window._financeRegisterMovement('renovation', `Inicio obras: ${upg.name}`, -upg.cost);
+            const catLabel = category === 'stadium' ? '[Estadio]' : '[Entrenamiento]';
+            window._financeRegisterMovement('renovation', `${catLabel} ${upg.name}`, -upg.cost);
         }
 
         news(`🏗️ Inicio de obras: ${upg.name} — ${upg.weeks} semanas hasta completarse.`, 'info');
@@ -460,6 +461,14 @@
         if (window.openPage) window.openPage('facilities');
     }
 
+    // ── Tab activo ────────────────────────────────────────────────
+    let _activeTab = 'stadium';
+
+    window._facTab = function(tab) {
+        _activeTab = tab;
+        buildPage();
+    };
+
     // ── Construir la página de instalaciones ──────────────────────
     function buildPage() {
         const container = document.getElementById('facilities');
@@ -468,13 +477,27 @@
         const s = gs();
         if (!s) return;
         const d = getFacData();
-
-        const stadiumUpgradesHTML = renderUpgradeList(STADIUM_UPGRADES, 'stadium', d.stadiumDone, d.construction);
-        const trainingUpgradesHTML = renderUpgradeList(TRAINING_UPGRADES, 'training', d.trainingDone, d.construction);
+        const injRed = Math.round((d.injuryReduction || 0) * 100);
         const constructionHTML = renderConstruction(d.construction);
 
-        // Calcular bonus de lesiones para mostrar
-        const injRed = Math.round((d.injuryReduction || 0) * 100);
+        // Foto del estadio (guardada por admin en gameState.stadiumImage)
+        const photoHTML = s.stadiumImage
+            ? `<img src="${s.stadiumImage}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-bottom:4px;">`
+            : `<div style="width:100%;height:80px;background:rgba(255,255,255,.03);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#444;font-size:.8em;">Sin foto del estadio</div>`;
+
+        const tabStadium  = _activeTab === 'stadium';
+        const tabBtnBase  = 'border:none;border-radius:8px 8px 0 0;padding:10px 22px;cursor:pointer;font-weight:bold;font-size:.88em;transition:all .2s;';
+        const tabActiveS  = tabBtnBase + 'background:#FFD700;color:#000;';
+        const tabActiveT  = tabBtnBase + 'background:#2196F3;color:#fff;';
+        const tabInactive = tabBtnBase + 'background:rgba(255,255,255,.06);color:#666;';
+
+        const tabContent = tabStadium
+            ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                ${renderUpgradeList(STADIUM_UPGRADES, 'stadium', d.stadiumDone, d.construction)}
+               </div>`
+            : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                ${renderUpgradeList(TRAINING_UPGRADES, 'training', d.trainingDone, d.construction)}
+               </div>`;
 
         container.innerHTML = `
         <div class="page-header">
@@ -482,44 +505,44 @@
             <button class="page-close-btn" onclick="closePage('facilities')">✖ CERRAR</button>
         </div>
 
-        <!-- RESUMEN ACTUAL -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
-            <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center;">
-                <div style="color:#888;font-size:.8em;margin-bottom:4px;">🏟️ Aforo</div>
-                <div style="color:#FFD700;font-size:1.4em;font-weight:bold;">${fmt(s.stadiumCapacity)}</div>
-                <div style="color:#555;font-size:.75em;">espectadores</div>
+        <!-- RESUMEN + FOTO -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <!-- Columna izquierda: stats -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.85em;">🏟️ ${s.stadiumName || 'Estadio'}</span>
+                    <span style="color:#FFD700;font-weight:bold;">${fmt(s.stadiumCapacity)} esp.</span>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.85em;">👥 Afición</span>
+                    <span style="color:#4CAF50;font-weight:bold;">${fmt(s.fanbase)}</span>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.85em;">🏋️ Entrenamiento</span>
+                    <span style="color:#2196F3;font-weight:bold;">Nivel ${s.trainingLevel || 1}${injRed > 0 ? ' · -'+injRed+'% lesiones' : ''}</span>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.85em;">📊 Popularidad</span>
+                    <span style="color:#9C27B0;font-weight:bold;">${s.popularity || 50}/100</span>
+                </div>
             </div>
-            <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center;">
-                <div style="color:#888;font-size:.8em;margin-bottom:4px;">👥 Afición</div>
-                <div style="color:#4CAF50;font-size:1.4em;font-weight:bold;">${fmt(s.fanbase)}</div>
-                <div style="color:#555;font-size:.75em;">seguidores</div>
-            </div>
-            <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center;">
-                <div style="color:#888;font-size:.8em;margin-bottom:4px;">🏋️ Entrenamiento</div>
-                <div style="color:#2196F3;font-size:1.4em;font-weight:bold;">Nv. ${s.trainingLevel || 1}</div>
-                <div style="color:#555;font-size:.75em;">${injRed > 0 ? `-${injRed}% lesiones` : 'sin bonus'}</div>
+            <!-- Columna derecha: foto -->
+            <div>
+                ${photoHTML}
+                <div style="color:#444;font-size:.72em;text-align:center;">Foto configurable en el panel Admin</div>
             </div>
         </div>
 
         <!-- OBRAS EN CURSO -->
         ${constructionHTML}
 
-        <!-- MEJORAS ESTADIO -->
-        <h2 style="font-size:1em;color:#FFD700;text-transform:uppercase;letter-spacing:1px;
-                   border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin:20px 0 14px;">
-            🏟️ Mejoras del Estadio
-        </h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
-            ${stadiumUpgradesHTML}
+        <!-- PESTAÑAS -->
+        <div style="display:flex;gap:4px;margin-bottom:0;margin-top:8px;">
+            <button style="${tabStadium ? tabActiveS : tabInactive}" onclick="window._facTab('stadium')">🏟️ Estadio</button>
+            <button style="${!tabStadium ? tabActiveT : tabInactive}" onclick="window._facTab('training')">🏋️ Centro Entrenamiento</button>
         </div>
-
-        <!-- MEJORAS ENTRENAMIENTO -->
-        <h2 style="font-size:1em;color:#2196F3;text-transform:uppercase;letter-spacing:1px;
-                   border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:14px;">
-            🏋️ Centro de Entrenamiento
-        </h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            ${trainingUpgradesHTML}
+        <div style="background:rgba(255,255,255,.03);border-radius:0 8px 8px 8px;padding:14px;border:1px solid rgba(255,255,255,.07);">
+            ${tabContent}
         </div>
         `;
     }
