@@ -669,8 +669,12 @@
 
         // ── Remodelaciones ───────────────────────────────────────
         const rens = mvs.filter(m => m.type === 'renovation');
-        const sR   = rens.filter(m => /estadio|asiento/i.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
-        const tR   = rens.filter(m => /entrenamiento/i.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
+        // Detectar estadio: palabras clave del sistema antiguo Y nuevo injector de instalaciones
+        const stadiumKeywords = /estadio|asiento|ampliar|iluminaci|pantalla|vip|restaurante|parking|tienda|c.sped|museo|seats|\[Estadio\]/i;
+        // Detectar entrenamiento — también detecta el prefijo [Entrenamiento] del nuevo injector
+        const trainingKeywords = /entrenamiento|centro|gimnasio|gym|m.dica|f.sio|piscina|nutrici|c.ntera|residencia|t.ctica|video|training|\[Entrenamiento\]/i;
+        const sR   = rens.filter(m => stadiumKeywords.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
+        const tR   = rens.filter(m => !stadiumKeywords.test(m.description) && trainingKeywords.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
         const toR  = rens.reduce((s, m) => s + Math.abs(m.amount), 0);
 
         setText('fin_rSta',   fmt(sR)  + '€', sR  > 0 ? '#f44336' : '#777');
