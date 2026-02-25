@@ -610,14 +610,12 @@
             return;
         }
         injectPage();
-        // Usar el sistema nativo de páginas (classList.add/remove 'active')
-        if (window.openPage) {
-            window.openPage('rival-analysis');
-        } else {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            const el = document.getElementById('rival-analysis');
-            if (el) el.classList.add('active');
-        }
+        // Cerrar otras páginas y abrir la rival directamente con classList
+        // NO usamos window.openPage() porque tiene lógica específica por pageId
+        // que puede fallar o disparar efectos secundarios no deseados.
+        document.querySelectorAll('.page.active').forEach(p => p.classList.remove('active'));
+        const el = document.getElementById('rival-analysis');
+        if (el) el.classList.add('active');
         buildRivalPage(rival);
     }
     window.openRivalPage = openRivalPage;
