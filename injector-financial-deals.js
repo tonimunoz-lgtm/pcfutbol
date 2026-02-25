@@ -152,9 +152,57 @@
     }
 
     // Añadir / actualizar filas de cuotas y prima en Gastos Recurrentes (Caja)
-    // addLoanRowToFinances: ELIMINADO — ahora gestionado por injector-finances.js
-    // que ya incluye cuotas de préstamo y primas en sus propias filas nativas.
-    function addLoanRowToFinances() { /* no-op */ }
+    function addLoanRowToFinances() {
+        const staffRow = document.getElementById('fin_sSal')?.closest('tr');
+        if (!staffRow) return;
+        const totRow  = document.getElementById('fin_totExp')?.closest('tr');
+        if (!totRow) return;
+        const d = getD();
+
+        // ── Fila cuotas préstamos (insertar antes del Total) ──────
+        let loanRow = document.getElementById('fd-fin-loanrow');
+        if (!loanRow) {
+            loanRow = document.createElement('tr');
+            loanRow.id = 'fd-fin-loanrow';
+            totRow.before(loanRow);
+        }
+        const activeLoans = d.loans.filter(l => l.weeksLeft > 0);
+        if (activeLoans.length) {
+            const lTotal = activeLoans.reduce((s, l) => s + l.weeklyPayment, 0);
+            loanRow.innerHTML = `
+                <td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;">${fmt(lTotal)}€/sem</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;">— ${activeLoans.length} préstamo${activeLoans.length!==1?'s':''}</td>`;
+        } else {
+            loanRow.innerHTML = '';
+        }
+
+        // ── Fila prima activa (insertar antes del Total) ──────────
+        let bonusRow = document.getElementById('fd-fin-bonusrow');
+        if (!bonusRow) {
+            bonusRow = document.createElement('tr');
+            bonusRow.id = 'fd-fin-bonusrow';
+            totRow.before(bonusRow);
+        }
+        if (d.bonus > 0) {
+            bonusRow.innerHTML = `
+                <td style="padding:6px 4px;color:#aaa;">💰 Prima jugadores (próx. partido)</td>
+                <td style="text-align:right;color:#FF8F00;">${fmt(d.bonus)}€</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;">— ya descontada del balance</td>`;
+        } else {
+            bonusRow.innerHTML = '';
+        }
+
+        // ── Actualizar Total incluyendo cuotas (sobreescribir el valor de finances) ──
+        const s = gs();
+        const salaries  = (s?.squad  || []).reduce((sum, p) => sum + (p.salary || 0), 0);
+        const staffSal  = Object.values(s?.staff  || {}).filter(Boolean)
+                                .reduce((sum, x) => sum + (x.salary || 0), 0);
+        const loanPay   = activeLoans.reduce((sum, l) => sum + l.weeklyPayment, 0);
+        const realTotal = salaries + staffSal + loanPay;
+        const totEl = document.getElementById('fin_totExp');
+        if (totEl) totEl.textContent = fmt(realTotal) + '€/sem';
+    }
 
     // ─────────────────────────────────────────────────────────────
     // PRIMAS A JUGADORES
@@ -288,73 +336,6 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // EMPRESAS REALES — DERECHOS TV Y PATROCINADORES
-    // ─────────────────────────────────────────────────────────────
-    const TV_COMPANIES = {
-        primera: [
-            { name: 'Movistar+', logo: '📡' }, { name: 'DAZN', logo: '🎬' },
-            { name: 'Amazon Prime Video', logo: '📦' }, { name: 'Orange TV', logo: '🟠' },
-            { name: 'Vodafone TV', logo: '🔴' }, { name: 'Mediapro / GOL', logo: '⚽' },
-            { name: 'beIN Sports', logo: '📺' }, { name: 'Rakuten TV', logo: '🛒' },
-            { name: 'Mediaset España', logo: '📺' }, { name: 'Telefónica', logo: '📡' },
-        ],
-        segunda: [
-            { name: 'Movistar+', logo: '📡' }, { name: 'DAZN', logo: '🎬' },
-            { name: 'Orange TV', logo: '🟠' }, { name: 'Vodafone TV', logo: '🔴' },
-            { name: 'GOL Internacional', logo: '⚽' }, { name: 'Mediapro', logo: '🎥' },
-            { name: 'TEN (Eleven Sports)', logo: '📺' }, { name: 'YouTube Sports ES', logo: '▶️' },
-            { name: 'Eurosport', logo: '🏆' }, { name: 'Telefoot', logo: '🇫🇷' },
-        ],
-        rfef: [
-            { name: 'GOL Internacional', logo: '⚽' }, { name: 'YouTube Sports ES', logo: '▶️' },
-            { name: 'Canal Sur', logo: '🌞' }, { name: 'Aragón TV', logo: '🦁' },
-            { name: 'TVG Galicia', logo: '🟢' }, { name: 'TV3 Catalunya', logo: '🔴' },
-            { name: 'Telemadrid', logo: '🏙️' }, { name: 'ETB Euskadi', logo: '🏔️' },
-            { name: 'IB3 Baleares', logo: '🏝️' }, { name: 'RTVC Canarias', logo: '🌋' },
-            { name: 'À Punt (CV)', logo: '🌊' }, { name: 'TPA Asturias', logo: '⛏️' },
-            { name: 'Canal Extremadura', logo: '🌿' }, { name: '7 TV Murcia', logo: '☀️' },
-            { name: 'Sportium TV', logo: '📊' },
-        ],
-    };
-    const SPONSOR_COMPANIES = {
-        primera: [
-            { name: 'Banco Santander', sector: 'Banca' }, { name: 'CaixaBank', sector: 'Banca' },
-            { name: 'BBVA', sector: 'Banca' }, { name: 'Iberdrola', sector: 'Energía' },
-            { name: 'Repsol', sector: 'Energía' }, { name: 'Moeve (Cepsa)', sector: 'Energía' },
-            { name: 'Emirates', sector: 'Aviación' }, { name: 'Iberia', sector: 'Aviación' },
-            { name: 'Coca-Cola', sector: 'Bebidas' }, { name: 'Heineken', sector: 'Cervezas' },
-            { name: 'Estrella Damm', sector: 'Cervezas' }, { name: 'Red Bull', sector: 'Bebidas' },
-            { name: 'Adidas', sector: 'Deportes' }, { name: 'Nike', sector: 'Deportes' },
-            { name: 'Puma', sector: 'Deportes' }, { name: 'Rakuten', sector: 'E-commerce' },
-            { name: 'Amazon', sector: 'Tecnología' }, { name: 'Visa', sector: 'Finanzas' },
-            { name: 'Mastercard', sector: 'Finanzas' }, { name: 'Mapfre', sector: 'Seguros' },
-        ],
-        segunda: [
-            { name: 'Mahou', sector: 'Cervezas' }, { name: 'Estrella Galicia', sector: 'Cervezas' },
-            { name: 'Halcón Viajes', sector: 'Turismo' }, { name: 'Renfe', sector: 'Transporte' },
-            { name: 'DIGI', sector: 'Telecos' }, { name: 'Finetwork', sector: 'Telecos' },
-            { name: 'Luckia', sector: 'Apuestas' }, { name: 'Codere', sector: 'Apuestas' },
-            { name: 'Endesa', sector: 'Energía' }, { name: 'Naturgy', sector: 'Energía' },
-            { name: 'El Corte Inglés', sector: 'Retail' }, { name: 'Mercadona', sector: 'Retail' },
-            { name: 'La Roche-Posay', sector: 'Cosmética' }, { name: 'ASISA', sector: 'Salud' },
-            { name: 'Sanitas', sector: 'Salud' },
-        ],
-        rfef: [
-            { name: 'Mahou', sector: 'Cervezas' }, { name: 'Estrella Galicia', sector: 'Cervezas' },
-            { name: 'DIGI', sector: 'Telecos' }, { name: 'Petronor', sector: 'Energía' },
-            { name: 'Codere', sector: 'Apuestas' }, { name: 'Luckia', sector: 'Apuestas' },
-            { name: 'Joma', sector: 'Deportes' }, { name: 'Hummel', sector: 'Deportes' },
-            { name: 'Panini', sector: 'Coleccionismo' }, { name: 'Halcón Viajes', sector: 'Turismo' },
-            { name: 'Vitruvian Sport', sector: 'Nutrición' }, { name: 'Caja Rural', sector: 'Banca' },
-            { name: 'Globo Energía', sector: 'Energía' }, { name: 'Sportradar', sector: 'Datos' },
-            { name: 'Diputación Local', sector: 'Institucional' },
-        ],
-    };
-    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-    function getTvCos(div)  { return TV_COMPANIES[div === 'primera' ? 'primera' : div === 'segunda' ? 'segunda' : 'rfef']; }
-    function getSpCos(div)  { return SPONSOR_COMPANIES[div === 'primera' ? 'primera' : div === 'segunda' ? 'segunda' : 'rfef']; }
-
-    // ─────────────────────────────────────────────────────────────
     // GENERADOR DE OFERTAS COMERCIALES
     // ─────────────────────────────────────────────────────────────
     function generateOffers() {
@@ -365,18 +346,18 @@
         const pop  = s?.popularity || 50;
         const mult = Math.max(0.4, Math.min(2.2,
             0.6 + (rat - 60) / 40 * 0.9 + (pop - 50) / 100 * 0.5));
-        const rnd   = () => 0.82 + Math.random() * 0.36;
-        const r100k = v => Math.round(v / 100_000) * 100_000;
-        const r50k  = v => Math.round(v / 50_000)  * 50_000;
-
-        const tvCos = getTvCos(div), spCos = getSpCos(div);
-        const usedTv = new Set(), usedSp = new Set();
-        const pickTv = () => { let c; do { c = pickRandom(tvCos); } while (usedTv.has(c.name) && usedTv.size < tvCos.length); usedTv.add(c.name); return c; };
-        const pickSp = () => { let c; do { c = pickRandom(spCos); } while (usedSp.has(c.name) && usedSp.size < spCos.length); usedSp.add(c.name); return c; };
-
+        const rnd     = () => 0.82 + Math.random() * 0.36;
+        const r100k   = v => Math.round(v / 100_000) * 100_000;
+        const r50k    = v => Math.round(v / 50_000)  * 50_000;
         return {
-            sponsorOffers: [1, 2, 3].map(y => { const co = pickSp(); return { type: 'sponsor', years: y, company: co.name, sector: co.sector, annualAmount: r50k(base.sponsor * mult * rnd()) }; }),
-            tvOffers:      [1, 2, 3].map(y => { const co = pickTv(); return { type: 'tv',      years: y, company: co.name, logo: co.logo,     annualAmount: r100k(base.tv    * mult * rnd()) }; }),
+            sponsorOffers: [1, 2, 3].map(y => ({
+                type: 'sponsor', years: y,
+                annualAmount: r50k(base.sponsor * mult * rnd())
+            })),
+            tvOffers: [1, 2, 3].map(y => ({
+                type: 'tv', years: y,
+                annualAmount: r100k(base.tv * mult * rnd())
+            })),
         };
     }
 
@@ -444,12 +425,11 @@
         const offer = arr?.[idx];
         if (!offer) return;
         const deal = { active:true, annualAmount:offer.annualAmount,
-                        years:offer.years, yearsLeft:offer.years, season:s.currentSeason,
-                        company: offer.company || '', sector: offer.sector || '', logo: offer.logo || '' };
+                        years:offer.years, yearsLeft:offer.years, season:s.currentSeason };
         if (type === 'sponsor') { d.sponsorDeal = deal; d.pendingOffers = {...d.pendingOffers, sponsorOffers:null};
-            news(`📣 Patrocinio firmado con ${offer.company || 'patrocinador'}: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
+            news(`📣 Patrocinio firmado: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
         else { d.tvDeal = deal; d.pendingOffers = {...d.pendingOffers, tvOffers:null};
-            news(`📺 Derechos TV firmados con ${offer.company || 'cadena'}: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
+            news(`📺 Derechos TV firmados: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
         if (!d.pendingOffers.sponsorOffers && !d.pendingOffers.tvOffers) d.pendingOffers = null;
         saveD(d); recalcWeekly();
         if (window._financeRefresh) window._financeRefresh();
@@ -489,10 +469,8 @@
                             border-radius:10px;padding:11px;display:flex;justify-content:space-between;
                             align-items:center;margin-bottom:7px;">
                   <div>
-                    <div style="color:#4CAF50;font-weight:bold;">🏢 ${o.company || 'Patrocinador'}</div>
-                    <div style="color:#888;font-size:.78em;margin:2px 0 3px;">${o.sector ? '('+o.sector+')' : ''}</div>
-                    <div style="color:#4CAF50;">${fmt(o.annualAmount)}€/año · ${o.years} temp.</div>
-                    <div style="color:#666;font-size:.78em;">Total: ${fmt(o.annualAmount*o.years)}€</div>
+                    <div style="color:#4CAF50;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
+                    <div style="color:#888;font-size:.8em;">${o.years} temp. · Total: ${fmt(o.annualAmount*o.years)}€</div>
                   </div>
                   <button onclick="window._fdAccept('sponsor',${i})"
                     style="background:#4CAF50;color:#fff;border:none;border-radius:8px;
@@ -508,11 +486,11 @@
             html += `<div style="background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.2);
                         border-radius:10px;padding:12px;margin-bottom:18px;">
               <div style="display:flex;justify-content:space-between;">
-                <span style="color:#4CAF50;font-weight:bold;">📣 ${d.sponsorDeal.company || 'Patrocinio activo'}</span>
+                <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
                 <span style="color:#4CAF50;">${fmt(d.sponsorDeal.annualAmount)}€/año</span>
               </div>
               <div style="color:#777;font-size:.8em;margin-top:3px;">
-                ${d.sponsorDeal.yearsLeft} temp. restante${d.sponsorDeal.yearsLeft!==1?'s':''}${d.sponsorDeal.sector?' · '+d.sponsorDeal.sector:''}
+                ${d.sponsorDeal.yearsLeft} temp. restante${d.sponsorDeal.yearsLeft!==1?'s':''}
               </div>
             </div>`;
         } else {
@@ -531,9 +509,8 @@
                             border-radius:10px;padding:11px;display:flex;justify-content:space-between;
                             align-items:center;margin-bottom:7px;">
                   <div>
-                    <div style="color:#2196F3;font-weight:bold;">${o.logo || '📺'} ${o.company || 'Cadena TV'}</div>
-                    <div style="color:#2196F3;margin-top:4px;">${fmt(o.annualAmount)}€/año · ${o.years} temp.</div>
-                    <div style="color:#666;font-size:.78em;">Total: ${fmt(o.annualAmount*o.years)}€</div>
+                    <div style="color:#2196F3;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
+                    <div style="color:#888;font-size:.8em;">${o.years} temp. · Total: ${fmt(o.annualAmount*o.years)}€</div>
                   </div>
                   <button onclick="window._fdAccept('tv',${i})"
                     style="background:#2196F3;color:#fff;border:none;border-radius:8px;
@@ -549,7 +526,7 @@
             html += `<div style="background:rgba(33,150,243,.06);border:1px solid rgba(33,150,243,.2);
                         border-radius:10px;padding:12px;margin-bottom:18px;">
               <div style="display:flex;justify-content:space-between;">
-                <span style="color:#2196F3;font-weight:bold;">📺 ${d.tvDeal.company || 'Derechos TV activos'}</span>
+                <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
                 <span style="color:#2196F3;">${fmt(d.tvDeal.annualAmount)}€/año</span>
               </div>
               <div style="color:#777;font-size:.8em;margin-top:3px;">
@@ -747,11 +724,11 @@
                 h += `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);
                           border-radius:10px;padding:12px;margin-bottom:10px;">
                   <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#4CAF50;font-weight:bold;">📣 ${ds.company || 'Patrocinio activo'}</span>
+                    <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
                     <span style="color:#4CAF50;font-weight:bold;">${fmt(ds.annualAmount)}€/año</span>
                   </div>
                   <div style="color:#777;font-size:.8em;margin-top:4px;">
-                    ${ds.sector?ds.sector+' · ':''}${ds.yearsLeft} temp. restante${ds.yearsLeft!==1?'s':''} · ~${fmt(Math.round(ds.annualAmount/38))}€/sem
+                    ${ds.yearsLeft} temp. restante${ds.yearsLeft!==1?'s':''} · ~${fmt(Math.round(ds.annualAmount/38))}€/sem
                   </div>
                 </div>`;
             } else {
@@ -762,7 +739,7 @@
                 h += `<div style="background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.25);
                           border-radius:10px;padding:12px;margin-bottom:10px;">
                   <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#2196F3;font-weight:bold;">📺 ${dt.company || 'Derechos TV activos'}</span>
+                    <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
                     <span style="color:#2196F3;font-weight:bold;">${fmt(dt.annualAmount)}€/año</span>
                   </div>
                   <div style="color:#777;font-size:.8em;margin-top:4px;">
@@ -886,11 +863,13 @@
     }
 
     function hookSelectTeam() {
-        if (!gl()?.selectTeamWithInitialSquad) { setTimeout(hookSelectTeam, 400); return; }
+        // window.gameLogic es un objeto literal plano (escribible).
+        // NO usar gl() directamente pues puede apuntar al módulo ES (read-only).
+        if (!window.gameLogic?.selectTeamWithInitialSquad) { setTimeout(hookSelectTeam, 400); return; }
         if (window._fdSelectHooked) return;
         window._fdSelectHooked = true;
-        const orig = gl().selectTeamWithInitialSquad;
-        gl().selectTeamWithInitialSquad = async function (...args) {
+        const orig = window.gameLogic.selectTeamWithInitialSquad;
+        window.gameLogic.selectTeamWithInitialSquad = async function (...args) {
             const result = await orig.apply(this, args);
             // Limpiar deals anteriores al empezar nueva partida
             save({ fd_loans:null, fd_sponsor:null, fd_tv:null, fd_pending:null,
@@ -898,6 +877,7 @@
             setTimeout(() => { recalcWeekly(); maybeGenerateOffers(); }, 1500);
             return result;
         };
+        console.log('[FinDeals] hookSelectTeam ✓');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -919,8 +899,34 @@
             addLoanRowToFinances();
         }, 2500);
 
-        // patchTotExpElement: ELIMINADO — injector-finances.js ya incluye
-        // cuotas de préstamo directamente en fin_totExp y en fin_loanRow.
+        // Interceptar textContent de fin_totExp y fin_pExp para sumar cuotas
+    function patchTotExpElement() {
+        const el = document.getElementById('fin_totExp');
+        if (!el) { setTimeout(patchTotExpElement, 500); return; }
+        if (el._fdPatched) return;
+        el._fdPatched = true;
+        Object.defineProperty(el, 'textContent', {
+            set(val) {
+                // val viene como "160.000€/sem" — extraer número y sumar cuotas
+                const d = getD();
+                const loanPay = d.loans.filter(l => l.weeksLeft > 0)
+                                       .reduce((sum, l) => sum + l.weeklyPayment, 0);
+                if (loanPay > 0) {
+                    const base = parseInt(val.replace(/[^0-9]/g, '')) || 0;
+                    const real = base + loanPay;
+                    el.__proto__.__lookupSetter__('textContent').call(el, fmt(real) + '€/sem');
+                } else {
+                    el.__proto__.__lookupSetter__('textContent').call(el, val);
+                }
+            },
+            get() {
+                return el.__proto__.__lookupGetter__('textContent').call(el);
+            },
+            configurable: true
+        });
+        console.log('[FinDeals] fin_totExp interceptado ✓');
+    }
+    setTimeout(patchTotExpElement, 1000);
 
     window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
         console.log('[FinDeals] ✅ v3.0 listo');
