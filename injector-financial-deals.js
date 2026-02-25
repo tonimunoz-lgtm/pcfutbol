@@ -1,23 +1,15 @@
 // ============================================================
-// injector-financial-deals.js  v1.0
-
+// injector-financial-deals.js  v2.0
 //
 // MÓDULO: Préstamos bancarios + Patrocinios + Derechos TV
 //
-// PRÉSTAMOS:
-//  - El manager puede solicitar préstamos al banco
-//  - Elige importe y plazo (6, 12, 24, 36 semanas)
-//  - Cuota semanal = (capital + intereses) / semanas
-//  - Descuento automático en weeklyExpenses cada semana
-//  - Aparece en Decisiones con capital pendiente y semanas restantes
-//
-// PATROCINIOS + DERECHOS TV:
-//  - Al inicio de temporada llegan ofertas automáticas
-//  - Importe anual (por temporada), plazo 1-3 temporadas
-//  - Importes ajustados a categoría, popularidad y rating del equipo
-//  - Si se rechaza, vuelven nuevas ofertas la semana siguiente
-//  - Ingresos suman a weeklyIncomeBase cada semana
-//  - Aparecen en finanzas como línea separada
+// CORREGIDO v2:
+// - Inyecta en página 'commercial' (Gestión Comercial / Decisiones)
+// - Patrocinio y TV se aceptan por separado, modal no se cierra
+//   hasta que ambos estén resueltos (o el usuario lo cierre)
+// - Contratos solo expiran pasadas las temporadas contratadas
+// - No se generan nuevas ofertas mientras el contrato esté vigente
+// - Las noticias de expiración solo salen cuando realmente expira
 // ============================================================
 
 (function () {
@@ -26,439 +18,413 @@
     const gl  = () => window.gameLogic;
     const gs  = () => gl()?.getGameState();
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
-    const save = (u) => gl()?.updateGameState(u);
+    const save = u => gl()?.updateGameState(u);
 
-    // ── Constantes ────────────────────────────────────────────────
-    const LOAN_INTEREST = {
-        6:  0.04,   // 4% total para préstamos cortos
-        12: 0.07,
-        24: 0.12,
-        36: 0.18
-    };
+    // ── Intereses por plazo ───────────────────────────────────────
+    const LOAN_INTEREST = { 6: 0.04, 12: 0.07, 24: 0.12, 36: 0.18 };
 
-    // Valores base anuales por categoría (patrocinio + TV separados)
+    // ── Importes base anuales por categoría ───────────────────────
     const DEAL_BASE = {
-        primera:      { sponsor: 8_000_000,  tv: 25_000_000 },
-        segunda:      { sponsor: 2_000_000,  tv:  6_000_000 },
-        rfef_grupo1:  { sponsor:   400_000,  tv:    800_000 },
-        rfef_grupo2:  { sponsor:   400_000,  tv:    800_000 },
+        primera:     { sponsor: 8_000_000,  tv: 25_000_000 },
+        segunda:     { sponsor: 2_000_000,  tv:  6_000_000 },
+        rfef_grupo1: { sponsor:   400_000,  tv:    800_000 },
+        rfef_grupo2: { sponsor:   400_000,  tv:    800_000 },
     };
 
-    // ── Helpers de estado ─────────────────────────────────────────
-    function getDeals() {
-        const state = gs();
-        if (!state) return { loans: [], sponsorDeal: null, tvDeal: null, pendingOffers: null };
+    // ── Acceso al estado de deals ─────────────────────────────────
+    function getD() {
+        const s = gs() || {};
         return {
-            loans:         state.finDeals_loans        || [],
-            sponsorDeal:   state.finDeals_sponsor      || null,
-            tvDeal:        state.finDeals_tv            || null,
-            pendingOffers: state.finDeals_pending       || null
+            loans:         s.fd_loans   || [],
+            sponsorDeal:   s.fd_sponsor || null,
+            tvDeal:        s.fd_tv      || null,
+            pendingOffers: s.fd_pending || null,
         };
     }
-
-    function saveDeals(d) {
+    function saveD(d) {
         save({
-            finDeals_loans:   d.loans,
-            finDeals_sponsor: d.sponsorDeal,
-            finDeals_tv:      d.tvDeal,
-            finDeals_pending: d.pendingOffers
+            fd_loans:   d.loans,
+            fd_sponsor: d.sponsorDeal,
+            fd_tv:      d.tvDeal,
+            fd_pending: d.pendingOffers,
         });
     }
 
-    // Recalcular weeklyExpenses y weeklyIncomeBase desde cero
+    // ── Rating medio del equipo ───────────────────────────────────
+    function avgRating() {
+        const s = gs();
+        if (!s?.squad?.length) return 70;
+        const vals = s.squad.map(p => p.overall || p.rating || 70);
+        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    }
+
+    // ── Recalcular weeklyExpenses y weeklyIncomeBase ──────────────
     function recalcWeekly() {
-        const state = gs();
-        if (!state) return;
-        const deals = getDeals();
+        const s = gs();
+        if (!s) return;
+        const d = getD();
 
-        // Cuotas activas de préstamos
-        const loanPayment = deals.loans
-            .filter(l => l.weeksLeft > 0)
-            .reduce((s, l) => s + l.weeklyPayment, 0);
+        const loanPayment = d.loans.filter(l => l.weeksLeft > 0)
+            .reduce((sum, l) => sum + l.weeklyPayment, 0);
 
-        // Ingresos semanales de contratos activos
-        // Los contratos son por temporada → dividir entre 38 semanas
-        const sponsorWeekly = deals.sponsorDeal?.active
-            ? Math.round(deals.sponsorDeal.annualAmount / 38) : 0;
-        const tvWeekly = deals.tvDeal?.active
-            ? Math.round(deals.tvDeal.annualAmount / 38) : 0;
+        const sponsorW = d.sponsorDeal?.active ? Math.round(d.sponsorDeal.annualAmount / 38) : 0;
+        const tvW      = d.tvDeal?.active      ? Math.round(d.tvDeal.annualAmount      / 38) : 0;
 
-        // Base original del juego (sin nuestros añadidos)
-        const baseOrig = state.finDeals_baseOrig ?? state.weeklyIncomeBase ?? 5000;
-        if (state.finDeals_baseOrig === undefined) {
-            save({ finDeals_baseOrig: state.weeklyIncomeBase ?? 5000 });
+        if (s.fd_baseOrig === undefined) {
+            save({ fd_baseOrig: s.weeklyIncomeBase ?? 5000 });
         }
+        const baseOrig = s.fd_baseOrig ?? s.weeklyIncomeBase ?? 5000;
 
-        const salaries = state.squad?.reduce((s, p) => s + (p.salary || 0), 0) || 0;
-        const staffSal = Object.values(state.staff || {}).filter(Boolean)
-                             .reduce((s, x) => s + (x.salary || 0), 0);
+        const salaries = (s.squad || []).reduce((sum, p) => sum + (p.salary || 0), 0);
+        const staffSal = Object.values(s.staff || {}).filter(Boolean)
+                             .reduce((sum, x) => sum + (x.salary || 0), 0);
 
         save({
             weeklyExpenses:   salaries + staffSal + loanPayment,
-            weeklyIncomeBase: baseOrig + sponsorWeekly + tvWeekly,
-            finDeals_loanPayment:   loanPayment,
-            finDeals_sponsorWeekly: sponsorWeekly,
-            finDeals_tvWeekly:      tvWeekly
+            weeklyIncomeBase: baseOrig + sponsorW + tvW,
+            fd_loanPayment:   loanPayment,
+            fd_sponsorW:      sponsorW,
+            fd_tvW:           tvW,
         });
+    }
+
+    // ── Noticias ──────────────────────────────────────────────────
+    function news(msg, type) {
+        try { gl()?.addNews?.(msg, type); } catch(e) {}
     }
 
     // ── PRÉSTAMOS ─────────────────────────────────────────────────
     function requestLoan(amount, weeks) {
-        const state = gs();
-        if (!state) return;
-        const deals = getDeals();
+        const s = gs();
+        if (!s) return;
+        const d = getD();
+        const interest  = LOAN_INTEREST[weeks] || 0.1;
+        const total     = Math.round(amount * (1 + interest));
+        const weeklyPay = Math.round(total / weeks);
 
-        const interest    = LOAN_INTEREST[weeks] || 0.1;
-        const total       = Math.round(amount * (1 + interest));
-        const weeklyPay   = Math.round(total / weeks);
-        const loan = {
-            id:            Date.now(),
-            amount,
-            totalWithInt:  total,
-            weeklyPayment: weeklyPay,
-            weeksTotal:    weeks,
-            weeksLeft:     weeks,
-            weekRequested: state.week
-        };
-
-        deals.loans.push(loan);
-        saveDeals(deals);
-        save({ balance: (state.balance || 0) + amount });
+        d.loans.push({
+            id: Date.now(), amount, totalWithInt: total,
+            weeklyPayment: weeklyPay, weeksTotal: weeks, weeksLeft: weeks,
+        });
+        saveD(d);
+        save({ balance: (s.balance || 0) + amount });
         recalcWeekly();
-
-        addNews(`🏦 Préstamo concedido: ${fmt(amount)}€ a ${weeks} semanas (cuota: ${fmt(weeklyPay)}€/sem)`, 'info');
+        news(`🏦 Préstamo concedido: ${fmt(amount)}€ a ${weeks} sem. · Cuota: ${fmt(weeklyPay)}€/sem`, 'info');
         if (window._financeRefresh) window._financeRefresh();
-        refreshDealsUI();
+        refreshUI();
     }
 
     function processLoanPayments() {
-        const deals = getDeals();
+        const d = getD();
         let changed = false;
-        deals.loans = deals.loans.map(l => {
+        d.loans = d.loans.map(l => {
             if (l.weeksLeft <= 0) return l;
-            const newLeft = l.weeksLeft - 1;
-            if (newLeft === 0) {
-                addNews(`✅ Préstamo de ${fmt(l.amount)}€ completamente devuelto.`, 'success');
-            }
             changed = true;
-            return { ...l, weeksLeft: newLeft };
+            const left = l.weeksLeft - 1;
+            if (left === 0) news(`✅ Préstamo de ${fmt(l.amount)}€ completamente devuelto.`, 'success');
+            return { ...l, weeksLeft: left };
         });
-        if (changed) {
-            saveDeals(deals);
-            recalcWeekly();
-        }
+        if (changed) { saveD(d); recalcWeekly(); }
     }
 
     // ── GENERADOR DE OFERTAS ──────────────────────────────────────
     function generateOffers() {
-        const state = gs();
-        if (!state) return null;
+        const s    = gs();
+        const div  = s?.division || 'rfef_grupo1';
+        const base = DEAL_BASE[div] || DEAL_BASE.rfef_grupo1;
+        const rat  = avgRating();
+        const pop  = s?.popularity || 50;
+        const mult = Math.max(0.4, Math.min(2.2,
+            0.6 + (rat - 60) / 40 * 0.9 + (pop - 50) / 100 * 0.5));
+        const rnd  = () => 0.82 + Math.random() * 0.36;
+        const rnd100k = v => Math.round(v / 100_000) * 100_000;
+        const rnd50k  = v => Math.round(v / 50_000)  * 50_000;
 
-        const division = state.division || 'rfef_grupo1';
-        const base     = DEAL_BASE[division] || DEAL_BASE.rfef_grupo1;
-        const rating   = avgRating();
-        const pop      = state.popularity || 50;
-
-        // Multiplicador según calidad del equipo (0.6 – 1.8)
-        const mult = 0.6 + (rating - 60) / 40 * 0.8 + (pop - 50) / 100 * 0.4;
-        const m    = Math.max(0.4, Math.min(2.0, mult));
-
-        // Variación aleatoria ±20%
-        const rnd = () => 0.8 + Math.random() * 0.4;
-
-        const sponsorOffers = [1, 2, 3].map(years => ({
-            type:         'sponsor',
-            years,
-            annualAmount: Math.round(base.sponsor * m * rnd() / 100_000) * 100_000
-        }));
-        const tvOffers = [1, 2, 3].map(years => ({
-            type:         'tv',
-            years,
-            annualAmount: Math.round(base.tv * m * rnd() / 100_000) * 100_000
-        }));
-
-        return { sponsorOffers, tvOffers, week: state.week };
+        return {
+            sponsorOffers: [1, 2, 3].map(y => ({
+                type: 'sponsor', years: y,
+                annualAmount: rnd50k(base.sponsor * mult * rnd())
+            })),
+            tvOffers: [1, 2, 3].map(y => ({
+                type: 'tv', years: y,
+                annualAmount: rnd100k(base.tv * mult * rnd())
+            })),
+        };
     }
 
-    function avgRating() {
-        const state = gs();
-        if (!state?.squad?.length) return 70;
-        const vals = state.squad.map(p => p.overall || p.rating || 70);
-        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-    }
+    function maybeGenerateOffers() {
+        const s = gs();
+        if (!s?.team) return;
+        const d = getD();
 
-    function checkAndGenerateOffers() {
-        const state = gs();
-        if (!state?.team) return;
-        const deals = getDeals();
+        const needSponsor = !d.sponsorDeal?.active;
+        const needTv      = !d.tvDeal?.active;
+        if (!needSponsor && !needTv) return;
 
-        // Generar al inicio de temporada (semana 1) o si no hay oferta pendiente
-        // y el contrato activo ha expirado
-        const sponsorExpired = !deals.sponsorDeal?.active;
-        const tvExpired      = !deals.tvDeal?.active;
-
-        if ((sponsorExpired || tvExpired) && !deals.pendingOffers) {
-            const offers = generateOffers();
-            deals.pendingOffers = offers;
-            saveDeals(deals);
-
-            const hasS = sponsorExpired;
-            const hasT = tvExpired;
-            const msg  = [
-                hasS ? '📣 Nueva oferta de patrocinio disponible' : '',
-                hasT ? '📺 Nueva oferta de derechos TV disponible' : ''
-            ].filter(Boolean).join(' · ');
-            addNews(msg + ' — revisa Decisiones', 'info');
-            showOffersModal();
+        // Si ya hay pendientes para ese tipo, solo mostrar modal
+        const alreadyHasSponsor = !!d.pendingOffers?.sponsorOffers;
+        const alreadyHasTv      = !!d.pendingOffers?.tvOffers;
+        if ((!needSponsor || alreadyHasSponsor) && (!needTv || alreadyHasTv)) {
+            setTimeout(showOffersModal, 800);
+            return;
         }
+
+        const fresh = generateOffers();
+        d.pendingOffers = {
+            sponsorOffers: needSponsor ? fresh.sponsorOffers : (d.pendingOffers?.sponsorOffers || null),
+            tvOffers:      needTv      ? fresh.tvOffers      : (d.pendingOffers?.tvOffers      || null),
+        };
+        saveD(d);
+
+        const msgs = [
+            needSponsor && !alreadyHasSponsor ? '📣 Nueva oferta de patrocinio' : '',
+            needTv      && !alreadyHasTv      ? '📺 Nueva oferta de derechos TV' : '',
+        ].filter(Boolean).join(' · ');
+        if (msgs) news(msgs + ' — revisa Gestión Comercial', 'info');
+        setTimeout(showOffersModal, 800);
+        refreshUI();
     }
 
-    function acceptOffer(type, idx) {
-        const state = gs();
-        const deals = getDeals();
-        if (!deals.pendingOffers) return;
+    // Procesar cambio de temporada
+    function processNewSeason() {
+        const d = getD();
+        let changed = false;
 
-        const offers  = type === 'sponsor' ? deals.pendingOffers.sponsorOffers : deals.pendingOffers.tvOffers;
-        const offer   = offers[idx];
+        if (d.sponsorDeal?.active) {
+            const left = d.sponsorDeal.yearsLeft - 1;
+            d.sponsorDeal = { ...d.sponsorDeal, yearsLeft: left };
+            if (left <= 0) {
+                d.sponsorDeal.active = false;
+                news('📣 Contrato de patrocinio expirado — recibirás nuevas ofertas esta temporada', 'warning');
+            }
+            changed = true;
+        }
+        if (d.tvDeal?.active) {
+            const left = d.tvDeal.yearsLeft - 1;
+            d.tvDeal = { ...d.tvDeal, yearsLeft: left };
+            if (left <= 0) {
+                d.tvDeal.active = false;
+                news('📺 Contrato de derechos TV expirado — recibirás nuevas ofertas esta temporada', 'warning');
+            }
+            changed = true;
+        }
+        if (changed) { saveD(d); recalcWeekly(); }
+    }
+
+    // ── ACEPTAR / RECHAZAR ────────────────────────────────────────
+    function acceptOffer(type, idx) {
+        const s = gs();
+        const d = getD();
+        if (!d.pendingOffers) return;
+
+        const arr   = type === 'sponsor' ? d.pendingOffers.sponsorOffers : d.pendingOffers.tvOffers;
+        const offer = arr?.[idx];
         if (!offer) return;
 
         const deal = {
-            active:       true,
+            active: true,
             annualAmount: offer.annualAmount,
-            years:        offer.years,
-            yearsLeft:    offer.years,
-            season:       state.currentSeason,
-            acceptedWeek: state.week
+            years: offer.years, yearsLeft: offer.years,
+            season: s.currentSeason,
         };
 
         if (type === 'sponsor') {
-            deals.sponsorDeal = deal;
-            addNews(`📣 Contrato de patrocinio firmado: ${fmt(offer.annualAmount)}€/año por ${offer.years} temporada${offer.years > 1 ? 's' : ''}`, 'success');
+            d.sponsorDeal = deal;
+            d.pendingOffers = { ...d.pendingOffers, sponsorOffers: null };
+            news(`📣 Patrocinio firmado: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success');
         } else {
-            deals.tvDeal = deal;
-            addNews(`📺 Derechos TV firmados: ${fmt(offer.annualAmount)}€/año por ${offer.years} temporada${offer.years > 1 ? 's' : ''}`, 'success');
+            d.tvDeal = deal;
+            d.pendingOffers = { ...d.pendingOffers, tvOffers: null };
+            news(`📺 Derechos TV firmados: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success');
         }
 
-        // Si ya hay deal para ambos, limpiar pendingOffers
-        const newDeals = { ...deals };
-        if (type === 'sponsor') newDeals.sponsorDeal = deal;
-        else                    newDeals.tvDeal      = deal;
+        if (!d.pendingOffers.sponsorOffers && !d.pendingOffers.tvOffers) {
+            d.pendingOffers = null;
+        }
 
-        const sOk = type === 'sponsor' ? true : !!newDeals.sponsorDeal?.active;
-        const tOk = type === 'tv'      ? true : !!newDeals.tvDeal?.active;
-        if (sOk && tOk) newDeals.pendingOffers = null;
-
-        saveDeals(newDeals);
+        saveD(d);
         recalcWeekly();
         if (window._financeRefresh) window._financeRefresh();
-
-        const modal = document.getElementById('fd-offers-modal');
-        if (modal) modal.remove();
-        refreshDealsUI();
+        updateOffersModal();
+        refreshUI();
     }
 
     function rejectOffer(type) {
-        const deals = getDeals();
-        if (!deals.pendingOffers) return;
-        // Regenerar solo las ofertas del tipo rechazado con valores ligeramente diferentes
+        const d = getD();
+        if (!d.pendingOffers) return;
         const fresh = generateOffers();
-        if (type === 'sponsor') deals.pendingOffers.sponsorOffers = fresh.sponsorOffers;
-        else                    deals.pendingOffers.tvOffers      = fresh.tvOffers;
-        saveDeals(deals);
-        addNews(`⚠️ Oferta rechazada — recibirás nuevas propuestas próximamente`, 'warning');
-
-        const modal = document.getElementById('fd-offers-modal');
-        if (modal) modal.remove();
-        refreshDealsUI();
+        if (type === 'sponsor') d.pendingOffers = { ...d.pendingOffers, sponsorOffers: fresh.sponsorOffers };
+        else                    d.pendingOffers = { ...d.pendingOffers, tvOffers:      fresh.tvOffers };
+        saveD(d);
+        news('⚠️ Oferta rechazada — llegarán nuevas propuestas la próxima semana', 'warning');
+        updateOffersModal();
+        refreshUI();
     }
 
-    // Procesar renovación de contratos al inicio de temporada
-    function processSeasonRenewal(newSeason) {
-        const deals = getDeals();
-        let changed = false;
-
-        if (deals.sponsorDeal?.active) {
-            deals.sponsorDeal.yearsLeft--;
-            if (deals.sponsorDeal.yearsLeft <= 0) {
-                deals.sponsorDeal.active = false;
-                addNews('📣 Contrato de patrocinio EXPIRADO — pronto recibirás nuevas ofertas', 'warning');
-                changed = true;
-            }
+    // ── MODAL ─────────────────────────────────────────────────────
+    function buildOffersBody() {
+        const d = getD();
+        if (!d.pendingOffers && !d.sponsorDeal?.active && !d.tvDeal?.active) {
+            return '<p style="color:#888;text-align:center;padding:20px 0;">Sin ofertas ni contratos activos.</p>';
         }
-        if (deals.tvDeal?.active) {
-            deals.tvDeal.yearsLeft--;
-            if (deals.tvDeal.yearsLeft <= 0) {
-                deals.tvDeal.active = false;
-                addNews('📺 Contrato de derechos TV EXPIRADO — pronto recibirás nuevas ofertas', 'warning');
-                changed = true;
-            }
-        }
-        if (changed) {
-            saveDeals(deals);
-            recalcWeekly();
-        }
-    }
 
-    // ── NOTICIAS ──────────────────────────────────────────────────
-    function addNews(msg, type) {
-        try {
-            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-            gl()?.addNews?.(msg, type);
-        } catch(e) {}
-    }
+        let html = '';
 
-    // ── HOOK simulateWeek ─────────────────────────────────────────
-    function hookSimulateWeek() {
-        if (typeof window.simulateWeek !== 'function') { setTimeout(hookSimulateWeek, 300); return; }
-        if (window._fdHooked) return;
-        window._fdHooked = true;
-
-        const orig = window.simulateWeek;
-        window.simulateWeek = async function (...args) {
-            const result = await orig.apply(this, args);
-            const state  = gs();
-            if (!state) return result;
-
-            // Descontar cuotas de préstamos
-            processLoanPayments();
-
-            // Inicio de temporada: nueva temporada detectada
-            if (state.week === 1) {
-                const deals = getDeals();
-                // Renovar contratos si temporada cambió
-                processSeasonRenewal(state.currentSeason);
-                // Reset baseOrig para la nueva temporada
-                save({ finDeals_baseOrig: undefined });
-                setTimeout(() => { recalcWeekly(); checkAndGenerateOffers(); }, 500);
-            }
-
-            // Semana 2: también mostrar ofertas si no se han aceptado
-            if (state.week === 2) {
-                const deals = getDeals();
-                if (deals.pendingOffers) setTimeout(() => showOffersModal(), 1000);
-            }
-
-            recalcWeekly();
-            if (window._financeRefresh) window._financeRefresh();
-            refreshDealsUI();
-            return result;
-        };
-        console.log('[FinDeals] simulateWeek hooked ✓');
-    }
-
-    // ── MODAL OFERTAS ─────────────────────────────────────────────
-    function showOffersModal() {
-        const deals = getDeals();
-        if (!deals.pendingOffers) return;
-        if (document.getElementById('fd-offers-modal')) return;
-
-        const { sponsorOffers, tvOffers } = deals.pendingOffers;
-        const sponsorActive = deals.sponsorDeal?.active;
-        const tvActive      = deals.tvDeal?.active;
-
-        let html = `
-        <div id="fd-offers-modal" style="
-            position:fixed;top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,.75);z-index:9999;
-            display:flex;align-items:center;justify-content:center;padding:16px;">
-          <div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:520px;width:100%;
-                      border:1px solid #333;max-height:90vh;overflow-y:auto;">
-            <h2 style="color:#FFD700;margin:0 0 6px;font-size:1.2em;">📬 Nuevas Ofertas Comerciales</h2>
-            <p style="color:#888;font-size:.85em;margin:0 0 20px;">Selecciona el contrato que más te convenga</p>`;
-
-        if (!sponsorActive && sponsorOffers) {
+        // ── Patrocinio ────────────────────────────────────────────
+        if (d.pendingOffers?.sponsorOffers && !d.sponsorDeal?.active) {
             html += `
-            <div style="margin-bottom:20px;">
-              <h3 style="color:#ccc;font-size:.95em;margin:0 0 10px;border-bottom:1px solid #333;padding-bottom:6px;">
-                📣 Patrocinio principal
-              </h3>
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#4CAF50;font-size:.95em;margin:0 0 10px;
+                         border-bottom:1px solid #2a3a2a;padding-bottom:6px;">📣 Ofertas de patrocinio</h3>
               <div style="display:flex;flex-direction:column;gap:8px;">
-                ${sponsorOffers.map((o, i) => `
-                  <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;
-                              display:flex;justify-content:space-between;align-items:center;">
+                ${d.pendingOffers.sponsorOffers.map((o, i) => `
+                  <div style="background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.2);
+                              border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                      <div style="color:#fff;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
-                      <div style="color:#888;font-size:.82em;">${o.years} temporada${o.years>1?'s':''} · Total: ${fmt(o.annualAmount * o.years)}€</div>
+                      <div style="color:#4CAF50;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
+                      <div style="color:#888;font-size:.8em;">
+                        ${o.years} temp. · Total: ${fmt(o.annualAmount * o.years)}€
+                      </div>
                     </div>
                     <button onclick="window._fdAccept('sponsor',${i})"
-                      style="background:#4CAF50;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:bold;">
-                      Firmar
-                    </button>
+                      style="background:#4CAF50;color:#fff;border:none;border-radius:8px;
+                             padding:8px 18px;cursor:pointer;font-weight:bold;">Firmar</button>
                   </div>`).join('')}
               </div>
               <button onclick="window._fdReject('sponsor')"
-                style="margin-top:8px;background:transparent;color:#888;border:1px solid #444;
-                       border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.82em;">
-                Rechazar todas
+                style="margin-top:8px;background:transparent;color:#666;border:1px solid #333;
+                       border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8em;width:100%;">
+                Rechazar y pedir nuevas ofertas
               </button>
+            </div>`;
+        } else if (d.sponsorDeal?.active) {
+            html += `
+            <div style="background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.2);
+                        border-radius:10px;padding:12px;margin-bottom:18px;">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
+                <span style="color:#4CAF50;">${fmt(d.sponsorDeal.annualAmount)}€/año</span>
+              </div>
+              <div style="color:#777;font-size:.8em;margin-top:4px;">
+                ${d.sponsorDeal.yearsLeft} temp. restante${d.sponsorDeal.yearsLeft!==1?'s':''}
+              </div>
             </div>`;
         }
 
-        if (!tvActive && tvOffers) {
+        // ── Derechos TV ───────────────────────────────────────────
+        if (d.pendingOffers?.tvOffers && !d.tvDeal?.active) {
             html += `
-            <div style="margin-bottom:20px;">
-              <h3 style="color:#ccc;font-size:.95em;margin:0 0 10px;border-bottom:1px solid #333;padding-bottom:6px;">
-                📺 Derechos de televisión
-              </h3>
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#2196F3;font-size:.95em;margin:0 0 10px;
+                         border-bottom:1px solid #1a2a3a;padding-bottom:6px;">📺 Ofertas de derechos TV</h3>
               <div style="display:flex;flex-direction:column;gap:8px;">
-                ${tvOffers.map((o, i) => `
-                  <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;
-                              display:flex;justify-content:space-between;align-items:center;">
+                ${d.pendingOffers.tvOffers.map((o, i) => `
+                  <div style="background:rgba(33,150,243,.06);border:1px solid rgba(33,150,243,.2);
+                              border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                      <div style="color:#fff;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
-                      <div style="color:#888;font-size:.82em;">${o.years} temporada${o.years>1?'s':''} · Total: ${fmt(o.annualAmount * o.years)}€</div>
+                      <div style="color:#2196F3;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
+                      <div style="color:#888;font-size:.8em;">
+                        ${o.years} temp. · Total: ${fmt(o.annualAmount * o.years)}€
+                      </div>
                     </div>
                     <button onclick="window._fdAccept('tv',${i})"
-                      style="background:#2196F3;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:bold;">
-                      Firmar
-                    </button>
+                      style="background:#2196F3;color:#fff;border:none;border-radius:8px;
+                             padding:8px 18px;cursor:pointer;font-weight:bold;">Firmar</button>
                   </div>`).join('')}
               </div>
               <button onclick="window._fdReject('tv')"
-                style="margin-top:8px;background:transparent;color:#888;border:1px solid #444;
-                       border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.82em;">
-                Rechazar todas
+                style="margin-top:8px;background:transparent;color:#666;border:1px solid #333;
+                       border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8em;width:100%;">
+                Rechazar y pedir nuevas ofertas
               </button>
+            </div>`;
+        } else if (d.tvDeal?.active) {
+            html += `
+            <div style="background:rgba(33,150,243,.06);border:1px solid rgba(33,150,243,.2);
+                        border-radius:10px;padding:12px;margin-bottom:18px;">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
+                <span style="color:#2196F3;">${fmt(d.tvDeal.annualAmount)}€/año</span>
+              </div>
+              <div style="color:#777;font-size:.8em;margin-top:4px;">
+                ${d.tvDeal.yearsLeft} temp. restante${d.tvDeal.yearsLeft!==1?'s':''}
+              </div>
             </div>`;
         }
 
-        html += `
-            <button onclick="document.getElementById('fd-offers-modal').remove()"
-              style="width:100%;background:#333;color:#aaa;border:none;border-radius:8px;
-                     padding:10px;cursor:pointer;margin-top:4px;">
-              Decidir más tarde
-            </button>
-          </div>
-        </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', html);
+        return html || '<p style="color:#555;text-align:center;padding:10px 0;">Sin decisiones pendientes.</p>';
     }
 
-    window._fdAccept = (type, idx) => acceptOffer(type, idx);
-    window._fdReject = (type)      => rejectOffer(type);
-    window._fdShowOffers = showOffersModal;
+    function showOffersModal() {
+        if (document.getElementById('fd-modal')) { updateOffersModal(); return; }
+        const d = getD();
+        if (!d.pendingOffers && !d.sponsorDeal?.active && !d.tvDeal?.active) return;
 
-    // ── PANEL DE DECISIONES (inyectado en el panel de finanzas) ───
-    function buildDealsSection() {
-        const panel = document.getElementById('finance-panel');
-        if (!panel || document.getElementById('fd-deals-section')) return;
+        const wrap = document.createElement('div');
+        wrap.id = 'fd-modal';
+        wrap.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,.78);z-index:9999;
+            display:flex;align-items:center;justify-content:center;padding:16px;`;
+        wrap.innerHTML = `
+          <div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:520px;width:100%;
+                      border:1px solid #333;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+              <h2 style="color:#FFD700;margin:0;font-size:1.15em;">📬 Contratos Comerciales</h2>
+              <button onclick="document.getElementById('fd-modal').remove()"
+                style="background:#333;color:#aaa;border:none;border-radius:6px;
+                       padding:4px 12px;cursor:pointer;font-size:1.1em;">✕</button>
+            </div>
+            <div id="fd-modal-body">${buildOffersBody()}</div>
+          </div>`;
+        document.body.appendChild(wrap);
+    }
+
+    function updateOffersModal() {
+        const body = document.getElementById('fd-modal-body');
+        if (body) body.innerHTML = buildOffersBody();
+        const d = getD();
+        if (!d.pendingOffers) {
+            const m = document.getElementById('fd-modal');
+            if (m) setTimeout(() => m.remove(), 500);
+        }
+    }
+
+    window._fdAccept     = (type, idx) => acceptOffer(type, idx);
+    window._fdReject     = (type)      => rejectOffer(type);
+    window._fdShowOffers = ()          => showOffersModal();
+
+    // ── SECCIÓN EN GESTIÓN COMERCIAL ──────────────────────────────
+    function buildSection() {
+        const page = document.getElementById('commercial');
+        if (!page || document.getElementById('fd-section')) return;
 
         const sec = document.createElement('div');
-        sec.id = 'fd-deals-section';
-        sec.style.cssText = 'margin-top:8px;';
+        sec.id = 'fd-section';
+        sec.style.cssText = 'margin-top:30px;';
         sec.innerHTML = `
-        <!-- PRÉSTAMOS BANCARIOS -->
-        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;
-                   font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
+
+        <h2 style="font-size:1.05em;color:#ccc;text-transform:uppercase;letter-spacing:1px;
+                   border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:14px;">
+            💼 Contratos comerciales
+        </h2>
+        <div id="fd-contracts" style="margin-bottom:12px;"></div>
+        <button onclick="window._fdShowOffers()" id="fd-btn-offers"
+          style="background:#1565C0;color:#fff;border:none;border-radius:8px;
+                 padding:10px 20px;cursor:pointer;font-size:.9em;margin-bottom:30px;width:100%;">
+          📬 Gestionar contratos y ofertas
+        </button>
+
+        <h2 style="font-size:1.05em;color:#ccc;text-transform:uppercase;letter-spacing:1px;
+                   border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:14px;">
             🏦 Préstamos bancarios
         </h2>
-        <div id="fd-loans-list" style="margin-bottom:12px;font-size:.88em;"></div>
-        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;margin-bottom:22px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div id="fd-loans" style="margin-bottom:14px;"></div>
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:16px;margin-bottom:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
             <div>
-              <label style="color:#aaa;font-size:.82em;">Importe</label>
-              <select id="fd-loan-amount" style="width:100%;background:#111;color:#fff;border:1px solid #333;
-                      border-radius:6px;padding:6px;margin-top:4px;font-size:.9em;">
+              <label style="color:#aaa;font-size:.82em;display:block;margin-bottom:4px;">Importe</label>
+              <select id="fd-amt" style="width:100%;background:#111;color:#fff;border:1px solid #333;
+                      border-radius:6px;padding:7px;font-size:.9em;">
                 <option value="500000">500.000€</option>
                 <option value="1000000">1.000.000€</option>
                 <option value="2000000">2.000.000€</option>
@@ -469,197 +435,169 @@
               </select>
             </div>
             <div>
-              <label style="color:#aaa;font-size:.82em;">Plazo</label>
-              <select id="fd-loan-weeks" style="width:100%;background:#111;color:#fff;border:1px solid #333;
-                      border-radius:6px;padding:6px;margin-top:4px;font-size:.9em;">
-                <option value="6">6 semanas (4% int.)</option>
-                <option value="12" selected>12 semanas (7% int.)</option>
-                <option value="24">24 semanas (12% int.)</option>
-                <option value="36">36 semanas (18% int.)</option>
+              <label style="color:#aaa;font-size:.82em;display:block;margin-bottom:4px;">Plazo</label>
+              <select id="fd-wks" style="width:100%;background:#111;color:#fff;border:1px solid #333;
+                      border-radius:6px;padding:7px;font-size:.9em;">
+                <option value="6">6 semanas — 4% interés</option>
+                <option value="12" selected>12 semanas — 7% interés</option>
+                <option value="24">24 semanas — 12% interés</option>
+                <option value="36">36 semanas — 18% interés</option>
               </select>
             </div>
           </div>
-          <div id="fd-loan-preview" style="color:#888;font-size:.82em;margin-bottom:10px;"></div>
-          <button onclick="window._fdRequestLoan()"
-            style="width:100%;background:#e65100;color:#fff;border:none;border-radius:8px;
-                   padding:10px;cursor:pointer;font-weight:bold;">
+          <div id="fd-prev" style="color:#888;font-size:.82em;margin-bottom:10px;min-height:18px;"></div>
+          <button onclick="window._fdAskLoan()"
+            style="width:100%;background:#b71c1c;color:#fff;border:none;border-radius:8px;
+                   padding:10px;cursor:pointer;font-weight:bold;font-size:.92em;">
             Solicitar préstamo
-          </button>
-        </div>
-
-        <!-- PATROCINIOS Y DERECHOS TV -->
-        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;
-                   font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            💼 Contratos comerciales
-        </h2>
-        <div id="fd-contracts-list" style="margin-bottom:10px;font-size:.88em;"></div>
-        <div style="display:flex;gap:8px;margin-bottom:22px;">
-          <button onclick="window._fdShowOffers()"
-            style="flex:1;background:#1565C0;color:#fff;border:none;border-radius:8px;
-                   padding:10px;cursor:pointer;font-size:.88em;">
-            📬 Ver ofertas pendientes
           </button>
         </div>`;
 
-        // Insertar antes del historial
-        const histEl = panel.querySelector('#fin_mList');
-        if (histEl) {
-            const h2s = panel.querySelectorAll('h2');
-            let histH2 = null;
-            h2s.forEach(h => { if (h.textContent.includes('Historial')) histH2 = h; });
-            if (histH2) panel.insertBefore(sec, histH2);
-            else panel.appendChild(sec);
-        } else {
-            panel.appendChild(sec);
-        }
+        page.appendChild(sec);
 
-        // Preview dinámica del préstamo
-        const updatePreview = () => {
-            const amt   = parseInt(document.getElementById('fd-loan-amount')?.value || 0);
-            const wks   = parseInt(document.getElementById('fd-loan-weeks')?.value  || 12);
-            const int   = LOAN_INTEREST[wks] || 0.1;
-            const total = Math.round(amt * (1 + int));
-            const weekly= Math.round(total / wks);
-            const prev  = document.getElementById('fd-loan-preview');
-            if (prev) prev.innerHTML =
-                `Total a devolver: <strong style="color:#fff">${fmt(total)}€</strong> · Cuota: <strong style="color:#f5a623">${fmt(weekly)}€/semana</strong>`;
+        const updatePrev = () => {
+            const amt  = parseInt(document.getElementById('fd-amt')?.value || 0);
+            const wks  = parseInt(document.getElementById('fd-wks')?.value  || 12);
+            const tot  = Math.round(amt * (1 + (LOAN_INTEREST[wks] || 0.1)));
+            const wpay = Math.round(tot / wks);
+            const el   = document.getElementById('fd-prev');
+            if (el) el.innerHTML = `Total: <strong style="color:#fff;">${fmt(tot)}€</strong>
+                &nbsp;·&nbsp; Cuota: <strong style="color:#f5a623;">${fmt(wpay)}€/sem</strong>`;
         };
-        document.getElementById('fd-loan-amount')?.addEventListener('change', updatePreview);
-        document.getElementById('fd-loan-weeks')?.addEventListener('change', updatePreview);
-        updatePreview();
-
-        refreshDealsUI();
+        document.getElementById('fd-amt')?.addEventListener('change', updatePrev);
+        document.getElementById('fd-wks')?.addEventListener('change', updatePrev);
+        updatePrev();
+        refreshUI();
     }
 
-    function refreshDealsUI() {
-        const deals    = getDeals();
-        const state    = gs();
-        if (!state) return;
-
-        // ── Préstamos activos ─────────────────────────────────────
-        const loansList = document.getElementById('fd-loans-list');
-        if (loansList) {
-            const active = deals.loans.filter(l => l.weeksLeft > 0);
-            if (active.length === 0) {
-                loansList.innerHTML = '<span style="color:#555;font-style:italic;">Sin préstamos activos.</span>';
-            } else {
-                loansList.innerHTML = active.map(l => `
-                  <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px;
-                              margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                      <div style="color:#f5a623;font-weight:bold;">Préstamo de ${fmt(l.amount)}€</div>
-                      <div style="color:#888;font-size:.8em;">
-                        Cuota: ${fmt(l.weeklyPayment)}€/sem ·
-                        Pendiente: ${fmt(l.weeklyPayment * l.weeksLeft)}€ ·
-                        ${l.weeksLeft} sem. restantes
-                      </div>
-                    </div>
-                    <div style="text-align:right;">
-                      <div style="font-size:.75em;color:#666;">${Math.round((1 - l.weeksLeft/l.weeksTotal)*100)}% pagado</div>
-                      <div style="width:80px;height:6px;background:#333;border-radius:3px;margin-top:4px;">
-                        <div style="width:${Math.round((1-l.weeksLeft/l.weeksTotal)*100)}%;height:100%;
-                                    background:#f5a623;border-radius:3px;"></div>
-                      </div>
-                    </div>
-                  </div>`).join('');
-            }
-        }
-
-        // ── Contratos activos ─────────────────────────────────────
-        const contractsList = document.getElementById('fd-contracts-list');
-        if (contractsList) {
-            const rows = [];
-
-            if (deals.sponsorDeal?.active) {
-                const d = deals.sponsorDeal;
-                rows.push(`
-                  <div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);
-                              border-radius:8px;padding:10px;margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div>
-                        <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio</span>
-                        <span style="color:#888;font-size:.8em;margin-left:8px;">${fmt(d.annualAmount)}€/año</span>
-                      </div>
-                      <span style="color:#aaa;font-size:.8em;">${d.yearsLeft} temp. restante${d.yearsLeft!==1?'s':''}</span>
-                    </div>
-                    <div style="color:#555;font-size:.78em;margin-top:4px;">
-                      ~${fmt(Math.round(d.annualAmount/38))}€/semana · firmado ${d.season}
-                    </div>
-                  </div>`);
-            } else {
-                rows.push(`<div style="color:#555;font-size:.85em;font-style:italic;margin-bottom:8px;">
-                    📣 Sin contrato de patrocinio activo</div>`);
-            }
-
-            if (deals.tvDeal?.active) {
-                const d = deals.tvDeal;
-                rows.push(`
-                  <div style="background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.2);
-                              border-radius:8px;padding:10px;margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div>
-                        <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV</span>
-                        <span style="color:#888;font-size:.8em;margin-left:8px;">${fmt(d.annualAmount)}€/año</span>
-                      </div>
-                      <span style="color:#aaa;font-size:.8em;">${d.yearsLeft} temp. restante${d.yearsLeft!==1?'s':''}</span>
-                    </div>
-                    <div style="color:#555;font-size:.78em;margin-top:4px;">
-                      ~${fmt(Math.round(d.annualAmount/38))}€/semana · firmado ${d.season}
-                    </div>
-                  </div>`);
-            } else {
-                rows.push(`<div style="color:#555;font-size:.85em;font-style:italic;margin-bottom:8px;">
-                    📺 Sin contrato de derechos TV activo</div>`);
-            }
-
-            contractsList.innerHTML = rows.join('');
-        }
-
-        // Actualizar label "derechos TV / patrocinios" en el panel de finanzas
-        const sponsorWeekly = state.finDeals_sponsorWeekly || 0;
-        const tvWeekly      = state.finDeals_tvWeekly      || 0;
-        const totalDeals    = sponsorWeekly + tvWeekly;
-        ['fin_lBase','fin_pBase'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el && totalDeals > 0) {
-                const breakdown = [
-                    sponsorWeekly > 0 ? `Patrocinio ${fmt(sponsorWeekly)}€` : '',
-                    tvWeekly > 0      ? `TV ${fmt(tvWeekly)}€` : ''
-                ].filter(Boolean).join(' + ');
-                el.title = breakdown;
-            }
-        });
-
-        // Mostrar botón de "Ver ofertas pendientes" en color si hay pendientes
-        const pendingBtn = document.querySelector('#fd-deals-section button[onclick*="ShowOffers"]');
-        if (pendingBtn) {
-            const hasPending = !!deals.pendingOffers;
-            pendingBtn.style.background = hasPending ? '#e65100' : '#1565C0';
-            pendingBtn.textContent      = hasPending ? '🔔 Ofertas pendientes — ¡Revisar!' : '📬 Ver ofertas pendientes';
-        }
-    }
-
-    window._fdRequestLoan = function () {
-        const amt = parseInt(document.getElementById('fd-loan-amount')?.value || 0);
-        const wks = parseInt(document.getElementById('fd-loan-weeks')?.value  || 12);
+    window._fdAskLoan = () => {
+        const amt = parseInt(document.getElementById('fd-amt')?.value || 0);
+        const wks = parseInt(document.getElementById('fd-wks')?.value || 12);
         if (!amt || !wks) return;
-        const state = gs();
-        if (!state) return;
-        if (confirm(`¿Solicitar préstamo de ${fmt(amt)}€ a ${wks} semanas?`)) {
-            requestLoan(amt, wks);
-        }
+        if (confirm(`¿Solicitar préstamo de ${fmt(amt)}€ a ${wks} semanas?`)) requestLoan(amt, wks);
     };
 
-    // ── HOOK openPage / finanzas ──────────────────────────────────
+    // ── REFRESCO ──────────────────────────────────────────────────
+    function refreshUI() {
+        const d = getD();
+
+        // Contratos
+        const cEl = document.getElementById('fd-contracts');
+        if (cEl) {
+            let html = '';
+            if (d.sponsorDeal?.active) {
+                const ds = d.sponsorDeal;
+                html += `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);
+                            border-radius:10px;padding:12px;margin-bottom:10px;">
+                  <div style="display:flex;justify-content:space-between;">
+                    <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
+                    <span style="color:#4CAF50;font-weight:bold;">${fmt(ds.annualAmount)}€/año</span>
+                  </div>
+                  <div style="color:#777;font-size:.8em;margin-top:4px;">
+                    ${ds.yearsLeft} temp. restante${ds.yearsLeft!==1?'s':''} ·
+                    ~${fmt(Math.round(ds.annualAmount/38))}€/sem
+                  </div>
+                </div>`;
+            } else {
+                html += `<div style="color:#555;font-size:.85em;font-style:italic;padding:4px 0 8px;">
+                    📣 Sin contrato de patrocinio activo</div>`;
+            }
+            if (d.tvDeal?.active) {
+                const dt = d.tvDeal;
+                html += `<div style="background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.25);
+                            border-radius:10px;padding:12px;margin-bottom:10px;">
+                  <div style="display:flex;justify-content:space-between;">
+                    <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
+                    <span style="color:#2196F3;font-weight:bold;">${fmt(dt.annualAmount)}€/año</span>
+                  </div>
+                  <div style="color:#777;font-size:.8em;margin-top:4px;">
+                    ${dt.yearsLeft} temp. restante${dt.yearsLeft!==1?'s':''} ·
+                    ~${fmt(Math.round(dt.annualAmount/38))}€/sem
+                  </div>
+                </div>`;
+            } else {
+                html += `<div style="color:#555;font-size:.85em;font-style:italic;padding:4px 0 8px;">
+                    📺 Sin contrato de derechos TV activo</div>`;
+            }
+            cEl.innerHTML = html;
+        }
+
+        // Botón ofertas
+        const btn = document.getElementById('fd-btn-offers');
+        if (btn) {
+            const has = !!d.pendingOffers;
+            btn.style.background = has ? '#e65100' : '#1565C0';
+            btn.textContent = has ? '🔔 ¡Hay ofertas pendientes! — Revisar' : '📬 Gestionar contratos y ofertas';
+        }
+
+        // Préstamos
+        const lEl = document.getElementById('fd-loans');
+        if (lEl) {
+            const active = d.loans.filter(l => l.weeksLeft > 0);
+            if (!active.length) {
+                lEl.innerHTML = `<div style="color:#555;font-size:.85em;font-style:italic;padding:4px 0 8px;">
+                    Sin préstamos activos.</div>`;
+            } else {
+                lEl.innerHTML = active.map(l => {
+                    const pct = Math.round((1 - l.weeksLeft / l.weeksTotal) * 100);
+                    return `<div style="background:rgba(255,255,255,.04);border-radius:8px;
+                                padding:11px;margin-bottom:8px;">
+                      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="color:#f5a623;font-weight:bold;">Préstamo ${fmt(l.amount)}€</span>
+                        <span style="color:#aaa;font-size:.82em;">${l.weeksLeft} sem. restantes</span>
+                      </div>
+                      <div style="color:#888;font-size:.8em;margin-bottom:6px;">
+                        Cuota: ${fmt(l.weeklyPayment)}€/sem ·
+                        Pendiente: ${fmt(l.weeklyPayment * l.weeksLeft)}€
+                      </div>
+                      <div style="width:100%;height:5px;background:#333;border-radius:3px;">
+                        <div style="width:${pct}%;height:100%;background:#f5a623;border-radius:3px;"></div>
+                      </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+    }
+
+    // ── HOOK simulateWeek ─────────────────────────────────────────
+    function hookSimWeek() {
+        if (typeof window.simulateWeek !== 'function') { setTimeout(hookSimWeek, 300); return; }
+        if (window._fdHooked) return;
+        window._fdHooked = true;
+
+        let _lastSeason = null;
+
+        const orig = window.simulateWeek;
+        window.simulateWeek = async function (...args) {
+            const result = await orig.apply(this, args);
+            const s = gs();
+            if (!s) return result;
+
+            // Cambio de temporada
+            if (_lastSeason && s.currentSeason && _lastSeason !== s.currentSeason) {
+                processNewSeason();
+                save({ fd_baseOrig: undefined });
+                setTimeout(() => { recalcWeekly(); maybeGenerateOffers(); }, 600);
+            }
+            _lastSeason = s.currentSeason;
+
+            processLoanPayments();
+            recalcWeekly();
+            if (window._financeRefresh) window._financeRefresh();
+            refreshUI();
+            return result;
+        };
+        console.log('[FinDeals] hook simulateWeek ✓');
+    }
+
+    // ── HOOK openPage ─────────────────────────────────────────────
     function hookOpenPage() {
-        const orig = window.openPage || window.showPage;
-        if (!orig) { setTimeout(hookOpenPage, 300); return; }
-        const key  = window.openPage ? 'openPage' : 'showPage';
-        const fn   = window[key];
-        window[key] = function (page, ...args) {
-            fn.call(this, page, ...args);
-            if (page === 'finances' || page === 'decisions') {
-                setTimeout(() => { buildDealsSection(); refreshDealsUI(); }, 100);
+        if (!window.openPage) { setTimeout(hookOpenPage, 300); return; }
+        const orig = window.openPage;
+        window.openPage = function (page, ...args) {
+            orig.call(this, page, ...args);
+            if (page === 'commercial') {
+                setTimeout(() => { buildSection(); refreshUI(); }, 80);
             }
         };
     }
@@ -667,26 +605,21 @@
     // ── INIT ──────────────────────────────────────────────────────
     function init() {
         if (!window.gameLogic) { setTimeout(init, 400); return; }
-
-        hookSimulateWeek();
+        hookSimWeek();
         hookOpenPage();
 
-        // Intentar construir panel si ya está abierto
         setTimeout(() => {
-            buildDealsSection();
             recalcWeekly();
-            checkAndGenerateOffers();
-            refreshDealsUI();
-        }, 2000);
+            maybeGenerateOffers();
+            buildSection();
+            refreshUI();
+        }, 2200);
 
-        // Exponer para acceso global
-        window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, refreshDealsUI };
-
-        console.log('[FinDeals] ✅ v1.0 listo — Préstamos + Patrocinios + Derechos TV');
+        window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, refreshUI };
+        console.log('[FinDeals] ✅ v2.0 listo — Préstamos + Patrocinios + Derechos TV');
     }
 
     document.readyState === 'loading'
         ? document.addEventListener('DOMContentLoaded', init)
         : init();
-
 })();
