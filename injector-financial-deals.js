@@ -896,34 +896,34 @@
             addLoanRowToFinances();
         }, 2500);
 
-        // Parchear _financeRefresh: wrappear para corregir total DESPUÉS de que finances lo sobreescriba
-    function patchFinanceRefresh() {
-        if (!window._financeRefresh) { setTimeout(patchFinanceRefresh, 300); return; }
-        if (window._fdRefreshPatched) return;
-        window._fdRefreshPatched = true;
-        const orig = window._financeRefresh;
-        window._financeRefresh = function() {
-            orig();
-            // Después de que finances sobreescriba fin_totExp, lo corregimos
-            const s = gs();
-            if (!s) return;
-            const d = getD();
-            const salaries = (s.squad  || []).reduce((sum, p) => sum + (p.salary || 0), 0);
-            const staffSal = Object.values(s.staff || {}).filter(Boolean)
-                                   .reduce((sum, x) => sum + (x.salary || 0), 0);
-            const loanPay  = d.loans.filter(l => l.weeksLeft > 0)
-                                    .reduce((sum, l) => sum + l.weeklyPayment, 0);
-            const realTotal = salaries + staffSal + loanPay;
-            const totEl = document.getElementById('fin_totExp');
-            if (totEl) totEl.textContent = fmt(realTotal) + '€/sem';
-            // También corregir fin_pExp (proyección)
-            const projEl = document.getElementById('fin_pExp');
-            if (projEl) projEl.textContent = fmt(realTotal) + '€';
-        };
-        // También reemplazar updateFinanceDisplay que es el alias
-        window.updateFinanceDisplay = window._financeRefresh;
+        // Interceptar textContent de fin_totExp y fin_pExp para sumar cuotas
+    function patchTotExpElement() {
+        const el = document.getElementById('fin_totExp');
+        if (!el) { setTimeout(patchTotExpElement, 500); return; }
+        if (el._fdPatched) return;
+        el._fdPatched = true;
+        Object.defineProperty(el, 'textContent', {
+            set(val) {
+                // val viene como "160.000€/sem" — extraer número y sumar cuotas
+                const d = getD();
+                const loanPay = d.loans.filter(l => l.weeksLeft > 0)
+                                       .reduce((sum, l) => sum + l.weeklyPayment, 0);
+                if (loanPay > 0) {
+                    const base = parseInt(val.replace(/[^0-9]/g, '')) || 0;
+                    const real = base + loanPay;
+                    el.__proto__.__lookupSetter__('textContent').call(el, fmt(real) + '€/sem');
+                } else {
+                    el.__proto__.__lookupSetter__('textContent').call(el, val);
+                }
+            },
+            get() {
+                return el.__proto__.__lookupGetter__('textContent').call(el);
+            },
+            configurable: true
+        });
+        console.log('[FinDeals] fin_totExp interceptado ✓');
     }
-    setTimeout(patchFinanceRefresh, 1500);
+    setTimeout(patchTotExpElement, 1000);
 
     window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
         console.log('[FinDeals] ✅ v3.0 listo');
