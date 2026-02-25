@@ -37,9 +37,28 @@
     }
 
     // ── Obtener el rival del próximo partido ──────────────────────
+    // Usa nextOpponent del estado (actualizado tras cada semana simulada).
+    // Si no hay, busca en el calendario el siguiente partido sin jugar.
     function getNextRivalName() {
         const s = gs();
         if (!s) return null;
+        // nextOpponent es fiable si hay partida activa
+        if (s.nextOpponent && s.nextOpponent !== '—' && s.nextOpponent !== 'Rival amistoso') {
+            return s.nextOpponent;
+        }
+        // Fallback: buscar en el calendario el próximo partido del equipo
+        if (s.seasonCalendar && s.team) {
+            const played = new Set((s.matchHistory || []).map(m => m.week + '_' + m.home + '_' + m.away));
+            const upcoming = s.seasonCalendar
+                .filter(m => (m.home === s.team || m.away === s.team) && m.week >= (s.week || 1))
+                .sort((a, b) => a.week - b.week);
+            for (const m of upcoming) {
+                const key = m.week + '_' + m.home + '_' + m.away;
+                if (!played.has(key)) {
+                    return m.home === s.team ? m.away : m.home;
+                }
+            }
+        }
         return s.nextOpponent || null;
     }
 
@@ -359,7 +378,7 @@
         container.innerHTML = `
         <div class="page-header">
             <h1>🔍 Análisis Rival</h1>
-            <button class="page-close-btn" onclick="closePage('rival-analysis')">✖ CERRAR</button>
+            <button class="page-close-btn" onclick="document.getElementById('rival-analysis').classList.remove('active')">✖ CERRAR</button>
         </div>
         <div style="text-align:center;padding:40px;color:#666;">
             <div style="font-size:2em;margin-bottom:12px;">⏳</div>
@@ -400,7 +419,7 @@
         container.innerHTML = `
         <div class="page-header">
             <h1>🔍 Análisis: <span style="color:#4CAF50;">${rivalName}</span></h1>
-            <button class="page-close-btn" onclick="closePage('rival-analysis')">✖ CERRAR</button>
+            <button class="page-close-btn" onclick="document.getElementById('rival-analysis').classList.remove('active')">✖ CERRAR</button>
         </div>
 
         <!-- Header rival -->
@@ -582,35 +601,8 @@
         });
     }
 
-    // ── Hook openPage / closePage para la nueva página ────────────
-    function hookOpenPage() {
-        if (!window.openPage) { setTimeout(hookOpenPage, 300); return; }
-        if (window._rivalPageHooked) return;
-        window._rivalPageHooked = true;
-        const origOpen  = window.openPage;
-        const origClose = window.closePage;
-        window.openPage = function(pageId, ...args) {
-            if (pageId === 'rival-analysis') {
-                // Cerrar otras páginas primero
-                document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-                const el = document.getElementById('rival-analysis');
-                if (el) el.style.display = 'block';
-                return;
-            }
-            return origOpen.call(this, pageId, ...args);
-        };
-        if (origClose) {
-            window.closePage = function(pageId, ...args) {
-                if (pageId === 'rival-analysis') {
-                    const el = document.getElementById('rival-analysis');
-                    if (el) el.style.display = 'none';
-                    return;
-                }
-                return origClose.call(this, pageId, ...args);
-            };
-        }
-    }
-
+    // ── Abrir/cerrar página rival — usa classList igual que las páginas nativas ──
+    // NO hookear openPage/closePage para no romper la cadena de hooks de otros injectors.
     function openRivalPage() {
         const rival = getNextRivalName();
         if (!rival || rival === '—' || rival === 'Rival amistoso') {
@@ -618,16 +610,26 @@
             return;
         }
         injectPage();
-        window.openPage('rival-analysis');
+        // Usar el sistema nativo de páginas (classList.add/remove 'active')
+        if (window.openPage) {
+            window.openPage('rival-analysis');
+        } else {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const el = document.getElementById('rival-analysis');
+            if (el) el.classList.add('active');
+        }
         buildRivalPage(rival);
     }
     window.openRivalPage = openRivalPage;
+
+    // hookOpenPage: no-op — no tocamos window.openPage/closePage para no romper otros injectors
+    function hookOpenPage() { /* no-op */ }
 
     // ── Init ──────────────────────────────────────────────────────
     function init() {
         if (!window.gameLogic) { setTimeout(init, 400); return; }
         injectPage();
-        hookOpenPage();
+        // hookOpenPage is a no-op — no need to call it
         setTimeout(activateButton, 1500);
         // Re-activar si se recarga la UI
         setTimeout(activateButton, 3000);
