@@ -480,22 +480,30 @@
         const injRed = Math.round((d.injuryReduction || 0) * 100);
         const constructionHTML = renderConstruction(d.construction);
 
-        // Foto del estadio (guardada por admin en gameState.stadiumImage)
+        // Foto del estadio — siempre en proporcion 4:3, object-fit:cover centra sin estirar
         const photoHTML = s.stadiumImage
-            ? `<img src="${s.stadiumImage}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-bottom:4px;">`
-            : `<div style="width:100%;height:80px;background:rgba(255,255,255,.03);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#444;font-size:.8em;">Sin foto del estadio</div>`;
+            ? `<div style="width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden;margin-bottom:4px;">
+                 <img src="${s.stadiumImage}" style="width:100%;height:100%;object-fit:cover;display:block;">
+               </div>`
+            : `<div style="width:100%;aspect-ratio:4/3;background:rgba(255,255,255,.03);border-radius:8px;
+                           display:flex;align-items:center;justify-content:center;color:#444;font-size:.8em;margin-bottom:4px;">
+                 🏟️ Sin foto
+               </div>`;
 
         const tabStadium  = _activeTab === 'stadium';
-        const tabBtnBase  = 'border:none;border-radius:8px 8px 0 0;padding:10px 22px;cursor:pointer;font-weight:bold;font-size:.88em;transition:all .2s;';
+        const tabBtnBase  = 'border:none;border-radius:8px 8px 0 0;padding:10px 18px;cursor:pointer;font-weight:bold;font-size:.85em;transition:all .2s;white-space:nowrap;';
         const tabActiveS  = tabBtnBase + 'background:#FFD700;color:#000;';
         const tabActiveT  = tabBtnBase + 'background:#2196F3;color:#fff;';
         const tabInactive = tabBtnBase + 'background:rgba(255,255,255,.06);color:#666;';
 
+        // Grid responsivo: 2 col en desktop, 1 col en móvil estrecho
+        const gridStyle = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;';
+
         const tabContent = tabStadium
-            ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            ? `<div style="${gridStyle}">
                 ${renderUpgradeList(STADIUM_UPGRADES, 'stadium', d.stadiumDone, d.construction)}
                </div>`
-            : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            : `<div style="${gridStyle}">
                 ${renderUpgradeList(TRAINING_UPGRADES, 'training', d.trainingDone, d.construction)}
                </div>`;
 
@@ -505,31 +513,31 @@
             <button class="page-close-btn" onclick="closePage('facilities')">✖ CERRAR</button>
         </div>
 
-        <!-- RESUMEN + FOTO -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-            <!-- Columna izquierda: stats -->
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.85em;">🏟️ ${s.stadiumName || 'Estadio'}</span>
+        <!-- RESUMEN + FOTO: flex-wrap para que en móvil se apilen -->
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <!-- Stats: crecen para llenar espacio, mínimo 200px -->
+            <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;">
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.83em;">🏟️ ${s.stadiumName || 'Estadio'}</span>
                     <span style="color:#FFD700;font-weight:bold;">${fmt(s.stadiumCapacity)} esp.</span>
                 </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.85em;">👥 Afición</span>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.83em;">👥 Afición</span>
                     <span style="color:#4CAF50;font-weight:bold;">${fmt(s.fanbase)}</span>
                 </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.85em;">🏋️ Entrenamiento</span>
-                    <span style="color:#2196F3;font-weight:bold;">Nivel ${s.trainingLevel || 1}${injRed > 0 ? ' · -'+injRed+'% lesiones' : ''}</span>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.83em;">🏋️ Entrenamiento</span>
+                    <span style="color:#2196F3;font-weight:bold;">Nv.${s.trainingLevel || 1}${injRed > 0 ? ' -'+injRed+'%' : ''}</span>
                 </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.85em;">📊 Popularidad</span>
+                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:.83em;">📊 Popularidad</span>
                     <span style="color:#9C27B0;font-weight:bold;">${s.popularity || 50}/100</span>
                 </div>
             </div>
-            <!-- Columna derecha: foto -->
-            <div>
+            <!-- Foto: ancho fijo 160px en desktop, 100% en móvil -->
+            <div style="flex:0 0 auto;width:clamp(120px,35%,200px);">
                 ${photoHTML}
-                <div style="color:#444;font-size:.72em;text-align:center;">Foto configurable en el panel Admin</div>
+                <div style="color:#444;font-size:.7em;text-align:center;">Admin → foto</div>
             </div>
         </div>
 
@@ -537,11 +545,11 @@
         ${constructionHTML}
 
         <!-- PESTAÑAS -->
-        <div style="display:flex;gap:4px;margin-bottom:0;margin-top:8px;">
+        <div style="display:flex;gap:4px;margin-bottom:0;margin-top:8px;overflow-x:auto;">
             <button style="${tabStadium ? tabActiveS : tabInactive}" onclick="window._facTab('stadium')">🏟️ Estadio</button>
-            <button style="${!tabStadium ? tabActiveT : tabInactive}" onclick="window._facTab('training')">🏋️ Centro Entrenamiento</button>
+            <button style="${!tabStadium ? tabActiveT : tabInactive}" onclick="window._facTab('training')">🏋️ C. Entrenamiento</button>
         </div>
-        <div style="background:rgba(255,255,255,.03);border-radius:0 8px 8px 8px;padding:14px;border:1px solid rgba(255,255,255,.07);">
+        <div style="background:rgba(255,255,255,.03);border-radius:0 8px 8px 8px;padding:12px;border:1px solid rgba(255,255,255,.07);">
             ${tabContent}
         </div>
         `;
