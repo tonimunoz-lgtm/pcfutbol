@@ -583,8 +583,10 @@
         const div = document.createElement('div');
         div.id    = 'rival-analysis';
         div.className = 'page';
-        div.style.display = 'none';
+        // NO poner display:none inline — el CSS .page ya lo hace
+        // y .page.active lo muestra. Inline style sobreescribiría el CSS.
         document.body.appendChild(div);
+        console.log('[Rival] página inyectada en DOM ✓');
     }
 
     // ── Activar el botón "Ver Rival" ──────────────────────────────
@@ -604,18 +606,43 @@
     // ── Abrir/cerrar página rival — usa classList igual que las páginas nativas ──
     // NO hookear openPage/closePage para no romper la cadena de hooks de otros injectors.
     function openRivalPage() {
-        const rival = getNextRivalName();
+        console.log('[Rival] openRivalPage called');
+        const s = gs();
+        console.log('[Rival] state:', s ? `team=${s.team} week=${s.week} nextOpponent=${s.nextOpponent}` : 'NULL');
+        
+        let rival = getNextRivalName();
+        console.log('[Rival] rival detectado:', rival);
+        
+        // Durante pretemporada no hay rival real — buscar el primero del calendario
         if (!rival || rival === '—' || rival === 'Rival amistoso') {
-            alert('No hay rival definido para el próximo partido.');
+            if (s?.seasonCalendar?.length && s.team) {
+                const firstMatch = s.seasonCalendar
+                    .filter(m => m.home === s.team || m.away === s.team)
+                    .sort((a,b) => a.week - b.week)[0];
+                if (firstMatch) {
+                    rival = firstMatch.home === s.team ? firstMatch.away : firstMatch.home;
+                    console.log('[Rival] usando primer rival del calendario:', rival);
+                }
+            }
+        }
+        
+        if (!rival || rival === '—') {
+            alert('No hay rival definido. Simula al menos una semana primero.');
             return;
         }
+        
         injectPage();
-        // Cerrar otras páginas y abrir la rival directamente con classList
-        // NO usamos window.openPage() porque tiene lógica específica por pageId
-        // que puede fallar o disparar efectos secundarios no deseados.
-        document.querySelectorAll('.page.active').forEach(p => p.classList.remove('active'));
+        console.log('[Rival] abriendo página para:', rival);
+        
+        // Cerrar todas las páginas activas y activar la nuestra
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const el = document.getElementById('rival-analysis');
-        if (el) el.classList.add('active');
+        console.log('[Rival] elemento rival-analysis:', el);
+        if (!el) {
+            console.error('[Rival] ERROR: elemento rival-analysis no encontrado tras injectPage');
+            return;
+        }
+        el.classList.add('active');
         buildRivalPage(rival);
     }
     window.openRivalPage = openRivalPage;
