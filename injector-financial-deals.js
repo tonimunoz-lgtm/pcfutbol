@@ -300,39 +300,40 @@
         mList.prepend(div);
     }
 
-    // Hook en competitions para detectar victorias
-    function hookCompetitionsForPrizes() {
-        // Observar addNews de gameLogic para detectar victorias
-        if (!gl()) { setTimeout(hookCompetitionsForPrizes, 500); return; }
-        const origAddNews = gl().addNews?.bind(gl());
-        if (!origAddNews || window._fdNewsHooked) return;
-        window._fdNewsHooked = true;
+    // hookCompetitionsForPrizes: no podemos hookear gl().addNews (modulo ES read-only).
+    // En su lugar, revisamos el newsFeed del estado despues de cada semana simulada.
+    // La deteccion se hace en checkPrizesFromNews(), llamada desde hookSimWeek.
+    function hookCompetitionsForPrizes() { /* no-op — deteccion via newsFeed en simulateWeek */ }
 
-        gl().addNews = function(msg, type, ...rest) {
-            origAddNews(msg, type, ...rest);
+    let _lastCheckedNewsIdx = 0;
+    function checkPrizesFromNews() {
+        const s = gs();
+        if (!s?.newsFeed) return;
+        const feed = s.newsFeed;
+        // Solo procesar noticias nuevas desde la ultima vez
+        const toCheck = feed.slice(0, Math.max(0, feed.length - _lastCheckedNewsIdx));
+        _lastCheckedNewsIdx = feed.length;
+        toCheck.forEach(item => {
+            const msg  = item.message || '';
+            const type = item.type    || '';
             if (type !== 'success') return;
-            // Liga
-            const s = gs();
-            if (!s) return;
-            if (msg.includes('¡Ascendemos') && s.division === 'primera') awardPrize('liga_primera');
-            if (msg.includes('campeones') && s.division === 'primera') awardPrize('liga_primera');
-            if (msg.includes('campeones') && s.division === 'segunda') awardPrize('liga_segunda');
-            if (msg.includes('campeones') && (s.division === 'rfef_grupo1' || s.division === 'rfef_grupo2')) awardPrize('liga_rfef');
-            // Copa
-            if (msg.includes('CAMPEONES DE LA COPA')) awardPrize('copa_champion');
-            // Europa
-            if (msg.includes('CAMPEONES DE LA CHAMPIONS') || msg.includes('Champions League') && msg.includes('¡¡CAMPEONES')) awardPrize('champions_win');
-            if (msg.includes('CAMPEONES DE LA EUROPA') || msg.includes('Europa League') && msg.includes('¡¡CAMPEONES')) awardPrize('europa_win');
-            if (msg.includes('Conference League') && msg.includes('¡¡CAMPEONES')) awardPrize('conference_win');
-            // Premios por fase Europa (solo una vez por fase)
-            if (msg.includes('Champions League') && msg.includes('Fase de grupos')) awardPrize('champions_groups');
-            if (msg.includes('Champions League') && msg.includes('Octavos')) awardPrize('champions_round16');
-            if (msg.includes('Champions League') && msg.includes('Cuartos')) awardPrize('champions_quarters');
-            if (msg.includes('Champions League') && msg.includes('Semifinales')) awardPrize('champions_semis');
-            if (msg.includes('Europa League') && msg.includes('grupos')) awardPrize('europa_groups');
-            if (msg.includes('Europa League') && msg.includes('Octavos')) awardPrize('europa_round16');
-            if (msg.includes('Conference League') && msg.includes('grupos')) awardPrize('conference_groups');
-        };
+            const div = s.division || '';
+            if (msg.includes('campeones') && div === 'primera')                                  awardPrize('liga_primera');
+            if (msg.includes('campeones') && div === 'segunda')                                  awardPrize('liga_segunda');
+            if (msg.includes('campeones') && (div === 'rfef_grupo1' || div === 'rfef_grupo2'))   awardPrize('liga_rfef');
+            if (msg.includes('Ascendemos') && div === 'primera')                                 awardPrize('liga_primera');
+            if (msg.includes('CAMPEONES DE LA COPA'))                                            awardPrize('copa_champion');
+            if ((msg.includes('CAMPEONES DE LA CHAMPIONS') || msg.includes('Champions League') && msg.includes('CAMPEONES'))) awardPrize('champions_win');
+            if ((msg.includes('CAMPEONES DE LA EUROPA')   || msg.includes('Europa League')      && msg.includes('CAMPEONES'))) awardPrize('europa_win');
+            if (msg.includes('Conference League')         && msg.includes('CAMPEONES'))          awardPrize('conference_win');
+            if (msg.includes('Champions League')          && msg.includes('Fase de grupos'))     awardPrize('champions_groups');
+            if (msg.includes('Champions League')          && msg.includes('Octavos'))            awardPrize('champions_round16');
+            if (msg.includes('Champions League')          && msg.includes('Cuartos'))            awardPrize('champions_quarters');
+            if (msg.includes('Champions League')          && msg.includes('Semifinales'))        awardPrize('champions_semis');
+            if (msg.includes('Europa League')             && msg.includes('grupos'))             awardPrize('europa_groups');
+            if (msg.includes('Europa League')             && msg.includes('Octavos'))            awardPrize('europa_round16');
+            if (msg.includes('Conference League')         && msg.includes('grupos'))             awardPrize('conference_groups');
+        });
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -854,6 +855,7 @@
             consumeBonus();
 
             processLoanPayments();
+            checkPrizesFromNews();
             recalcWeekly();
             if (window._financeRefresh) window._financeRefresh();
             refreshUI();
