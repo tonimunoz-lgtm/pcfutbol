@@ -336,6 +336,128 @@
     }
 
     // ─────────────────────────────────────────────────────────────
+    // EMPRESAS REALES — DERECHOS TV Y PATROCINADORES
+    // ─────────────────────────────────────────────────────────────
+
+    // Empresas de derechos TV (por tier según división)
+    const TV_COMPANIES = {
+        primera: [
+            { name: 'Movistar+',       logo: '📡' },
+            { name: 'DAZN',            logo: '🎬' },
+            { name: 'Amazon Prime Video', logo: '📦' },
+            { name: 'Orange TV',       logo: '🟠' },
+            { name: 'Telefónica',      logo: '📡' },
+            { name: 'Vodafone TV',     logo: '🔴' },
+            { name: 'Mediapro / GOL',  logo: '⚽' },
+            { name: 'beIN Sports',     logo: '📺' },
+            { name: 'Rakuten TV',      logo: '🛒' },
+            { name: 'Mediaset España', logo: '📺' },
+        ],
+        segunda: [
+            { name: 'Movistar+',       logo: '📡' },
+            { name: 'DAZN',            logo: '🎬' },
+            { name: 'Orange TV',       logo: '🟠' },
+            { name: 'Vodafone TV',     logo: '🔴' },
+            { name: 'GOL Internacional', logo: '⚽' },
+            { name: 'Mediapro',        logo: '🎥' },
+            { name: 'TEN (Eleven Sports)', logo: '📺' },
+            { name: 'YouTube Sports ES', logo: '▶️' },
+            { name: 'Telefoot',        logo: '🇫🇷' },
+            { name: 'Eurosport',       logo: '🏆' },
+        ],
+        rfef: [
+            { name: 'GOL Internacional', logo: '⚽' },
+            { name: 'YouTube Sports ES', logo: '▶️' },
+            { name: 'Canal Sur',       logo: '🌞' },
+            { name: 'Aragón TV',       logo: '🦁' },
+            { name: 'TVG Galicia',     logo: '🟢' },
+            { name: 'TV3 Catalunya',   logo: '🔴' },
+            { name: 'Telemadrid',      logo: '🏙️' },
+            { name: 'À Punt (CV)',     logo: '🌊' },
+            { name: 'ETB Euskadi',     logo: '🏔️' },
+            { name: 'TPA Asturias',    logo: '⛏️' },
+            { name: '7 TV Región Murcia', logo: '☀️' },
+            { name: 'Canal Extremadura', logo: '🌿' },
+            { name: 'IB3 Baleares',    logo: '🏝️' },
+            { name: 'RTVC Canarias',   logo: '🌋' },
+            { name: 'Sportium TV',     logo: '📊' },
+        ],
+    };
+
+    // Empresas patrocinadoras (por tier)
+    const SPONSOR_COMPANIES = {
+        primera: [
+            { name: 'Banco Santander',   sector: 'Banca' },
+            { name: 'CaixaBank',         sector: 'Banca' },
+            { name: 'BBVA',              sector: 'Banca' },
+            { name: 'Iberdrola',         sector: 'Energía' },
+            { name: 'Repsol',            sector: 'Energía' },
+            { name: 'Moeve (Cepsa)',     sector: 'Energía' },
+            { name: 'Emirates',          sector: 'Aviación' },
+            { name: 'Iberia',            sector: 'Aviación' },
+            { name: 'Coca-Cola',         sector: 'Bebidas' },
+            { name: 'Heineken',          sector: 'Cervezas' },
+            { name: 'Estrella Damm',     sector: 'Cervezas' },
+            { name: 'Red Bull',          sector: 'Bebidas' },
+            { name: 'Adidas',            sector: 'Deportes' },
+            { name: 'Nike',              sector: 'Deportes' },
+            { name: 'Puma',              sector: 'Deportes' },
+            { name: 'Rakuten',           sector: 'E-commerce' },
+            { name: 'Amazon',            sector: 'Tecnología' },
+            { name: 'Visa',              sector: 'Finanzas' },
+            { name: 'Mastercard',        sector: 'Finanzas' },
+            { name: 'Mapfre',            sector: 'Seguros' },
+        ],
+        segunda: [
+            { name: 'Mahou',             sector: 'Cervezas' },
+            { name: 'Estrella Galicia',  sector: 'Cervezas' },
+            { name: 'Halcón Viajes',     sector: 'Turismo' },
+            { name: 'Renfe',             sector: 'Transporte' },
+            { name: 'DIGI',              sector: 'Telecos' },
+            { name: 'Finetwork',         sector: 'Telecos' },
+            { name: 'Luckia',            sector: 'Apuestas' },
+            { name: 'Codere',            sector: 'Apuestas' },
+            { name: 'Endesa',            sector: 'Energía' },
+            { name: 'Naturgy',           sector: 'Energía' },
+            { name: 'El Corte Inglés',   sector: 'Retail' },
+            { name: 'Mercadona',         sector: 'Retail' },
+            { name: 'La Roche-Posay',    sector: 'Cosmética' },
+            { name: 'ASISA',             sector: 'Salud' },
+            { name: 'Sanitas',           sector: 'Salud' },
+        ],
+        rfef: [
+            { name: 'Mahou',             sector: 'Cervezas' },
+            { name: 'Estrella Galicia',  sector: 'Cervezas' },
+            { name: 'DIGI',              sector: 'Telecos' },
+            { name: 'Petronor',          sector: 'Energía' },
+            { name: 'Codere',            sector: 'Apuestas' },
+            { name: 'Luckia',            sector: 'Apuestas' },
+            { name: 'Sportradar',        sector: 'Datos' },
+            { name: 'Globo Energía',     sector: 'Energía' },
+            { name: 'Joma',              sector: 'Deportes' },
+            { name: 'Hummel',            sector: 'Deportes' },
+            { name: 'Panini',            sector: 'Coleccionismo' },
+            { name: 'Halcón Viajes',     sector: 'Turismo' },
+            { name: 'Vitruvian Sport',   sector: 'Nutrición' },
+            { name: 'Diputación Local',  sector: 'Institucional' },
+            { name: 'Caja Rural',        sector: 'Banca' },
+        ],
+    };
+
+    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function getTvCompanies(div) {
+        if (div === 'primera') return TV_COMPANIES.primera;
+        if (div === 'segunda') return TV_COMPANIES.segunda;
+        return TV_COMPANIES.rfef;
+    }
+    function getSponsorCompanies(div) {
+        if (div === 'primera') return SPONSOR_COMPANIES.primera;
+        if (div === 'segunda') return SPONSOR_COMPANIES.segunda;
+        return SPONSOR_COMPANIES.rfef;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // GENERADOR DE OFERTAS COMERCIALES
     // ─────────────────────────────────────────────────────────────
     function generateOffers() {
@@ -349,15 +471,33 @@
         const rnd     = () => 0.82 + Math.random() * 0.36;
         const r100k   = v => Math.round(v / 100_000) * 100_000;
         const r50k    = v => Math.round(v / 50_000)  * 50_000;
+
+        const tvCos      = getTvCompanies(div);
+        const sponsorCos = getSponsorCompanies(div);
+
+        // Seleccionar 3 empresas diferentes para cada tipo
+        const usedTv = new Set();
+        const usedSp = new Set();
+        const pickTv = () => {
+            let c; do { c = pickRandom(tvCos); } while (usedTv.has(c.name) && usedTv.size < tvCos.length);
+            usedTv.add(c.name); return c;
+        };
+        const pickSp = () => {
+            let c; do { c = pickRandom(sponsorCos); } while (usedSp.has(c.name) && usedSp.size < sponsorCos.length);
+            usedSp.add(c.name); return c;
+        };
+
         return {
-            sponsorOffers: [1, 2, 3].map(y => ({
-                type: 'sponsor', years: y,
-                annualAmount: r50k(base.sponsor * mult * rnd())
-            })),
-            tvOffers: [1, 2, 3].map(y => ({
-                type: 'tv', years: y,
-                annualAmount: r100k(base.tv * mult * rnd())
-            })),
+            sponsorOffers: [1, 2, 3].map(y => {
+                const co = pickSp();
+                return { type: 'sponsor', years: y, company: co.name, sector: co.sector,
+                         annualAmount: r50k(base.sponsor * mult * rnd()) };
+            }),
+            tvOffers: [1, 2, 3].map(y => {
+                const co = pickTv();
+                return { type: 'tv', years: y, company: co.name, logo: co.logo,
+                         annualAmount: r100k(base.tv * mult * rnd()) };
+            }),
         };
     }
 
@@ -425,11 +565,12 @@
         const offer = arr?.[idx];
         if (!offer) return;
         const deal = { active:true, annualAmount:offer.annualAmount,
-                        years:offer.years, yearsLeft:offer.years, season:s.currentSeason };
+                        years:offer.years, yearsLeft:offer.years, season:s.currentSeason,
+                        company: offer.company || '', sector: offer.sector || '', logo: offer.logo || '' };
         if (type === 'sponsor') { d.sponsorDeal = deal; d.pendingOffers = {...d.pendingOffers, sponsorOffers:null};
-            news(`📣 Patrocinio firmado: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
+            news(`📣 Patrocinio firmado con ${offer.company}: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
         else { d.tvDeal = deal; d.pendingOffers = {...d.pendingOffers, tvOffers:null};
-            news(`📺 Derechos TV firmados: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
+            news(`📺 Derechos TV firmados con ${offer.company}: ${fmt(offer.annualAmount)}€/año · ${offer.years} temp.`, 'success'); }
         if (!d.pendingOffers.sponsorOffers && !d.pendingOffers.tvOffers) d.pendingOffers = null;
         saveD(d); recalcWeekly();
         if (window._financeRefresh) window._financeRefresh();
@@ -469,8 +610,10 @@
                             border-radius:10px;padding:11px;display:flex;justify-content:space-between;
                             align-items:center;margin-bottom:7px;">
                   <div>
-                    <div style="color:#4CAF50;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
-                    <div style="color:#888;font-size:.8em;">${o.years} temp. · Total: ${fmt(o.annualAmount*o.years)}€</div>
+                    <div style="color:#4CAF50;font-weight:bold;font-size:1em;">🏢 ${o.company || 'Empresa desconocida'}</div>
+                    <div style="color:#aaa;font-size:.78em;margin:2px 0 4px;">${o.sector ? '(' + o.sector + ')' : ''}</div>
+                    <div style="color:#4CAF50;">${fmt(o.annualAmount)}€/año · ${o.years} temp.</div>
+                    <div style="color:#666;font-size:.78em;">Total contrato: ${fmt(o.annualAmount*o.years)}€</div>
                   </div>
                   <button onclick="window._fdAccept('sponsor',${i})"
                     style="background:#4CAF50;color:#fff;border:none;border-radius:8px;
@@ -486,11 +629,11 @@
             html += `<div style="background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.2);
                         border-radius:10px;padding:12px;margin-bottom:18px;">
               <div style="display:flex;justify-content:space-between;">
-                <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
+                <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo${d.sponsorDeal.company ? ' — ' + d.sponsorDeal.company : ''}</span>
                 <span style="color:#4CAF50;">${fmt(d.sponsorDeal.annualAmount)}€/año</span>
               </div>
               <div style="color:#777;font-size:.8em;margin-top:3px;">
-                ${d.sponsorDeal.yearsLeft} temp. restante${d.sponsorDeal.yearsLeft!==1?'s':''}
+                ${d.sponsorDeal.yearsLeft} temp. restante${d.sponsorDeal.yearsLeft!==1?'s':''}${d.sponsorDeal.sector ? ' · ' + d.sponsorDeal.sector : ''}
               </div>
             </div>`;
         } else {
@@ -509,8 +652,9 @@
                             border-radius:10px;padding:11px;display:flex;justify-content:space-between;
                             align-items:center;margin-bottom:7px;">
                   <div>
-                    <div style="color:#2196F3;font-weight:bold;">${fmt(o.annualAmount)}€/año</div>
-                    <div style="color:#888;font-size:.8em;">${o.years} temp. · Total: ${fmt(o.annualAmount*o.years)}€</div>
+                    <div style="color:#2196F3;font-weight:bold;font-size:1em;">${o.logo || '📺'} ${o.company || 'Cadena desconocida'}</div>
+                    <div style="color:#2196F3;margin-top:4px;">${fmt(o.annualAmount)}€/año · ${o.years} temp.</div>
+                    <div style="color:#666;font-size:.78em;">Total contrato: ${fmt(o.annualAmount*o.years)}€</div>
                   </div>
                   <button onclick="window._fdAccept('tv',${i})"
                     style="background:#2196F3;color:#fff;border:none;border-radius:8px;
@@ -526,7 +670,7 @@
             html += `<div style="background:rgba(33,150,243,.06);border:1px solid rgba(33,150,243,.2);
                         border-radius:10px;padding:12px;margin-bottom:18px;">
               <div style="display:flex;justify-content:space-between;">
-                <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
+                <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos${d.tvDeal.company ? ' — ' + d.tvDeal.company : ''}</span>
                 <span style="color:#2196F3;">${fmt(d.tvDeal.annualAmount)}€/año</span>
               </div>
               <div style="color:#777;font-size:.8em;margin-top:3px;">
@@ -724,11 +868,11 @@
                 h += `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);
                           border-radius:10px;padding:12px;margin-bottom:10px;">
                   <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#4CAF50;font-weight:bold;">📣 Patrocinio activo</span>
+                    <span style="color:#4CAF50;font-weight:bold;">📣 ${ds.company ? ds.company : 'Patrocinio activo'}</span>
                     <span style="color:#4CAF50;font-weight:bold;">${fmt(ds.annualAmount)}€/año</span>
                   </div>
                   <div style="color:#777;font-size:.8em;margin-top:4px;">
-                    ${ds.yearsLeft} temp. restante${ds.yearsLeft!==1?'s':''} · ~${fmt(Math.round(ds.annualAmount/38))}€/sem
+                    ${ds.sector ? ds.sector + ' · ' : ''}${ds.yearsLeft} temp. restante${ds.yearsLeft!==1?'s':''} · ~${fmt(Math.round(ds.annualAmount/38))}€/sem
                   </div>
                 </div>`;
             } else {
@@ -739,7 +883,7 @@
                 h += `<div style="background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.25);
                           border-radius:10px;padding:12px;margin-bottom:10px;">
                   <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#2196F3;font-weight:bold;">📺 Derechos TV activos</span>
+                    <span style="color:#2196F3;font-weight:bold;">📺 ${dt.company ? dt.company : 'Derechos TV activos'}</span>
                     <span style="color:#2196F3;font-weight:bold;">${fmt(dt.annualAmount)}€/año</span>
                   </div>
                   <div style="color:#777;font-size:.8em;margin-top:4px;">
