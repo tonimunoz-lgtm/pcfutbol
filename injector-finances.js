@@ -105,15 +105,26 @@
         const merchInc = home ? items * stateBefore.merchandisingPrice : 0;
         const baseInc  = stateBefore.weeklyIncomeBase || 5000;
         const totalInc = ticketInc + merchInc + baseInc;
-        // Gastos: tomar los salarios del estado ANTES (antes de posibles cambios)
-        const totalExp = stateBefore.weeklyExpenses || 0;
+
+        // Gastos completos: salarios + staff + cuotas de prestamos + prima jugadores
+        const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0);
+        const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
+                               .reduce((s, x) => s + (x.salary || 0), 0);
+        const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
+        const bonusPay = stateBefore.fd_bonus       || 0;  // prima prometida (FinDeals)
+        const totalExp = salaries + staffSal + loanPay + bonusPay;
         const net      = totalInc - totalExp;
 
-        const lastWeek = { week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
-                           ticketInc, merchInc, baseInc, totalInc, totalExp, net };
+        const lastWeek = {
+            week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
+            ticketInc, merchInc, baseInc, totalInc,
+            totalExp, expSalaries: salaries, expStaff: staffSal,
+            expLoans: loanPay, expBonus: bonusPay,
+            net
+        };
 
         saveState({ balance: state.balance + net, lastWeekFinance: lastWeek });
-        console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} → +${fmt(totalInc)} -${fmt(totalExp)} = ${fmt(net)}€`);
+        console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} -> +${fmt(totalInc)} -${fmt(totalExp)} (sal:${fmt(salaries)} staff:${fmt(staffSal)} loan:${fmt(loanPay)} bonus:${fmt(bonusPay)}) = ${fmt(net)}`);
     }
 
     // ── Cambio de temporada ──────────────────────────────────────
@@ -406,8 +417,12 @@
             <tr style="border-top:1px solid #333;">
                 <td style="padding:6px 4px;font-weight:bold;">Total ingresos reales</td>
                 <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_lTotI">—</td><td></td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios pagados</td>
+            <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios plantilla + staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lExp">—</td><td></td></tr>
+            <tr id="fin_lLoanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;" id="fin_lLoanExp">—</td><td></td></tr>
+            <tr id="fin_lBonusRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">💰 Prima jugadores</td>
+                <td style="text-align:right;color:#f44336;" id="fin_lBonusExp">—</td><td></td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Resultado neto</td>
                 <td style="text-align:right;font-weight:bold;" id="fin_lNet">—</td><td></td></tr>
@@ -471,6 +486,9 @@
             <tr><td style="padding:6px 4px;color:#aaa;">👔 Salarios staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_sSal">0€/sem</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_sCnt">—</td></tr>
+            <tr id="fin_loanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;" id="fin_loanExp">0€/sem</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_loanCnt">—</td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Total</td>
                 <td style="text-align:right;font-weight:bold;color:#f44336;" id="fin_totExp">0€/sem</td><td></td></tr>
@@ -531,7 +549,7 @@
         const mI  = isAway ? 0 : its * mp;
         const bI  = state.weeklyIncomeBase || 5000;
         const totI= tI + mI + bI;
-        const totE= state.weeklyExpenses || 0;
+        const totE= (state.weeklyExpenses || 0) + (state.fd_loanPayment || 0);
         const net = totI - totE;
 
         setText('fin_pTicket',  fmt(tI) + '€',   isAway ? '#aaa' : '#4CAF50');
@@ -569,7 +587,15 @@
             setText('fin_lMerchD',  lw.home ? `— ${fmt(lw.items)} uds vendidas` : '— Partido visitante');
             setText('fin_lBase',    fmt(lw.baseInc) + '€', '#4CAF50');
             setText('fin_lTotI',    fmt(lw.totalInc) + '€', '#4CAF50');
-            setText('fin_lExp',     fmt(lw.totalExp) + '€', '#f44336');
+            // Gastos desglosados
+            const expSal = (lw.expSalaries || 0) + (lw.expStaff || 0);
+            setText('fin_lExp',     fmt(expSal > 0 ? expSal : lw.totalExp) + '€', '#f44336');
+            const lLoanRow = document.getElementById('fin_lLoanRow');
+            if (lLoanRow) lLoanRow.style.display = (lw.expLoans || 0) > 0 ? '' : 'none';
+            setText('fin_lLoanExp', fmt(lw.expLoans || 0) + '€', '#f44336');
+            const lBonusRow = document.getElementById('fin_lBonusRow');
+            if (lBonusRow) lBonusRow.style.display = (lw.expBonus || 0) > 0 ? '' : 'none';
+            setText('fin_lBonusExp', fmt(lw.expBonus || 0) + '€', '#f44336');
             setText('fin_lNet',     (lw.net >= 0 ? '+' : '') + fmt(lw.net) + '€', lw.net >= 0 ? '#4CAF50' : '#f44336');
         } else {
             setText('fin_lastLabel', '(sin jornadas jugadas todavía)');
@@ -589,7 +615,8 @@
         const pS     = state.squad.reduce((s, p) => s + (p.salary || 0), 0);
         const sArr   = Object.values(state.staff).filter(Boolean);
         const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
-        const totE   = pS + stS;
+        const loanE  = state.fd_loanPayment || 0;
+        const totE   = pS + stS + loanE;
         const projN  = projI - totE;
 
         const nLabel = home === true ? '🏟️ LOCAL' : home === false ? '✈️ VISITANTE' : '—';
@@ -616,7 +643,14 @@
         setText('fin_pCnt',  `— ${state.squad.length} jugadores`);
         setText('fin_sSal',  fmt(stS) + '€/sem', '#f44336');
         setText('fin_sCnt',  `— ${sArr.length} miembro${sArr.length !== 1 ? 's' : ''}`);
-        setText('fin_totExp',fmt(totE)+ '€/sem', '#f44336');
+        // Cuotas préstamos
+        const loanRow = document.getElementById('fin_loanRow');
+        if (loanRow) loanRow.style.display = loanE > 0 ? '' : 'none';
+        setText('fin_loanExp', fmt(loanE) + '€/sem', '#f44336');
+        const fd = window.FinDeals ? null : null; // acceso via state
+        const activeLoans = (state.fd_loans || []).filter(l => l.weeksLeft > 0);
+        setText('fin_loanCnt', `— ${activeLoans.length} préstamo${activeLoans.length !== 1 ? 's' : ''}`);
+        setText('fin_totExp', fmt(totE) + '€/sem', '#f44336');
 
         // ── Mercado (fuente: acumulados de gameLogic) ────────────
         const pur  = state.playerPurchases     || 0;
