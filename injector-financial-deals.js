@@ -152,30 +152,15 @@
     }
 
     // Añadir / actualizar filas de cuotas y prima en Gastos Recurrentes (Caja)
+    // NOTA: injector-finances.js ya maneja fin_loanRow y fin_totExp con los datos correctos.
+    // Esta función solo actualiza la fila de prima (fd-fin-bonusrow), que es exclusiva de este módulo.
     function addLoanRowToFinances() {
-        const staffRow = document.getElementById('fin_sSal')?.closest('tr');
-        if (!staffRow) return;
-        const totRow  = document.getElementById('fin_totExp')?.closest('tr');
+        const totRow = document.getElementById('fin_totExp')?.closest('tr');
         if (!totRow) return;
         const d = getD();
 
-        // ── Fila cuotas préstamos (insertar antes del Total) ──────
-        let loanRow = document.getElementById('fd-fin-loanrow');
-        if (!loanRow) {
-            loanRow = document.createElement('tr');
-            loanRow.id = 'fd-fin-loanrow';
-            totRow.before(loanRow);
-        }
-        const activeLoans = d.loans.filter(l => l.weeksLeft > 0);
-        if (activeLoans.length) {
-            const lTotal = activeLoans.reduce((s, l) => s + l.weeklyPayment, 0);
-            loanRow.innerHTML = `
-                <td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
-                <td style="text-align:right;color:#f44336;">${fmt(lTotal)}€/sem</td>
-                <td style="padding-left:14px;color:#666;font-size:.82em;">— ${activeLoans.length} préstamo${activeLoans.length!==1?'s':''}</td>`;
-        } else {
-            loanRow.innerHTML = '';
-        }
+        // Eliminar fila duplicada si existía de versiones anteriores
+        document.getElementById('fd-fin-loanrow')?.remove();
 
         // ── Fila prima activa (insertar antes del Total) ──────────
         let bonusRow = document.getElementById('fd-fin-bonusrow');
@@ -192,16 +177,6 @@
         } else {
             bonusRow.innerHTML = '';
         }
-
-        // ── Actualizar Total incluyendo cuotas (sobreescribir el valor de finances) ──
-        const s = gs();
-        const salaries  = (s?.squad  || []).reduce((sum, p) => sum + (p.salary || 0), 0);
-        const staffSal  = Object.values(s?.staff  || {}).filter(Boolean)
-                                .reduce((sum, x) => sum + (x.salary || 0), 0);
-        const loanPay   = activeLoans.reduce((sum, l) => sum + l.weeklyPayment, 0);
-        const realTotal = salaries + staffSal + loanPay;
-        const totEl = document.getElementById('fin_totExp');
-        if (totEl) totEl.textContent = fmt(realTotal) + '€/sem';
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1029,36 +1004,7 @@
             addLoanRowToFinances();
         }, 2500);
 
-        // Interceptar textContent de fin_totExp y fin_pExp para sumar cuotas
-    function patchTotExpElement() {
-        const el = document.getElementById('fin_totExp');
-        if (!el) { setTimeout(patchTotExpElement, 500); return; }
-        if (el._fdPatched) return;
-        el._fdPatched = true;
-        Object.defineProperty(el, 'textContent', {
-            set(val) {
-                // val viene como "160.000€/sem" — extraer número y sumar cuotas
-                const d = getD();
-                const loanPay = d.loans.filter(l => l.weeksLeft > 0)
-                                       .reduce((sum, l) => sum + l.weeklyPayment, 0);
-                if (loanPay > 0) {
-                    const base = parseInt(val.replace(/[^0-9]/g, '')) || 0;
-                    const real = base + loanPay;
-                    el.__proto__.__lookupSetter__('textContent').call(el, fmt(real) + '€/sem');
-                } else {
-                    el.__proto__.__lookupSetter__('textContent').call(el, val);
-                }
-            },
-            get() {
-                return el.__proto__.__lookupGetter__('textContent').call(el);
-            },
-            configurable: true
-        });
-        console.log('[FinDeals] fin_totExp interceptado ✓');
-    }
-    setTimeout(patchTotExpElement, 1000);
-
-    window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
+        window.FinDeals = { requestLoan, acceptOffer, rejectOffer, showOffersModal, awardPrize, refreshUI };
         console.log('[FinDeals] ✅ v3.0 listo');
     }
 
