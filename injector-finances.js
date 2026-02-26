@@ -105,15 +105,26 @@
         const merchInc = home ? items * stateBefore.merchandisingPrice : 0;
         const baseInc  = stateBefore.weeklyIncomeBase || 5000;
         const totalInc = ticketInc + merchInc + baseInc;
-        // Gastos: tomar los salarios del estado ANTES (antes de posibles cambios)
-        const totalExp = stateBefore.weeklyExpenses || 0;
+
+        // Gastos completos: salarios + staff + cuotas de prestamos + prima jugadores
+        const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0);
+        const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
+                               .reduce((s, x) => s + (x.salary || 0), 0);
+        const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
+        const bonusPay = stateBefore.fd_bonus       || 0;  // prima prometida (FinDeals)
+        const totalExp = salaries + staffSal + loanPay + bonusPay;
         const net      = totalInc - totalExp;
 
-        const lastWeek = { week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
-                           ticketInc, merchInc, baseInc, totalInc, totalExp, net };
+        const lastWeek = {
+            week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
+            ticketInc, merchInc, baseInc, totalInc,
+            totalExp, expSalaries: salaries, expStaff: staffSal,
+            expLoans: loanPay, expBonus: bonusPay,
+            net
+        };
 
         saveState({ balance: state.balance + net, lastWeekFinance: lastWeek });
-        console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} → +${fmt(totalInc)} -${fmt(totalExp)} = ${fmt(net)}€`);
+        console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} -> +${fmt(totalInc)} -${fmt(totalExp)} (sal:${fmt(salaries)} staff:${fmt(staffSal)} loan:${fmt(loanPay)} bonus:${fmt(bonusPay)}) = ${fmt(net)}`);
     }
 
     // ── Cambio de temporada ──────────────────────────────────────
@@ -406,12 +417,63 @@
             <tr style="border-top:1px solid #333;">
                 <td style="padding:6px 4px;font-weight:bold;">Total ingresos reales</td>
                 <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_lTotI">—</td><td></td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios pagados</td>
+            <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios plantilla + staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lExp">—</td><td></td></tr>
+            <tr id="fin_lLoanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;" id="fin_lLoanExp">—</td><td></td></tr>
+            <tr id="fin_lBonusRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">💰 Prima jugadores</td>
+                <td style="text-align:right;color:#f44336;" id="fin_lBonusExp">—</td><td></td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Resultado neto</td>
                 <td style="text-align:right;font-weight:bold;" id="fin_lNet">—</td><td></td></tr>
         </table>
+
+        <!-- PROYECCIÓN PRÓXIMA JORNADA — solo estimación visual -->
+        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
+            🔮 Proyección próxima jornada <span id="fin_nextLabel" style="font-weight:normal;font-size:.85em;"></span>
+        </h2>
+        <div id="fin_awayWarning" style="display:none;padding:6px 4px 10px;color:#f5a623;font-size:.85em;">
+            ✈️ Partido visitante — sin ingresos de taquilla ni merchandising
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
+            <tr><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla estimada</td>
+                <td style="text-align:right;min-width:90px;" id="fin_pTicket">0€</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_pTicketD">—</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">🛍️ Merchandising estimado</td>
+                <td style="text-align:right;" id="fin_pMerch">0€</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_pMerchD">—</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV / patrocinios</td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_pBase">0€</td><td></td></tr>
+            <tr style="border-top:1px solid #2a2a2a;">
+                <td style="padding:6px 4px;font-weight:bold;">Total estimado</td>
+                <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_pTotI">0€</td><td></td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">💸 Gastos recurrentes/sem</td>
+                <td style="text-align:right;color:#f44336;" id="fin_pExp">0€</td><td></td></tr>
+            <tr style="border-top:1px solid #2a2a2a;">
+                <td style="padding:8px 4px;font-weight:bold;">Resultado estimado</td>
+                <td style="text-align:right;font-weight:bold;" id="fin_pNet">0€</td><td></td></tr>
+        </table>
+        <!-- Sliders → solo afectan a la proyección de arriba, NUNCA al balance -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 22px;">
+            <div style="background:rgba(255,255,255,.04);padding:12px;border-radius:8px;">
+                <div style="font-size:.85em;color:#aaa;margin-bottom:6px;">
+                    Precio Entrada: <strong id="fin_tpVal">0€</strong>
+                    <span style="color:#555;font-size:.78em;"> — aplica próx. jornada local</span>
+                </div>
+                <input type="range" id="fin_tpSlider" min="5" max="100" value="20" style="width:100%;cursor:pointer;"
+                    oninput="document.getElementById('fin_tpVal').textContent=this.value+'€';window._financePreviewProj('ticket',this.value);"
+                    onchange="window.setTicketPriceFromSlider&&window.setTicketPriceFromSlider(this.value);">
+            </div>
+            <div style="background:rgba(255,255,255,.04);padding:12px;border-radius:8px;">
+                <div style="font-size:.85em;color:#aaa;margin-bottom:6px;">
+                    Precio Merch: <strong id="fin_mpVal">0€</strong>
+                    <span style="color:#555;font-size:.78em;"> — aplica próx. jornada local</span>
+                </div>
+                <input type="range" id="fin_mpSlider" min="1" max="50" value="10" style="width:100%;cursor:pointer;"
+                    oninput="document.getElementById('fin_mpVal').textContent=this.value+'€';window._financePreviewProj('merch',this.value);"
+                    onchange="window.setMerchandisingPriceFromSlider&&window.setMerchandisingPriceFromSlider(this.value);">
+            </div>
+        </div>
 
         <!-- GASTOS RECURRENTES -->
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
@@ -424,6 +486,9 @@
             <tr><td style="padding:6px 4px;color:#aaa;">👔 Salarios staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_sSal">0€/sem</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_sCnt">—</td></tr>
+            <tr id="fin_loanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
+                <td style="text-align:right;color:#f44336;" id="fin_loanExp">0€/sem</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_loanCnt">—</td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Total</td>
                 <td style="text-align:right;font-weight:bold;color:#f44336;" id="fin_totExp">0€/sem</td><td></td></tr>
@@ -468,6 +533,35 @@
         console.log('[Finances] Panel construido ✓');
     }
 
+    // ── Preview proyección (slider oninput) ──────────────────────
+    // SOLO actualiza la sección Proyección — no toca Última Jornada
+    window._financePreviewProj = function (type, value) {
+        const state = gs();
+        if (!state) return;
+        value = parseInt(value);
+        const home   = isNextMatchHome();
+        const isAway = home === false;
+        const tp = type === 'ticket' ? value : parseInt(document.getElementById('fin_tpSlider')?.value || state.ticketPrice);
+        const mp = type === 'merch'  ? value : parseInt(document.getElementById('fin_mpSlider')?.value  || state.merchandisingPrice);
+        const att = computeAttendance(state, tp);
+        const tI  = isAway ? 0 : Math.floor(tp * att);
+        const its = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
+        const mI  = isAway ? 0 : its * mp;
+        const bI  = state.weeklyIncomeBase || 5000;
+        const totI= tI + mI + bI;
+        const totE= (state.weeklyExpenses || 0) + (state.fd_loanPayment || 0);
+        const net = totI - totE;
+
+        setText('fin_pTicket',  fmt(tI) + '€',   isAway ? '#aaa' : '#4CAF50');
+        setText('fin_pTicketD', isAway ? '— Visitante' : `— ${fmt(att)} espect. x ${tp}€`);
+        setText('fin_pMerch',   fmt(mI) + '€',   isAway ? '#aaa' : '#4CAF50');
+        setText('fin_pMerchD',  isAway ? '— Visitante' : `— ${fmt(its)} uds x ${mp}€`);
+        setText('fin_pBase',    fmt(bI) + '€',   '#4CAF50');
+        setText('fin_pTotI',    fmt(totI) + '€', '#4CAF50');
+        setText('fin_pNet',     (net >= 0 ? '+' : '') + fmt(net) + '€', net >= 0 ? '#4CAF50' : '#f44336');
+    };
+    // Alias legacy
+    window._financePreviewPrice = window._financePreviewProj;
 
     // ============================================================
     // REFRESCO COMPLETO DEL PANEL
@@ -493,18 +587,70 @@
             setText('fin_lMerchD',  lw.home ? `— ${fmt(lw.items)} uds vendidas` : '— Partido visitante');
             setText('fin_lBase',    fmt(lw.baseInc) + '€', '#4CAF50');
             setText('fin_lTotI',    fmt(lw.totalInc) + '€', '#4CAF50');
-            setText('fin_lExp',     fmt(lw.totalExp) + '€', '#f44336');
+            // Gastos desglosados
+            const expSal = (lw.expSalaries || 0) + (lw.expStaff || 0);
+            setText('fin_lExp',     fmt(expSal > 0 ? expSal : lw.totalExp) + '€', '#f44336');
+            const lLoanRow = document.getElementById('fin_lLoanRow');
+            if (lLoanRow) lLoanRow.style.display = (lw.expLoans || 0) > 0 ? '' : 'none';
+            setText('fin_lLoanExp', fmt(lw.expLoans || 0) + '€', '#f44336');
+            const lBonusRow = document.getElementById('fin_lBonusRow');
+            if (lBonusRow) lBonusRow.style.display = (lw.expBonus || 0) > 0 ? '' : 'none';
+            setText('fin_lBonusExp', fmt(lw.expBonus || 0) + '€', '#f44336');
             setText('fin_lNet',     (lw.net >= 0 ? '+' : '') + fmt(lw.net) + '€', lw.net >= 0 ? '#4CAF50' : '#f44336');
         } else {
             setText('fin_lastLabel', '(sin jornadas jugadas todavía)');
         }
+
+        // ── Proyección próxima jornada ───────────────────────────
+        const home   = isNextMatchHome();
+        const isAway = home === false;
+        const tp     = state.ticketPrice || 20;
+        const mp     = state.merchandisingPrice || 10;
+        const att    = computeAttendance(state, tp);
+        const tI     = isAway ? 0 : Math.floor(tp * att);
+        const its    = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
+        const mI     = isAway ? 0 : its * mp;
+        const bI     = state.weeklyIncomeBase || 5000;
+        const projI  = tI + mI + bI;
+        const pS     = state.squad.reduce((s, p) => s + (p.salary || 0), 0);
+        const sArr   = Object.values(state.staff).filter(Boolean);
+        const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
+        const loanE  = state.fd_loanPayment || 0;
+        const totE   = pS + stS + loanE;
+        const projN  = projI - totE;
+
+        const nLabel = home === true ? '🏟️ LOCAL' : home === false ? '✈️ VISITANTE' : '—';
+        setText('fin_nextLabel', nLabel, home === true ? '#4CAF50' : home === false ? '#f5a623' : '#666');
+        const awDiv = document.getElementById('fin_awayWarning');
+        if (awDiv) awDiv.style.display = isAway ? '' : 'none';
+
+        setText('fin_pTicket',  fmt(tI)  + '€', isAway ? '#aaa' : '#4CAF50');
+        setText('fin_pTicketD', isAway ? '— Partido visitante' : `— ${fmt(att)} espect. x ${tp}€`);
+        setText('fin_pMerch',   fmt(mI)  + '€', isAway ? '#aaa' : '#4CAF50');
+        setText('fin_pMerchD',  isAway ? '— Partido visitante' : `— ${fmt(its)} uds x ${mp}€`);
+        setText('fin_pBase',    fmt(bI)  + '€', '#4CAF50');
+        setText('fin_pTotI',    fmt(projI)+ '€', '#4CAF50');
+        setText('fin_pExp',     fmt(totE)+ '€', '#f44336');
+        setText('fin_pNet',     (projN >= 0 ? '+' : '') + fmt(projN) + '€', projN >= 0 ? '#4CAF50' : '#f44336');
+
+        const tpSlider = document.getElementById('fin_tpSlider');
+        if (tpSlider) { tpSlider.value = tp; setText('fin_tpVal', tp + '€'); }
+        const mpSlider = document.getElementById('fin_mpSlider');
+        if (mpSlider) { mpSlider.value = mp; setText('fin_mpVal', mp + '€'); }
 
         // ── Gastos recurrentes ───────────────────────────────────
         setText('fin_pSal',  fmt(pS)  + '€/sem', '#f44336');
         setText('fin_pCnt',  `— ${state.squad.length} jugadores`);
         setText('fin_sSal',  fmt(stS) + '€/sem', '#f44336');
         setText('fin_sCnt',  `— ${sArr.length} miembro${sArr.length !== 1 ? 's' : ''}`);
-        setText('fin_totExp',fmt(totE)+ '€/sem', '#f44336');
+        // Cuotas préstamos
+        const loanRow = document.getElementById('fin_loanRow');
+        if (loanRow) loanRow.style.display = loanE > 0 ? '' : 'none';
+        setText('fin_loanExp', fmt(loanE) + '€/sem', '#f44336');
+        const fd = window.FinDeals ? null : null; // acceso via state
+        const activeLoans = (state.fd_loans || []).filter(l => l.weeksLeft > 0);
+        setText('fin_loanCnt', `— ${activeLoans.length} préstamo${activeLoans.length !== 1 ? 's' : ''}`);
+        setText('fin_totExp', fmt(totE) + '€/sem', '#f44336');
 
         // ── Mercado (fuente: acumulados de gameLogic) ────────────
         const pur  = state.playerPurchases     || 0;
@@ -523,8 +669,12 @@
 
         // ── Remodelaciones ───────────────────────────────────────
         const rens = mvs.filter(m => m.type === 'renovation');
-        const sR   = rens.filter(m => /estadio|asiento/i.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
-        const tR   = rens.filter(m => /entrenamiento/i.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
+        // Detectar estadio: palabras clave del sistema antiguo Y nuevo injector de instalaciones
+        const stadiumKeywords = /estadio|asiento|ampliar|iluminaci|pantalla|vip|restaurante|parking|tienda|c.sped|museo|seats|\[Estadio\]/i;
+        // Detectar entrenamiento — también detecta el prefijo [Entrenamiento] del nuevo injector
+        const trainingKeywords = /entrenamiento|centro|gimnasio|gym|m.dica|f.sio|piscina|nutrici|c.ntera|residencia|t.ctica|video|training|\[Entrenamiento\]/i;
+        const sR   = rens.filter(m => stadiumKeywords.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
+        const tR   = rens.filter(m => !stadiumKeywords.test(m.description) && trainingKeywords.test(m.description)).reduce((s, m) => s + Math.abs(m.amount), 0);
         const toR  = rens.reduce((s, m) => s + Math.abs(m.amount), 0);
 
         setText('fin_rSta',   fmt(sR)  + '€', sR  > 0 ? '#f44336' : '#777');
