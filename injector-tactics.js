@@ -179,30 +179,24 @@
     }
 
     // ── Render tarjetas de selección ─────────────────────────────
-    function renderCards(dataObj, currentVal, onClickFn, cols = 3) {
+    function renderCards(dataObj, currentVal, onClickFn, cols) {
         const entries = Object.entries(dataObj);
-        return `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">
+        const gridClass = cols === 3 ? 'tc-grid-3' : 'tc-grid-5';
+        return `<div class="${gridClass}">
             ${entries.map(([key, d]) => {
                 const active = key === currentVal;
                 const color = d.color || '#4CAF50';
                 return `<div onclick="${onClickFn}('${key}')"
                     style="cursor:pointer;border-radius:10px;padding:10px 8px;text-align:center;
-                           border:2px solid ${active ? (d.color || '#4CAF50') : 'rgba(255,255,255,.1)'};
-                           background:${active ? `rgba(${active ? hexToRgb(d.color || '#4CAF50') : '255,255,255'},.12)` : 'rgba(255,255,255,.04)'};
+                           border:2px solid ${active ? color : 'rgba(255,255,255,.1)'};
+                           background:${active ? `${color}20` : 'rgba(255,255,255,.04)'};
                            transition:all .2s;user-select:none;">
                     <div style="font-size:1.3em;margin-bottom:4px;">${d.emoji}</div>
-                    <div style="font-size:.78em;font-weight:bold;color:${active ? (d.color || '#4CAF50') : '#ccc'};">${d.label}</div>
+                    <div style="font-size:.78em;font-weight:bold;color:${active ? color : '#ccc'};">${d.label}</div>
                     <div style="font-size:.65em;color:#666;margin-top:3px;line-height:1.3;">${d.desc}</div>
                 </div>`;
             }).join('')}
         </div>`;
-    }
-
-    function hexToRgb(hex) {
-        const r = parseInt(hex.slice(1,3),16);
-        const g = parseInt(hex.slice(3,5),16);
-        const b = parseInt(hex.slice(5,7),16);
-        return `${r},${g},${b}`;
     }
 
     // ── Render barra de balance táctico ───────────────────────────
@@ -244,15 +238,14 @@
         });
         const posColor = { POR:'#FFD700', DEF:'#2196F3', MED:'#4CAF50', DEL:'#f44336' };
         return `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
             <span style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;">XI Titular actual</span>
             <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:.8em;color:#FFD700;font-weight:bold;">Media OVR: ${avg}</span>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="tc-xi-chips">
             ${['POR','DEF','MED','DEL'].map(g =>
                 posGroups[g].map(p => `
-                <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.05);
-                            border-radius:6px;padding:3px 7px;border-left:3px solid ${posColor[g]};">
+                <div class="tc-xi-chip" style="border-left:3px solid ${posColor[g]};">
                     <span style="color:${posColor[g]};font-size:.7em;font-weight:bold;">${p.position}</span>
                     <span style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
                     <span style="color:#888;font-size:.68em;">${p.overall || 70}</span>
@@ -280,13 +273,13 @@
             .findIndex(([t]) => t === s.team) + 1;
 
         return `
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div class="tc-match-header">
             <div>
                 <div style="color:#666;font-size:.72em;margin-bottom:2px;">Jornada ${match.week} · ${isHome ? '🏟️ LOCAL' : '✈️ VISITANTE'}</div>
                 <div style="font-size:1em;font-weight:bold;color:#fff;">${s.team} <span style="color:#666;">vs</span> ${rival}</div>
             </div>
             ${st ? `
-            <div style="display:flex;gap:14px;margin-left:auto;">
+            <div class="tc-match-stats">
                 <div style="text-align:center;">
                     <div style="color:#FFD700;font-weight:bold;font-size:1.1em;">${sorted}º</div>
                     <div style="color:#555;font-size:.65em;">Pos rival</div>
