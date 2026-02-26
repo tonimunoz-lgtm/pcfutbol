@@ -389,39 +389,47 @@
 
         <!-- BALANCE RESULTANTE -->
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-                    border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+                    border-radius:10px;padding:12px 14px;margin-bottom:8px;">
             <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
                 📊 Balance táctico resultante
             </div>
             ${renderBalanceBar(formation, mentality, pressStyle, specialInstr)}
-        </div>
-
-        <!-- SEPARADOR CAMPO -->
-        <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
-            🏟️ Posiciones en el campo
         </div>`;
+    }
+
+    // ── Disparar renderTactic interno vía evento change del select ─
+    // renderTactic() es privada en gameLogic.js (módulo ES6), no está
+    // en window. Pero el select#formationSelect tiene un listener
+    // 'change' que la llama. Disparamos ese evento para activarla.
+    function triggerRenderTactic(formation) {
+        const sel = document.getElementById('formationSelect');
+        if (!sel) return;
+        sel.value = formation;
+        sel.dispatchEvent(new Event('change'));
+    }
+
+    // ── Ocultar los selects, labels y campo originales ────────────
+    function hideOriginalControls() {
+        const tactics = document.getElementById('tactics');
+        if (!tactics) return;
+        // Ocultar el div.form-group que contiene los dos selects
+        const formGroup = tactics.querySelector('.form-group');
+        if (formGroup) formGroup.style.display = 'none';
+        // Ocultar el campo visual y banquillo
+        const tacticContainer = document.getElementById('tactic-container');
+        if (tacticContainer) tacticContainer.style.display = 'none';
     }
 
     // ── Setters globales ──────────────────────────────────────────
     window._tacticsSetFormation = function(val) {
-        const s = gs();
-        if (!s) return;
+        if (!gs()) return;
         gl().updateGameState({ formation: val });
-        // Actualizar el select original para compatibilidad
-        const sel = document.getElementById('formationSelect');
-        if (sel) sel.value = val;
-        // Llamar al renderTactic original para actualizar el campo
-        if (typeof window.renderLineupPageUI === 'function') window.renderLineupPageUI();
-        if (typeof renderTactic === 'function') renderTactic();
-        // Intentar llamar el renderTactic del gameLogic
-        const rt = window._originalRenderTactic || window.renderTactic;
-        if (typeof rt === 'function') rt();
+        triggerRenderTactic(val);
         refreshExtras();
     };
 
     window._tacticsSetMentality = function(val) {
-        const s = gs();
-        if (!s) return;
+        if (!gs()) return;
         gl().updateGameState({ mentality: val });
         const sel = document.getElementById('mentalitySelect');
         if (sel) sel.value = val;
@@ -429,15 +437,13 @@
     };
 
     window._tacticsSetPress = function(val) {
-        const s = gs();
-        if (!s) return;
+        if (!gs()) return;
         gl().updateGameState({ pressStyle: val });
         refreshExtras();
     };
 
     window._tacticsSetInstruction = function(val) {
-        const s = gs();
-        if (!s) return;
+        if (!gs()) return;
         gl().updateGameState({ specialInstruction: val });
         refreshExtras();
     };
@@ -492,50 +498,37 @@
             const r = orig.call(this, pageId, ...args);
             if (pageId === 'tactics') {
                 setTimeout(() => {
+                    hideOriginalControls();
                     buildTacticsExtras();
                     refreshExtras();
-                    // Forzar renderTactic del campo original
-                    const sel = document.getElementById('formationSelect');
-                    if (sel) {
-                        const s = gs();
-                        if (s?.formation) sel.value = s.formation;
-                    }
-                    const menSel = document.getElementById('mentalitySelect');
-                    if (menSel) {
-                        const s = gs();
-                        if (s?.mentality) menSel.value = s.mentality;
-                    }
-                }, 60);
+                    // Disparar renderTactic interno via evento change
+                    const s = gs();
+                    if (s?.formation) triggerRenderTactic(s.formation);
+                }, 80);
             }
             return r;
         };
     }
 
     // ── Reemplazar los alerts de updateFormation / updateMentality ─
-    // Sobrescribir para quitar los molestos alert() y en su lugar
-    // simplemente actualizar el estado y refrescar la UI.
     function patchOriginalFunctions() {
         if (!window.updateFormation || !window.updateMentality) {
             setTimeout(patchOriginalFunctions, 300); return;
         }
-
         window.updateFormation = function() {
             const sel = document.getElementById('formationSelect');
             if (!sel) return;
             gl()?.updateGameState?.({ formation: sel.value });
-            // Llamar renderTactic del gameLogic si está disponible
-            try { renderTactic(); } catch(e) {}
+            sel.dispatchEvent(new Event('change')); // dispara renderTactic interno
             refreshExtras();
         };
-
         window.updateMentality = function() {
             const sel = document.getElementById('mentalitySelect');
             if (!sel) return;
             gl()?.updateGameState?.({ mentality: sel.value });
             refreshExtras();
         };
-
-        console.log('[Tactics] updateFormation/updateMentality sin alert ✓');
+        console.log('[Tactics] updateFormation/updateMentality parchados ✓');
     }
 
     // ── Init ──────────────────────────────────────────────────────
