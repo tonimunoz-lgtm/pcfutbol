@@ -324,20 +324,20 @@
     // 4.  HOOK SIMULATE WEEK → procesar búsqueda
     // ─────────────────────────────────────────────────────────────
     function hookSimulateWeek() {
-        if (!window.gameLogic?.simulateFullWeek) {
+        if (typeof window.simulateWeek !== 'function') {
             setTimeout(hookSimulateWeek, 400); return;
         }
         if (window._scoutWeekHooked) return;
         window._scoutWeekHooked = true;
 
-        const orig = window.gameLogic.simulateFullWeek.bind(window.gameLogic);
-        window.gameLogic.simulateFullWeek = async function(...args) {
-            const result = await orig(...args);
+        const orig = window.simulateWeek;
+        window.simulateWeek = async function(...args) {
+            const result = await orig.apply(this, args);
             processScoutWeek();
             processAnalistaWeek();
             return result;
         };
-        console.log('[ScoutAnalista] hook simulateFullWeek ✓');
+        console.log('[ScoutAnalista] hook simulateWeek ✓');
     }
 
     function processScoutWeek() {
@@ -546,7 +546,7 @@
     // 10. INIT
     // ─────────────────────────────────────────────────────────────
     function init() {
-        if (!window.gameLogic || !window.openModal) {
+        if (!window.gameLogic || !window.openModal || !window.simulateWeek) {
             setTimeout(init, 400); return;
         }
         buildScoutModal();
