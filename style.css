@@ -1884,3 +1884,43 @@ Salida
         min-width: 60px; max-width: 75px; white-space: normal; word-break: break-word;
     }
 }
+
+/* ============================================
+   TÁCTICAS INJECTOR - RESPONSIVE
+   ============================================ */
+
+#tactics {
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+#tactics-extras {
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* Grid de tarjetas tácticas */
+.tc-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.tc-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+/* Contexto partido */
+.tc-match-header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tc-match-stats   { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+
+/* XI titular chips */
+.tc-xi-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tc-xi-chip  {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,.05); border-radius: 6px;
+    padding: 3px 7px;
+}
+
+@media (max-width: 640px) {
+    .tc-grid-5 { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
+    .tc-grid-3 { grid-template-columns: repeat(3, 1fr) !important; gap: 6px; }
+    .tc-match-stats { margin-left: 0; gap: 8px; }
+    .tc-match-header { flex-direction: column; align-items: flex-start; }
+    #tactics-extras { font-size: 0.9em; }
+    .tc-xi-chip { padding: 2px 5px; font-size: 0.9em; }
+}
