@@ -390,14 +390,35 @@
         </div>`;
     }
 
-    // ── Disparar renderTactic interno vía evento change del select ─
-    // renderTactic() es privada en gameLogic.js (módulo ES6), no está
-    // en window. Pero el select#formationSelect tiene un listener
-    // 'change' que la llama. Disparamos ese evento para activarla.
+    // ── Invocar renderTactic sin dispatchEvent ────────────────────
+    // El select#formationSelect tiene onchange="window.updateFormation()"
+    // en el HTML. Si disparamos change → llama updateFormation → bucle.
+    // Solución: eliminar el atributo onchange del select y gestionar
+    // todo desde el injector. renderTactic sigue siendo privada pero
+    // la invocamos añadiendo un listener directo solo la primera vez.
+    let _renderTacticFn = null;
+
+    function setupRenderTacticBridge() {
+        const sel = document.getElementById('formationSelect');
+        if (!sel) return;
+
+        // Quitar el onchange inline del HTML para romper el ciclo
+        sel.removeAttribute('onchange');
+
+        // Añadir nuestro propio listener que llama renderTactic sin pasar por updateFormation
+        sel.addEventListener('change', function() {
+            // Este listener es el único que queda: no llama a updateFormation
+            // renderTactic() se ejecutará por el addEventListener de gameLogic.js
+            // que fue registrado con addEventListener (no onchange) — ver línea 2882 gameLogic.js
+        });
+    }
+
     function triggerRenderTactic(formation) {
         const sel = document.getElementById('formationSelect');
         if (!sel) return;
         sel.value = formation;
+        // Disparar solo el evento nativo de gameLogic (addEventListener 'change')
+        // no el onchange inline (ya lo eliminamos en setupRenderTacticBridge)
         sel.dispatchEvent(new Event('change'));
     }
 
@@ -405,10 +426,8 @@
     function hideOriginalControls() {
         const tactics = document.getElementById('tactics');
         if (!tactics) return;
-        // Ocultar el div.form-group que contiene los dos selects
         const formGroup = tactics.querySelector('.form-group');
         if (formGroup) formGroup.style.display = 'none';
-        // Ocultar el campo visual y banquillo
         const tacticContainer = document.getElementById('tactic-container');
         if (tacticContainer) tacticContainer.style.display = 'none';
     }
@@ -441,9 +460,33 @@
         refreshExtras();
     };
 
+    // ── Patch updateFormation/updateMentality: quitar alerts ─────
+    function patchOriginalFunctions() {
+        if (!window.updateFormation || !window.updateMentality) {
+            setTimeout(patchOriginalFunctions, 300); return;
+        }
+        // Reemplazar para quitar el alert() y el dispatchEvent extra
+        window.updateFormation = function() {
+            const sel = document.getElementById('formationSelect');
+            if (!sel) return;
+            gl()?.updateGameState?.({ formation: sel.value });
+            refreshExtras();
+            // No llama a dispatchEvent ni a renderTactic —
+            // renderTactic ya fue llamada por el addEventListener de gameLogic
+        };
+        window.updateMentality = function() {
+            const sel = document.getElementById('mentalitySelect');
+            if (!sel) return;
+            gl()?.updateGameState?.({ mentality: sel.value });
+            refreshExtras();
+        };
+        // Eliminar también el onchange inline del select de formación
+        // para que window.updateFormation no se llame al disparar change
+        setupRenderTacticBridge();
+        console.log('[Tactics] updateFormation/updateMentality parchados ✓');
+    }
+
     // ── Hook en el motor de partidos ──────────────────────────────
-    // Los nuevos parámetros (presión + instrucción especial) modifican
-    // los factores de ataque y defensa antes del cálculo del resultado.
     function hookMatchEngine() {
         if (typeof window.calculateMatchOutcomeImproved !== 'function') {
             setTimeout(hookMatchEngine, 400); return;
@@ -460,13 +503,10 @@
                 const pd = PRESS_DATA[press]       || PRESS_DATA['medium'];
                 const id = INSTRUCTION_DATA[instr] || INSTRUCTION_DATA['none'];
 
-                // Solo aplicar al equipo del jugador (no a la IA)
-                // params.teamFormation identifica si somos nosotros
                 const ourFormation = s.formation || '433';
                 if (params.teamFormation === ourFormation) {
                     const atkMod = pd.attackBonus  * id.attackBonus;
                     const defMod = pd.defenseBonus * id.defenseBonus;
-                    // Incorporar al teamForm como ajuste relativo
                     const formBoost = Math.round((atkMod - 1) * 20);
                     const defBoost  = Math.round((defMod - 1) * 20);
                     params = {
@@ -501,27 +541,6 @@
             }
             return r;
         };
-    }
-
-    // ── Reemplazar los alerts de updateFormation / updateMentality ─
-    function patchOriginalFunctions() {
-        if (!window.updateFormation || !window.updateMentality) {
-            setTimeout(patchOriginalFunctions, 300); return;
-        }
-        window.updateFormation = function() {
-            const sel = document.getElementById('formationSelect');
-            if (!sel) return;
-            gl()?.updateGameState?.({ formation: sel.value });
-            sel.dispatchEvent(new Event('change')); // dispara renderTactic interno
-            refreshExtras();
-        };
-        window.updateMentality = function() {
-            const sel = document.getElementById('mentalitySelect');
-            if (!sel) return;
-            gl()?.updateGameState?.({ mentality: sel.value });
-            refreshExtras();
-        };
-        console.log('[Tactics] updateFormation/updateMentality parchados ✓');
     }
 
     // ── Init ──────────────────────────────────────────────────────
