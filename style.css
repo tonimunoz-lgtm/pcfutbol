@@ -264,6 +264,7 @@ body {
 .stadium-icon::before {background-image: url('/assets/iconos/estadio.png');}
 .renovation-icon::before {content: "\270D\FE0F"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
 .cantera-icon::before {content: "\1F331"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
+.noticias-icon::before {background-image: url('/assets/iconos/noticias.png');}
 
 /* ============================================
    PÃGINAS DE CONTENIDO - Pantallas secundarias
