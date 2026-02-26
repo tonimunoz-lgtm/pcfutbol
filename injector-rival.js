@@ -37,18 +37,18 @@
     }
 
     // ── Obtener el rival del próximo partido ──────────────────────
-    // Usa nextOpponent del estado (actualizado tras cada semana simulada).
-    // Si no hay, busca en el calendario el siguiente partido sin jugar.
+    // Busca directamente en el calendario el próximo partido sin jugar.
+    // s.nextOpponent NO es fiable (gameLogic no lo guarda en gameState),
+    // así que siempre se usa el calendario como fuente de verdad.
     function getNextRivalName() {
         const s = gs();
         if (!s) return null;
-        // nextOpponent es fiable si hay partida activa
-        if (s.nextOpponent && s.nextOpponent !== '—' && s.nextOpponent !== 'Rival amistoso') {
-            return s.nextOpponent;
-        }
-        // Fallback: buscar en el calendario el próximo partido del equipo
+
+        // Buscar en el calendario el próximo partido sin jugar a partir de la semana actual
         if (s.seasonCalendar && s.team) {
-            const played = new Set((s.matchHistory || []).map(m => m.week + '_' + m.home + '_' + m.away));
+            const played = new Set(
+                (s.matchHistory || []).map(m => m.week + '_' + m.home + '_' + m.away)
+            );
             const upcoming = s.seasonCalendar
                 .filter(m => (m.home === s.team || m.away === s.team) && m.week >= (s.week || 1))
                 .sort((a, b) => a.week - b.week);
@@ -59,7 +59,12 @@
                 }
             }
         }
-        return s.nextOpponent || null;
+
+        // Último recurso: nextOpponent del estado
+        if (s.nextOpponent && s.nextOpponent !== '—' && s.nextOpponent !== 'Rival amistoso') {
+            return s.nextOpponent;
+        }
+        return null;
     }
 
     // ── Obtener división del equipo ───────────────────────────────
