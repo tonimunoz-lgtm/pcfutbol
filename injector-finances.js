@@ -428,53 +428,6 @@
                 <td style="text-align:right;font-weight:bold;" id="fin_lNet">—</td><td></td></tr>
         </table>
 
-        <!-- PROYECCIÓN PRÓXIMA JORNADA — solo estimación visual -->
-        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            🔮 Proyección próxima jornada <span id="fin_nextLabel" style="font-weight:normal;font-size:.85em;"></span>
-        </h2>
-        <div id="fin_awayWarning" style="display:none;padding:6px 4px 10px;color:#f5a623;font-size:.85em;">
-            ✈️ Partido visitante — sin ingresos de taquilla ni merchandising
-        </div>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
-            <tr><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla estimada</td>
-                <td style="text-align:right;min-width:90px;" id="fin_pTicket">0€</td>
-                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_pTicketD">—</td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">🛍️ Merchandising estimado</td>
-                <td style="text-align:right;" id="fin_pMerch">0€</td>
-                <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_pMerchD">—</td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV / patrocinios</td>
-                <td style="text-align:right;color:#4CAF50;" id="fin_pBase">0€</td><td></td></tr>
-            <tr style="border-top:1px solid #2a2a2a;">
-                <td style="padding:6px 4px;font-weight:bold;">Total estimado</td>
-                <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_pTotI">0€</td><td></td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">💸 Gastos recurrentes/sem</td>
-                <td style="text-align:right;color:#f44336;" id="fin_pExp">0€</td><td></td></tr>
-            <tr style="border-top:1px solid #2a2a2a;">
-                <td style="padding:8px 4px;font-weight:bold;">Resultado estimado</td>
-                <td style="text-align:right;font-weight:bold;" id="fin_pNet">0€</td><td></td></tr>
-        </table>
-        <!-- Sliders → solo afectan a la proyección de arriba, NUNCA al balance -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 22px;">
-            <div style="background:rgba(255,255,255,.04);padding:12px;border-radius:8px;">
-                <div style="font-size:.85em;color:#aaa;margin-bottom:6px;">
-                    Precio Entrada: <strong id="fin_tpVal">0€</strong>
-                    <span style="color:#555;font-size:.78em;"> — aplica próx. jornada local</span>
-                </div>
-                <input type="range" id="fin_tpSlider" min="5" max="100" value="20" style="width:100%;cursor:pointer;"
-                    oninput="document.getElementById('fin_tpVal').textContent=this.value+'€';window._financePreviewProj('ticket',this.value);"
-                    onchange="window.setTicketPriceFromSlider&&window.setTicketPriceFromSlider(this.value);">
-            </div>
-            <div style="background:rgba(255,255,255,.04);padding:12px;border-radius:8px;">
-                <div style="font-size:.85em;color:#aaa;margin-bottom:6px;">
-                    Precio Merch: <strong id="fin_mpVal">0€</strong>
-                    <span style="color:#555;font-size:.78em;"> — aplica próx. jornada local</span>
-                </div>
-                <input type="range" id="fin_mpSlider" min="1" max="50" value="10" style="width:100%;cursor:pointer;"
-                    oninput="document.getElementById('fin_mpVal').textContent=this.value+'€';window._financePreviewProj('merch',this.value);"
-                    onchange="window.setMerchandisingPriceFromSlider&&window.setMerchandisingPriceFromSlider(this.value);">
-            </div>
-        </div>
-
         <!-- GASTOS RECURRENTES -->
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
             💸 Gastos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal)</span>
@@ -533,35 +486,7 @@
         console.log('[Finances] Panel construido ✓');
     }
 
-    // ── Preview proyección (slider oninput) ──────────────────────
-    // SOLO actualiza la sección Proyección — no toca Última Jornada
-    window._financePreviewProj = function (type, value) {
-        const state = gs();
-        if (!state) return;
-        value = parseInt(value);
-        const home   = isNextMatchHome();
-        const isAway = home === false;
-        const tp = type === 'ticket' ? value : parseInt(document.getElementById('fin_tpSlider')?.value || state.ticketPrice);
-        const mp = type === 'merch'  ? value : parseInt(document.getElementById('fin_mpSlider')?.value  || state.merchandisingPrice);
-        const att = computeAttendance(state, tp);
-        const tI  = isAway ? 0 : Math.floor(tp * att);
-        const its = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
-        const mI  = isAway ? 0 : its * mp;
-        const bI  = state.weeklyIncomeBase || 5000;
-        const totI= tI + mI + bI;
-        const totE= (state.weeklyExpenses || 0) + (state.fd_loanPayment || 0);
-        const net = totI - totE;
-
-        setText('fin_pTicket',  fmt(tI) + '€',   isAway ? '#aaa' : '#4CAF50');
-        setText('fin_pTicketD', isAway ? '— Visitante' : `— ${fmt(att)} espect. x ${tp}€`);
-        setText('fin_pMerch',   fmt(mI) + '€',   isAway ? '#aaa' : '#4CAF50');
-        setText('fin_pMerchD',  isAway ? '— Visitante' : `— ${fmt(its)} uds x ${mp}€`);
-        setText('fin_pBase',    fmt(bI) + '€',   '#4CAF50');
-        setText('fin_pTotI',    fmt(totI) + '€', '#4CAF50');
-        setText('fin_pNet',     (net >= 0 ? '+' : '') + fmt(net) + '€', net >= 0 ? '#4CAF50' : '#f44336');
-    };
-    // Alias legacy
-    window._financePreviewPrice = window._financePreviewProj;
+    // _financePreviewProj eliminado (sección Proyección eliminada — los sliders están en Decisiones)
 
     // ============================================================
     // REFRESCO COMPLETO DEL PANEL
@@ -601,44 +526,12 @@
             setText('fin_lastLabel', '(sin jornadas jugadas todavía)');
         }
 
-        // ── Proyección próxima jornada ───────────────────────────
-        const home   = isNextMatchHome();
-        const isAway = home === false;
-        const tp     = state.ticketPrice || 20;
-        const mp     = state.merchandisingPrice || 10;
-        const att    = computeAttendance(state, tp);
-        const tI     = isAway ? 0 : Math.floor(tp * att);
-        const its    = Math.floor(state.fanbase * (state.popularity / 500) * 0.015);
-        const mI     = isAway ? 0 : its * mp;
-        const bI     = state.weeklyIncomeBase || 5000;
-        const projI  = tI + mI + bI;
+        // ── Gastos recurrentes ───────────────────────────────────
         const pS     = state.squad.reduce((s, p) => s + (p.salary || 0), 0);
         const sArr   = Object.values(state.staff).filter(Boolean);
         const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
         const loanE  = state.fd_loanPayment || 0;
         const totE   = pS + stS + loanE;
-        const projN  = projI - totE;
-
-        const nLabel = home === true ? '🏟️ LOCAL' : home === false ? '✈️ VISITANTE' : '—';
-        setText('fin_nextLabel', nLabel, home === true ? '#4CAF50' : home === false ? '#f5a623' : '#666');
-        const awDiv = document.getElementById('fin_awayWarning');
-        if (awDiv) awDiv.style.display = isAway ? '' : 'none';
-
-        setText('fin_pTicket',  fmt(tI)  + '€', isAway ? '#aaa' : '#4CAF50');
-        setText('fin_pTicketD', isAway ? '— Partido visitante' : `— ${fmt(att)} espect. x ${tp}€`);
-        setText('fin_pMerch',   fmt(mI)  + '€', isAway ? '#aaa' : '#4CAF50');
-        setText('fin_pMerchD',  isAway ? '— Partido visitante' : `— ${fmt(its)} uds x ${mp}€`);
-        setText('fin_pBase',    fmt(bI)  + '€', '#4CAF50');
-        setText('fin_pTotI',    fmt(projI)+ '€', '#4CAF50');
-        setText('fin_pExp',     fmt(totE)+ '€', '#f44336');
-        setText('fin_pNet',     (projN >= 0 ? '+' : '') + fmt(projN) + '€', projN >= 0 ? '#4CAF50' : '#f44336');
-
-        const tpSlider = document.getElementById('fin_tpSlider');
-        if (tpSlider) { tpSlider.value = tp; setText('fin_tpVal', tp + '€'); }
-        const mpSlider = document.getElementById('fin_mpSlider');
-        if (mpSlider) { mpSlider.value = mp; setText('fin_mpVal', mp + '€'); }
-
-        // ── Gastos recurrentes ───────────────────────────────────
         setText('fin_pSal',  fmt(pS)  + '€/sem', '#f44336');
         setText('fin_pCnt',  `— ${state.squad.length} jugadores`);
         setText('fin_sSal',  fmt(stS) + '€/sem', '#f44336');
