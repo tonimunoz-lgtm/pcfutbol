@@ -15,6 +15,27 @@
 (function () {
     'use strict';
 
+    // ── Ocultar secciones del dashboard que ya no necesitamos ─────
+    const style = document.createElement('style');
+    style.textContent = `
+        #dashboard .data-grid { display: none !important; }
+        #dashboard table      { display: none !important; }
+    `;
+    document.head.appendChild(style);
+
+    // Ocultar el h2 "Estado Financiero" y dejamos "Últimas Noticias"
+    // Lo hacemos por DOM una vez cargado para ser precisos
+    function hideDashboardExtras() {
+        const dashboard = document.getElementById('dashboard');
+        if (!dashboard) return;
+        dashboard.querySelectorAll('h2').forEach(h2 => {
+            if (h2.textContent.trim() === 'Estado Financiero') h2.style.display = 'none';
+        });
+    }
+    document.readyState === 'loading'
+        ? document.addEventListener('DOMContentLoaded', hideDashboardExtras)
+        : hideDashboardExtras();
+
     // ── Guardar último resultado al interceptar injectMatchSummary ─
     function hookMatchSummary() {
         if (typeof window.injectMatchSummary !== 'function') {
@@ -38,9 +59,9 @@
         const topLeft = document.querySelector('.quadrant.top-left');
         if (!topLeft) { setTimeout(patchTopLeftButtons, 300); return; }
 
-        // 1. Renombrar "Resultados" → "Noticias"
+        // 1. Renombrar "Resultados" → "📰 Noticias"
         const dashBtn = topLeft.querySelector('button[onclick*="dashboard"]');
-        if (dashBtn) dashBtn.textContent = 'Noticias';
+        if (dashBtn) dashBtn.textContent = '📰 Noticias';
 
         // 2. Añadir nuevo botón "Resultados" después del botón Calendario
         if (topLeft.querySelector('#btn-last-result')) return; // ya añadido
