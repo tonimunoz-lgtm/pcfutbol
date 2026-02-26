@@ -60,8 +60,8 @@
         if (!topLeft) { setTimeout(patchTopLeftButtons, 300); return; }
 
         // 1. Renombrar "Resultados" → "📰 Noticias"
-        const dashBtn = topLeft.querySelector('button[onclick*="dashboard"]');
-        if (dashBtn) dashBtn.textContent = '📰 Noticias';
+        //const dashBtn = topLeft.querySelector('button[onclick*="dashboard"]');
+        //if (dashBtn) dashBtn.textContent = '📰 Noticias';
 
         // 2. Añadir nuevo botón "Resultados" después del botón Calendario
         if (topLeft.querySelector('#btn-last-result')) return; // ya añadido
