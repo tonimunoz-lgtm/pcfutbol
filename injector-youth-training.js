@@ -1,4 +1,4 @@
-// injector-youth-training.js  v1.1
+// injector-youth-training.js  v1.0
 // ============================================================
 // DOS FUNCIONALIDADES:
 //
@@ -11,9 +11,8 @@
 //    - Se añade a la tabla de Empleados
 //
 // 2. PANEL DE ENTRENAMIENTO AUTOMÁTICO
-//    - El botón YA EXISTE en index.html (no se crea aquí)
-//    - El botón llama openPage('openTrainingPanel')
-//    - El hook de openPage lo redirige a window.openTrainingPanel()
+//    - Nuevo botón "Entrenamiento" en cuadrante superior derecho
+//    - Muestra todos los entrenadores contratados
 //    - Modo automático: cada entrenador decide qué entrenar
 //      · entrenadorPorteros → entrena porteros
 //      · segundoEntrenador  → entrena el resto de jugadores
@@ -37,12 +36,16 @@ console.log('🏫 Youth Training Injector cargando...');
         levelCostMultiplier: 1.5
     };
 
-    const YOUTH_WEEKLY_PROG  = { 1: 0.06, 2: 0.10, 3: 0.15, 4: 0.22, 5: 0.30 };
-    const YOUTH_SEASON_BONUS = { 1: 0.8,  2: 1.5,  3: 2.5,  4: 3.5,  5: 5.0  };
+    // Progresión semanal base por nivel de entrenador
+    const YOUTH_WEEKLY_PROG = { 1: 0.06, 2: 0.10, 3: 0.15, 4: 0.22, 5: 0.30 };
+    // Bonus extra al cambio de temporada (simula verano de 5-8 semanas reales)
+    const YOUTH_SEASON_BONUS = { 1: 0.8, 2: 1.5, 3: 2.5, 4: 3.5, 5: 5.0 };
 
+    // Umbral para proponer ascenso
     const PROMOTE_THRESHOLD_OVERALL = 65;
     const PROMOTE_THRESHOLD_AGE_MAX = 21;
 
+    // Atributos del juego
     const ATTRS = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
 
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
@@ -55,8 +58,8 @@ console.log('🏫 Youth Training Injector cargando...');
 
     function calculateOverall(player) {
         const weights = {
-            POR:     { EN:0.1, VE:0.1, RE:0.1, AG:0.1, CA:0.2, EF:0.1, MO:0.1, AT:0.05, DF:0.15 },
-            DFC:     { EN:0.2, VE:0.1, RE:0.15, AG:0.1, CA:0.15, EF:0.1, MO:0.1, AT:0.05, DF:0.15 },
+            POR:  { EN:0.1, VE:0.1, RE:0.1, AG:0.1, CA:0.2, EF:0.1, MO:0.1, AT:0.05, DF:0.15 },
+            DFC:  { EN:0.2, VE:0.1, RE:0.15, AG:0.1, CA:0.15, EF:0.1, MO:0.1, AT:0.05, DF:0.15 },
             default: { EN:0.1, VE:0.15, RE:0.15, AG:0.1, CA:0.1, EF:0.15, MO:0.1, AT:0.1, DF:0.05 }
         };
         const w = weights[player.position] || weights.default;
@@ -71,7 +74,7 @@ console.log('🏫 Youth Training Injector cargando...');
         if (!state) return;
 
         const coach = state.staff?.[YOUTH_ROLE];
-        if (!coach) return;
+        if (!coach) return; // Sin entrenador → sin progresión
 
         const level = coach.level || 1;
         const weeklyRate = isSeasonChange ? YOUTH_SEASON_BONUS[level] : YOUTH_WEEKLY_PROG[level];
@@ -82,17 +85,21 @@ console.log('🏫 Youth Training Injector cargando...');
 
             const potential = player.potential || 70;
             const currentOverall = calculateOverall(player);
-            const gap = potential - currentOverall;
-            if (gap <= 0) return;
+            const gap = potential - currentOverall; // Cuánto le queda por crecer
+            if (gap <= 0) return; // Ya llegó a su techo
 
-            const potentialFactor = potential / 100;
-            const gapFactor = Math.min(1, gap / 40);
+            // Cuanto más potencial y más margen de mejora, más rápido progresa
+            const potentialFactor = (potential / 100); // 0.5 - 0.99
+            const gapFactor = Math.min(1, gap / 40);   // Progresa más rápido cuando está lejos del techo
+
             const effectiveRate = weeklyRate * potentialFactor * (0.5 + gapFactor * 0.5);
 
+            // Distribuir mejoras entre atributos: primero los más bajos respecto a la posición
             let improved = false;
             ATTRS.forEach(attr => {
                 if ((player[attr] || 0) < potential - 2) {
-                    if (Math.random() < effectiveRate) {
+                    const roll = Math.random();
+                    if (roll < effectiveRate) {
                         player[attr] = Math.min(potential, (player[attr] || 30) + 1);
                         improved = true;
                     }
@@ -104,6 +111,7 @@ console.log('🏫 Youth Training Injector cargando...');
                 player.value = Math.floor(player.overall * 1000 + potential * 500 + (player.salary || 100) * 5);
             }
 
+            // ¿Listo para el primer equipo?
             const newOverall = calculateOverall(player);
             const age = player.age || 18;
             if (newOverall >= PROMOTE_THRESHOLD_OVERALL && age <= PROMOTE_THRESHOLD_AGE_MAX && !player._promoteSuggested) {
@@ -112,15 +120,20 @@ console.log('🏫 Youth Training Injector cargando...');
             }
         });
 
-        promotionCandidates.forEach(p => {
-            gl().addNews(`👁️ [Cantera] ${coach.name} informa: ${p.name} (${p.age} años, OVR ${p.overall}, POT ${p.potential}) está listo para dar el salto al primer equipo.`, 'success');
-        });
+        // Noticias de progresión y sugerencias de ascenso
+        if (promotionCandidates.length > 0) {
+            promotionCandidates.forEach(p => {
+                const msg = `👁️ [Cantera] ${coach.name} informa: ${p.name} (${p.age} años, OVR ${p.overall}, POT ${p.potential}) está listo para dar el salto al primer equipo.`;
+                gl().addNews(msg, 'success');
+            });
+        }
 
         if (isSeasonChange) {
             const progressed = state.academy.filter(p => p && calculateOverall(p) > (p._prevOverall || 0));
             if (progressed.length > 0) {
                 gl().addNews(`🏫 [Cantera] ${coach.name} ha dirigido la pretemporada de la cantera. ${progressed.length} jugadores han mejorado notablemente.`, 'info');
             }
+            // Guardar referencia de overall para el próximo cambio de temporada
             state.academy.forEach(p => { if (p) p._prevOverall = calculateOverall(p); });
         }
 
@@ -136,39 +149,53 @@ console.log('🏫 Youth Training Injector cargando...');
 
         const porteroCoach = state.staff?.entrenadorPorteros;
         const segundoCoach = state.staff?.segundoEntrenador;
-        const available = state.squad.filter(p => p && !p.isInjured && !p.isSuspended);
-        if (available.length === 0) return;
 
+        // Obtener jugadores disponibles (no lesionados, no sancionados)
+        const availableSquad = state.squad.filter(p => p && !p.isInjured && !p.isSuspended);
+        if (availableSquad.length === 0) return;
+
+        // El entrenador de porteros entrena al mejor portero disponible
         if (porteroCoach) {
-            const gks = available.filter(p => p.position === 'POR');
-            if (gks.length > 0) {
-                const gk = gks.reduce((best, p) =>
-                    ((p.potential || calculateOverall(p)) - calculateOverall(p)) >
-                    ((best.potential || calculateOverall(best)) - calculateOverall(best)) ? p : best
-                , gks[0]);
-                const idx = state.squad.findIndex(p => p?.name === gk.name);
-                if (idx !== -1) {
+            const goalkeepers = availableSquad.filter(p => p.position === 'POR');
+            if (goalkeepers.length > 0) {
+                const gk = goalkeepers.reduce((best, p) => {
+                    const bOvr = calculateOverall(best);
+                    const pOvr = calculateOverall(p);
+                    // Priorizar porteros con más margen de mejora
+                    const bGap = (best.potential || bOvr) - bOvr;
+                    const pGap = (p.potential || pOvr) - pOvr;
+                    return pGap > bGap ? p : best;
+                }, goalkeepers[0]);
+                
+                const gkIdx = state.squad.findIndex(p => p?.name === gk.name);
+                if (gkIdx !== -1) {
+                    // Elegir el atributo más bajo de portero
                     const gkAttrs = ['EN', 'CA', 'RE', 'DF', 'AG'];
                     const weakest = gkAttrs.reduce((w, a) => (gk[a] || 0) < (gk[w] || 0) ? a : w, gkAttrs[0]);
-                    gl().setTrainingFocus(idx, weakest);
+                    gl().setTrainingFocus(gkIdx, weakest);
                 }
             }
         }
 
+        // El segundo entrenador entrena al jugador de campo con más potencial sin explotar
         if (segundoCoach) {
-            const field = available.filter(p => p.position !== 'POR');
-            if (field.length > 0) {
-                const best = field.reduce((best, p) =>
-                    ((p.potential || calculateOverall(p)) - calculateOverall(p)) >
-                    ((best.potential || calculateOverall(best)) - calculateOverall(best)) ? p : best
-                , field[0]);
+            const fieldPlayers = availableSquad.filter(p => p.position !== 'POR');
+            if (fieldPlayers.length > 0) {
+                const best = fieldPlayers.reduce((best, p) => {
+                    const bOvr = calculateOverall(best);
+                    const pOvr = calculateOverall(p);
+                    const bGap = (best.potential || bOvr) - bOvr;
+                    const pGap = (p.potential || pOvr) - pOvr;
+                    return pGap > bGap ? p : best;
+                }, fieldPlayers[0]);
+
                 const idx = state.squad.findIndex(p => p?.name === best.name);
                 if (idx !== -1) {
                     const posAttrs = {
                         DFC: ['DF','EN','CA'], LI: ['VE','RE','DF'], LD: ['VE','RE','DF'],
-                        MC:  ['RE','MO','CA'], MCO: ['CA','AG','AT'], MCD: ['DF','MO','EN'],
-                        MD:  ['VE','AT','RE'], MI:  ['VE','AT','RE'], EXT: ['VE','AG','AT'],
-                        DC:  ['EF','AT','CA']
+                        MC: ['RE','MO','CA'], MCO: ['CA','AG','AT'], MCD: ['DF','MO','EN'],
+                        MD: ['VE','AT','RE'], MI: ['VE','AT','RE'], EXT: ['VE','AG','AT'],
+                        DC: ['EF','AT','CA']
                     };
                     const attrs = posAttrs[best.position] || ['RE','AT','DF'];
                     const weakest = attrs.reduce((w, a) => (best[a] || 0) < (best[w] || 0) ? a : w, attrs[0]);
@@ -181,20 +208,21 @@ console.log('🏫 Youth Training Injector cargando...');
     // ─────────────────────────────────────────────────────────────
     // HOOK simulateWeek
     // ─────────────────────────────────────────────────────────────
-    let _simHooked = false;
+    let _prevSeason = null;
+    let _hooked = false;
 
     function hookSimulateWeek() {
-        if (!window.simulateWeek || _simHooked) {
-            if (!window.simulateWeek) setTimeout(hookSimulateWeek, 400);
-            return;
-        }
-        _simHooked = true;
+        if (!window.simulateWeek || _hooked) { if (!window.simulateWeek) setTimeout(hookSimulateWeek, 400); return; }
+        _hooked = true;
 
         const orig = window.simulateWeek;
         window.simulateWeek = async function (...args) {
             const before = gs();
+            const wasPreseason = before?.seasonType === 'preseason';
 
-            if (localStorage.getItem('autoTraining_enabled') === 'true' && before?.seasonType !== 'preseason') {
+            // Si auto-training está activo, aplicar antes de simular
+            const autoOn = localStorage.getItem('autoTraining_enabled') === 'true';
+            if (autoOn && !wasPreseason) {
                 autoTrainFirstTeam();
             }
 
@@ -203,10 +231,12 @@ console.log('🏫 Youth Training Injector cargando...');
             const after = gs();
             const isSeasonChange = before?.currentSeason && after?.currentSeason && before.currentSeason !== after.currentSeason;
 
+            // Entrenar cantera cada semana (si no es pretemporada, o en cambio de temporada)
             if (after?.seasonType !== 'preseason' || isSeasonChange) {
                 trainAcademy(isSeasonChange);
             }
 
+            _prevSeason = after?.currentSeason;
             return result;
         };
 
@@ -214,7 +244,7 @@ console.log('🏫 Youth Training Injector cargando...');
     }
 
     // ─────────────────────────────────────────────────────────────
-    // UI: Fila del Entrenador de Juveniles en tabla de Staff
+    // UI: Añadir fila del Entrenador de Juveniles en tabla de Staff
     // ─────────────────────────────────────────────────────────────
     function injectStaffRow() {
         const tbody = document.querySelector('#staff table tbody');
@@ -226,7 +256,7 @@ console.log('🏫 Youth Training Injector cargando...');
             <td>🏫 Entrenador Juveniles</td>
             <td id="staffEntrenadorJuvenilesName">No Contratado</td>
             <td id="staffEntrenadorJuvenilesLevel">-</td>
-            <td id="staffEntrenadorJuvenilesalary">-</td>
+            <td id="staffEntrenadorJuvenilessalary">-</td>
             <td id="staffEntrenadorJuvenilesClausula">-</td>
             <td><button class="btn btn-sm" id="btnHireEntrenadorJuveniles" onclick="window.openYouthCoachModal()">Contratar</button></td>
         `;
@@ -236,17 +266,19 @@ console.log('🏫 Youth Training Injector cargando...');
     }
 
     function updateStaffRowUI() {
-        const coach = gs()?.staff?.[YOUTH_ROLE];
-        const nameEl  = document.getElementById('staffEntrenadorJuvenilesName');
-        const lvlEl   = document.getElementById('staffEntrenadorJuvenilesLevel');
-        const salEl   = document.getElementById('staffEntrenadorJuvenilesalary');
-        const clausEl = document.getElementById('staffEntrenadorJuvenilesClausula');
-        const btnEl   = document.getElementById('btnHireEntrenadorJuveniles');
+        const state = gs();
+        const coach = state?.staff?.[YOUTH_ROLE];
+
+        const nameEl = document.getElementById('staffEntrenadorJuvenilesName');
+        const lvlEl  = document.getElementById('staffEntrenadorJuvenilesLevel');
+        const salEl  = document.getElementById('staffEntrenadorJuvenilesalary');  // note: typo en id para evitar colisión
+        const clausEl= document.getElementById('staffEntrenadorJuvenilesClausula');
+        const btnEl  = document.getElementById('btnHireEntrenadorJuveniles');
 
         if (nameEl)  nameEl.textContent  = coach ? coach.name  : 'No Contratado';
         if (lvlEl)   lvlEl.textContent   = coach ? coach.level : '-';
         if (salEl)   salEl.textContent   = coach ? fmt(coach.salary) + '€' : '-';
-        if (clausEl) clausEl.textContent = 'N/A';
+        if (clausEl) clausEl.textContent = coach ? 'N/A' : '-';
         if (btnEl) {
             btnEl.disabled    = !!coach;
             btnEl.textContent = coach ? 'Contratado' : 'Contratar';
@@ -258,18 +290,24 @@ console.log('🏫 Youth Training Injector cargando...');
     // ─────────────────────────────────────────────────────────────
     function injectYouthModal() {
         if (document.getElementById('youthCoachModal')) return;
+
         const modal = document.createElement('div');
         modal.id = 'youthCoachModal';
-        modal.style.cssText = `display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;`;
+        modal.style.cssText = `
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;
+        `;
         modal.innerHTML = `
             <div style="background:#1a1a2e; border:2px solid #4CAF50; border-radius:12px; padding:24px; width:90%; max-width:500px; color:#e0e0e0;">
                 <h2 style="margin:0 0 16px; color:#4CAF50;">🏫 Contratar Entrenador de Juveniles</h2>
-                <p style="color:#aaa; font-size:0.85em; margin:0 0 16px;">El entrenador de juveniles se encarga de la progresión de todos los jugadores de la cantera semana a semana. Cuanto mayor sea su nivel, más rápido progresarán las futuras estrellas.</p>
+                <p style="color:#aaa; font-size:0.85em; margin:0 0 16px;">El entrenador de juveniles se encargará de la progresión de todos los jugadores de la cantera semana a semana. Cuanto mayor sea su nivel, más rápido progresarán las futuras estrellas.</p>
                 <div id="youthCandidatesList" style="margin-bottom:16px;"></div>
-                <button onclick="document.getElementById('youthCoachModal').style.display='none'"
-                    style="background:#555; border:none; color:#fff; padding:8px 20px; border-radius:6px; cursor:pointer;">Cancelar</button>
-            </div>`;
+                <button onclick="document.getElementById('youthCoachModal').style.display='none'" 
+                    style="background:#555; border:none; color:#fff; padding:8px 20px; border-radius:6px; cursor:pointer;">
+                    Cancelar
+                </button>
+            </div>
+        `;
         document.body.appendChild(modal);
     }
 
@@ -277,41 +315,48 @@ console.log('🏫 Youth Training Injector cargando...');
         const modal = document.getElementById('youthCoachModal');
         if (!modal) return;
 
-        const existing = gs()?.staff?.[YOUTH_ROLE];
-        const names = ["Juan","Pedro","María","Carlos","Ana","Luis","Sofía","Pablo","Laura","Diego","Miguel","Sergio","Elena"];
-        const progLabels   = { 1:'Básico', 2:'Normal', 3:'Bueno', 4:'Muy bueno', 5:'Élite' };
-        const weeklyLabels = { 1:'Lenta',  2:'Moderada', 3:'Normal', 4:'Rápida', 5:'Muy rápida' };
-
+        const state = gs();
+        const existing = state?.staff?.[YOUTH_ROLE];
+        const staffNames = ["Juan", "Pedro", "María", "Carlos", "Ana", "Luis", "Sofía", "Pablo", "Laura", "Diego", "Miguel", "Sergio", "Elena"];
+        
+        // Generar 3 candidatos
         const candidates = Array.from({ length: 3 }, () => {
-            const level   = 1 + Math.floor(Math.random() * 5);
-            const salary  = Math.floor(YOUTH_ROLE_CONFIG.minSalary + (YOUTH_ROLE_CONFIG.maxSalary - YOUTH_ROLE_CONFIG.minSalary) * (level / 5));
-            const name    = names[Math.floor(Math.random() * names.length)] + ' ' + names[Math.floor(Math.random() * names.length)];
-            const clausula = level <= 1 && Math.random() < 0.5 ? 0
-                : Math.max(1000, Math.floor(YOUTH_ROLE_CONFIG.baseClausula * level * YOUTH_ROLE_CONFIG.levelCostMultiplier * (0.8 + Math.random() * 0.4)));
+            const level = 1 + Math.floor(Math.random() * 5);
+            const salary = Math.floor(YOUTH_ROLE_CONFIG.minSalary + (YOUTH_ROLE_CONFIG.maxSalary - YOUTH_ROLE_CONFIG.minSalary) * (level / 5));
+            const name = staffNames[Math.floor(Math.random() * staffNames.length)] + ' ' + staffNames[Math.floor(Math.random() * staffNames.length)];
+            const clausula = level <= 1 && Math.random() < 0.5 ? 0 : Math.max(1000, Math.floor(YOUTH_ROLE_CONFIG.baseClausula * level * YOUTH_ROLE_CONFIG.levelCostMultiplier * (0.8 + Math.random() * 0.4)));
             return { name, level, salary: Math.round(salary), clausula: Math.round(clausula), role: YOUTH_ROLE, displayName: YOUTH_ROLE_CONFIG.displayName };
         });
+
+        const progLabels = { 1:'Básico', 2:'Normal', 3:'Bueno', 4:'Muy bueno', 5:'Élite' };
+        const weeklyLabels = { 1:'Lenta', 2:'Moderada', 3:'Normal', 4:'Rápida', 5:'Muy rápida' };
 
         let indemnMsg = '';
         if (existing) {
             const indem = existing.salary * 52;
             indemnMsg = `<p style="background:#333; border-left:3px solid #FF9800; padding:8px; font-size:0.85em; color:#FF9800;">
-                ⚠️ Al contratar nuevo entrenador, se despedirá a ${existing.name} con ${fmt(indem)}€ de indemnización.</p>`;
+                ⚠️ Al contratar nuevo entrenador, se despedirá a ${existing.name} con ${fmt(indem)}€ de indemnización.
+            </p>`;
         }
 
         document.getElementById('youthCandidatesList').innerHTML = indemnMsg + candidates.map((c, i) => `
             <div style="background:#0d0d1a; border:1px solid #333; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <strong style="color:#fff;">${c.name}</strong>
+                    <strong style="color:#fff;">${c.name}</strong> 
                     <span style="background:#4CAF50; color:#000; font-size:0.75em; padding:2px 6px; border-radius:10px; margin-left:6px;">Nivel ${c.level} · ${progLabels[c.level]}</span><br>
-                    <span style="color:#aaa; font-size:0.82em;">💰 ${fmt(c.salary)}€/sem · 📋 Cláusula: ${c.clausula === 0 ? 'Libre' : fmt(c.clausula)+'€'}</span><br>
+                    <span style="color:#aaa; font-size:0.82em;">
+                        💰 ${fmt(c.salary)}€/sem · 📋 Cláusula: ${c.clausula === 0 ? 'Libre' : fmt(c.clausula)+'€'}
+                    </span><br>
                     <span style="color:#666; font-size:0.78em;">⚡ Progresión cantera: ${weeklyLabels[c.level]}</span>
                 </div>
-                <button onclick="window.hireYouthCoach(${i})"
+                <button onclick="window.hireYouthCoach(${i})" data-idx="${i}"
                     style="background:#4CAF50; border:none; color:#000; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">
                     Contratar
                 </button>
-            </div>`).join('');
+            </div>
+        `).join('');
 
+        // Guardar candidatos temporalmente
         window._youthCandidates = candidates;
         modal.style.display = 'flex';
     };
@@ -323,8 +368,9 @@ console.log('🏫 Youth Training Injector cargando...');
         const state = gs();
         const existing = state?.staff?.[YOUTH_ROLE];
         let cost = candidate.clausula;
-        let msg  = `¿Contratar a ${candidate.name} (Nivel ${candidate.level}) por ${fmt(candidate.salary)}€/sem`;
+        let msg = `¿Contratar a ${candidate.name} (Nivel ${candidate.level}) por ${fmt(candidate.salary)}€/sem`;
         msg += candidate.clausula > 0 ? ` y cláusula ${fmt(candidate.clausula)}€?` : `? (Sin cláusula)`;
+
         if (existing) {
             const indem = existing.salary * 52;
             cost += indem;
@@ -332,29 +378,59 @@ console.log('🏫 Youth Training Injector cargando...');
         }
 
         if (!confirm(msg)) return;
-        if ((state.balance || 0) < cost) { alert(`Saldo insuficiente. Necesitas ${fmt(cost)}€.`); return; }
 
+        if ((state.balance || 0) < cost) {
+            alert(`Saldo insuficiente. Necesitas ${fmt(cost)}€.`);
+            return;
+        }
+
+        // Contratar
         state.balance -= cost;
         state.staff[YOUTH_ROLE] = candidate;
+        // Incluir el salario del entrenador en los gastos semanales
         gl().updateGameState(state);
         gl().addNews(`🏫 ¡${candidate.name} (Entrenador de Juveniles, Nivel ${candidate.level}) se incorpora al club!`, 'success');
 
         document.getElementById('youthCoachModal').style.display = 'none';
         updateStaffRowUI();
+
+        // Actualizar display general si existe
         if (window.updateStaffDisplay) window.updateStaffDisplay(state);
     };
+
+    // ─────────────────────────────────────────────────────────────
+    // UI: Botón Entrenamiento en cuadrante superior derecho
+    // ─────────────────────────────────────────────────────────────
+    function injectTrainingButton() {
+        const topRight = document.querySelector('.quadrant.top-right');
+        if (!topRight || document.getElementById('btnOpenTrainingPanel')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'btnOpenTrainingPanel';
+        btn.className = 'menu-button green-button';
+        btn.style.cssText = 'background: linear-gradient(135deg, #1565C0, #0D47A1);';
+        btn.textContent = '🎯 Entrenamiento';
+        btn.onclick = openTrainingPanel;
+        topRight.appendChild(btn);
+        console.log('[YouthTraining] Botón Entrenamiento añadido ✓');
+    }
 
     // ─────────────────────────────────────────────────────────────
     // PANEL DE ENTRENAMIENTO
     // ─────────────────────────────────────────────────────────────
     function injectTrainingPanel() {
         if (document.getElementById('trainingPanel')) return;
+
         const panel = document.createElement('div');
         panel.id = 'trainingPanel';
-        panel.style.cssText = `display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.85); z-index:9998; overflow-y:auto;`;
+        panel.style.cssText = `
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.85); z-index:9998; overflow-y:auto;
+        `;
         panel.innerHTML = `
             <div style="background:#0d0d1a; min-height:100vh; padding:20px; color:#e0e0e0; max-width:800px; margin:0 auto;">
+                
+                <!-- HEADER -->
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #1565C0; padding-bottom:12px;">
                     <h1 style="margin:0; color:#42A5F5;">🎯 Centro de Entrenamiento</h1>
                     <button onclick="document.getElementById('trainingPanel').style.display='none'"
@@ -363,6 +439,7 @@ console.log('🏫 Youth Training Injector cargando...');
                     </button>
                 </div>
 
+                <!-- TOGGLE AUTOMÁTICO -->
                 <div style="background:#0a1628; border:1px solid #1565C0; border-radius:10px; padding:16px; margin-bottom:20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
@@ -377,58 +454,61 @@ console.log('🏫 Youth Training Injector cargando...');
                     </div>
                 </div>
 
+                <!-- STAFF ENTRENADORES -->
                 <div id="trainingStaffCards" style="margin-bottom:20px;"></div>
 
+                <!-- CANTERA - PROGRESIÓN -->
                 <div style="background:#0a1628; border:1px solid #388E3C; border-radius:10px; padding:16px;">
                     <h3 style="margin:0 0 12px; color:#66BB6A;">🏫 Cantera - Estado actual</h3>
                     <div id="trainingAcademyList"></div>
                 </div>
-            </div>`;
+
+            </div>
+        `;
         document.body.appendChild(panel);
     }
 
     window.toggleAutoTraining = function (enabled) {
         localStorage.setItem('autoTraining_enabled', enabled ? 'true' : 'false');
-        const label = document.getElementById('autoTrainingLabel');
-        if (label) label.textContent = enabled ? 'Activado ✓' : 'Desactivado';
+        document.getElementById('autoTrainingLabel').textContent = enabled ? 'Activado ✓' : 'Desactivado';
     };
 
-    // Expuesto globalmente — llamado desde el hook de openPage
-    window.openTrainingPanel = function () {
+    function openTrainingPanel() {
         const panel = document.getElementById('trainingPanel');
-        if (!panel) { injectTrainingPanel(); }
+        if (!panel) return;
 
         const state = gs();
         if (!state) return;
 
+        // Toggle state
         const autoOn = localStorage.getItem('autoTraining_enabled') === 'true';
         const toggle = document.getElementById('autoTrainingToggle');
         if (toggle) toggle.checked = autoOn;
         const label = document.getElementById('autoTrainingLabel');
         if (label) label.textContent = autoOn ? 'Activado ✓' : 'Desactivado';
 
+        // Render staff entrenadores
         renderStaffCards(state);
+
+        // Render cantera
         renderAcademyProgress(state);
 
-        document.getElementById('trainingPanel').style.display = 'block';
-    };
+        panel.style.display = 'block';
+    }
 
     function renderStaffCards(state) {
         const container = document.getElementById('trainingStaffCards');
         if (!container) return;
 
         const coaches = [
-            { role: YOUTH_ROLE,          icon: '🏫', label: 'Entrenador de Juveniles', color: '#66BB6A', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
-            { role: 'entrenadorPorteros', icon: '🥅', label: 'Entrenador de Porteros',  color: '#42A5F5', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
-            { role: 'segundoEntrenador',  icon: '📋', label: 'Segundo Entrenador',       color: '#FFA726', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
+            { role: 'entrenadorJuveniles', icon: '🏫', label: 'Entrenador de Juveniles', color: '#66BB6A', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
+            { role: 'entrenadorPorteros', icon: '🥅', label: 'Entrenador de Porteros', color: '#42A5F5', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
+            { role: 'segundoEntrenador', icon: '📋', label: 'Segundo Entrenador', color: '#FFA726', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
         ];
 
         container.innerHTML = `<h3 style="margin:0 0 12px; color:#e0e0e0;">👔 Cuerpo Técnico</h3>` +
         coaches.map(c => {
             const staff = state.staff?.[c.role];
-            const hireCall = c.role === YOUTH_ROLE
-                ? `window.openYouthCoachModal()`
-                : `window.openHireStaffModal('${c.role}')`;
             return `
             <div style="background:#0a1628; border:1px solid ${c.color}33; border-radius:10px; padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
@@ -439,10 +519,10 @@ console.log('🏫 Youth Training Injector cargando...');
                     <span style="color:#aaa; font-size:0.82em;">${staff ? staff.name + ' · ' + fmt(staff.salary) + '€/sem' : 'No contratado'}</span><br>
                     <span style="color:#666; font-size:0.78em;">${c.desc}</span>
                 </div>
-                ${!staff
-                    ? `<button onclick="${hireCall}" style="background:#333; border:1px solid ${c.color}; color:${c.color}; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.82em;">Contratar</button>`
-                    : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`
-                }
+                ${!staff ? `<button onclick="window.${c.role === YOUTH_ROLE ? 'openYouthCoachModal' : 'openHireStaffModal("' + c.role + '")'}()"
+                    style="background:#333; border:1px solid ${c.color}; color:${c.color}; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.82em;">
+                    Contratar
+                </button>` : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`}
             </div>`;
         }).join('');
     }
@@ -452,25 +532,26 @@ console.log('🏫 Youth Training Injector cargando...');
         if (!container) return;
 
         const academy = state.academy || [];
-        const coach   = state.staff?.[YOUTH_ROLE];
+        const coach = state.staff?.[YOUTH_ROLE];
 
         if (!coach) {
             container.innerHTML = `<p style="color:#666; text-align:center; padding:20px;">⚠️ Sin entrenador de juveniles contratado. Los jugadores de cantera no progresan.</p>`;
             return;
         }
+
         if (academy.length === 0) {
             container.innerHTML = `<p style="color:#666; text-align:center; padding:20px;">La cantera está vacía.</p>`;
             return;
         }
 
-        container.innerHTML = academy.map(p => {
+        const rows = academy.map(p => {
             if (!p) return '';
             const ovr = calculateOverall(p);
             const pot = p.potential || ovr;
             const gap = pot - ovr;
             const pct = Math.round((ovr / pot) * 100);
-            const barColor   = pct > 85 ? '#4CAF50' : pct > 65 ? '#FFA726' : '#42A5F5';
-            const status      = p.isInjured ? '🏥 Lesionado' : p._promoteSuggested ? '⬆️ Listo para subir' : '✓ Entrenando';
+            const barColor = pct > 85 ? '#4CAF50' : pct > 65 ? '#FFA726' : '#42A5F5';
+            const status = p.isInjured ? '🏥 Lesionado' : p._promoteSuggested ? '⬆️ Listo para subir' : '✓ Entrenando';
             const statusColor = p.isInjured ? '#f44336' : p._promoteSuggested ? '#4CAF50' : '#aaa';
             return `
             <div style="background:#111827; border:1px solid #1e293b; border-radius:8px; padding:10px 14px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -495,7 +576,9 @@ console.log('🏫 Youth Training Injector cargando...');
                     ⬆️ Subir
                 </button>` : ''}
             </div>`;
-        }).join('') || `<p style="color:#666; text-align:center;">Sin jugadores en cantera.</p>`;
+        }).join('');
+
+        container.innerHTML = rows || `<p style="color:#666; text-align:center;">Sin jugadores en cantera.</p>`;
     }
 
     window.promoteFromTrainingPanel = function (name) {
@@ -503,32 +586,27 @@ console.log('🏫 Youth Training Injector cargando...');
         const result = gl()?.promoteYoungster?.(name);
         if (result?.success) {
             alert(`✅ ${name} ha sido ascendido al primer equipo.`);
-            window.openTrainingPanel();
+            openTrainingPanel(); // Refrescar panel
         } else {
             alert(result?.message || 'No se pudo ascender al jugador.');
         }
     };
 
     // ─────────────────────────────────────────────────────────────
-    // HOOK openPage
-    // El botón del HTML usa: onclick="openPage('openTrainingPanel')"
-    // Este hook intercepta esa llamada y abre el panel
-    // También refresca la fila de staff al abrir Empleados
+    // HOOK openPage para refrescar staff row al abrir Staff
     // ─────────────────────────────────────────────────────────────
     function hookOpenPage() {
         if (!window.openPage) { setTimeout(hookOpenPage, 300); return; }
         const orig = window.openPage;
         window.openPage = function (page, ...args) {
-            if (page === 'openTrainingPanel') {
-                window.openTrainingPanel();
-                return;
-            }
             orig.call(this, page, ...args);
             if (page === 'staff') {
-                setTimeout(() => { injectStaffRow(); updateStaffRowUI(); }, 80);
+                setTimeout(() => {
+                    injectStaffRow();
+                    updateStaffRowUI();
+                }, 80);
             }
         };
-        console.log('[YouthTraining] hook openPage ✓');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -537,6 +615,7 @@ console.log('🏫 Youth Training Injector cargando...');
     function boot() {
         if (!window.gameLogic) { setTimeout(boot, 600); return; }
 
+        // Asegurar que el rol de entrenador de juveniles existe en el staff del gameState
         const state = gs();
         if (state && state.staff && !(YOUTH_ROLE in state.staff)) {
             state.staff[YOUTH_ROLE] = null;
@@ -548,7 +627,29 @@ console.log('🏫 Youth Training Injector cargando...');
         hookSimulateWeek();
         hookOpenPage();
 
-        console.log('[YouthTraining] ✅ v1.1 listo');
+        // Intentar inyectar botón y fila cuando el DOM esté listo
+        const tryInject = () => {
+            injectTrainingButton();
+            // Fila en staff se inyecta al abrir la página de staff
+        };
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(tryInject, 500);
+        } else {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(tryInject, 500));
+        }
+
+        // Re-intentar periódicamente hasta que el botón esté en DOM
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (!document.getElementById('btnOpenTrainingPanel')) {
+                injectTrainingButton();
+            }
+            if (attempts > 20) clearInterval(interval);
+        }, 1000);
+
+        console.log('[YouthTraining] ✅ v1.0 listo');
     }
 
     boot();
