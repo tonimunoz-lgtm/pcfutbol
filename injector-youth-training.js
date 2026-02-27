@@ -1,3 +1,4 @@
+
 // injector-youth-training.js  v1.0
 // ============================================================
 // DOS FUNCIONALIDADES:
@@ -256,7 +257,7 @@ console.log('🏫 Youth Training Injector cargando...');
             <td>🏫 Entrenador Juveniles</td>
             <td id="staffEntrenadorJuvenilesName">No Contratado</td>
             <td id="staffEntrenadorJuvenilesLevel">-</td>
-            <td id="staffEntrenadorJuvenilessalary">-</td>
+            <td id="staffEntrenadorJuvenilesalary">-</td>
             <td id="staffEntrenadorJuvenilesClausula">-</td>
             <td><button class="btn btn-sm" id="btnHireEntrenadorJuveniles" onclick="window.openYouthCoachModal()">Contratar</button></td>
         `;
@@ -277,7 +278,7 @@ console.log('🏫 Youth Training Injector cargando...');
 
         if (nameEl)  nameEl.textContent  = coach ? coach.name  : 'No Contratado';
         if (lvlEl)   lvlEl.textContent   = coach ? coach.level : '-';
-        if (salEl)   salEl.textContent   = coach ? fmt(coach.salary) + '€' : '-';
+        if (salEl)   salEl.textContent   = coach ? (coach.salary ? fmt(coach.salary) + '€' : '-') : '-';
         if (clausEl) clausEl.textContent = coach ? 'N/A' : '-';
         if (btnEl) {
             btnEl.disabled    = !!coach;
