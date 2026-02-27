@@ -164,10 +164,16 @@
             <div id="scoutResultsSection" style="display:none;">
                 <div style="color:#4CAF50;font-weight:bold;margin-bottom:14px;">✅ Resultados encontrados</div>
                 <div id="scoutResultsList"></div>
-                <button onclick="window.closeScoutModal()"
-                    style="width:100%;margin-top:14px;padding:11px;background:rgba(255,255,255,.07);
-                           border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;
-                           cursor:pointer;font-size:.9em;">Cerrar</button>
+                <div style="display:flex;gap:10px;margin-top:14px;">
+                    <button onclick="window.newScoutSearch()"
+                        style="flex:1;padding:11px;background:rgba(255,165,0,.15);
+                               border:1px solid rgba(255,165,0,.5);border-radius:8px;color:#FFA726;
+                               cursor:pointer;font-size:.9em;font-weight:bold;">🔄 Nueva Búsqueda</button>
+                    <button onclick="window.closeScoutModal()"
+                        style="flex:1;padding:11px;background:rgba(255,255,255,.07);
+                               border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;
+                               cursor:pointer;font-size:.9em;">Cerrar</button>
+                </div>
             </div>
         </div>`;
         document.body.appendChild(modal);
@@ -176,6 +182,20 @@
     window.closeScoutModal = function() {
         const m = document.getElementById('scoutSearchModal');
         if (m) m.style.display = 'none';
+    };
+
+    window.newScoutSearch = function() {
+        // Limpiar resultados del estado para poder iniciar nueva búsqueda
+        gl()?.updateGameState?.({ scoutResults: null, scoutSearch: null });
+        refreshAcademyBadge();
+
+        // Volver al formulario dentro del modal (sin cerrarlo)
+        const form   = document.getElementById('scoutSearchForm');
+        const active = document.getElementById('scoutSearchActive');
+        const resSec = document.getElementById('scoutResultsSection');
+        if (form)   form.style.display   = 'block';
+        if (active) active.style.display = 'none';
+        if (resSec) resSec.style.display = 'none';
     };
 
     window.openScoutModal = function() {
