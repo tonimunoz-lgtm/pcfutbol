@@ -1545,8 +1545,8 @@ window.selectTeamAndStart = function(teamName, division) {
                 if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '€' : '-';
                 if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-';
                 if (btnElem) {
-                    btnElem.disabled = !!staff;
-                    btnElem.textContent = staff ? 'Contratado' : 'Contratar';
+                    btnElem.disabled = false;
+                    btnElem.textContent = staff ? 'Cambiar' : 'Contratar';
                 }
             });
         }
