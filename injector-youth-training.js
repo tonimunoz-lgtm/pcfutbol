@@ -398,21 +398,6 @@ console.log('🏫 Youth Training Injector cargando...');
         if (window.updateStaffDisplay) window.updateStaffDisplay(state);
     };
 
-    // ─────────────────────────────────────────────────────────────
-    // UI: Botón Entrenamiento en cuadrante superior derecho
-    // ─────────────────────────────────────────────────────────────
-    function injectTrainingButton() {
-        const topRight = document.querySelector('.quadrant.top-right');
-        if (!topRight || document.getElementById('btnOpenTrainingPanel')) return;
-
-        const btn = document.createElement('button');
-        btn.id = 'btnOpenTrainingPanel';
-        btn.className = 'menu-button green-button entreno.icon';
-        btn.textContent = '🎯 Entrenamiento';
-        btn.onclick = openTrainingPanel;
-        topRight.appendChild(btn);
-        console.log('[YouthTraining] Botón Entrenamiento añadido ✓');
-    }
 
     // ─────────────────────────────────────────────────────────────
     // PANEL DE ENTRENAMIENTO
