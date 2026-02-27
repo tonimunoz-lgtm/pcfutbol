@@ -398,6 +398,22 @@ console.log('🏫 Youth Training Injector cargando...');
         if (window.updateStaffDisplay) window.updateStaffDisplay(state);
     };
 
+    // ─────────────────────────────────────────────────────────────
+    // UI: Botón Entrenamiento en cuadrante superior derecho
+    // ─────────────────────────────────────────────────────────────
+    function injectTrainingButton() {
+        const topRight = document.querySelector('.quadrant.top-right');
+        if (!topRight || document.getElementById('btnOpenTrainingPanel')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'btnOpenTrainingPanel';
+        btn.className = 'menu-button green-button';
+        btn.style.cssText = 'background: linear-gradient(135deg, #1565C0, #0D47A1);';
+        btn.textContent = '🎯 Entrenamiento';
+        btn.onclick = openTrainingPanel;
+        topRight.appendChild(btn);
+        console.log('[YouthTraining] Botón Entrenamiento añadido ✓');
+    }
 
     // ─────────────────────────────────────────────────────────────
     // PANEL DE ENTRENAMIENTO
@@ -565,6 +581,8 @@ console.log('🏫 Youth Training Injector cargando...');
         container.innerHTML = rows || `<p style="color:#666; text-align:center;">Sin jugadores en cantera.</p>`;
     }
 
+    window.openTrainingPanel = openTrainingPanel;
+
     window.promoteFromTrainingPanel = function (name) {
         if (!confirm(`¿Ascender a ${name} al primer equipo?`)) return;
         const result = gl()?.promoteYoungster?.(name);
@@ -610,28 +628,6 @@ console.log('🏫 Youth Training Injector cargando...');
         injectTrainingPanel();
         hookSimulateWeek();
         hookOpenPage();
-
-        // Intentar inyectar botón y fila cuando el DOM esté listo
-        const tryInject = () => {
-            injectTrainingButton();
-            // Fila en staff se inyecta al abrir la página de staff
-        };
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            setTimeout(tryInject, 500);
-        } else {
-            document.addEventListener('DOMContentLoaded', () => setTimeout(tryInject, 500));
-        }
-
-        // Re-intentar periódicamente hasta que el botón esté en DOM
-        let attempts = 0;
-        const interval = setInterval(() => {
-            attempts++;
-            if (!document.getElementById('btnOpenTrainingPanel')) {
-                injectTrainingButton();
-            }
-            if (attempts > 20) clearInterval(interval);
-        }, 1000);
 
         console.log('[YouthTraining] ✅ v1.0 listo');
     }
