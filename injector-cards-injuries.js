@@ -289,7 +289,7 @@ function hookSimulateWeek() {
         const previousGlobalWeek = globalWeekCounter;
         globalWeekCounter++;
         
-        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
+        const isPreseason = state?.seasonType === 'preseason';
         
         console.log(`📅 Semana global ${globalWeekCounter} (anterior: ${previousGlobalWeek}, last processed: ${lastProcessedGlobalWeek}), Semana ${state?.week}, Pretemporada: ${isPreseason}`);
         
