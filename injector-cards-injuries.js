@@ -159,9 +159,9 @@ function processWeeklySuspensions(squad) {
                 player.isSuspended = false;
                 player.suspensionWeeks = 0;
                 
-                if (player.yellowCards >= CARDS_CONFIG.YELLOW_FOR_SUSPENSION && player.redCards === 0) {
-                    player.yellowCards = 0;
-                }
+                // Siempre resetear los contadores al cumplir la sanción
+                player.yellowCards = 0;
+                player.redCards = 0;
                 
                 recovered.push(player.name);
             }
