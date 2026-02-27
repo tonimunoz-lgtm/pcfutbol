@@ -46,32 +46,10 @@
 
         const orig = window.injectMatchSummary;
         window.injectMatchSummary = function(matchResult) {
-            // Guardar el objeto básico de resultado
+            // Guardar el resultado para mostrarlo después
             window._lastMatchResult = matchResult;
-
-            // Llamar al original (construye y añade el modal al DOM)
-            const ret = orig.call(this, matchResult);
-
-            // Capturar el HTML interno del modal ya renderizado
-            // (goleadores, stats, tarjetas y lesiones tal como los generó match-summary)
-            setTimeout(() => {
-                const modal = document.getElementById('matchSummaryModal');
-                if (modal) {
-                    const container = modal.querySelector('.match-container');
-                    if (container) {
-                        // Guardamos el innerHTML completo del contenedor, sin el botón cerrar
-                        // y sin el botón continuar (los reemplazamos por los de la página)
-                        let html = container.innerHTML;
-                        // Quitar el botón ✖ cerrar del modal
-                        html = html.replace(/<button[^>]*class="match-close"[^>]*>.*?<\/button>/s, '');
-                        // Quitar el botón "Continuar" del footer
-                        html = html.replace(/<div[^>]*class="match-footer"[^>]*>[\s\S]*?<\/div>/s, '');
-                        window._lastMatchResultHTML = html;
-                    }
-                }
-            }, 100);
-
-            return ret;
+            // Llamar al original (muestra el modal normal)
+            return orig.call(this, matchResult);
         };
         console.log('[LastResult] hook injectMatchSummary ✓');
     }
@@ -108,6 +86,141 @@
     function createLastResultPage() {
         if (document.getElementById('last-result')) return;
 
+        // Inyectar los mismos estilos del modal pero con selector #last-result
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #last-result-content .match-container {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 700px;
+                width: 90%;
+                margin: 0 auto;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                position: relative;
+            }
+            #last-result-content .match-close { display: none; }
+            #last-result-content .match-header {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 30px;
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            }
+            #last-result-content .match-team { text-align: center; }
+            #last-result-content .team-name {
+                font-size: 1.3em;
+                font-weight: bold;
+                color: #fff;
+                margin-bottom: 10px;
+            }
+            #last-result-content .team-score {
+                font-size: 3.5em;
+                font-weight: bold;
+                color: #4CAF50;
+                text-shadow: 0 2px 10px rgba(76, 175, 80, 0.5);
+            }
+            #last-result-content .match-separator {
+                font-size: 2.5em;
+                color: rgba(255, 255, 255, 0.3);
+            }
+            #last-result-content h3 {
+                color: #FFD700;
+                margin: 25px 0 15px 0;
+                font-size: 1.1em;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            #last-result-content .goals-list,
+            #last-result-content .cards-list,
+            #last-result-content .injuries-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            #last-result-content .goal-item,
+            #last-result-content .card-item,
+            #last-result-content .injury-item {
+                background: rgba(255, 255, 255, 0.05);
+                padding: 10px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border-left: 3px solid;
+            }
+            #last-result-content .goal-item.home,
+            #last-result-content .card-item.home { border-color: #4CAF50; }
+            #last-result-content .goal-item.away,
+            #last-result-content .card-item.away { border-color: #FF5722; }
+            #last-result-content .injury-item { border-color: #FF9800; }
+            #last-result-content .goal-minute,
+            #last-result-content .card-minute,
+            #last-result-content .injury-minute {
+                color: #FFD700;
+                font-weight: bold;
+                min-width: 35px;
+            }
+            #last-result-content .goal-scorer,
+            #last-result-content .card-player,
+            #last-result-content .injury-player {
+                color: white;
+                font-weight: 600;
+                flex: 1;
+            }
+            #last-result-content .goal-team,
+            #last-result-content .card-team,
+            #last-result-content .injury-team {
+                color: rgba(255, 255, 255, 0.5);
+                font-size: 0.9em;
+            }
+            #last-result-content .card-icon { font-size: 1.2em; }
+            #last-result-content .poss-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            #last-result-content .poss-label {
+                color: white;
+                min-width: 120px;
+                font-size: 0.95em;
+            }
+            #last-result-content .poss-bar {
+                flex: 1;
+                height: 24px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            #last-result-content .poss-fill { height: 100%; transition: width 1s ease-out; }
+            #last-result-content .poss-fill.home { background: linear-gradient(90deg, #4CAF50, #66BB6A); }
+            #last-result-content .poss-fill.away { background: linear-gradient(90deg, #FF5722, #FF7043); }
+            #last-result-content .poss-value {
+                color: #FFD700;
+                font-weight: bold;
+                min-width: 45px;
+                text-align: right;
+            }
+            #last-result-content .stats-table { width: 100%; border-collapse: collapse; }
+            #last-result-content .stats-table tr { border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+            #last-result-content .stats-table td { padding: 12px 8px; color: white; }
+            #last-result-content .stat-name {
+                text-align: center;
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 0.9em;
+            }
+            #last-result-content .stat-home,
+            #last-result-content .stat-away { font-weight: bold; font-size: 1.1em; }
+            #last-result-content .stat-home { text-align: right; color: #4CAF50; }
+            #last-result-content .stat-away { text-align: left; color: #FF5722; }
+            #last-result-content .match-footer { display: none; }
+        `;
+        document.head.appendChild(style);
+
         const page = document.createElement('div');
         page.id = 'last-result';
         page.className = 'page';
@@ -137,13 +250,7 @@
         }
 
         if (content) {
-            // Volcar el HTML exacto del modal dentro de un contenedor con el mismo estilo
-            content.innerHTML = `
-                <div class="match-container" style="max-width:700px;margin:0 auto;
-                     background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px;
-                     padding:30px;box-shadow:0 20px 60px rgba(0,0,0,.8);">
-                    ${window._lastMatchResultHTML}
-                </div>`;
+            content.innerHTML = `<div class="match-container">${window._lastMatchResultHTML}</div>`;
         }
         if (window.openPage) window.openPage('last-result');
     };
