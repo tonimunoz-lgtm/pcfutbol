@@ -266,7 +266,9 @@ body {
 .cantera-icon::before {content: "\1F331"; display: inline-block; font-size: 1.2em; margin-right: 5px;}
 .noticias-icon::before {background-image: url('/assets/iconos/noticias.png');}
 .rival-icon::before {background-image: url('/assets/iconos/rival.png');}
+.entreno-icon::before {background-image: url('/assets/iconos/entrenamiento.png');}
 
+entrenamiento.png
 /* ============================================
    PÃGINAS DE CONTENIDO - Pantallas secundarias
    ============================================ */
