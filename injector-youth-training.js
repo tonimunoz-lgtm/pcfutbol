@@ -515,10 +515,14 @@ console.log('🏫 Youth Training Injector cargando...');
     // Este hook intercepta esa llamada y abre el panel
     // También refresca la fila de staff al abrir Empleados
     // ─────────────────────────────────────────────────────────────
- function hookOpenPage() {
+    function hookOpenPage() {
         if (!window.openPage) { setTimeout(hookOpenPage, 300); return; }
         const orig = window.openPage;
         window.openPage = function (page, ...args) {
+            if (page === 'openTrainingPanel') {
+                window.openTrainingPanel();
+                return;
+            }
             orig.call(this, page, ...args);
             if (page === 'staff') {
                 setTimeout(() => { injectStaffRow(); updateStaffRowUI(); }, 80);
