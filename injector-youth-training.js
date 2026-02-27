@@ -1,4 +1,3 @@
-
 // injector-youth-training.js  v1.0
 // ============================================================
 // DOS FUNCIONALIDADES:
@@ -281,8 +280,8 @@ console.log('🏫 Youth Training Injector cargando...');
         if (salEl)   salEl.textContent   = coach ? (coach.salary ? fmt(coach.salary) + '€' : '-') : '-';
         if (clausEl) clausEl.textContent = coach ? 'N/A' : '-';
         if (btnEl) {
-            btnEl.disabled    = !!coach;
-            btnEl.textContent = coach ? 'Contratado' : 'Contratar';
+            btnEl.disabled    = false;
+            btnEl.textContent = coach ? 'Cambiar' : 'Contratar';
         }
     }
 
