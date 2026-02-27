@@ -924,6 +924,12 @@ function applyWeeklyTraining() {
   
     const player = gameState.squad[gameState.trainingFocus.playerIndex];  
     const attribute = gameState.trainingFocus.attribute;  
+
+    if (!player) {
+        // El índice ya no corresponde a ningún jugador (cambio de temporada/plantilla)
+        gameState.trainingFocus = { playerIndex: -1, attribute: null };
+        return { success: false, message: 'Jugador de entrenamiento ya no existe en la plantilla. Foco reiniciado.', type: 'system' };
+    }
   
     if (player.isInjured) {  
         return { success: false, message: `${player.name} está lesionado y no puede entrenar.`, type: 'system' };  
