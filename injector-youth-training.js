@@ -407,8 +407,7 @@ console.log('🏫 Youth Training Injector cargando...');
 
         const btn = document.createElement('button');
         btn.id = 'btnOpenTrainingPanel';
-        btn.className = 'menu-button green-button';
-        btn.style.cssText = 'background: linear-gradient(135deg, #1565C0, #0D47A1);';
+        btn.className = 'menu-button green-button entreno.icon';
         btn.textContent = '🎯 Entrenamiento';
         btn.onclick = openTrainingPanel;
         topRight.appendChild(btn);
