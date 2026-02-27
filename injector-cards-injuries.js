@@ -159,9 +159,9 @@ function processWeeklySuspensions(squad) {
                 player.isSuspended = false;
                 player.suspensionWeeks = 0;
                 
-                if (player.yellowCards >= CARDS_CONFIG.YELLOW_FOR_SUSPENSION && player.redCards === 0) {
-                    player.yellowCards = 0;
-                }
+                // Siempre resetear los contadores al cumplir la sanción
+                player.yellowCards = 0;
+                player.redCards = 0;
                 
                 recovered.push(player.name);
             }
@@ -289,7 +289,7 @@ function hookSimulateWeek() {
         const previousGlobalWeek = globalWeekCounter;
         globalWeekCounter++;
         
-        const isPreseason = state?.week <= 4 && globalWeekCounter <= 4;
+        const isPreseason = state?.seasonType === 'preseason';
         
         console.log(`📅 Semana global ${globalWeekCounter} (anterior: ${previousGlobalWeek}, last processed: ${lastProcessedGlobalWeek}), Semana ${state?.week}, Pretemporada: ${isPreseason}`);
         
