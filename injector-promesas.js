@@ -70,12 +70,20 @@
 
     function getMyRating() {
         const state = getState();
-        if (!state?.players) return 65;
+        if (!state) return 65;
+        // Usar calculateTeamEffectiveOverall si está disponible (penalización por posición)
+        if (window.calculateTeamEffectiveOverallImproved && state.lineup?.length >= 11) {
+            return Math.round(window.calculateTeamEffectiveOverallImproved(
+                state.lineup.slice(0,11), state.formation || '433'
+            ));
+        }
+        // Fallback: media del once
         const lineup = (state.lineup || []).slice(0, 11);
         if (!lineup.length) return 65;
-        const sum = lineup.reduce((acc, name) => {
-            const p = state.players.find(x => x.name === name);
-            return acc + (p?.overall || 65);
+        const squad = state.squad || state.players || [];
+        const sum = lineup.reduce((acc, p) => {
+            const sp = squad.find(x => x.name === (p?.name || p));
+            return acc + (sp?.overall || p?.overall || 65);
         }, 0);
         return sum / lineup.length;
     }
