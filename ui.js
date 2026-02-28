@@ -213,7 +213,10 @@ function renderSquadList(squad, currentTeam) {
                 <tbody>  
     `;  
   
-    const sorted = squad.sort((a, b) => b.overall - a.overall);  
+    // ✅ FIX: Guardar índice REAL en squad original antes de ordenar
+    // openTrainingModal necesita el índice en gameState.squad, no en el array ordenado
+    squad.forEach((p, realIdx) => { if (p) p._realSquadIndex = realIdx; });
+    const sorted = [...squad].sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {  
         const statusText = p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
         
@@ -267,7 +270,7 @@ function renderSquadList(squad, currentTeam) {
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
     ${p.contractType !== 'loaned_out' ? `
-        <button class="btn btn-sm" onclick="window.openTrainingModal(${idx})" 
+        <button class="btn btn-sm" onclick="window.openTrainingModal(${p._realSquadIndex})" 
                 title="Entrenar" style="padding: 5px 8px;">
             💪
         </button>
