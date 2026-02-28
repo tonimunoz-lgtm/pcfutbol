@@ -33,7 +33,7 @@ const CARDS_CONFIG = {
 };
 
 const INJURIES_CONFIG = {
-    BASE_PROBABILITY: 0.08,
+    BASE_PROBABILITY: 0.018,
     TYPES: [
         'Esguince de tobillo',
         'Lesión muscular',
@@ -103,21 +103,29 @@ function simulateMatchInjuries(player, staff) {
         probability *= reduction;
         console.log(`💪 Prep.Físico nivel ${level}: ${(reduction * 100).toFixed(0)}% probabilidad`);
     } else {
-        probability *= 1.5;
-        console.log('⚠️ Sin preparador físico: +50% probabilidad lesión');
+        probability *= 1.3;
+        console.log('⚠️ Sin preparador físico: +30% probabilidad lesión');
     }
     
-    if (player.age > 30) {
-        const ageMultiplier = 1 + ((player.age - 30) * 0.02);
+    // Edad: solo penaliza a partir de 32
+    if (player.age > 32) {
+        const ageMultiplier = 1 + ((player.age - 32) * 0.025);
         probability *= ageMultiplier;
     }
     
+    // Baja forma
     if (player.form < 60) {
-        probability *= 1.3;
+        probability *= 1.2;
     }
     
     if (Math.random() < probability) {
-        let weeks = 1 + Math.floor(Math.random() * 4);
+        // 95% lesión leve (1-3 semanas), 5% lesión grave (4-8 semanas)
+        let weeks;
+        if (Math.random() < 0.05) {
+            weeks = 4 + Math.floor(Math.random() * 5); // grave: 4-8 semanas
+        } else {
+            weeks = 1 + Math.floor(Math.random() * 3); // leve: 1-3 semanas
+        }
         
         // MÉDICO: Reduce semanas de recuperación
         if (staff?.medico) {
