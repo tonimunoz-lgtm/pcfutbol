@@ -256,7 +256,7 @@ console.log('🏫 Youth Training Injector cargando...');
             <td>🏫 Entrenador Juveniles</td>
             <td id="staffEntrenadorJuvenilesName">No Contratado</td>
             <td id="staffEntrenadorJuvenilesLevel">-</td>
-            <td id="staffEntrenadorJuvenilessalary">-</td>
+            <td id="staffEntrenadorJuvenilesalary">-</td>
             <td id="staffEntrenadorJuvenilesClausula">-</td>
             <td><button class="btn btn-sm" id="btnHireEntrenadorJuveniles" onclick="window.openYouthCoachModal()">Contratar</button></td>
         `;
@@ -277,11 +277,11 @@ console.log('🏫 Youth Training Injector cargando...');
 
         if (nameEl)  nameEl.textContent  = coach ? coach.name  : 'No Contratado';
         if (lvlEl)   lvlEl.textContent   = coach ? coach.level : '-';
-        if (salEl)   salEl.textContent   = coach ? fmt(coach.salary) + '€' : '-';
+        if (salEl)   salEl.textContent   = coach ? (coach.salary ? fmt(coach.salary) + '€' : '-') : '-';
         if (clausEl) clausEl.textContent = coach ? 'N/A' : '-';
         if (btnEl) {
-            btnEl.disabled    = !!coach;
-            btnEl.textContent = coach ? 'Contratado' : 'Contratar';
+            btnEl.disabled    = false;
+            btnEl.textContent = coach ? 'Cambiar' : 'Contratar';
         }
     }
 
@@ -398,6 +398,22 @@ console.log('🏫 Youth Training Injector cargando...');
         if (window.updateStaffDisplay) window.updateStaffDisplay(state);
     };
 
+    // ─────────────────────────────────────────────────────────────
+    // UI: Botón Entrenamiento en cuadrante superior derecho
+    // ─────────────────────────────────────────────────────────────
+    function injectTrainingButton() {
+        const topRight = document.querySelector('.quadrant.top-right');
+        if (!topRight || document.getElementById('btnOpenTrainingPanel')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'btnOpenTrainingPanel';
+        btn.className = 'menu-button green-button';
+        btn.style.cssText = 'background: linear-gradient(135deg, #1565C0, #0D47A1);';
+        btn.textContent = '🎯 Entrenamiento';
+        btn.onclick = openTrainingPanel;
+        topRight.appendChild(btn);
+        console.log('[YouthTraining] Botón Entrenamiento añadido ✓');
+    }
 
     // ─────────────────────────────────────────────────────────────
     // PANEL DE ENTRENAMIENTO
@@ -457,38 +473,6 @@ console.log('🏫 Youth Training Injector cargando...');
         document.getElementById('autoTrainingLabel').textContent = enabled ? 'Activado ✓' : 'Desactivado';
     };
 
-    // ─────────────────────────────────────────────────────────────
-    // BOTÓN DE ACCESO AL PANEL (inyectado en el cuadrante de botones)
-    // ─────────────────────────────────────────────────────────────
-    function injectTrainingButton() {
-        if (document.getElementById('btnOpenTrainingPanel')) return;
-
-        // Buscar el contenedor de botones del cuadrante principal
-        const containers = [
-            document.querySelector('.quadrant-buttons'),
-            document.querySelector('.action-buttons'),
-            document.querySelector('#main-actions'),
-            document.querySelector('.btn-group'),
-            document.querySelector('[id*="cuadrante"]'),
-            document.querySelector('[class*="cuadrante"]'),
-            document.querySelector('[class*="buttons"]')
-        ];
-        const target = containers.find(c => c !== null);
-
-        if (!target) return; // DOM aún no está listo
-
-        const btn = document.createElement('button');
-        btn.id = 'btnOpenTrainingPanel';
-        btn.textContent = '🎯 Entrenamiento';
-        btn.onclick = () => window.openTrainingPanel();
-        btn.style.cssText = `
-            background:#1565C0; border:none; color:#fff;
-            padding:8px 14px; border-radius:6px; cursor:pointer;
-            font-size:0.88em; font-weight:bold; margin:4px;
-        `;
-        target.appendChild(btn);
-    }
-
     function openTrainingPanel() {
         const panel = document.getElementById('trainingPanel');
         if (!panel) return;
@@ -535,14 +519,10 @@ console.log('🏫 Youth Training Injector cargando...');
                     <span style="color:#aaa; font-size:0.82em;">${staff ? staff.name + ' · ' + fmt(staff.salary) + '€/sem' : 'No contratado'}</span><br>
                     <span style="color:#666; font-size:0.78em;">${c.desc}</span>
                 </div>
-                ${(()=>{
-                    const fn = c.role === YOUTH_ROLE ? 'window.openYouthCoachModal()' : `window.openHireStaffModal('${c.role}')`;
-                    const label = !staff ? 'Contratar' : 'Cambiar';
-                    return `<button onclick="${fn}"
-                        style="background:#333; border:1px solid ${c.color}; color:${c.color}; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.82em;">
-                        ${label}
-                    </button>`;
-                })()}
+                ${!staff ? `<button onclick="window.${c.role === YOUTH_ROLE ? 'openYouthCoachModal' : 'openHireStaffModal("' + c.role + '")'}()"
+                    style="background:#333; border:1px solid ${c.color}; color:${c.color}; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.82em;">
+                    Contratar
+                </button>` : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`}
             </div>`;
         }).join('');
     }
@@ -648,28 +628,6 @@ console.log('🏫 Youth Training Injector cargando...');
         injectTrainingPanel();
         hookSimulateWeek();
         hookOpenPage();
-
-        // Intentar inyectar botón y fila cuando el DOM esté listo
-        const tryInject = () => {
-            injectTrainingButton();
-            // Fila en staff se inyecta al abrir la página de staff
-        };
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            setTimeout(tryInject, 500);
-        } else {
-            document.addEventListener('DOMContentLoaded', () => setTimeout(tryInject, 500));
-        }
-
-        // Re-intentar periódicamente hasta que el botón esté en DOM
-        let attempts = 0;
-        const interval = setInterval(() => {
-            attempts++;
-            if (!document.getElementById('btnOpenTrainingPanel')) {
-                injectTrainingButton();
-            }
-            if (attempts > 20) clearInterval(interval);
-        }, 1000);
 
         console.log('[YouthTraining] ✅ v1.0 listo');
     }
