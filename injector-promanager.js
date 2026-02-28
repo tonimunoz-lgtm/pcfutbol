@@ -1,6 +1,6 @@
-// injector-promanager.js v2
+// injector-promanager.js v3
 // Sistema Promanager: ofertas de equipos, reputación en Firebase, despidos.
-// Sin hookUIRefresh (módulo ES6 read-only). Solo añadir <script> en index.html.
+// v3: fix hook simulateWeek via callback global, fix nombre usuario, fix textos.
 
 console.log('🎯 Injector Promanager cargando...');
 
@@ -23,6 +23,21 @@ console.log('🎯 Injector Promanager cargando...');
         lastOfferWeek: -99, firedThisSeason: false,
         consecutiveLosses: 0, weeklyPoints: [], unemployed: true
     };
+
+    // ── Nombre del usuario logueado ──
+    function getManagerName() {
+        if (window.currentUser) {
+            return window.currentUser.name || window.currentUser.email || 'Manager';
+        }
+        try {
+            var stored = localStorage.getItem('currentUser');
+            if (stored) {
+                var u = JSON.parse(stored);
+                return u.name || u.email || 'Manager';
+            }
+        } catch(e) {}
+        return 'Manager';
+    }
 
     // ── Firebase ──
     async function waitForAuth() {
@@ -93,31 +108,34 @@ console.log('🎯 Injector Promanager cargando...');
 
     function removeModal(id) { var el = document.getElementById(id); if (el) el.remove(); }
 
-    // ── Modal inicial: 3 ofertas ──
+    // ── Modal inicial: 3 ofertas de empleo ──
     async function showInitialOfferModal(offers, onAccept) {
         removeModal('pmInitialModal');
         var logos = await Promise.all(offers.map(function(o){ return getTeamLogo(o.team); }));
+        var managerName = getManagerName();
 
         var cardsHTML = offers.map(function(offer, i) {
-            return '<div class="pm-ic" data-i="' + i + '" onclick="window._pmPick(' + i + ')" style="background:rgba(255,255,255,0.06);border:2px solid rgba(102,126,234,0.4);border-radius:14px;padding:22px 14px;cursor:pointer;text-align:center;flex:1;min-width:150px;max-width:200px;transition:all 0.2s;" onmouseover="this.style.borderColor=\'#667eea\';this.style.background=\'rgba(102,126,234,0.15)\';this.style.transform=\'translateY(-4px)\'" onmouseout="this.style.borderColor=\'rgba(102,126,234,0.4)\';this.style.background=\'rgba(255,255,255,0.06)\';this.style.transform=\'translateY(0)\'">'
+            return '<div onclick="window._pmPick(' + i + ')" style="background:rgba(255,255,255,0.06);border:2px solid rgba(102,126,234,0.4);border-radius:14px;padding:22px 14px;cursor:pointer;text-align:center;flex:1;min-width:150px;max-width:200px;transition:all 0.2s;" onmouseover="this.style.borderColor=\'#667eea\';this.style.background=\'rgba(102,126,234,0.18)\';this.style.transform=\'translateY(-5px)\';this.style.boxShadow=\'0 8px 25px rgba(102,126,234,0.3)\'" onmouseout="this.style.borderColor=\'rgba(102,126,234,0.4)\';this.style.background=\'rgba(255,255,255,0.06)\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">'
                 + '<div style="display:flex;justify-content:center;margin-bottom:12px;">' + shieldHTML(logos[i], offer.team, 62) + '</div>'
-                + '<div style="font-weight:bold;font-size:0.93em;color:#fff;margin-bottom:6px;line-height:1.2;">' + offer.team + '</div>'
-                + '<div style="font-size:0.76em;color:#f4c430;padding:3px 8px;background:rgba(244,196,48,0.1);border-radius:20px;display:inline-block;">' + DIVISION_LABELS[offer.division] + '</div>'
+                + '<div style="font-weight:bold;font-size:0.92em;color:#fff;margin-bottom:6px;line-height:1.2;">' + offer.team + '</div>'
+                + '<div style="font-size:0.74em;color:#f4c430;padding:3px 8px;background:rgba(244,196,48,0.1);border-radius:20px;display:inline-block;">' + DIVISION_LABELS[offer.division] + '</div>'
+                + '<div style="margin-top:10px;font-size:0.72em;color:#aaa;">📋 Oferta recibida</div>'
                 + '</div>';
         }).join('');
 
         var modal = document.createElement('div');
         modal.id = 'pmInitialModal';
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:inherit;';
-        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);border:2px solid #667eea;border-radius:18px;padding:36px 24px;max-width:620px;width:95%;box-shadow:0 0 80px rgba(102,126,234,0.4);color:#fff;">'
-            + '<div style="text-align:center;margin-bottom:22px;">'
-            + '<div style="font-size:52px;margin-bottom:8px;">🚀</div>'
-            + '<h2 style="color:#667eea;margin:0 0 4px;font-size:1.45em;">Liga Promanager</h2>'
-            + '<p style="color:#aaa;margin:0;font-size:0.86em;">Sin historial. Elige uno de estos equipos para empezar tu carrera.</p>'
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);border:2px solid #667eea;border-radius:18px;padding:36px 24px;max-width:640px;width:95%;box-shadow:0 0 80px rgba(102,126,234,0.4);color:#fff;">'
+            + '<div style="text-align:center;margin-bottom:6px;">'
+            + '<div style="font-size:48px;margin-bottom:8px;">📬</div>'
+            + '<h2 style="color:#667eea;margin:0 0 4px;font-size:1.45em;">Ofertas de empleo recibidas</h2>'
+            + '<p style="color:#aaa;margin:0 0 4px;font-size:0.88em;">Hola, <strong style="color:#fff;">' + managerName + '</strong>. Estos clubs quieren contratarte como entrenador.</p>'
+            + '<p style="color:#666;font-size:0.78em;margin:0 0 20px;">Sin historial previo, solo equipos de categorías inferiores están interesados.</p>'
             + '</div>'
             + '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">' + cardsHTML + '</div>'
-            + '<div style="background:rgba(102,126,234,0.1);border-radius:8px;padding:12px;font-size:0.8em;color:#ccc;text-align:center;">'
-            + '💡 Gana partidos para subir tu reputación y recibir ofertas de equipos mejores. Tu carrera se guarda en la nube.'
+            + '<div style="background:rgba(102,126,234,0.1);border-radius:8px;padding:12px;font-size:0.79em;color:#ccc;text-align:center;">'
+            + '💡 Haz clic en un club para aceptar su oferta. Gana partidos para subir tu reputación y recibir ofertas de equipos mejores.'
             + '</div></div>';
         document.body.appendChild(modal);
 
@@ -137,17 +155,18 @@ console.log('🎯 Injector Promanager cargando...');
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:inherit;';
         modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:34px 28px;max-width:420px;width:92%;box-shadow:0 0 60px rgba(233,69,96,0.4);text-align:center;color:#fff;">'
             + '<div style="font-size:42px;margin-bottom:6px;">📋</div>'
-            + '<h2 style="color:#e94560;margin:0 0 18px;font-size:1.35em;">¡Nueva Oferta de Trabajo!</h2>'
+            + '<h2 style="color:#e94560;margin:0 0 4px;font-size:1.35em;">Nueva oferta de empleo</h2>'
+            + '<p style="color:#888;font-size:0.8em;margin:0 0 18px;">Un club quiere contratarte como entrenador</p>'
             + '<div style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">'
             + shieldHTML(logo, offer.team, 56)
-            + '<div><div style="color:#aaa;font-size:0.78em;">EQUIPO</div>'
+            + '<div><div style="color:#aaa;font-size:0.78em;">CLUB INTERESADO</div>'
             + '<div style="font-size:1.08em;font-weight:bold;">' + offer.team + '</div>'
             + '<div style="color:#f4c430;font-size:0.83em;margin-top:4px;">' + (DIVISION_LABELS[offer.division] || offer.division) + '</div></div>'
             + '</div>'
-            + '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:9px;margin-bottom:18px;font-size:0.83em;">Tu reputación: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></div>'
-            + '<p style="color:#ccc;font-size:0.86em;margin-bottom:20px;">¿Aceptas el cargo de entrenador?<br><small style="color:#666;">Puedes rechazar y seguir con tu equipo.</small></p>'
+            + '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:9px;margin-bottom:18px;font-size:0.83em;">Tu reputación actual: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></div>'
+            + '<p style="color:#ccc;font-size:0.86em;margin-bottom:20px;">¿Aceptas la oferta de <strong>' + offer.team + '</strong>?<br><small style="color:#666;">Puedes rechazar y seguir con tu equipo actual.</small></p>'
             + '<div style="display:flex;gap:12px;justify-content:center;">'
-            + '<button id="pmOA" style="background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">✅ Aceptar</button>'
+            + '<button id="pmOA" style="background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">✅ Aceptar oferta</button>'
             + '<button id="pmOR" style="background:rgba(233,69,96,0.15);color:#e94560;border:1px solid #e94560;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">❌ Rechazar</button>'
             + '</div></div>';
         document.body.appendChild(modal);
@@ -186,14 +205,15 @@ console.log('🎯 Injector Promanager cargando...');
                     + '<div style="display:flex;justify-content:center;margin-bottom:10px;">' + shieldHTML(logos[i], offer.team, 52) + '</div>'
                     + '<div style="font-weight:bold;font-size:0.88em;color:#fff;margin-bottom:5px;line-height:1.2;">' + offer.team + '</div>'
                     + '<div style="font-size:0.74em;color:#f4c430;">' + DIVISION_LABELS[offer.division] + '</div>'
+                    + '<div style="margin-top:8px;font-size:0.7em;color:#aaa;">📋 Oferta recibida</div>'
                     + '</div>';
             }).join('');
             var modal = document.createElement('div');
             modal.id = 'pmWaitingModal';
             modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99998;font-family:inherit;';
-            modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:28px 22px;max-width:540px;width:95%;box-shadow:0 0 60px rgba(233,69,96,0.4);color:#fff;text-align:center;">'
-                + '<div style="font-size:46px;margin-bottom:8px;">📞</div>'
-                + '<h3 style="color:#e94560;margin:0 0 4px;">Nuevas ofertas recibidas</h3>'
+            modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:28px 22px;max-width:560px;width:95%;box-shadow:0 0 60px rgba(233,69,96,0.4);color:#fff;text-align:center;">'
+                + '<div style="font-size:44px;margin-bottom:8px;">📬</div>'
+                + '<h3 style="color:#e94560;margin:0 0 4px;">Ofertas de empleo recibidas</h3>'
                 + '<p style="color:#aaa;font-size:0.83em;margin:0 0 20px;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
                 + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' + cardsHTML + '</div>'
                 + '</div>';
@@ -204,11 +224,11 @@ console.log('🎯 Injector Promanager cargando...');
             modal2.id = 'pmWaitingModal';
             modal2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99998;font-family:inherit;';
             modal2.innerHTML = '<div style="text-align:center;color:#fff;max-width:360px;padding:40px;">'
-                + '<div style="font-size:54px;margin-bottom:12px;">📞</div>'
-                + '<h3 style="color:#f4c430;margin:0 0 10px;">Esperando oferta...</h3>'
+                + '<div style="font-size:54px;margin-bottom:12px;">📭</div>'
+                + '<h3 style="color:#f4c430;margin:0 0 10px;">Sin ofertas por ahora</h3>'
                 + '<p style="color:#aaa;font-size:0.9em;">Ningún club ha contactado aún.</p>'
-                + '<p style="color:#ccc;font-size:0.85em;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
-                + '<button id="pmWT" style="margin-top:18px;background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.93em;font-weight:bold;cursor:pointer;">⏩ Pasar tiempo</button>'
+                + '<p style="color:#ccc;font-size:0.85em;">Tu reputación: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
+                + '<button id="pmWT" style="margin-top:18px;background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.93em;font-weight:bold;cursor:pointer;">⏩ Esperar más tiempo</button>'
                 + '</div>';
             document.body.appendChild(modal2);
             document.getElementById('pmWT').onclick = function() { removeModal('pmWaitingModal'); tryGenerateNewOffers(); };
@@ -260,35 +280,76 @@ console.log('🎯 Injector Promanager cargando...');
         }, 700);
     }
 
-    // ── Hook simulateWeek ──
-    function hookSimulateWeek() {
-        var original = window.simulateWeek;
-        if (!original || original._pmHooked) return;
-        window.simulateWeek = async function() {
-            if (!pmState.active) return original.apply(this, arguments);
-            if (pmState.unemployed) { tryGenerateNewOffers(); return; }
-            await original.apply(this, arguments);
+    // ── HOOK simulateWeek: estrategia robusta ──
+    // En lugar de reemplazar window.simulateWeek (que otros injectors también reemplazan),
+    // registramos un callback global window._pmAfterWeek que se llama desde el hook.
+    // El hook se instala UNA SOLA VEZ cuando simulateWeek esté disponible,
+    // y usa la propiedad _pmCB para no perder el callback aunque otro injector
+    // vuelva a wrappear window.simulateWeek después.
+
+    function installPmCallback() {
+        // Este callback se llama desde el hook instalado en window.simulateWeek
+        window._pmAfterWeek = async function() {
+            if (!pmState.active || pmState.unemployed) return;
             await afterWeekPromanager();
         };
+    }
+
+    function hookSimulateWeek() {
+        if (typeof window.simulateWeek !== 'function') return false;
+        if (window.simulateWeek._pmHooked) return true;
+
+        var original = window.simulateWeek;
+        window.simulateWeek = async function() {
+            if (pmState.active && pmState.unemployed) {
+                tryGenerateNewOffers();
+                return;
+            }
+            var result = await original.apply(this, arguments);
+            // Llamar al callback promanager si existe
+            if (typeof window._pmAfterWeek === 'function') {
+                await window._pmAfterWeek();
+            }
+            return result;
+        };
         window.simulateWeek._pmHooked = true;
-        console.log('[Promanager] hook simulateWeek ✓');
+        console.log('[Promanager] hook simulateWeek instalado ✓');
+        return true;
     }
 
     async function afterWeekPromanager() {
         if (!window.gameLogic) return;
         var state = window.gameLogic.getGameState();
         var history = state.matchHistory;
-        if (!history || !history.length) return;
-        var last = history[history.length - 1];
-        if (!last) return;
+
+        console.log('[Promanager] afterWeekPromanager - historial:', history ? history.length : 'null', 'semana:', state.week, 'tipo:', state.seasonType);
+
+        if (!history || !history.length) {
+            console.log('[Promanager] Sin historial todavía (pretemporada?)');
+            return;
+        }
 
         var myTeam = state.team;
         var result = null;
-        var parts = (last.score || '0-0').split('-').map(Number);
-        var gh = parts[0], ga = parts[1];
-        if (last.home === myTeam) result = gh > ga ? 'win' : gh === ga ? 'draw' : 'loss';
-        else if (last.away === myTeam) result = ga > gh ? 'win' : gh === ga ? 'draw' : 'loss';
-        if (!result) return;
+
+        // Buscar el partido más reciente del equipo del jugador
+        for (var i = history.length - 1; i >= 0; i--) {
+            var match = history[i];
+            if (!match || !match.score) continue;
+            if (match.home === myTeam || match.away === myTeam) {
+                var parts = match.score.split('-').map(Number);
+                var gh = parts[0], ga = parts[1];
+                if (match.home === myTeam) result = gh > ga ? 'win' : gh === ga ? 'draw' : 'loss';
+                else result = ga > gh ? 'win' : gh === ga ? 'draw' : 'loss';
+                console.log('[Promanager] Partido encontrado:', match.home, match.score, match.away, '→', result);
+                break;
+            }
+        }
+
+        if (!result) {
+            console.log('[Promanager] No se encontró partido del equipo en el historial');
+            return;
+        }
 
         var gain = calcRepGain(result, state.division);
         pmState.reputation = Math.max(0, Math.min(100, pmState.reputation + gain));
@@ -299,6 +360,8 @@ console.log('🎯 Injector Promanager cargando...');
         else { pmState.losses++; pmState.consecutiveLosses++; }
         pmState.currentTeam = myTeam;
         pmState.currentDivision = state.division;
+
+        console.log('[Promanager] Rep actualizada:', pmState.reputation, '| Partidos:', pmState.gamesManaged);
         updateRepBadge();
         await saveCareerToFirebase();
 
@@ -394,12 +457,14 @@ console.log('🎯 Injector Promanager cargando...');
     function showRepSummary() {
         removeModal('pmRepModal');
         var wr = pmState.gamesManaged > 0 ? Math.round((pmState.wins / pmState.gamesManaged) * 100) : 0;
+        var managerName = getManagerName();
         var modal = document.createElement('div');
         modal.id = 'pmRepModal';
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:99990;font-family:inherit;';
-        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #f4c430;border-radius:14px;padding:28px;max-width:340px;width:90%;text-align:center;color:#fff;">'
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #f4c430;border-radius:14px;padding:28px;max-width:360px;width:90%;text-align:center;color:#fff;">'
             + '<div style="font-size:42px;margin-bottom:6px;">📊</div>'
-            + '<h3 style="color:#f4c430;margin:0 0 4px;">Tu Carrera Promanager</h3>'
+            + '<h3 style="color:#f4c430;margin:0 0 2px;">Carrera de ' + managerName + '</h3>'
+            + '<div style="color:#888;font-size:0.78em;margin-bottom:10px;">Liga Promanager</div>'
             + '<div style="font-size:1.2em;margin-bottom:14px;">' + getRepLabel(pmState.reputation) + '</div>'
             + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px;text-align:left;font-size:0.86em;line-height:1.9;">'
             + '<div>🏟️ Equipo: <strong>' + (pmState.currentTeam||'-') + '</strong></div>'
@@ -433,14 +498,24 @@ console.log('🎯 Injector Promanager cargando...');
     function init() {
         interceptButton();
         injectRepBadge();
-        var t = setInterval(function() {
-            if (window.simulateWeek && !window.simulateWeek._pmHooked) hookSimulateWeek();
-            if (window.simulateWeek && window.simulateWeek._pmHooked) clearInterval(t);
-        }, 400);
-        console.log('✅ Injector Promanager listo');
+        installPmCallback();
+
+        // Instalar el hook con delay de 2.5s para garantizar que somos los ÚLTIMOS
+        // en hookear simulateWeek (todos los otros injectors usan delays de 200-800ms)
+        // Así nuestro hook queda encima de todos y siempre se ejecuta último.
+        setTimeout(function() {
+            if (!hookSimulateWeek()) {
+                // Si no está disponible aún, reintentar
+                var t = setInterval(function() {
+                    if (hookSimulateWeek()) clearInterval(t);
+                }, 500);
+            }
+        }, 2500);
+
+        console.log('✅ Injector Promanager v3 listo');
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else setTimeout(init, 100);
+    else setTimeout(init, 150);
 
 })();
