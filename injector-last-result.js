@@ -59,7 +59,7 @@
                         window._lastMatchResultHTML = container.innerHTML;
                     }
                 }
-            }, 150);
+            }, 600);
 
             return ret;
         };
