@@ -426,6 +426,8 @@
                 }
             };
             adminBtn.style.background = '#ff9500';
+            adminBtn.style.fontSize = '0.72em';
+            adminBtn.style.padding = '3px 8px';
             headerInfo.insertBefore(adminBtn, headerInfo.firstChild);
             console.log('✅ Botón de Admin añadido');
         }
