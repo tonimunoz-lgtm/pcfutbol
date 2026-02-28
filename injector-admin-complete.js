@@ -81,6 +81,9 @@
                         <button id="tabSquad" class="admin-tab" onclick="window.adminBackend.switchTab('squad')">
                             👥 Plantilla
                         </button>
+                        <button id="tabUsers" class="admin-tab" onclick="window.adminBackend.switchTab('users')">
+                            🧑‍💼 Usuarios
+                        </button>
                     </div>
 
                     <div style="margin-bottom: 30px;">
@@ -182,6 +185,35 @@
                         </div>
                     </div>
 
+                    <!-- TAB: Usuarios -->
+                    <div id="tabContentUsers" class="tab-content" style="display: none;">
+                        <h2 style="color:#e94560;">🧑‍💼 Gestión de Usuarios</h2>
+                        <p style="color:#999;margin-bottom:15px;">Usuarios registrados en la aplicación.</p>
+
+                        <div style="margin-bottom:15px;">
+                            <button class="btn" onclick="window.adminBackend.loadUsers()" style="background:#0088cc;">
+                                🔄 Recargar lista
+                            </button>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table id="adminUsersTable" style="width:100%;border-collapse:collapse;font-size:.88em;">
+                                <thead>
+                                    <tr style="border-bottom:2px solid #e94560;color:#e94560;">
+                                        <th style="padding:8px;text-align:left;">Nombre</th>
+                                        <th style="padding:8px;text-align:left;">Email</th>
+                                        <th style="padding:8px;text-align:left;">Registro</th>
+                                        <th style="padding:8px;text-align:center;">Estado</th>
+                                        <th style="padding:8px;text-align:center;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminUsersTbody">
+                                    <tr><td colspan="5" style="text-align:center;padding:20px;color:#666;">Pulsa "Recargar lista" para cargar usuarios</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e94560;">
                         <h3>📦 Importar/Exportar Todo</h3>
                         <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">📦 Exportar Todos los Datos</button>
@@ -254,15 +286,16 @@
         squadPlayers: [],
 
         switchTab: function(tab) {
-            this.currentTab = tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('.admin-tab').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
-            
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-            document.getElementById(`tabContent${tab.charAt(0).toUpperCase() + tab.slice(1)}`).style.display = 'block';
+            // Ocultar todos
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+            // Mostrar el seleccionado
+            const content = document.getElementById('tabContent' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (content) content.style.display = 'block';
+            const tabBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (tabBtn) tabBtn.classList.add('active');
+            // Cargar usuarios automáticamente al abrir el tab
+            if (tab === 'users') window.adminBackend.loadUsers();
         },
 
         loadTeamsFromDivision: function() {
@@ -585,6 +618,108 @@
             };
             reader.readAsText(file);
             event.target.value = '';
+        },
+
+        // ── Gestión de Usuarios ──────────────────────────────────
+        loadUsers: async function() {
+            const tbody = document.getElementById('adminUsersTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">⏳ Cargando usuarios...</td></tr>';
+
+            try {
+                const { getFirestore, collection, getDocs, orderBy, query } =
+                    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const firestore = getFirestore();
+                const q = query(collection(firestore, 'game_users'), orderBy('createdAt', 'desc'));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#666;">No hay usuarios registrados aún</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const suspended = d.suspended || false;
+                    const createdAt = d.createdAt?.toDate?.()?.toLocaleDateString('es-ES') || '-';
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #2a2a2a';
+                    tr.innerHTML = `
+                        <td style="padding:8px;">${d.name || '-'}</td>
+                        <td style="padding:8px;color:#aaa;">${d.email || doc.id}</td>
+                        <td style="padding:8px;color:#666;font-size:.82em;">${createdAt}</td>
+                        <td style="padding:8px;text-align:center;">
+                            <span style="padding:3px 8px;border-radius:10px;font-size:.8em;
+                                background:${suspended ? 'rgba(200,40,40,.3)' : 'rgba(50,200,50,.2)'};
+                                color:${suspended ? '#ff6666' : '#66ff88'};">
+                                ${suspended ? '🔴 Suspendido' : '🟢 Activo'}
+                            </span>
+                        </td>
+                        <td style="padding:8px;text-align:center;white-space:nowrap;">
+                            <button onclick="window.adminBackend.toggleSuspend('${doc.id}', ${suspended})"
+                                style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
+                                       background:${suspended ? '#2196F3' : '#ff9500'};color:#fff;font-size:.8em;">
+                                ${suspended ? '✅ Reactivar' : '⏸ Suspender'}
+                            </button>
+                            <button onclick="window.adminBackend.resetUserPassword('${doc.id}', '${d.email || ''}')"
+                                style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
+                                       background:#555;color:#fff;font-size:.8em;">
+                                🔑 Reset PW
+                            </button>
+                            <button onclick="window.adminBackend.deleteUser('${doc.id}', '${d.email || ''}')"
+                                style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
+                                       background:#c73446;color:#fff;font-size:.8em;">
+                                🗑 Eliminar
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Error cargando usuarios:', err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#f66;">❌ Error: ${err.message}</td></tr>`;
+            }
+        },
+
+        toggleSuspend: async function(uid, currentlySuspended) {
+            try {
+                const { getFirestore, doc, updateDoc } =
+                    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const firestore = getFirestore();
+                await updateDoc(doc(firestore, 'game_users', uid), { suspended: !currentlySuspended });
+                alert(currentlySuspended ? '✅ Usuario reactivado' : '⏸ Usuario suspendido');
+                this.loadUsers();
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        },
+
+        resetUserPassword: async function(uid, email) {
+            if (!email) return alert('No hay email asociado a este usuario');
+            if (!confirm(`¿Enviar email de recuperación de contraseña a ${email}?`)) return;
+            try {
+                const { sendPasswordResetEmail } =
+                    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                await sendPasswordResetEmail(window.firebaseAuth, email);
+                alert(`✅ Email de recuperación enviado a ${email}`);
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        },
+
+        deleteUser: async function(uid, email) {
+            if (!confirm(`¿Eliminar usuario ${email}? Esta acción no se puede deshacer.`)) return;
+            try {
+                const { getFirestore, doc, deleteDoc } =
+                    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const firestore = getFirestore();
+                await deleteDoc(doc(firestore, 'game_users', uid));
+                alert('✅ Usuario eliminado');
+                this.loadUsers();
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
         }
     };
 
