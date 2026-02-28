@@ -21,7 +21,8 @@ console.log('🎯 Injector Promanager cargando...');
         gamesManaged: 0, wins: 0, draws: 0, losses: 0,
         currentTeam: null, currentDivision: null,
         lastOfferWeek: -99, firedThisSeason: false,
-        consecutiveLosses: 0, weeklyPoints: [], unemployed: true
+        consecutiveLosses: 0, weeklyPoints: [], unemployed: true,
+        lastProcessedMatchKey: null  // evita procesar el mismo partido dos veces
     };
 
     // ── Nombre del usuario logueado ──
@@ -242,7 +243,8 @@ console.log('🎯 Injector Promanager cargando...');
             gamesManaged: 0, wins: 0, draws: 0, losses: 0,
             currentTeam: null, currentDivision: null,
             lastOfferWeek: -99, firedThisSeason: false,
-            consecutiveLosses: 0, weeklyPoints: [], unemployed: true
+            consecutiveLosses: 0, weeklyPoints: [], unemployed: true,
+            lastProcessedMatchKey: null
         };
         var tries = 0;
         while (!window.TEAMS_DATA && tries++ < 30) await new Promise(function(r){ setTimeout(r, 200); });
@@ -331,23 +333,32 @@ console.log('🎯 Injector Promanager cargando...');
 
         var myTeam = state.team;
         var result = null;
+        var foundMatch = null;
 
-        // Buscar el partido más reciente del equipo del jugador
+        // Buscar el partido más reciente del equipo que NO hayamos procesado ya
         for (var i = history.length - 1; i >= 0; i--) {
             var match = history[i];
             if (!match || !match.score) continue;
             if (match.home === myTeam || match.away === myTeam) {
+                // Clave única del partido
+                var matchKey = match.home + '_' + match.away + '_' + match.score + '_' + (match.week || i);
+                if (matchKey === pmState.lastProcessedMatchKey) {
+                    console.log('[Promanager] Partido ya procesado, ignorando:', matchKey);
+                    return;
+                }
                 var parts = match.score.split('-').map(Number);
                 var gh = parts[0], ga = parts[1];
                 if (match.home === myTeam) result = gh > ga ? 'win' : gh === ga ? 'draw' : 'loss';
                 else result = ga > gh ? 'win' : gh === ga ? 'draw' : 'loss';
+                foundMatch = match;
+                pmState.lastProcessedMatchKey = matchKey;
                 console.log('[Promanager] Partido encontrado:', match.home, match.score, match.away, '→', result);
                 break;
             }
         }
 
         if (!result) {
-            console.log('[Promanager] No se encontró partido del equipo en el historial');
+            console.log('[Promanager] No se encontró partido nuevo del equipo en el historial');
             return;
         }
 
