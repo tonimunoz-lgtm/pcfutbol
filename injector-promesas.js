@@ -771,6 +771,11 @@
             if (getState()?.division === 'promesas') overridePromasasDeals();
         }, 3000);
 
+        // Y también más tarde por si injector-financial-deals carga después
+        setTimeout(() => {
+            if (getState()?.division === 'promesas') overridePromasasDeals();
+        }, 5000);
+
         // Bloquear Copa del Rey y Europa en promesas
         blockCopaForPromesas();
 
@@ -782,14 +787,13 @@
         let d;
         try { d = JSON.parse(localStorage.getItem(DEALS_KEY)) || {}; } catch(e) { d = {}; }
 
-        // Si ya hay deals activos, no tocar
-        if (d.sponsorDeal?.active && d.tvDeal?.active) return;
-
         const rnd = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
         const r500 = v => Math.round(v / 500) * 500;
         const pickRand = arr => arr[Math.floor(Math.random() * arr.length)];
 
-        if (!d.sponsorDeal?.active && !d.pendingOffers?.sponsorOffers) {
+        // Sponsor: reemplazar SIEMPRE las pendientes si no hay contrato activo
+        // (así sobrescribimos las de rfef que generó injector-financial-deals)
+        if (!d.sponsorDeal?.active) {
             const usedNames = new Set();
             d.pendingOffers = d.pendingOffers || {};
             d.pendingOffers.sponsorOffers = [1, 2, 3].map(years => {
@@ -801,7 +805,8 @@
             });
         }
 
-        if (!d.tvDeal?.active && !d.pendingOffers?.tvOffers) {
+        // TV: igual, reemplazar siempre si no hay contrato activo
+        if (!d.tvDeal?.active) {
             const usedNames = new Set();
             d.pendingOffers = d.pendingOffers || {};
             d.pendingOffers.tvOffers = [1, 2, 3].map(years => {
