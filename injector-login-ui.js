@@ -13,6 +13,30 @@
                 
                 // Determinar si es admin basándose en el email
                 const isAdmin = email === 'tonaco92@gmail.com';
+
+                // Comprobar si el usuario está suspendido (solo para no-admin)
+                if (!isAdmin) {
+                    try {
+                        const { getFirestore, doc, getDoc, setDoc, serverTimestamp } =
+                            await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const firestore = getFirestore();
+                        const userDoc = await getDoc(doc(firestore, 'game_users', user.uid));
+                        if (userDoc.exists() && userDoc.data().suspended === true) {
+                            // Cerrar sesión inmediatamente en Firebase Auth
+                            const { signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                            await signOut(window.firebaseAuth);
+                            return { success: false, message: '🚫 Tu cuenta ha sido suspendida. Contacta con el administrador.' };
+                        }
+                        // Actualizar lastLogin
+                        await setDoc(doc(firestore, 'game_users', user.uid), {
+                            email: user.email,
+                            name: user.displayName || user.email.split('@')[0],
+                            lastLogin: serverTimestamp()
+                        }, { merge: true });
+                    } catch(e) {
+                        console.warn('No se pudo comprobar game_users:', e);
+                    }
+                }
                 
                 const userData = {
                     email: user.email,
@@ -24,23 +48,6 @@
                 window.currentUser = userData;
                 window.currentUserId = userData.uid;
                 localStorage.setItem('currentUser', JSON.stringify(userData));
-
-                // Actualizar/crear perfil en game_users (para migrados sin email)
-                if (!isAdmin) {
-                    try {
-                        const { getFirestore, doc, setDoc, serverTimestamp } =
-                            await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                        const firestore = getFirestore();
-                        await setDoc(doc(firestore, 'game_users', user.uid), {
-                            email: user.email,
-                            name: user.displayName || user.email.split('@')[0],
-                            suspended: false,
-                            lastLogin: serverTimestamp()
-                        }, { merge: true }); // merge:true no sobreescribe campos existentes
-                    } catch(e) {
-                        console.warn('No se pudo actualizar game_users:', e);
-                    }
-                }
                 
                 console.log('✅ Login exitoso en Firebase:', user.email, '- Role:', userData.role);
                 return { success: true, user: userData };
