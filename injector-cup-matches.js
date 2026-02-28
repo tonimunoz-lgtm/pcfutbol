@@ -1,4 +1,5 @@
 // ============================================================
+
 // injector-cup-matches.js  v4.0 — FIREBASE COMPATIBLE
 //
 // TODO el estado se guarda en gameState.cupData
