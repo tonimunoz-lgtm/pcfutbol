@@ -116,6 +116,18 @@ function renderStandingsTable(state) {
     const standingsDiv = document.getElementById('standingsTable');
     if (!standingsDiv) return;
 
+  const DIVISION_NAMES = {
+        primera:      'Primera División',
+        segunda:      'Segunda División',
+        rfef_grupo1:  'Primera RFEF Grupo 1',
+        rfef_grupo2:  'Primera RFEF Grupo 2',
+        promesas:     'Liga Promesas',
+    
+    };
+    const divTitle = DIVISION_NAMES[state.division] || state.division || 'Liga';
+    const h1 = document.querySelector('#standings h1');
+    if (h1) h1.textContent = '📈 Clasificación — ' + divTitle;
+
     if (!state.standings || Object.keys(state.standings).length === 0) {
         standingsDiv.innerHTML = '<p class="text-center text-gray-500">No hay clasificación disponible</p>';
         return;
