@@ -821,6 +821,7 @@ function showResultModal(match,result,processed){
     return new Promise(resolve=>{
         const cfg=CUP_CONFIG[match.type]||CUP_CONFIG.copa;
         const phaseName=PHASE_NAMES[match.phase]||match.phase;
+        const locText=match.isHome?'🏟️ EN CASA':'✈️ A DOMICILIO';
         const myTeam=result.myTeam||'Tu Equipo';
         const win=result.win,draw=result.draw;
         const outLabel=win?'¡VICTORIA!':draw?'EMPATE':'DERROTA';
