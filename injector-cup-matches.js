@@ -592,57 +592,205 @@ function genScorers(team,n,isMine){
 // MODAL 1 — ANUNCIO DEL PARTIDO (HYPE)
 // ============================================================
 function showAnnouncementModal(match) {
-    return new Promise(resolve=>{
-        const cfg=CUP_CONFIG[match.type]||CUP_CONFIG.copa;
-        const phaseName=PHASE_NAMES[match.phase]||match.phase;
-        const locText=match.isHome?'🏟️ EN CASA':'✈️ A DOMICILIO';
-        const myTeam=getGS()?.team||'Tu Equipo';
+    return new Promise(resolve => {
+        const cfg = CUP_CONFIG[match.type] || CUP_CONFIG.copa;
+        const phaseName = PHASE_NAMES[match.phase] || match.phase;
+        const locText = match.isHome ? '🏟️ EN CASA' : '✈️ A DOMICILIO';
+        const gs = getGS();
+        const myTeam = gs?.team || 'Tu Equipo';
 
-        const parts=Array.from({length:18},()=>{
-            const sz=4+Math.random()*8,l=Math.random()*100,d=Math.random()*3,dur=3+Math.random()*4;
-            return `<div style="position:absolute;width:${sz}px;height:${sz}px;background:${cfg.accentColor};border-radius:50%;left:${l}%;top:110%;animation:cu-flt ${dur}s ${d}s infinite ease-in;opacity:.7"></div>`;
-        }).join('');
+        // ── Datos de lesionados y alineación ──────────────────
+        function getInjuredList() {
+            const squad = gs?.squad || [];
+            return squad.filter(p => p.isInjured);
+        }
+        function getLineup() {
+            return gs?.lineup || [];
+        }
+        function getInjuredInLineup() {
+            const lineup = getLineup();
+            const injured = new Set(getInjuredList().map(p => p.name));
+            return lineup.filter(p => injured.has(p.name));
+        }
 
-        const el=document.createElement('div');
-        el.id='cupAnnModal';
-        el.innerHTML=`<style>
-#cupAnnModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.97);display:flex;align-items:center;justify-content:center;z-index:999999;overflow:hidden;animation:cu-fi .4s ease}
+        // ── Prima actual ───────────────────────────────────────
+        function getCurrentBonus() {
+            return window._fdGetMatchBonus ? window._fdGetMatchBonus() : 0;
+        }
+        function fmt(n) { return Math.round(n).toLocaleString('es-ES'); }
+
+        // ── Construir HTML de lesionados ───────────────────────
+        function buildInjuredHTML() {
+            const injured = getInjuredList();
+            if (!injured.length) return `<div style="color:#4CAF50;font-size:.85em">✅ Toda la plantilla disponible</div>`;
+            const inLineup = getInjuredInLineup();
+            let html = injured.map(p =>
+                `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+                    <span style="color:#f44336">🚑</span>
+                    <span style="color:#fff;flex:1">${p.name}</span>
+                    <span style="color:#888;font-size:.8em">${p.position||''}</span>
+                    ${getLineup().some(l=>l.name===p.name)
+                        ? '<span style="color:#FF8F00;font-size:.75em;background:rgba(255,143,0,.2);padding:2px 6px;border-radius:4px">⚠️ EN 11</span>'
+                        : ''}
+                </div>`
+            ).join('');
+            if (inLineup.length) {
+                html += `<div style="margin-top:8px;padding:8px;background:rgba(255,143,0,.15);border:1px solid #FF8F00;border-radius:8px;font-size:.82em;color:#FF8F00">
+                    ⚠️ Tienes ${inLineup.length} jugador(es) lesionado(s) en el once. ¡Revisa la alineación!
+                </div>`;
+            }
+            return html;
+        }
+
+        // ── Construir HTML de prima ────────────────────────────
+        function buildBonusHTML() {
+            const current = getCurrentBonus();
+            const boost = current > 0 ? Math.min(25, Math.round(Math.sqrt(current / 50000) * 2)) : 0;
+            return `
+            <div id="cu-bonus-section">
+                ${current > 0
+                    ? `<div style="background:rgba(255,143,0,.2);border:1px solid #FF8F00;border-radius:8px;padding:10px;margin-bottom:10px;font-size:.85em;color:#FF8F00">
+                        💰 Prima activa: <strong>${fmt(current)}€</strong> → boost rendimiento <strong>+${boost}</strong>
+                       </div>`
+                    : ''}
+                <div style="display:flex;gap:8px;align-items:center">
+                    <select id="cu-bonus-sel" style="flex:1;background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:8px;padding:8px;font-size:.85em">
+                        <option value="0">Sin prima</option>
+                        <option value="50000">50.000€ — +2 rendimiento</option>
+                        <option value="100000">100.000€ — +3 rendimiento</option>
+                        <option value="250000" selected>250.000€ — +4 rendimiento</option>
+                        <option value="500000">500.000€ — +6 rendimiento</option>
+                        <option value="1000000">1.000.000€ — +9 rendimiento</option>
+                    </select>
+                    <button id="cu-bonus-btn" style="background:#FF8F00;color:#fff;border:none;border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:bold;white-space:nowrap;font-size:.85em">
+                        💰 Prometer
+                    </button>
+                </div>
+                <div id="cu-bonus-msg" style="font-size:.78em;color:#aaa;margin-top:5px">
+                    Saldo actual: <strong style="color:#4CAF50">${fmt(gs?.balance || 0)}€</strong>
+                </div>
+            </div>`;
+        }
+
+        // ── Construir modal ────────────────────────────────────
+        const el = document.createElement('div');
+        el.id = 'cupAnnModal';
+        el.innerHTML = `<style>
+#cupAnnModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.97);display:flex;align-items:center;justify-content:center;z-index:999999;overflow-y:auto;animation:cu-fi .4s ease;padding:16px;box-sizing:border-box}
 @keyframes cu-fi{from{opacity:0}to{opacity:1}}
-@keyframes cu-flt{0%{transform:translateY(0) rotate(0);opacity:.7}100%{transform:translateY(-110vh) rotate(720deg);opacity:0}}
-@keyframes cu-pg{0%,100%{box-shadow:0 0 30px ${cfg.color}44}50%{box-shadow:0 0 70px ${cfg.color}99}}
-@keyframes cu-up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-@keyframes cu-sp{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.2) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0)}}
-.cu-box{background:${cfg.gradient};border:2px solid ${cfg.color}88;border-radius:24px;padding:40px 36px;max-width:480px;width:90%;text-align:center;position:relative;animation:cu-pg 2s ease-in-out infinite;overflow:hidden}
-.cu-comp{font-size:.82em;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${cfg.accentColor};margin-bottom:8px;animation:cu-up .5s .1s both}
-.cu-logo{font-size:4em;margin:12px 0;animation:cu-sp .8s .2s both cubic-bezier(.175,.885,.32,1.275)}
-.cu-phase{font-size:1.55em;font-weight:900;color:#fff;margin-bottom:6px;text-shadow:0 2px 20px ${cfg.color};animation:cu-up .5s .3s both}
-.cu-vs{display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;animation:cu-up .5s .4s both}
-.cu-team{font-size:1.1em;font-weight:800;color:#fff;flex:1;padding:12px 8px;border-radius:12px;background:rgba(255,255,255,.08)}
+@keyframes cu-pg{0%,100%{box-shadow:0 0 20px ${cfg.color}44}50%{box-shadow:0 0 50px ${cfg.color}88}}
+@keyframes cu-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.cu-box{background:${cfg.gradient};border:2px solid ${cfg.color}88;border-radius:20px;padding:24px 20px;max-width:520px;width:100%;position:relative;animation:cu-pg 2s ease-in-out infinite}
+.cu-header{text-align:center;margin-bottom:18px;animation:cu-up .4s .1s both}
+.cu-comp{font-size:.78em;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${cfg.accentColor};margin-bottom:4px}
+.cu-logo{font-size:2.5em;margin:6px 0}
+.cu-phase{font-size:1.3em;font-weight:900;color:#fff;text-shadow:0 2px 20px ${cfg.color}}
+.cu-vs{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0;animation:cu-up .4s .2s both}
+.cu-team{font-size:1em;font-weight:800;color:#fff;flex:1;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.08);text-align:center}
 .cu-team.h{border-left:3px solid ${cfg.accentColor}}.cu-team.a{border-right:3px solid ${cfg.accentColor}}
-.cu-vsbdg{font-size:1.2em;font-weight:900;color:${cfg.accentColor};background:rgba(255,255,255,.1);width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid ${cfg.color};flex-shrink:0}
-.cu-loc{font-size:.86em;color:rgba(255,255,255,.6);margin-bottom:22px;animation:cu-up .5s .5s both}
-.cu-btn{background:linear-gradient(135deg,${cfg.color},${cfg.accentColor});color:${match.type==='copa'?'#000':'#fff'};border:none;padding:15px 48px;border-radius:50px;font-size:1.2em;font-weight:900;cursor:pointer;letter-spacing:1px;text-transform:uppercase;box-shadow:0 6px 30px ${cfg.color}66;transition:all .2s;width:100%;animation:cu-up .5s .6s both}
-.cu-btn:hover{transform:translateY(-3px);box-shadow:0 10px 40px ${cfg.color}99}
-.cu-stakes{font-size:.8em;color:rgba(255,255,255,.5);margin-top:10px;animation:cu-up .5s .7s both}
+.cu-vsbdg{font-size:1.1em;font-weight:900;color:${cfg.accentColor};background:rgba(255,255,255,.1);width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid ${cfg.color};flex-shrink:0}
+.cu-loc{text-align:center;font-size:.83em;color:rgba(255,255,255,.55);margin-bottom:16px;animation:cu-up .4s .25s both}
+.cu-section{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin-bottom:12px;animation:cu-up .4s .3s both}
+.cu-section-title{font-size:.75em;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${cfg.accentColor};margin-bottom:10px}
+.cu-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;animation:cu-up .4s .5s both}
+.cu-btn-play{background:linear-gradient(135deg,${cfg.color},${cfg.accentColor});color:${match.type==='copa'?'#000':'#fff'};border:none;padding:14px;border-radius:50px;font-size:1.1em;font-weight:900;cursor:pointer;text-transform:uppercase;box-shadow:0 6px 25px ${cfg.color}55;transition:all .2s;width:100%}
+.cu-btn-play:hover{transform:translateY(-2px);box-shadow:0 10px 35px ${cfg.color}88}
+.cu-btn-lineup{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);padding:11px;border-radius:50px;font-size:.9em;font-weight:700;cursor:pointer;transition:all .2s;width:100%}
+.cu-btn-lineup:hover{background:rgba(255,255,255,.18)}
+.cu-stakes{text-align:center;font-size:.76em;color:rgba(255,255,255,.4);margin-top:8px;animation:cu-up .4s .6s both}
 </style>
 <div class="cu-box">
-<div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">${parts}</div>
-<div class="cu-comp">${cfg.emoji} ${cfg.shortName}</div>
-<div class="cu-logo">${cfg.emoji}</div>
-<div class="cu-phase">${phaseName}</div>
-<div class="cu-vs">
-  <div class="cu-team h">${myTeam}</div>
-  <div class="cu-vsbdg">VS</div>
-  <div class="cu-team a">${match.opponent}</div>
-</div>
-<div class="cu-loc">${locText} · ${cfg.name}</div>
-<button class="cu-btn" id="cuPlayBtn">⚽ ¡A JUGAR!</button>
-<div class="cu-stakes">${getStakesText(match)}</div>
+  <div class="cu-header">
+    <div class="cu-comp">${cfg.emoji} ${cfg.shortName}</div>
+    <div class="cu-logo">${cfg.emoji}</div>
+    <div class="cu-phase">${phaseName}</div>
+  </div>
+  <div class="cu-vs">
+    <div class="cu-team h">${myTeam}</div>
+    <div class="cu-vsbdg">VS</div>
+    <div class="cu-team a">${match.opponent}</div>
+  </div>
+  <div class="cu-loc">${locText} · ${cfg.name}</div>
+
+  <!-- Sección lesionados -->
+  <div class="cu-section">
+    <div class="cu-section-title">🚑 Estado de la plantilla</div>
+    <div id="cu-injured-list">${buildInjuredHTML()}</div>
+  </div>
+
+  <!-- Sección prima -->
+  <div class="cu-section">
+    <div class="cu-section-title">💰 Prima motivacional</div>
+    ${buildBonusHTML()}
+  </div>
+
+  <div class="cu-actions">
+    <button class="cu-btn-lineup" id="cuLineupBtn">📋 Revisar alineación antes de jugar</button>
+    <button class="cu-btn-play" id="cuPlayBtn">⚽ ¡JUGAR PARTIDO!</button>
+  </div>
+  <div class="cu-stakes">${getStakesText(match)}</div>
 </div>`;
+
         document.body.appendChild(el);
-        document.getElementById('cuPlayBtn').onclick=()=>{
-            el.style.animation='cu-fi .25s ease reverse forwards';
-            setTimeout(()=>{el.remove();resolve();},250);
+
+        // ── Botón prima ────────────────────────────────────────
+        document.getElementById('cu-bonus-btn').onclick = () => {
+            const amount = parseInt(document.getElementById('cu-bonus-sel').value);
+            const balance = getGS()?.balance || 0;
+            const msg = document.getElementById('cu-bonus-msg');
+            if (!amount) { msg.style.color='#aaa'; msg.textContent='Selecciona un importe de prima.'; return; }
+            if (balance < amount) { msg.style.color='#f44336'; msg.textContent=`❌ Saldo insuficiente (${fmt(balance)}€)`; return; }
+            // Aplicar prima via injector-financial-deals si está disponible
+            if (window._fdSetBonus) {
+                window._fdSetBonus(amount);
+            } else {
+                // fallback manual
+                const d_fd = JSON.parse(localStorage.getItem('fd_data_' + getGS()?.team) || '{}');
+                d_fd.bonus = amount;
+                localStorage.setItem('fd_data_' + getGS()?.team, JSON.stringify(d_fd));
+                window.gameLogic?.updateGameState({ balance: balance - amount });
+            }
+            const boost = Math.min(25, Math.round(Math.sqrt(amount / 50000) * 2));
+            msg.style.color = '#4CAF50';
+            msg.textContent = `✅ Prima de ${fmt(amount)}€ prometida. Boost: +${boost} rendimiento`;
+            document.getElementById('cu-bonus-btn').disabled = true;
+            document.getElementById('cu-bonus-btn').style.opacity = '0.5';
+        };
+
+        // ── Botón revisar alineación ────────────────────────────
+        document.getElementById('cuLineupBtn').onclick = () => {
+            el.style.opacity = '0.15';
+            el.style.pointerEvents = 'none';
+            // Abrir página de alineación
+            window.openPage?.('lineup');
+            // Añadir botón flotante para volver al partido
+            if (!document.getElementById('cu-return-btn')) {
+                const returnBtn = document.createElement('button');
+                returnBtn.id = 'cu-return-btn';
+                returnBtn.innerHTML = `${cfg.emoji} Volver al partido`;
+                returnBtn.style.cssText = `position:fixed;bottom:24px;right:16px;z-index:9999999;
+                    background:linear-gradient(135deg,${cfg.color},${cfg.accentColor});
+                    color:${match.type==='copa'?'#000':'#fff'};border:none;padding:14px 22px;
+                    border-radius:50px;font-size:1em;font-weight:900;cursor:pointer;
+                    box-shadow:0 6px 25px ${cfg.color}77;animation:cu-fi .3s ease`;
+                returnBtn.onclick = () => {
+                    returnBtn.remove();
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                    // Refrescar lista de lesionados por si hubo cambios
+                    document.getElementById('cu-injured-list').innerHTML = buildInjuredHTML();
+                    window.openPage?.('dashboard');
+                };
+                document.body.appendChild(returnBtn);
+            }
+        };
+
+        // ── Botón jugar ────────────────────────────────────────
+        document.getElementById('cuPlayBtn').onclick = () => {
+            document.getElementById('cu-return-btn')?.remove();
+            el.style.transition = 'opacity .25s';
+            el.style.opacity = '0';
+            setTimeout(() => { el.remove(); resolve(); }, 260);
         };
     });
 }
