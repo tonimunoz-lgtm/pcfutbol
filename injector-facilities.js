@@ -307,6 +307,25 @@
             }
         }
 
+        // Comprobar límite máximo de capacidad (105.000 espectadores)
+        const MAX_STADIUM_CAPACITY = 105000;
+        if (upg.capacityAdd > 0) {
+            const currentCap = s.stadiumCapacity || 5000;
+            // Sumar también lo que hay en construcción
+            const pendingCap = getFacData().construction
+                .filter(c => c.effects?.capacityAdd > 0)
+                .reduce((sum, c) => sum + c.effects.capacityAdd, 0);
+            if (currentCap + pendingCap + upg.capacityAdd > MAX_STADIUM_CAPACITY) {
+                const remaining = MAX_STADIUM_CAPACITY - currentCap - pendingCap;
+                if (remaining <= 0) {
+                    alert(`El estadio ya ha alcanzado la capacidad máxima permitida de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.`);
+                } else {
+                    alert(`Esta ampliación superaría el límite máximo de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.\nCapacidad restante permitida: ${fmt(remaining)} espectadores.`);
+                }
+                return;
+            }
+        }
+
         if ((s.balance || 0) < upg.cost) {
             alert(`No tienes saldo suficiente. Necesitas ${fmt(upg.cost)}€.`);
             return;
