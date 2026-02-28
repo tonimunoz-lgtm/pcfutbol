@@ -519,7 +519,7 @@ console.log('🏫 Youth Training Injector cargando...');
                     <span style="color:#aaa; font-size:0.82em;">${staff ? staff.name + ' · ' + fmt(staff.salary) + '€/sem' : 'No contratado'}</span><br>
                     <span style="color:#666; font-size:0.78em;">${c.desc}</span>
                 </div>
-                ${!staff ? `<span style="color:#888; font-size:0.8em; font-style:italic;">Ve a Staff para contratar</span>` : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`}
+                ${!staff ? `<span style="color:#888; font-size:0.8em; font-style:italic;">Ve a sección empleados para contratar</span>` : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`}
             </div>`;
         }).join('');
     }
