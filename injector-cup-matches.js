@@ -1,5 +1,4 @@
 // ============================================================
-
 // injector-cup-matches.js  v4.0 — FIREBASE COMPATIBLE
 //
 // TODO el estado se guarda en gameState.cupData
@@ -386,22 +385,40 @@ function getMyLeaguePos() {
 // ============================================================
 function simMatch(match) {
     const gs=getGS();
-    // Usar el once titular si existe, si no la plantilla completa
-    const ratingSource = (gs?.lineup?.length >= 11)
-        ? gs.lineup.slice(0,11)
-        : gs?.squad || [];
-    const myRating = ratingSource.length
-        ? Math.round(ratingSource.reduce((a,b)=>a+(b.overall||70),0)/ratingSource.length)
-        : 75;
 
-    const base={champions:82,europaLeague:76,conferenceLague:71,copa:70}[match.type]||73;
+    // Usar calculateTeamEffectiveOverall si está disponible (incluye penalización por posición)
+    let myRating;
+    if (window.calculateTeamEffectiveOverallImproved && gs?.lineup?.length >= 11) {
+        myRating = Math.round(window.calculateTeamEffectiveOverallImproved(
+            gs.lineup.slice(0,11), gs.formation || '433'
+        ));
+    } else if (gs?.lineup?.length >= 11) {
+        const starters = gs.lineup.slice(0,11);
+        const squad = gs.squad || [];
+        const ratings = starters.map(p => {
+            const sp = squad.find(s => s.name === p.name);
+            return sp?.overall || p.overall || 70;
+        }).filter(r => r > 0);
+        myRating = ratings.length ? Math.round(ratings.reduce((a,b)=>a+b,0)/ratings.length) : 75;
+    } else if (gs?.squad?.length) {
+        myRating = Math.round(gs.squad.reduce((a,b)=>a+(b.overall||70),0)/gs.squad.length);
+    } else {
+        myRating = 75;
+    }
+
+    // Aplicar boost de prima si existe
+    const bonus = window._fdGetMatchBonus ? window._fdGetMatchBonus() : 0;
+    const bonusBoost = bonus > 0 ? Math.min(25, Math.round(Math.sqrt(bonus/50000)*2)) : 0;
+    myRating = Math.min(99, myRating + bonusBoost);
+
+    const base={champions:80,europaLeague:75,conferenceLague:70,copa:68}[match.type]||72;
     const pmod={
-        final:7,copa_final:6,playoffs:5,semifinals:4,quarterfinals:3,round16:2,
-        groups_md8:2,groups_md7:1,copa_sf:3,copa_qf:2,copa_r16:1,copa_r32:0,copa_r1:-1
+        final:6,copa_final:5,playoffs:4,semifinals:3,quarterfinals:2,round16:1,
+        groups_md8:1,groups_md7:1,copa_sf:2,copa_qf:1,copa_r16:0,copa_r32:-1,copa_r1:-2
     }[match.phase]||0;
     const oppRating=base+pmod+(Math.floor(Math.random()*6)-3);
-    const homeBonus=match.isHome?0.06:-0.03;
-    const wp=Math.max(0.12,Math.min(0.82,0.46+(myRating-oppRating)/60+homeBonus));
+    const homeBonus=match.isHome?0.07:-0.04;
+    const wp=Math.max(0.12,Math.min(0.85,0.46+(myRating-oppRating)/80+homeBonus));
     const r=Math.random();
 
     let myG,opG;
@@ -410,6 +427,7 @@ function simMatch(match) {
     else{opG=Math.floor(Math.random()*3)+1;myG=Math.max(0,opG-1-Math.floor(Math.random()*2));}
 
     const win=myG>opG,draw=myG===opG;
+    console.log(`🏆 Cup simMatch: myRating=${myRating}(+${bonusBoost}boost) vs oppRating=${oppRating} → wp=${wp.toFixed(2)} → ${myG}-${opG}`);
     return {myGoals:myG,oppGoals:opG,win,draw,loss:!win&&!draw,
             myTeam:gs?.team,opponent:match.opponent,isHome:match.isHome};
 }
