@@ -28,6 +28,7 @@
         segunda:     { sponsor: 2_000_000,  tv:  6_000_000 },
         rfef_grupo1: { sponsor:   400_000,  tv:    800_000 },
         rfef_grupo2: { sponsor:   400_000,  tv:    800_000 },
+        promesas:    { sponsor:     1_500,  tv:        500 },   // ← AÑADIR ESTA LÍNEA
     };
 
     // Premios económicos por competición
@@ -357,6 +358,16 @@
             { name: 'RTVC Canarias',   logo: '🌋' },
             { name: 'Sportium TV',     logo: '📊' },
         ],
+        promesas: [
+            { name: 'TV Sabadell Vallès',       logo: '📺' },
+            { name: 'Canal Terrassa Vallès',    logo: '📡' },
+            { name: 'TV Sant Cugat',            logo: '🎬' },
+            { name: 'Canal Català Vallès',      logo: '🔴' },
+            { name: 'betevé',                   logo: '🏙️' },
+            { name: 'Vallès Visió',             logo: '👁️' },
+            { name: 'Rubí TV',                  logo: '📹' },
+            { name: 'Canal Català Vallès Occ.', logo: '🔴' },
+        ],
     };
 
     // Empresas patrocinadoras (por tier)
@@ -417,6 +428,23 @@
             { name: 'Diputación Local',  sector: 'Institucional' },
             { name: 'Caja Rural',        sector: 'Banca' },
         ],
+        promesas: [
+            { name: 'Fruites Rosario Sabadell',      sector: 'Alimentació' },
+            { name: 'Hermeticline Sabadell',          sector: 'Finestres' },
+            { name: 'TUS Transports Urbans Sabadell', sector: 'Transport' },
+            { name: 'Vitaldent Sabadell',             sector: 'Salut' },
+            { name: 'Mastercold Refrigeració',        sector: 'Industrial' },
+            { name: 'Kisamba',                        sector: 'Alimentació' },
+            { name: 'Etixx Nutrició Esportiva',       sector: 'Nutrició' },
+            { name: 'Clínica Dental Terrassa',        sector: 'Salut' },
+            { name: 'Informàtica Rubí',               sector: 'Tecnologia' },
+            { name: 'Ferreteria Vallès',              sector: 'Ferreteria' },
+            { name: 'Clínica Fisio Sant Cugat',       sector: 'Salut' },
+            { name: 'Taxi Vallès',                    sector: 'Transport' },
+            { name: 'Bar Esportiu Can Puig',          sector: 'Hostaleria' },
+            { name: 'Impremta Gràfica Vallès',        sector: 'Impremta' },
+            { name: 'Assegurances Mútua Terrassa',    sector: 'Assegurances' },
+        ],
     };
 
     function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -424,11 +452,13 @@
     function getTvCompanies(div) {
         if (div === 'primera') return TV_COMPANIES.primera;
         if (div === 'segunda') return TV_COMPANIES.segunda;
+        if (div === 'promesas') return TV_COMPANIES.promesas;
         return TV_COMPANIES.rfef;
     }
     function getSponsorCompanies(div) {
         if (div === 'primera') return SPONSOR_COMPANIES.primera;
         if (div === 'segunda') return SPONSOR_COMPANIES.segunda;
+        if (div === 'promesas') return SPONSOR_COMPANIES.promesas;
         return SPONSOR_COMPANIES.rfef;
     }
 
