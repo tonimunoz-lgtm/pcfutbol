@@ -194,6 +194,12 @@
                             <button class="btn" onclick="window.adminBackend.loadUsers()" style="background:#0088cc;">
                                 🔄 Recargar lista
                             </button>
+                            <button class="btn" onclick="window.adminBackend.migrateUsers()" style="background:#7b2fbe;">
+                                🔀 Migrar usuarios existentes
+                            </button>
+                            <p style="color:#666;font-size:.8em;margin-top:6px;">
+                                "Migrar" busca en las partidas guardadas y crea los perfiles de usuarios que se registraron antes de este sistema.
+                            </p>
                         </div>
 
                         <div style="overflow-x:auto;">
@@ -719,6 +725,69 @@
                 this.loadUsers();
             } catch (err) {
                 alert('❌ Error: ' + err.message);
+            }
+        },
+
+        // Migrar usuarios existentes desde la colección 'users' (partidas guardadas)
+        migrateUsers: async function() {
+            if (!confirm('Esto buscará todos los usuarios con partidas guardadas y creará su perfil en game_users si no existe. ¿Continuar?')) return;
+
+            const tbody = document.getElementById('adminUsersTbody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">⏳ Migrando usuarios...</td></tr>';
+
+            try {
+                const { getFirestore, collection, getDocs, doc, getDoc, setDoc, serverTimestamp } =
+                    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const firestore = getFirestore();
+
+                // Leer todos los documentos de 'users' (cada uno es un uid)
+                const usersSnap = await getDocs(collection(firestore, 'users'));
+
+                let migrated = 0;
+                let skipped = 0;
+
+                for (const userDoc of usersSnap.docs) {
+                    const uid = userDoc.id;
+
+                    // Comprobar si ya existe en game_users
+                    const existing = await getDoc(doc(firestore, 'game_users', uid));
+                    if (existing.exists()) { skipped++; continue; }
+
+                    // Intentar obtener el email desde las partidas guardadas
+                    let email = null;
+                    let name = null;
+                    try {
+                        const gamesSnap = await getDocs(collection(firestore, 'users', uid, 'saved_games'));
+                        if (!gamesSnap.empty) {
+                            // El email lo sacamos del currentUser si coincide, o dejamos el uid
+                            const firstGame = gamesSnap.docs[0].data();
+                            name = firstGame.team ? `Jugador (${firstGame.team})` : null;
+                        }
+                    } catch(e) {}
+
+                    // Si el uid coincide con el usuario actual logueado, podemos sacar su email
+                    if (window.firebaseAuth?.currentUser?.uid === uid) {
+                        email = window.firebaseAuth.currentUser.email;
+                        name = window.firebaseAuth.currentUser.displayName || name;
+                    }
+
+                    // Crear documento en game_users
+                    await setDoc(doc(firestore, 'game_users', uid), {
+                        email: email || `uid:${uid}`,
+                        name: name || uid.substring(0, 8) + '...',
+                        suspended: false,
+                        migrated: true,
+                        createdAt: serverTimestamp()
+                    });
+                    migrated++;
+                }
+
+                alert(`✅ Migración completada.\n• Migrados: ${migrated}\n• Ya existían: ${skipped}\n\nNota: los emails pueden aparecer como "uid:xxxx" si el usuario no ha iniciado sesión desde este dispositivo. Se actualizarán automáticamente en el próximo login.`);
+                this.loadUsers();
+
+            } catch (err) {
+                console.error('Error en migración:', err);
+                alert('❌ Error durante la migración: ' + err.message);
             }
         }
     };
