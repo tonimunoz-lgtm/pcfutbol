@@ -138,12 +138,13 @@ window.injectMatchSummary = function(matchResult) {
     // ========================================
     const generateCards = (team, numYellow, numRed) => {
         const cards = [];
-        const players = ['Rodri', 'Savic', 'Hermoso', 'De Paul', 'Kondogbia', 'Lodi', 'Felipe'];
-        
+        let namePool = team === _myTeam ? _getMyTeamScorers() : _getRivalScorers(team);
+        if (!namePool || namePool.length === 0) namePool = _genericNames;
+
         for (let i = 0; i < numYellow; i++) {
             cards.push({
                 type: 'yellow',
-                player: players[Math.floor(Math.random() * players.length)],
+                player: namePool[Math.floor(Math.random() * namePool.length)],
                 minute: Math.floor(Math.random() * 90) + 1,
                 team: team
             });
@@ -152,7 +153,7 @@ window.injectMatchSummary = function(matchResult) {
         for (let i = 0; i < numRed; i++) {
             cards.push({
                 type: 'red',
-                player: players[Math.floor(Math.random() * players.length)],
+                player: namePool[Math.floor(Math.random() * namePool.length)],
                 minute: Math.floor(Math.random() * 90) + 1,
                 team: team
             });
