@@ -73,8 +73,25 @@
                 const user = userCredential.user;
                 
                 // Actualizar perfil con el nombre
+                // Actualizar perfil con el nombre
                 if (name) {
                     await updateProfile(user, { displayName: name });
+                }
+
+                // Guardar en Firestore para que aparezca en el panel de admin
+                try {
+                    const { getFirestore, doc, setDoc, serverTimestamp } =
+                        await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const firestore = getFirestore();
+                    await setDoc(doc(firestore, 'game_users', user.uid), {
+                        email,
+                        name: name || email.split('@')[0],
+                        suspended: false,
+                        createdAt: serverTimestamp()
+                    });
+                    console.log('✅ Perfil guardado en Firestore para:', email);
+                } catch (fsErr) {
+                    console.warn('⚠️ No se pudo guardar en Firestore:', fsErr);
                 }
                 
                 console.log('✅ Usuario registrado en Firebase:', email);
