@@ -492,16 +492,17 @@
             usedSp.add(c.name); return c;
         };
 
+       const isPromesas = div === 'promesas';
         return {
             sponsorOffers: [1, 2, 3].map(y => {
                 const co = pickSp();
                 return { type: 'sponsor', years: y, company: co.name, sector: co.sector,
-                         annualAmount: r50k(base.sponsor * mult * rnd()) };
+                         annualAmount: isPromesas ? base.sponsor : r50k(base.sponsor * mult * rnd()) };
             }),
             tvOffers: [1, 2, 3].map(y => {
                 const co = pickTv();
                 return { type: 'tv', years: y, company: co.name, logo: co.logo,
-                         annualAmount: r100k(base.tv * mult * rnd()) };
+                         annualAmount: isPromesas ? base.tv : r100k(base.tv * mult * rnd()) };
             }),
         };
     }
