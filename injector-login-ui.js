@@ -139,6 +139,12 @@
                     <p style="margin-top: 15px; color: #999; font-size: 0.9em;">
                         ¿No tienes cuenta? Regístrate arriba
                     </p>
+                    <p style="margin-top: 8px;">
+                        <button onclick="window.handleForgotPassword()" 
+                                style="background: none; border: none; color: #e94560; cursor: pointer; font-size: 0.9em; text-decoration: underline; padding: 0;">
+                            🔑 ¿Olvidaste tu contraseña?
+                        </button>
+                    </p>
                 </div>
 
                 <!-- Formulario de Registro -->
@@ -195,6 +201,43 @@
             loginTab.style.background = 'rgba(233, 69, 96, 0.3)';
             registerForm.style.display = 'block';
             loginForm.style.display = 'none';
+        }
+    };
+
+    // Manejar recuperación de contraseña
+    window.handleForgotPassword = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const messageDiv = document.getElementById('loginMessage');
+
+        if (!email) {
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = 'rgba(255, 200, 0, 0.2)';
+            messageDiv.style.color = 'orange';
+            messageDiv.textContent = '⚠️ Introduce tu email arriba y pulsa el botón';
+            return;
+        }
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(255, 255, 0, 0.2)';
+        messageDiv.style.color = 'yellow';
+        messageDiv.textContent = '⏳ Enviando email de recuperación...';
+
+        try {
+            const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            await sendPasswordResetEmail(window.firebaseAuth, email);
+            messageDiv.style.background = 'rgba(0, 255, 0, 0.2)';
+            messageDiv.style.color = '#00ff00';
+            messageDiv.textContent = '✅ Email enviado. Revisa tu bandeja de entrada';
+        } catch (error) {
+            messageDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+            messageDiv.style.color = 'red';
+            if (error.code === 'auth/user-not-found') {
+                messageDiv.textContent = '❌ No existe ninguna cuenta con ese email';
+            } else if (error.code === 'auth/invalid-email') {
+                messageDiv.textContent = '❌ Email inválido';
+            } else {
+                messageDiv.textContent = '❌ Error: ' + error.message;
+            }
         }
     };
 
