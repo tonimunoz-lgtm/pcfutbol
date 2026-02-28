@@ -1027,13 +1027,14 @@ function renderTeamSelectors() {
         return;  
     }  
   
-    const divisions = ['primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2'];  
-    const divisionListIds = {  
-        'primera': 'primeraList',  
-        'segunda': 'segundaList',  
-        'rfef_grupo1': 'rfef_grupo1List',  
-        'rfef_grupo2': 'rfef_grupo2List'  
-    };  
+    const divisions = ['primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2', 'promesas'];  
+    const divisionListIds = {
+        'primera': 'primeraList',
+        'segunda': 'segundaList',
+        'rfef_grupo1': 'rfef_grupo1List',
+        'rfef_grupo2': 'rfef_grupo2List',
+        'promesas': 'promasasList'
+    }; 
   
     divisions.forEach(divisionKey => {  
         const listElement = document.getElementById(divisionListIds[divisionKey]);  
