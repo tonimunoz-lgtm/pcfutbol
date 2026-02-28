@@ -647,6 +647,147 @@
     }
 
     // ============================================================
+    // GENERACIÓN DE JUGADORES ESPECÍFICA PARA LIGA PROMESAS
+    // Patrón basado en plantilla real Can Rull Rómulo Tronchoni:
+    //   - Edad: 13-15 años
+    //   - Atributos: 50-70 (media ~60)
+    //   - Salario: 100€/sem fijo
+    //   - Cláusula: 10.000€
+    //   - Contrato: 1 año, owned
+    //   - Potencial: overall + 20-35 (mucho margen de crecimiento)
+    // ============================================================
+    function patchPromasasSquadGeneration() {
+        // Añadir config de calidad para promesas en DIVISION_QUALITY si está expuesto
+        // (no lo está, así que interceptamos generateRealisticSquad directamente)
+
+        // Esperamos a que generateRealisticSquad esté disponible en window
+        function tryPatch() {
+            if (!window.generateRealisticSquad) {
+                setTimeout(tryPatch, 600);
+                return;
+            }
+
+            const orig = window.generateRealisticSquad;
+            window.generateRealisticSquad = async function(teamName, division) {
+                if (division !== 'promesas') return orig(teamName, division);
+                return generatePromasasSquad(teamName);
+            };
+            console.log('✅ Promesas: generateRealisticSquad parchado para jugadores sub-15');
+        }
+        tryPatch();
+
+        // También interceptar el hook de match-engine que genera plantillas IA
+        // por si acaso usa directamente la config de división
+        function patchMatchEngineQuality() {
+            if (!window.generateAISquad) {
+                setTimeout(patchMatchEngineQuality, 800);
+                return;
+            }
+            const origAI = window.generateAISquad;
+            window.generateAISquad = async function(teamName, division) {
+                if (division !== 'promesas') return origAI(teamName, division);
+                return generatePromasasSquad(teamName);
+            };
+            console.log('✅ Promesas: generateAISquad parchado para jugadores sub-15');
+        }
+        patchMatchEngineQuality();
+    }
+
+    // ── Generador de plantilla Promesas ──────────────────────────
+    function generatePromasasSquad(teamName) {
+        const ATTRS = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
+
+        // Distribución de posiciones (14 jugadores, como Can Rull)
+        const positions = [
+            'POR', 'POR',
+            'DFC', 'DFC', 'DFC',
+            'MC', 'MC', 'MCO', 'MCO',
+            'EXT', 'EXT',
+            'DC', 'DC', 'DC'
+        ];
+
+        return positions.map(position => {
+            // Atributos: rango 50-70 con ligeras variaciones por posición
+            const attrs = {};
+            ATTRS.forEach(attr => {
+                const base = 50 + Math.floor(Math.random() * 18); // 50-67
+                // Pequeño bonus posicional (defensas más EN/DF, delanteros más AT/EF)
+                let bonus = 0;
+                if (position === 'POR' && (attr === 'CA' || attr === 'DF')) bonus = Math.floor(Math.random() * 5);
+                if ((position === 'DFC') && (attr === 'EN' || attr === 'DF')) bonus = Math.floor(Math.random() * 5);
+                if ((position === 'DC') && (attr === 'AT' || attr === 'EF')) bonus = Math.floor(Math.random() * 5);
+                if ((position === 'MCO' || position === 'MC') && (attr === 'RE' || attr === 'MO')) bonus = Math.floor(Math.random() * 4);
+                if ((position === 'EXT') && (attr === 'VE' || attr === 'AG')) bonus = Math.floor(Math.random() * 5);
+                attrs[attr] = Math.min(70, base + bonus);
+            });
+
+            // Calcular overall con pesos posicionales si están disponibles
+            let overall = 58; // default
+            if (window.POSITION_ATTRIBUTE_WEIGHTS && window.POSITION_ATTRIBUTE_WEIGHTS[position]) {
+                const weights = window.POSITION_ATTRIBUTE_WEIGHTS[position];
+                let sum = 0, totalW = 0;
+                for (const a in weights) {
+                    sum += (attrs[a] || 55) * weights[a];
+                    totalW += weights[a];
+                }
+                overall = Math.round(sum / totalW);
+            } else {
+                overall = Math.round(ATTRS.reduce((s, a) => s + (attrs[a] || 55), 0) / ATTRS.length);
+            }
+
+            const age = 13 + Math.floor(Math.random() * 3); // 13, 14 o 15 años
+            const potential = Math.min(95, overall + 20 + Math.floor(Math.random() * 16)); // +20 a +35
+
+            return {
+                name: generatePromasasName(),
+                position,
+                age,
+                foot: Math.random() < 0.82 ? 'Diestro' : 'Zurdo',
+                ...attrs,
+                overall,
+                potential,
+                // Económico: igual que Can Rull
+                salary: 100,
+                value: 10000,
+                contractType: 'owned',
+                contractYears: 1,
+                releaseClause: 10000,
+                // Estado
+                currentTeam: teamName,
+                club: teamName,
+                matches: 0,
+                form: 65 + Math.floor(Math.random() * 15),
+                isInjured: false,
+                weeksOut: 0,
+                isSuspended: false,
+                yellowCards: 0,
+                redCards: 0,
+                minutesPlayed: 0,
+                goals: 0,
+                assists: 0,
+                history: []
+            };
+        });
+    }
+
+    // Nombres catalanes/españoles típicos para chavales de la zona
+    const NOMS_PROM = ['Biel','Pol','Arnau','Marc','Pau','Jan','Nil','Roc','Aleix','Ferran',
+        'Oriol','Guillem','Adrià','Roger','Jordi','Miquel','Sergi','David','Alex','Hugo',
+        'Mario','Iker','Maicol','Vicent','Teo','Jhonefer','Ibai','Luka','Dani','Toni',
+        'Xavi','Gerard','Bernat','Eric','Àlex','Unai','Aitor','Nahuel','Joel','Mikel'];
+    const COGN_PROM = ['Garcia','Martínez','López','Sánchez','Fernández','González','Rodríguez',
+        'Pérez','Gómez','Puig','Serra','Vila','Mas','Vidal','Font','Soler','Molina','Roca',
+        'Torres','Blanco','Romero','Ferrer','Bosch','Costa','Pons','Llopis','Reyes','Moreno',
+        'Castro','Ruiz','Díaz','Muñoz','Navarro','Ortiz','Delgado','Jordà','Coll','Ibáñez'];
+
+    function generatePromasasName() {
+        const nom = NOMS_PROM[Math.floor(Math.random() * NOMS_PROM.length)];
+        const cog1 = COGN_PROM[Math.floor(Math.random() * COGN_PROM.length)];
+        const cog2initial = COGN_PROM[Math.floor(Math.random() * COGN_PROM.length)][0];
+        return `${nom} ${cog1} ${cog2initial}.`;
+    }
+
+    // ============================================================
     // BOOTSTRAP
     // ============================================================
     function boot() {
@@ -656,6 +797,7 @@
         patchCompetitionConfig();
         patchPromotionRelegation();
         patchDivisionMultipliers();
+        patchPromasasSquadGeneration();
         patchTeamSelectionModal();
         patchAdminPanel();
         patchStandingsTitle();
