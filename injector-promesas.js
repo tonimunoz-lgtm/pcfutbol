@@ -1,0 +1,736 @@
+// ============================================================
+// injector-promesas.js  v1.0
+//
+// MÓDULO: Liga Promesas + Descensos Primera RFEF
+//
+// ESTRUCTURA:
+//   - Liga Promesas: liga única de 20 equipos
+//   - Primera RFEF G1 y G2: ahora con 1 descenso directo cada uno
+//   - De Promesas: 1º sube directo a RFEF G2
+//                 2º-5º → playoff → ganador sube a RFEF G1
+//   - Admin: selector de división incluye Promesas
+// ============================================================
+
+(function () {
+    'use strict';
+
+    // ── Equipos Liga Promesas ──────────────────────────────────
+    const PROMESAS_TEAMS = [
+        'Sabadell Nord',
+        'Pericos de Sant Cugat',
+        'Sabadellenca',
+        'Barberà',
+        'OAR Gràcia',
+        'Escola F. Sabadell',
+        'Peña Blaugrana SC',
+        'Castellar',
+        'Marina',
+        'Base Montcada',
+        'Tibidabo Torre Romeu',
+        'Rubí',
+        'Junior',
+        'Atlético Roureda',
+        'Can Rull Rómulo Tronchoni',
+        'Sant Cugat',
+        'Matadepera',
+        'FC Barcelona Prom',
+        'Real Madrid Prom',
+        'Español Prom'
+    ];
+
+    // ── Configuración de zonas para Promesas ──────────────────
+    // Pos 1:   ascenso directo → RFEF G2
+    // Pos 2-5: playoff ascenso → ganador va a RFEF G1
+    // Pos 20:  (no hay descenso por ahora, liga nueva)
+    const PROMESAS_COMP_CONFIG = {
+        promoteAuto:    [1],
+        promotePlayoff: [2, 3, 4, 5],
+        relegate:       0
+    };
+
+    // ── Storage para playoff de Promesas ──────────────────────
+    const PLAYOFF_PROMESAS_KEY = 'playoff_promesas_v1';
+    const storeP = {
+        get:   () => { try { return JSON.parse(localStorage.getItem(PLAYOFF_PROMESAS_KEY)); } catch(e) { return null; } },
+        save:  (s) => { try { localStorage.setItem(PLAYOFF_PROMESAS_KEY, JSON.stringify(s)); } catch(e) {} },
+        clear: () => localStorage.removeItem(PLAYOFF_PROMESAS_KEY)
+    };
+
+    // ── Helpers ───────────────────────────────────────────────
+    function getState() { return window.gameLogic?.getGameState(); }
+
+    function simMatch(ratingA, ratingB) {
+        const diff = (ratingA - ratingB) / 100;
+        const baseHome = 0.45 + diff * 0.5;
+        const r = Math.random();
+        const hg = Math.floor(Math.random() * 3) + (r < baseHome ? 1 : 0);
+        const ag = Math.floor(Math.random() * 3) + (r >= baseHome ? 1 : 0);
+        return { hg, ag };
+    }
+
+    function getMyRating() {
+        const state = getState();
+        if (!state?.players) return 65;
+        const lineup = (state.lineup || []).slice(0, 11);
+        if (!lineup.length) return 65;
+        const sum = lineup.reduce((acc, name) => {
+            const p = state.players.find(x => x.name === name);
+            return acc + (p?.overall || 65);
+        }, 0);
+        return sum / lineup.length;
+    }
+
+    // ── Ordenar standings ──────────────────────────────────────
+    function sortSt(standings) {
+        return Object.entries(standings || {}).sort((a, b) => {
+            const dp = (b[1].pts || 0) - (a[1].pts || 0);
+            if (dp !== 0) return dp;
+            return ((b[1].gf || 0) - (b[1].gc || 0)) - ((a[1].gf || 0) - (a[1].gc || 0));
+        });
+    }
+
+    // ============================================================
+    // PASO 1: Registrar equipos de Promesas en TEAMS_DATA
+    // ============================================================
+    function registerPromasasTeams() {
+        // Esperar a que window.TEAMS_DATA esté disponible
+        if (!window.TEAMS_DATA) {
+            setTimeout(registerPromasasTeams, 300);
+            return;
+        }
+        if (!window.TEAMS_DATA.promesas) {
+            window.TEAMS_DATA.promesas = PROMESAS_TEAMS;
+            console.log('✅ Liga Promesas: equipos registrados en TEAMS_DATA');
+        }
+    }
+
+    // ============================================================
+    // PASO 2: Parchar COMPETITION_CONFIG de injector-competitions
+    //         → añadir Promesas + activar descenso en RFEF
+    // ============================================================
+    function patchCompetitionConfig() {
+        // El COMPETITION_CONFIG es una variable local del closure de injector-competitions.
+        // Lo más limpio es exponer una función que lo parchea desde fuera,
+        // o bien monkey-patchear updateStandingsColors para que soporte 'promesas'.
+        // Como COMPETITION_CONFIG no está expuesto globalmente, hacemos el patch
+        // directamente sobre window.CompetitionsSystem si existe, y también
+        // interceptamos updateStandingsColors.
+
+        // Guardar referencia al updateColors original si existe
+        const origUpdateColors = window.CompetitionsSystem?.updateColors;
+
+        // Sobrescribir updateStandingsColors para añadir soporte a 'promesas'
+        // y descenso en rfef_grupo1/rfef_grupo2
+        const _originalUpdateColors = window.updateStandingsColors;
+
+        window.updateStandingsColorsPromesas = function () {
+            const state = getState();
+            if (!state?.standings) return;
+            const division = state.division;
+
+            // Colores de zona (mismos que injector-competitions)
+            const ZONE_COLORS = {
+                champions:       { bg: 'rgba(30,90,200,0.25)',  border: '#1E5AC8' },
+                europaLeague:    { bg: 'rgba(255,140,0,0.22)',  border: '#FF8C00' },
+                conferenceLague: { bg: 'rgba(0,180,100,0.22)',  border: '#00B464' },
+                promoteAuto:     { bg: 'rgba(50,200,50,0.25)',  border: '#32C832' },
+                promotePlayoff:  { bg: 'rgba(180,150,0,0.22)',  border: '#B49600' },
+                relegate:        { bg: 'rgba(200,40,40,0.25)',  border: '#C82828' }
+            };
+
+            if (division !== 'promesas' &&
+                division !== 'rfef_grupo1' &&
+                division !== 'rfef_grupo2') return; // otras divisiones las gestiona el original
+
+            const total = Object.keys(state.standings).length;
+            const rows = document.querySelectorAll('#standingsTable tr, .standings-table tbody tr');
+
+            rows.forEach((row, idx) => {
+                const pos = idx + 1;
+                row.style.background  = '';
+                row.style.borderLeft  = '';
+
+                const apply = zone => {
+                    row.style.background = ZONE_COLORS[zone].bg;
+                    row.style.borderLeft = `4px solid ${ZONE_COLORS[zone].border}`;
+                };
+
+                if (division === 'promesas') {
+                    if (pos === 1)                              apply('promoteAuto');
+                    else if (pos >= 2 && pos <= 5)             apply('promotePlayoff');
+                    // último: no hay descenso en el primer año (ampliable)
+                } else if (division === 'rfef_grupo1' || division === 'rfef_grupo2') {
+                    // ascenso directo: pos 1
+                    if (pos === 1)                             apply('promoteAuto');
+                    else if (pos >= 2 && pos <= 5)            apply('promotePlayoff');
+                    // descenso: último de la tabla
+                    else if (pos === total)                    apply('relegate');
+                }
+
+                // Resaltar equipo del jugador
+                if (row.classList.contains('my-team-row')) {
+                    const currentBg = row.style.background;
+                    if (currentBg && currentBg !== '') {
+                        row.style.background = currentBg.replace(/[\d.]+\)$/, '0.45)');
+                    } else {
+                        row.style.background = 'rgba(233,69,96,0.22)';
+                    }
+                    row.style.borderLeft  = '4px solid #e94560';
+                    row.style.borderRight = '3px solid rgba(233,69,96,0.6)';
+                    row.style.fontWeight  = 'bold';
+                    const nameCell = row.querySelector('.team-name, td:nth-child(2)');
+                    if (nameCell && !nameCell.textContent.includes('⭐')) {
+                        nameCell.innerHTML = '⭐ ' + nameCell.innerHTML;
+                    }
+                } else {
+                    row.style.borderRight = '';
+                    row.style.fontWeight  = '';
+                }
+            });
+
+            addPromasasLegend(division, total);
+        };
+
+        console.log('✅ Liga Promesas: updateStandingsColorsPromesas registrado');
+    }
+
+    // ── Leyenda para Promesas / RFEF con descenso ─────────────
+    function addPromasasLegend(division, total) {
+        const page = document.getElementById('standings');
+        if (!page) return;
+        document.getElementById('promesas-legend')?.remove();
+
+        const div = document.createElement('div');
+        div.id = 'promesas-legend';
+        div.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:.82em;';
+
+        const items = [];
+
+        if (division === 'promesas') {
+            items.push({ bg:'rgba(50,200,50,0.25)',  border:'#32C832', text:'Pos 1: ⬆️ Ascenso directo → 1ª RFEF G2' });
+            items.push({ bg:'rgba(180,150,0,0.22)', border:'#B49600', text:'Pos 2-5: ⭐ Playoff → ganador sube a 1ª RFEF G1' });
+        } else {
+            // rfef_grupo1 o rfef_grupo2
+            items.push({ bg:'rgba(50,200,50,0.25)',  border:'#32C832', text:'Pos 1: ⬆️ Ascenso directo a 2ª División' });
+            items.push({ bg:'rgba(180,150,0,0.22)', border:'#B49600', text:'Pos 2-5: ⭐ Playoff de ascenso' });
+            items.push({ bg:'rgba(200,40,40,0.25)', border:'#C82828', text:`Pos ${total}: ⬇️ Descenso a Liga Promesas` });
+        }
+
+        items.forEach(item => {
+            const s = document.createElement('span');
+            s.style.cssText = `background:${item.bg};border-left:3px solid ${item.border};padding:4px 10px;border-radius:4px;color:#fff;`;
+            s.textContent = item.text;
+            div.appendChild(s);
+        });
+
+        const tbl = page.querySelector('table');
+        if (tbl) tbl.insertAdjacentElement('afterend', div);
+        else page.appendChild(div);
+    }
+
+    // ============================================================
+    // PASO 3: Hook a updateStandingsColors del sistema principal
+    //         para que llame también al nuestro
+    // ============================================================
+    function hookStandingsColors() {
+        // Intentamos hookear cuando CompetitionsSystem esté disponible
+        if (!window.CompetitionsSystem) {
+            setTimeout(hookStandingsColors, 500);
+            return;
+        }
+
+        const origUpdateColors = window.CompetitionsSystem.updateColors;
+        window.CompetitionsSystem.updateColors = function () {
+            const state = getState();
+            const div = state?.division;
+            if (div === 'promesas' || div === 'rfef_grupo1' || div === 'rfef_grupo2') {
+                window.updateStandingsColorsPromesas();
+            } else {
+                origUpdateColors?.();
+            }
+        };
+
+        // También hookear openPage para interceptar navegación a clasificación
+        const origOpen = window.openPage;
+        if (origOpen && !window._promasasOpenPageHooked) {
+            window._promasasOpenPageHooked = true;
+            window.openPage = function (pageId, ...args) {
+                origOpen.call(this, pageId, ...args);
+                if (pageId === 'standings') {
+                    setTimeout(() => {
+                        const div = getState()?.division;
+                        if (div === 'promesas' || div === 'rfef_grupo1' || div === 'rfef_grupo2') {
+                            window.updateStandingsColorsPromesas();
+                        }
+                    }, 350);
+                }
+            };
+        }
+
+        console.log('✅ Liga Promesas: hook de colores aplicado');
+    }
+
+    // ============================================================
+    // PASO 4: Playoff de ascenso desde Promesas
+    //         Formato: SF (2vs5, 3vs4) → Final → Campeón sube a RFEF G1
+    // ============================================================
+    function initPromasasPlayoff(myTeam, sortedAll, season) {
+        const p2 = sortedAll[1]?.[0];
+        const p3 = sortedAll[2]?.[0];
+        const p4 = sortedAll[3]?.[0];
+        const p5 = sortedAll[4]?.[0];
+        const inPlayoff = [p2, p3, p4, p5].includes(myTeam);
+
+        const po = {
+            type: 'promesas',
+            season,
+            myTeam,
+            teams: { p2, p3, p4, p5 },
+            sf1: { home: p2, away: p5, played: false },  // 2º vs 5º
+            sf2: { home: p3, away: p4, played: false },  // 3º vs 4º
+            final: null,
+            winner: null,
+            myResult: inPlayoff ? 'pending' : 'not_qualified',
+            simulated: false,
+            phase: inPlayoff ? 'sf' : 'done'
+        };
+        storeP.save(po);
+        return po;
+    }
+
+    function runPromasasPlayoff(myTeam) {
+        let po = storeP.get();
+        if (!po || po.simulated) return po;
+
+        const myR = getMyRating();
+        const fakeR = () => 55 + Math.floor(Math.random() * 15);
+
+        // SF1: p2 vs p5
+        const sf1 = simMatchPO(po.sf1.home, po.sf1.away, myTeam, myR, fakeR);
+        po.sf1 = { ...po.sf1, ...sf1, played: true };
+        const sf1Winner = sf1.winner;
+
+        // SF2: p3 vs p4
+        const sf2 = simMatchPO(po.sf2.home, po.sf2.away, myTeam, myR, fakeR);
+        po.sf2 = { ...po.sf2, ...sf2, played: true };
+        const sf2Winner = sf2.winner;
+
+        // Final
+        const finalMatch = simMatchPO(sf1Winner, sf2Winner, myTeam, myR, fakeR);
+        po.final = { home: sf1Winner, away: sf2Winner, ...finalMatch, played: true };
+        po.winner = finalMatch.winner;
+
+        // Resultado del jugador
+        if (myTeam === po.winner) {
+            po.myResult = 'promoted_playoff'; // sube a RFEF G1
+        } else if ([sf1Winner, sf2Winner].includes(myTeam)) {
+            po.myResult = 'lost_final';
+        } else if ([po.sf1.home, po.sf1.away, po.sf2.home, po.sf2.away].includes(myTeam)) {
+            po.myResult = 'eliminated_sf';
+        }
+
+        po.simulated = true;
+        po.phase = 'done';
+        storeP.save(po);
+        return po;
+    }
+
+    function simMatchPO(teamA, teamB, myTeam, myRating, fakeR) {
+        const rA = teamA === myTeam ? myRating : fakeR();
+        const rB = teamB === myTeam ? myRating : fakeR();
+        const r = simMatch(rA, rB);
+        // Si empate, gana el mejor clasificado (el home, que es el mejor)
+        const winner = r.hg > r.ag ? teamA : r.ag > r.hg ? teamB : teamA;
+        return { hg: r.hg, ag: r.ag, winner };
+    }
+
+    // ============================================================
+    // PASO 5: Hook fin de temporada para gestionar descensos RFEF
+    //         y ascensos/descensos con Promesas
+    // ============================================================
+    function hookEndSeason() {
+        if (!window.gameLogic || window._promasasEndSeasonHooked) return;
+        window._promasasEndSeasonHooked = true;
+
+        // Hookear simulateWeek para interceptar cambio de temporada
+        const origSimWeek = window.simulateWeek;
+        if (!origSimWeek) { setTimeout(hookEndSeason, 800); return; }
+
+        window.simulateWeek = async function () {
+            const before = getState();
+            const result = await origSimWeek.apply(this, arguments);
+            const after = getState();
+
+            if (before && after && before.currentSeason !== after.currentSeason) {
+                handlePromasasSeasonEnd(before, after);
+            } else if (after?.division === 'promesas' && after?.seasonType === 'regular') {
+                // Actualizar colores si estamos en promesas
+                setTimeout(() => window.updateStandingsColorsPromesas?.(), 100);
+
+                // Simular playoff al final de temporada (semana penúltima)
+                const total = after.maxSeasonWeeks || 38;
+                if (after.week === total - 1) {
+                    const po = storeP.get();
+                    if (po && !po.simulated) {
+                        const res = runPromasasPlayoff(after.team);
+                        notifyPromasasPlayoff(res);
+                    }
+                }
+            }
+            return result;
+        };
+
+        console.log('✅ Liga Promesas: hook de fin de temporada aplicado');
+    }
+
+    function handlePromasasSeasonEnd(before, after) {
+        const div = before.division;
+        const sorted = Object.entries(before.standings || {}).sort((a, b) => {
+            const dp = (b[1].pts || 0) - (a[1].pts || 0);
+            if (dp !== 0) return dp;
+            return ((b[1].gf || 0) - (b[1].gc || 0)) - ((a[1].gf || 0) - (a[1].gc || 0));
+        });
+        const myPos = sorted.findIndex(([n]) => n === before.team) + 1;
+        const total = sorted.length;
+
+        if (div === 'promesas') {
+            // 1º → RFEF G2 (ascenso directo)
+            if (myPos === 1) {
+                window.gameLogic?.addNews('🏆 ¡CAMPEÓN DE LIGA PROMESAS! ¡ASCIENDES A PRIMERA RFEF GRUPO 2!', 'success');
+                // La división se cambia en el propio gameLogic, aquí solo notificamos
+            }
+            // 2-5 → playoff (ya iniciado)
+            if (myPos >= 2 && myPos <= 5) {
+                setTimeout(() => {
+                    storeP.clear();
+                    const po = initPromasasPlayoff(before.team, sorted, after.currentSeason);
+                    window.gameLogic?.addNews(`⭐ ¡Clasificado para el playoff de ascenso desde Promesas! (${myPos}º)`, 'info');
+                }, 500);
+            }
+        } else if (div === 'rfef_grupo1' || div === 'rfef_grupo2') {
+            // Último → desciende a Promesas
+            if (myPos === total) {
+                window.gameLogic?.addNews('⬇️ HAS DESCENDIDO A LIGA PROMESAS. ¡A luchar para volver!', 'error');
+            }
+            // Noticias de descenso IA
+            const descendido = sorted[total - 1]?.[0];
+            if (descendido && descendido !== before.team) {
+                window.gameLogic?.addNews(`⬇️ ${descendido} desciende a Liga Promesas`, 'info');
+            }
+        }
+    }
+
+    function notifyPromasasPlayoff(po) {
+        const gl = window.gameLogic;
+        if (!gl) return;
+        gl.addNews(`⬆️ SF Playoff: ${po.sf1.winner} y ${po.sf2.winner} pasan a la final`, 'info');
+        if (po.winner) gl.addNews(`🏆 Final Playoff Promesas: ${po.winner} asciende a 1ª RFEF Grupo 1`, 'success');
+
+        const msgs = {
+            promoted_playoff: '🎉 ¡HAS ASCENDIDO VÍA PLAYOFF A PRIMERA RFEF GRUPO 1!',
+            lost_final:       '😤 Eliminado en la FINAL del playoff. Permaneces en Promesas.',
+            eliminated_sf:    '😞 Eliminado en semifinales del playoff. Permaneces en Promesas.'
+        };
+        if (msgs[po.myResult]) {
+            gl.addNews(msgs[po.myResult], po.myResult === 'promoted_playoff' ? 'success' : 'error');
+        }
+    }
+
+    // ============================================================
+    // PASO 6: Render del Playoff en la UI de Clasificación
+    // ============================================================
+    function renderPromasasPlayoff() {
+        const panel = document.getElementById('comp-playoff-panel');
+        if (!panel) return;
+        const state = getState();
+        if (state?.division !== 'promesas') return;
+
+        const po = storeP.get();
+        if (!po) {
+            panel.innerHTML = `<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5)">
+                <div style="font-size:2em">⭐</div>
+                <div style="margin-top:10px">No hay datos de playoff todavía. Se iniciará al final de temporada.</div>
+            </div>`;
+            return;
+        }
+
+        const myTeam = state.team;
+        const fmt = (home, away, hg, ag, winner) => {
+            const meH = home === myTeam, meA = away === myTeam;
+            const winH = winner === home, winA = winner === away;
+            return `<div class="po-match">
+                <div class="pm-title">⚽ ${po.phase === 'done' ? 'Resultado' : 'Pendiente'}</div>
+                <div class="po-row ${winH ? 'winner' : winA ? 'loser' : ''}">${home}${meH ? ' ⭐' : ''} <span>${hg ?? '-'}</span></div>
+                <div class="po-row ${winA ? 'winner' : winH ? 'loser' : ''}">${away}${meA ? ' ⭐' : ''} <span>${ag ?? '-'}</span></div>
+                ${winner ? `<div class="po-info">Pasa: <strong>${winner}</strong></div>` : ''}
+            </div>`;
+        };
+
+        let html = `<div style="padding:8px 0">
+            <div style="color:#B49600;font-size:.9em;font-weight:bold;margin-bottom:10px">
+                ⭐ PLAYOFF ASCENSO — Liga Promesas → 1ª RFEF
+            </div>
+            <div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:12px">
+                🥇 Ganador → Primera RFEF Grupo 1 &nbsp;|&nbsp; Campeón de liga → Primera RFEF Grupo 2
+            </div>
+            <div class="po-wrap">`;
+
+        html += `<div style="color:#FFD700;font-size:.85em;font-weight:bold;margin-top:6px">Semifinales</div>`;
+        html += fmt(po.sf1.home, po.sf1.away, po.sf1.hg, po.sf1.ag, po.sf1.played ? po.sf1.winner : null);
+        html += fmt(po.sf2.home, po.sf2.away, po.sf2.hg, po.sf2.ag, po.sf2.played ? po.sf2.winner : null);
+
+        if (po.final) {
+            html += `<div style="color:#FFD700;font-size:.85em;font-weight:bold;margin-top:10px">Final</div>`;
+            html += fmt(po.final.home, po.final.away, po.final.hg, po.final.ag, po.final.played ? po.final.winner : null);
+        }
+
+        // Banner resultado jugador
+        if (po.myResult && po.myResult !== 'pending' && po.myResult !== 'not_qualified') {
+            const banners = {
+                promoted_playoff: { bg: 'rgba(50,200,50,.2)', border: '#32C832', icon: '🎉', text: '¡HAS ASCENDIDO VÍA PLAYOFF A PRIMERA RFEF GRUPO 1!' },
+                lost_final:       { bg: 'rgba(255,150,0,.15)', border: '#FF8C00', icon: '😤', text: 'Eliminado en la FINAL. Permaneces en Promesas.' },
+                eliminated_sf:    { bg: 'rgba(200,40,40,.15)', border: '#C82828', icon: '😞', text: 'Eliminado en Semifinales. Permaneces en Promesas.' }
+            };
+            const b = banners[po.myResult];
+            if (b) {
+                html += `<div class="result-banner" style="background:${b.bg};border-color:${b.border};border-radius:8px;padding:14px;text-align:center;margin-top:14px;border:2px solid ${b.border}">
+                    <div style="font-size:1.5em">${b.icon}</div>
+                    <div style="color:#fff;font-weight:bold;margin-top:4px">${b.text}</div>
+                </div>`;
+            }
+        }
+
+        html += `</div></div>`;
+        panel.innerHTML = html;
+    }
+
+    // ============================================================
+    // PASO 7: Inyectar tab "Playoff" en la página de clasificación
+    //         cuando estamos en Promesas
+    // ============================================================
+    function injectPromasasUI() {
+        const state = getState();
+        if (state?.division !== 'promesas') return;
+
+        // Si ya hay tabs inyectados por injector-competitions, añadir/verificar el de playoff
+        const tabPlayoff = document.getElementById('ctab-playoff');
+        if (!tabPlayoff) {
+            // Intentar añadir el tab manualmente
+            const tabs = document.getElementById('comp-tabs');
+            if (tabs) {
+                const btn = document.createElement('button');
+                btn.className = 'ctab';
+                btn.id = 'ctab-playoff';
+                btn.onclick = () => window.showCompTab('playoff');
+                btn.textContent = '⭐ Playoff Ascenso';
+                tabs.appendChild(btn);
+            }
+        }
+
+        // Redirigir renderPlayoff para promesas
+        const origShowCompTab = window.showCompTab;
+        if (origShowCompTab && !window._promasasShowTabHooked) {
+            window._promasasShowTabHooked = true;
+            window.showCompTab = function (tab) {
+                origShowCompTab(tab);
+                if (tab === 'playoff' && getState()?.division === 'promesas') {
+                    setTimeout(renderPromasasPlayoff, 50);
+                }
+            };
+        }
+    }
+
+    // ============================================================
+    // PASO 8: Patch del panel Admin para incluir Liga Promesas
+    // ============================================================
+    function patchAdminPanel() {
+        // Esperamos a que el panel de admin esté en el DOM
+        const checkAdmin = setInterval(() => {
+            const select = document.getElementById('adminDivisionSelect');
+            if (!select) return;
+            clearInterval(checkAdmin);
+
+            // Añadir opción si no existe ya
+            if (!select.querySelector('option[value="promesas"]')) {
+                const opt = document.createElement('option');
+                opt.value = 'promesas';
+                opt.textContent = '🌟 Liga Promesas';
+                select.appendChild(opt);
+                console.log('✅ Admin: opción Liga Promesas añadida');
+            }
+        }, 500);
+
+        // También observar si el modal se crea después (el admin crea el modal dinámicamente)
+        const observer = new MutationObserver(() => {
+            const select = document.getElementById('adminDivisionSelect');
+            if (select && !select.querySelector('option[value="promesas"]')) {
+                const opt = document.createElement('option');
+                opt.value = 'promesas';
+                opt.textContent = '🌟 Liga Promesas';
+                select.appendChild(opt);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // ============================================================
+    // PASO 9: Parchar PROMOTION_RELEGATION para incluir Promesas
+    //         y actualizar el valor de relegate en RFEF
+    // ============================================================
+    function patchPromotionRelegation() {
+        if (typeof PROMOTION_RELEGATION === 'undefined' && !window.PROMOTION_RELEGATION) {
+            setTimeout(patchPromotionRelegation, 300);
+            return;
+        }
+        // Intentar acceder tanto a la variable global como a window
+        const pr = typeof PROMOTION_RELEGATION !== 'undefined' ? PROMOTION_RELEGATION : window.PROMOTION_RELEGATION;
+        if (!pr) return;
+
+        // Liga Promesas: 1 sube directo, 2-5 playoff, ninguno desciende (1er año)
+        if (!pr.promesas) {
+            pr.promesas = { promote: 1, relegate: 0 };
+        }
+        // RFEF grupos: activar descenso de 1 (era 4 pero no estaba implementado)
+        if (pr.rfef_grupo1) pr.rfef_grupo1.relegate = 1;
+        if (pr.rfef_grupo2) pr.rfef_grupo2.relegate = 1;
+
+        console.log('✅ Liga Promesas: PROMOTION_RELEGATION actualizado');
+    }
+
+    // ============================================================
+    // PASO 10: Exponer división Promesas en la selección de equipo
+    //          al inicio del juego (modal de selección de equipo)
+    // ============================================================
+    function patchTeamSelectionModal() {
+        // Observar cuando se añada el selector de división en el login
+        const observer = new MutationObserver(() => {
+            // Buscar selects de división en la pantalla de inicio
+            const divSelects = document.querySelectorAll('#divisionSelect, [id*="division"] select, select[onchange*="division"]');
+            divSelects.forEach(sel => {
+                if (sel && !sel.querySelector('option[value="promesas"]')) {
+                    const opt = document.createElement('option');
+                    opt.value = 'promesas';
+                    opt.textContent = '🌟 Liga Promesas';
+                    sel.appendChild(opt);
+                }
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // ============================================================
+    // PASO 11: Soporte para título dinámico en clasificación
+    // ============================================================
+    function patchStandingsTitle() {
+        // Hookeamos la apertura de la página de clasificación
+        const origOpen = window.openPage;
+        if (!origOpen || window._promasasTitleHooked) return;
+        window._promasasTitleHooked = true;
+
+        window.openPage = function (pageId, ...args) {
+            origOpen.call(this, pageId, ...args);
+            if (pageId === 'standings') {
+                setTimeout(() => {
+                    const div = getState()?.division;
+                    if (div === 'promesas') {
+                        // Actualizar título si ui.js lo gestiona dinámicamente
+                        const titleEl = document.querySelector('#standings .page-header h1, #standings h1, #standings h2');
+                        if (titleEl && !titleEl.textContent.includes('Promesas')) {
+                            const orig = titleEl.textContent;
+                            titleEl.textContent = '🌟 Liga Promesas';
+                        }
+                    }
+                }, 400);
+            }
+        };
+    }
+
+    // ============================================================
+    // MULTIPLIER para Promesas (presupuestos y staff más bajos)
+    // ============================================================
+    function patchDivisionMultipliers() {
+        if (window.DIVISION_MULTIPLIERS && !window.DIVISION_MULTIPLIERS.promesas) {
+            window.DIVISION_MULTIPLIERS.promesas = 0.3;
+        }
+        if (typeof DIVISION_MULTIPLIERS !== 'undefined' && !DIVISION_MULTIPLIERS.promesas) {
+            DIVISION_MULTIPLIERS.promesas = 0.3;
+        }
+    }
+
+    // ============================================================
+    // BOOTSTRAP
+    // ============================================================
+    function boot() {
+        console.log('🌟 injector-promesas.js v1.0 arrancando...');
+
+        registerPromasasTeams();
+        patchCompetitionConfig();
+        patchPromotionRelegation();
+        patchDivisionMultipliers();
+        patchTeamSelectionModal();
+        patchAdminPanel();
+        patchStandingsTitle();
+
+        // Esperar a que el sistema de competiciones esté listo
+        function waitForComps() {
+            if (!window.CompetitionsSystem) {
+                setTimeout(waitForComps, 600);
+                return;
+            }
+            hookStandingsColors();
+            console.log('✅ Promesas: hook de colores listo');
+        }
+        waitForComps();
+
+        // Esperar a que gameLogic esté listo
+        function waitForGameLogic() {
+            if (!window.gameLogic) {
+                setTimeout(waitForGameLogic, 800);
+                return;
+            }
+            hookEndSeason();
+
+            // Actualizar colores si ya estamos en promesas
+            const state = getState();
+            if (state?.division === 'promesas') {
+                setTimeout(window.updateStandingsColorsPromesas, 500);
+            }
+        }
+        waitForGameLogic();
+
+        // Monitorear navegación a clasificación
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('[onclick*="standings"],.nav-item,.bottom-nav-item');
+            if (btn && btn.textContent?.toLowerCase().includes('clasif')) {
+                setTimeout(() => {
+                    const div = getState()?.division;
+                    if (div === 'promesas' || div === 'rfef_grupo1' || div === 'rfef_grupo2') {
+                        window.updateStandingsColorsPromesas?.();
+                        injectPromasasUI();
+                    }
+                }, 400);
+            }
+        });
+
+        // Exponer API pública
+        window.PromasasSystem = {
+            getPlayoff:     storeP.get,
+            clearPlayoff:   storeP.clear,
+            initPlayoff:    initPromasasPlayoff,
+            runPlayoff:     runPromasasPlayoff,
+            renderPlayoff:  renderPromasasPlayoff,
+            updateColors:   window.updateStandingsColorsPromesas,
+            teams:          PROMESAS_TEAMS
+        };
+
+        console.log('✅ injector-promesas.js v1.0 listo');
+    }
+
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 1500));
+    } else {
+        setTimeout(boot, 1500);
+    }
+
+})();
