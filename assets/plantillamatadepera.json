@@ -1,6 +1,6 @@
 [
   {
-    "name": "Victor Galera",
+    "name": "Joen",
     "position": "POR",
     "age": 14,
     "EN": 58,
@@ -19,10 +19,10 @@
     "releaseClause": 10000
   },
   {
-    "name": "Pedro Lopez",
+    "name": "David Ponseti",
     "position": "POR",
     "age": 14,
-    "EN": 55,
+    "EN": 57,
     "VE": 50,
     "RE": 54,
     "AG": 58,
@@ -38,7 +38,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Nil Bastida",
+    "name": "Gerard Rodríguez",
     "position": "DFC",
     "age": 14,
     "EN": 65,
@@ -57,7 +57,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Ibai Polo",
+    "name": "Xavier Vega",
     "position": "DFC",
     "age": 14,
     "EN": 64,
@@ -76,26 +76,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Alex Rogido",
-    "position": "DFC",
-    "age": 14,
-    "EN": 62,
-    "VE": 58,
-    "RE": 60,
-    "AG": 61,
-    "CA": 59,
-    "EF": 58,
-    "MO": 60,
-    "AT": 42,
-    "DF": 64,
-    "foot": "Diestro",
-    "contractType": "owned",
-    "contractYears": 1,
-    "salary": 100,
-    "releaseClause": 10000
-  },
-  {
-    "name": "Teo Muñoz",
+    "name": "Álex Espín",
     "position": "MCD",
     "age": 14,
     "EN": 68,
@@ -114,7 +95,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Vicent Montaño",
+    "name": "Pol Fernández",
     "position": "MC",
     "age": 14,
     "EN": 66,
@@ -133,7 +114,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Ferran Lopez",
+    "name": "Ferran Serra",
     "position": "MC",
     "age": 14,
     "EN": 64,
@@ -152,7 +133,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Jhonefer Piedrahita",
+    "name": "Aran Ruiz",
     "position": "MCO",
     "age": 14,
     "EN": 68,
@@ -171,7 +152,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Mario Sanchez",
+    "name": "Aidan Cinquemani",
     "position": "MCO",
     "age": 14,
     "EN": 65,
@@ -190,7 +171,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Aleix Fuente",
+    "name": "Biel Aymerich",
     "position": "EXT",
     "age": 14,
     "EN": 66,
@@ -209,7 +190,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Marc Lopez",
+    "name": "Bernat Pardos",
     "position": "EXT",
     "age": 14,
     "EN": 64,
@@ -228,7 +209,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Maicol Tames",
+    "name": "Marc Larios",
     "position": "DC",
     "age": 14,
     "EN": 60,
@@ -247,7 +228,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Iker",
+    "name": "Biel Salvador",
     "position": "DC",
     "age": 14,
     "EN": 59,
@@ -266,45 +247,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Hugo Mata",
-    "position": "MCO",
-    "age": 14,
-    "EN": 66,
-    "VE": 63,
-    "RE": 64,
-    "AG": 62,
-    "CA": 61,
-    "EF": 64,
-    "MO": 64,
-    "AT": 46,
-    "DF": 60,
-    "foot": "Diestro",
-    "contractType": "owned",
-    "contractYears": 1,
-    "salary": 100,
-    "releaseClause": 10000
-  },
-  {
-    "name": "Hugo Galera",
-    "position": "MCO",
-    "age": 14,
-    "EN": 65,
-    "VE": 62,
-    "RE": 63,
-    "AG": 61,
-    "CA": 60,
-    "EF": 63,
-    "MO": 63,
-    "AT": 44,
-    "DF": 58,
-    "foot": "Diestro",
-    "contractType": "owned",
-    "contractYears": 1,
-    "salary": 100,
-    "releaseClause": 10000
-  },
-  {
-    "name": "Fabian Quinteros",
+    "name": "Joan Latorre",
     "position": "MC",
     "age": 14,
     "EN": 66,
@@ -323,7 +266,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Angel Moreno",
+    "name": "Adam Khaira",
     "position": "MC",
     "age": 14,
     "EN": 65,
@@ -342,7 +285,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Roc Mir",
+    "name": "Erik Leon",
     "position": "EXT",
     "age": 14,
     "EN": 64,
@@ -361,7 +304,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Isaac Mancera",
+    "name": "Hugo Sanchez",
     "position": "DC",
     "age": 14,
     "EN": 60,
@@ -380,7 +323,7 @@
     "releaseClause": 10000
   },
   {
-    "name": "Jesus Jimenez",
+    "name": "Leo Hernandez",
     "position": "DC",
     "age": 14,
     "EN": 59,
@@ -392,6 +335,25 @@
     "MO": 59,
     "AT": 48,
     "DF": 58,
+    "foot": "Diestro",
+    "contractType": "owned",
+    "contractYears": 1,
+    "salary": 100,
+    "releaseClause": 10000
+  },
+  {
+    "name": "Pep Castells",
+    "position": "MCO",
+    "age": 14,
+    "EN": 66,
+    "VE": 63,
+    "RE": 65,
+    "AG": 62,
+    "CA": 61,
+    "EF": 64,
+    "MO": 64,
+    "AT": 48,
+    "DF": 60,
     "foot": "Diestro",
     "contractType": "owned",
     "contractYears": 1,
