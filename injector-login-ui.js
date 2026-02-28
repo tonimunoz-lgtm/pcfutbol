@@ -417,7 +417,7 @@
             const adminBtn = document.createElement('button');
             adminBtn.id = 'adminButton';
             adminBtn.className = 'btn btn-sm';
-            adminBtn.innerHTML = '⚙️ Admin';
+            adminBtn.innerHTML = 'Admin';
             adminBtn.onclick = () => {
                 if (window.openAdminPanel) {
                     window.openAdminPanel();
