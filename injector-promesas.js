@@ -598,24 +598,13 @@
     }
 
     // ============================================================
-    // PASO 10: Exponer división Promesas en la selección de equipo
-    //          al inicio del juego (modal de selección de equipo)
+    // PASO 10: El modal de selección ya tiene el div #promasasList
+    //          hardcodeado en index.html (igual que las otras divisiones).
+    //          renderTeamSelectors() también incluye 'promesas'.
+    //          Esta función queda como no-op por compatibilidad.
     // ============================================================
     function patchTeamSelectionModal() {
-        // Observar cuando se añada el selector de división en el login
-        const observer = new MutationObserver(() => {
-            // Buscar selects de división en la pantalla de inicio
-            const divSelects = document.querySelectorAll('#divisionSelect, [id*="division"] select, select[onchange*="division"]');
-            divSelects.forEach(sel => {
-                if (sel && !sel.querySelector('option[value="promesas"]')) {
-                    const opt = document.createElement('option');
-                    opt.value = 'promesas';
-                    opt.textContent = '🌟 Liga Promesas';
-                    sel.appendChild(opt);
-                }
-            });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+        // Nada que hacer — ya está en index.html
     }
 
     // ============================================================
