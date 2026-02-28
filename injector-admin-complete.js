@@ -714,13 +714,38 @@
         },
 
         deleteUser: async function(uid, email) {
-            if (!confirm(`¿Eliminar usuario ${email}? Esta acción no se puede deshacer.`)) return;
+            if (!confirm(`¿Eliminar usuario ${email}?\n\nSe borrarán:\n• Su perfil de game_users\n• Todas sus partidas guardadas\n• Sus datos de usuario\n\nEsta acción NO se puede deshacer.`)) return;
             try {
-                const { getFirestore, doc, deleteDoc } =
+                const { getFirestore, doc, deleteDoc, collection, getDocs } =
                     await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 const firestore = getFirestore();
+
+                // 1. Borrar partidas guardadas
+                try {
+                    const savedGamesSnap = await getDocs(collection(firestore, 'users', uid, 'saved_games'));
+                    const deleteGames = savedGamesSnap.docs.map(d => deleteDoc(d.ref));
+                    await Promise.all(deleteGames);
+                    console.log(`🗑 ${savedGamesSnap.size} partidas borradas para ${email}`);
+                } catch(e) {
+                    console.warn('No se pudieron borrar partidas:', e);
+                }
+
+                // 2. Borrar carreras promanager
+                try {
+                    const proSnap = await getDocs(collection(firestore, 'users', uid, 'promanager_career'));
+                    const deletePro = proSnap.docs.map(d => deleteDoc(d.ref));
+                    await Promise.all(deletePro);
+                } catch(e) {}
+
+                // 3. Borrar documento raíz del usuario en 'users'
+                try {
+                    await deleteDoc(doc(firestore, 'users', uid));
+                } catch(e) {}
+
+                // 4. Borrar perfil en game_users
                 await deleteDoc(doc(firestore, 'game_users', uid));
-                alert('✅ Usuario eliminado');
+
+                alert(`✅ Usuario ${email} eliminado completamente.\n\nNota: la cuenta de Firebase Auth sigue activa (requiere Admin SDK para eliminarla desde servidor). El usuario no podrá acceder al juego pero técnicamente podría registrarse de nuevo con el mismo email.`);
                 this.loadUsers();
             } catch (err) {
                 alert('❌ Error: ' + err.message);
