@@ -1,74 +1,32 @@
-// injector-promanager.js
-// Sistema Promanager: recibe ofertas de equipos, reputación en Firebase, despidos.
-// NO toca ningún archivo existente. Se añade como <script> en index.html.
+// injector-promanager.js v2
+// Sistema Promanager: ofertas de equipos, reputación en Firebase, despidos.
+// Sin hookUIRefresh (módulo ES6 read-only). Solo añadir <script> en index.html.
 
 console.log('🎯 Injector Promanager cargando...');
 
 (function () {
     'use strict';
 
-    // ─────────────────────────────────────────────
-    // CONSTANTES
-    // ─────────────────────────────────────────────
-
-    // Jerarquía de divisiones (0 = más baja, 3 = más alta)
-    const DIVISION_RANK = {
-        rfef_grupo2: 0,
-        rfef_grupo1: 1,
-        segunda: 2,
-        primera: 3
-    };
-
+    const DIVISION_RANK = { rfef_grupo2: 0, rfef_grupo1: 1, segunda: 2, primera: 3 };
     const DIVISION_LABELS = {
         rfef_grupo2: 'Primera RFEF Grupo 2',
         rfef_grupo1: 'Primera RFEF Grupo 1',
         segunda: 'Segunda División',
         primera: 'Primera División'
     };
+    const DIVISION_REP_THRESHOLD = { rfef_grupo2: 0, rfef_grupo1: 15, segunda: 35, primera: 60 };
 
-    // Umbrales de reputación para poder recibir ofertas de cada división
-    // Reputación empieza en 0. Máxima ~100.
-    const DIVISION_REP_THRESHOLD = {
-        rfef_grupo2: 0,
-        rfef_grupo1: 15,
-        segunda: 35,
-        primera: 60
-    };
-
-    // Nodo de Firebase donde guardamos el perfil del manager (por partida / por usuario)
-    // Clave: users/{uid}/promanager_career/{sessionId}
-    // sessionId se genera al iniciar nueva partida Promanager
-
-    // ─────────────────────────────────────────────
-    // ESTADO LOCAL DEL MÓDULO
-    // ─────────────────────────────────────────────
     let pmState = {
-        active: false,           // ¿Estamos en modo Promanager?
-        sessionId: null,         // ID de esta carrera
-        reputation: 0,           // Reputación acumulada en esta carrera
-        gamesManaged: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        seasonsCompleted: 0,
-        currentTeam: null,
-        currentDivision: null,
-        firebaseSaved: false,
-        lastOfferWeek: -99,      // Jornada en que se mostró la última oferta
-        pendingOffer: null,      // Oferta pendiente de aceptar/rechazar
-        firedThisSeason: false,
-        consecutiveLosses: 0,
-        weeklyPoints: [],        // Historial de puntos por jornada
+        active: false, sessionId: null, reputation: 0,
+        gamesManaged: 0, wins: 0, draws: 0, losses: 0,
+        currentTeam: null, currentDivision: null,
+        lastOfferWeek: -99, firedThisSeason: false,
+        consecutiveLosses: 0, weeklyPoints: [], unemployed: true
     };
 
-    // ─────────────────────────────────────────────
-    // FIREBASE: guardar / cargar estado del manager
-    // ─────────────────────────────────────────────
-
+    // ── Firebase ──
     async function waitForAuth() {
-        if (window.authReadyPromise) {
-            await window.authReadyPromise;
-        }
+        if (window.authReadyPromise) await window.authReadyPromise;
         return window.currentUserId || null;
     }
 
@@ -77,42 +35,17 @@ console.log('🎯 Injector Promanager cargando...');
         if (!uid || !window.firebaseDB) return;
         try {
             const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            const ref = doc(window.firebaseDB, 'users', uid, 'promanager_career', pmState.sessionId);
-            await setDoc(ref, {
-                ...pmState,
-                updatedAt: Date.now()
+            await setDoc(doc(window.firebaseDB, 'users', uid, 'promanager_career', pmState.sessionId), {
+                ...pmState, updatedAt: Date.now()
             });
-        } catch (e) {
-            console.warn('⚠️ Promanager: error guardando carrera', e);
-        }
+        } catch (e) { console.warn('⚠️ Promanager Firebase:', e.message); }
     }
 
-    async function loadCareerFromFirebase(sessionId) {
-        const uid = await waitForAuth();
-        if (!uid || !window.firebaseDB) return null;
-        try {
-            const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            const ref = doc(window.firebaseDB, 'users', uid, 'promanager_career', sessionId);
-            const snap = await getDoc(ref);
-            return snap.exists() ? snap.data() : null;
-        } catch (e) {
-            console.warn('⚠️ Promanager: error cargando carrera', e);
-            return null;
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    // LÓGICA DE REPUTACIÓN
-    // ─────────────────────────────────────────────
-
+    // ── Reputación ──
     function calcRepGain(result, division) {
-        const divBonus = { primera: 3, segunda: 2, rfef_grupo1: 1.5, rfef_grupo2: 1 };
-        const mult = divBonus[division] || 1;
-        if (result === 'win') return Math.round(3 * mult);
-        if (result === 'draw') return Math.round(1 * mult);
-        return Math.round(-1 * mult); // derrota
+        const m = { primera: 3, segunda: 2, rfef_grupo1: 1.5, rfef_grupo2: 1 }[division] || 1;
+        return result === 'win' ? Math.round(3 * m) : result === 'draw' ? Math.round(1 * m) : Math.round(-1 * m);
     }
-
     function getRepLabel(rep) {
         if (rep < 10) return '⭐ Desconocido';
         if (rep < 25) return '⭐⭐ Prometedor';
@@ -121,297 +54,181 @@ console.log('🎯 Injector Promanager cargando...');
         return '⭐⭐⭐⭐⭐ Élite';
     }
 
-    // ─────────────────────────────────────────────
-    // SELECCIÓN DE EQUIPO OFERTANTE
-    // ─────────────────────────────────────────────
-
-    function pickOfferTeam(allowedDivisions, excludeTeam) {
-        const allTeams = window.TEAMS_DATA || {};
-        let candidates = [];
-        for (const div of allowedDivisions) {
-            const teams = allTeams[div] || [];
-            teams.forEach(t => {
-                if (t && t !== excludeTeam) {
-                    candidates.push({ team: t, division: div });
-                }
-            });
+    // ── Escudos ──
+    async function getTeamLogo(teamName) {
+        if (window.getTeamData) {
+            try { const d = await window.getTeamData(teamName); if (d && d.logo) return d.logo; } catch(e) {}
         }
-        if (candidates.length === 0) return null;
-        return candidates[Math.floor(Math.random() * candidates.length)];
+        try {
+            const raw = localStorage.getItem('team_data_' + teamName);
+            if (raw) { const d = JSON.parse(raw); if (d.logo) return d.logo; }
+        } catch(e) {}
+        return null;
     }
 
+    function shieldHTML(logo, teamName, size) {
+        size = size || 60;
+        if (logo) return '<img src="' + logo + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;border-radius:6px;border:2px solid rgba(255,255,255,0.2);" alt="Escudo">';
+        const ini = teamName.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+        return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:6px;background:rgba(255,255,255,0.1);border:2px dashed rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:' + Math.round(size*0.35) + 'px;font-weight:bold;color:rgba(255,255,255,0.5);">' + ini + '</div>';
+    }
+
+    // ── Selección de equipos ──
     function getAllowedDivisions(rep) {
-        return Object.entries(DIVISION_REP_THRESHOLD)
-            .filter(([, threshold]) => rep >= threshold)
-            .map(([div]) => div);
+        return Object.entries(DIVISION_REP_THRESHOLD).filter(function(e){ return rep >= e[1]; }).map(function(e){ return e[0]; });
     }
 
-    // ─────────────────────────────────────────────
-    // MODAL: Oferta de entrenador
-    // ─────────────────────────────────────────────
+    function pickOffers(allowedDivisions, excludeTeam, count) {
+        count = count || 3;
+        var all = window.TEAMS_DATA || {};
+        var candidates = [];
+        allowedDivisions.forEach(function(div) {
+            (all[div] || []).forEach(function(t) {
+                if (t && t !== excludeTeam) candidates.push({ team: t, division: div });
+            });
+        });
+        candidates.sort(function(){ return Math.random() - 0.5; });
+        return candidates.slice(0, Math.min(count, candidates.length));
+    }
 
-    function showOfferModal(offer, onAccept, onReject) {
-        removeModal('pmOfferModal');
-        const div = offer.division;
-        const modal = document.createElement('div');
-        modal.id = 'pmOfferModal';
-        modal.style.cssText = `
-            position:fixed;inset:0;background:rgba(0,0,0,0.85);
-            display:flex;align-items:center;justify-content:center;
-            z-index:99999;font-family:inherit;
-        `;
-        modal.innerHTML = `
-            <div style="
-                background: linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
-                border:2px solid #e94560;border-radius:16px;
-                padding:36px 32px;max-width:480px;width:92%;
-                box-shadow:0 0 60px rgba(233,69,96,0.4);
-                text-align:center;color:#fff;
-            ">
-                <div style="font-size:52px;margin-bottom:10px;">📋</div>
-                <h2 style="color:#e94560;margin:0 0 6px;font-size:1.5em;">¡Nueva Oferta de Trabajo!</h2>
-                <p style="color:#aaa;margin:0 0 24px;font-size:0.9em;">Ha llegado un contrato a tu mesa</p>
+    function removeModal(id) { var el = document.getElementById(id); if (el) el.remove(); }
 
-                <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:18px;margin-bottom:20px;text-align:left;">
-                    <div style="margin-bottom:8px;">
-                        <span style="color:#aaa;font-size:0.85em;">EQUIPO</span><br>
-                        <strong style="font-size:1.2em;color:#fff;">🏟️ ${offer.team}</strong>
-                    </div>
-                    <div style="margin-bottom:8px;">
-                        <span style="color:#aaa;font-size:0.85em;">DIVISIÓN</span><br>
-                        <strong style="color:#f4c430;">📊 ${DIVISION_LABELS[div] || div}</strong>
-                    </div>
-                    <div>
-                        <span style="color:#aaa;font-size:0.85em;">TU REPUTACIÓN ACTUAL</span><br>
-                        <strong style="color:#4caf50;">${getRepLabel(pmState.reputation)} (${pmState.reputation} pts)</strong>
-                    </div>
-                </div>
+    // ── Modal inicial: 3 ofertas ──
+    async function showInitialOfferModal(offers, onAccept) {
+        removeModal('pmInitialModal');
+        var logos = await Promise.all(offers.map(function(o){ return getTeamLogo(o.team); }));
 
-                <p style="color:#ccc;font-size:0.9em;margin-bottom:24px;">
-                    ¿Aceptas el cargo de entrenador del <strong>${offer.team}</strong>?<br>
-                    <small style="color:#888;">Puedes rechazar y seguir con tu equipo actual.</small>
-                </p>
+        var cardsHTML = offers.map(function(offer, i) {
+            return '<div class="pm-ic" data-i="' + i + '" onclick="window._pmPick(' + i + ')" style="background:rgba(255,255,255,0.06);border:2px solid rgba(102,126,234,0.4);border-radius:14px;padding:22px 14px;cursor:pointer;text-align:center;flex:1;min-width:150px;max-width:200px;transition:all 0.2s;" onmouseover="this.style.borderColor=\'#667eea\';this.style.background=\'rgba(102,126,234,0.15)\';this.style.transform=\'translateY(-4px)\'" onmouseout="this.style.borderColor=\'rgba(102,126,234,0.4)\';this.style.background=\'rgba(255,255,255,0.06)\';this.style.transform=\'translateY(0)\'">'
+                + '<div style="display:flex;justify-content:center;margin-bottom:12px;">' + shieldHTML(logos[i], offer.team, 62) + '</div>'
+                + '<div style="font-weight:bold;font-size:0.93em;color:#fff;margin-bottom:6px;line-height:1.2;">' + offer.team + '</div>'
+                + '<div style="font-size:0.76em;color:#f4c430;padding:3px 8px;background:rgba(244,196,48,0.1);border-radius:20px;display:inline-block;">' + DIVISION_LABELS[offer.division] + '</div>'
+                + '</div>';
+        }).join('');
 
-                <div style="display:flex;gap:12px;justify-content:center;">
-                    <button id="pmOfferAccept" style="
-                        background:linear-gradient(135deg,#4caf50,#2e7d32);
-                        color:#fff;border:none;border-radius:8px;
-                        padding:12px 28px;font-size:1em;font-weight:bold;cursor:pointer;
-                        box-shadow:0 4px 15px rgba(76,175,80,0.4);
-                    ">✅ Aceptar</button>
-                    <button id="pmOfferReject" style="
-                        background:rgba(233,69,96,0.2);
-                        color:#e94560;border:1px solid #e94560;border-radius:8px;
-                        padding:12px 28px;font-size:1em;font-weight:bold;cursor:pointer;
-                    ">❌ Rechazar</button>
-                </div>
-            </div>
-        `;
+        var modal = document.createElement('div');
+        modal.id = 'pmInitialModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:inherit;';
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);border:2px solid #667eea;border-radius:18px;padding:36px 24px;max-width:620px;width:95%;box-shadow:0 0 80px rgba(102,126,234,0.4);color:#fff;">'
+            + '<div style="text-align:center;margin-bottom:22px;">'
+            + '<div style="font-size:52px;margin-bottom:8px;">🚀</div>'
+            + '<h2 style="color:#667eea;margin:0 0 4px;font-size:1.45em;">Liga Promanager</h2>'
+            + '<p style="color:#aaa;margin:0;font-size:0.86em;">Sin historial. Elige uno de estos equipos para empezar tu carrera.</p>'
+            + '</div>'
+            + '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">' + cardsHTML + '</div>'
+            + '<div style="background:rgba(102,126,234,0.1);border-radius:8px;padding:12px;font-size:0.8em;color:#ccc;text-align:center;">'
+            + '💡 Gana partidos para subir tu reputación y recibir ofertas de equipos mejores. Tu carrera se guarda en la nube.'
+            + '</div></div>';
         document.body.appendChild(modal);
-        document.getElementById('pmOfferAccept').onclick = () => { removeModal('pmOfferModal'); onAccept(offer); };
-        document.getElementById('pmOfferReject').onclick = () => { removeModal('pmOfferModal'); onReject(offer); };
+
+        window._pmPick = function(idx) {
+            delete window._pmPick;
+            removeModal('pmInitialModal');
+            onAccept(offers[idx]);
+        };
     }
 
-    // ─────────────────────────────────────────────
-    // MODAL: Despido
-    // ─────────────────────────────────────────────
+    // ── Modal oferta espontánea ──
+    async function showOfferModal(offer, onAccept, onReject) {
+        removeModal('pmOfferModal');
+        var logo = await getTeamLogo(offer.team);
+        var modal = document.createElement('div');
+        modal.id = 'pmOfferModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:inherit;';
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:34px 28px;max-width:420px;width:92%;box-shadow:0 0 60px rgba(233,69,96,0.4);text-align:center;color:#fff;">'
+            + '<div style="font-size:42px;margin-bottom:6px;">📋</div>'
+            + '<h2 style="color:#e94560;margin:0 0 18px;font-size:1.35em;">¡Nueva Oferta de Trabajo!</h2>'
+            + '<div style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">'
+            + shieldHTML(logo, offer.team, 56)
+            + '<div><div style="color:#aaa;font-size:0.78em;">EQUIPO</div>'
+            + '<div style="font-size:1.08em;font-weight:bold;">' + offer.team + '</div>'
+            + '<div style="color:#f4c430;font-size:0.83em;margin-top:4px;">' + (DIVISION_LABELS[offer.division] || offer.division) + '</div></div>'
+            + '</div>'
+            + '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:9px;margin-bottom:18px;font-size:0.83em;">Tu reputación: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></div>'
+            + '<p style="color:#ccc;font-size:0.86em;margin-bottom:20px;">¿Aceptas el cargo de entrenador?<br><small style="color:#666;">Puedes rechazar y seguir con tu equipo.</small></p>'
+            + '<div style="display:flex;gap:12px;justify-content:center;">'
+            + '<button id="pmOA" style="background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">✅ Aceptar</button>'
+            + '<button id="pmOR" style="background:rgba(233,69,96,0.15);color:#e94560;border:1px solid #e94560;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">❌ Rechazar</button>'
+            + '</div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('pmOA').onclick = function() { removeModal('pmOfferModal'); onAccept(offer); };
+        document.getElementById('pmOR').onclick = function() { removeModal('pmOfferModal'); onReject(offer); };
+    }
 
+    // ── Modal despido ──
     function showFiredModal(onContinue) {
         removeModal('pmFiredModal');
-        const modal = document.createElement('div');
+        var modal = document.createElement('div');
         modal.id = 'pmFiredModal';
-        modal.style.cssText = `
-            position:fixed;inset:0;background:rgba(0,0,0,0.9);
-            display:flex;align-items:center;justify-content:center;
-            z-index:99999;font-family:inherit;
-        `;
-        modal.innerHTML = `
-            <div style="
-                background:linear-gradient(135deg,#1a0a0a 0%,#2d0f0f 100%);
-                border:2px solid #e94560;border-radius:16px;
-                padding:36px 32px;max-width:440px;width:92%;
-                box-shadow:0 0 80px rgba(233,69,96,0.6);
-                text-align:center;color:#fff;
-            ">
-                <div style="font-size:60px;margin-bottom:10px;">🚪</div>
-                <h2 style="color:#e94560;margin:0 0 8px;font-size:1.6em;">HAS SIDO DESPEDIDO</h2>
-                <p style="color:#aaa;margin:0 0 20px;font-size:0.95em;">
-                    La directiva ha decidido prescindir de tus servicios.
-                </p>
-                <div style="background:rgba(233,69,96,0.1);border-radius:10px;padding:14px;margin-bottom:20px;">
-                    <div style="color:#ccc;font-size:0.9em;">Reputación conservada:</div>
-                    <div style="color:#f4c430;font-size:1.2em;font-weight:bold;">${getRepLabel(pmState.reputation)} (${pmState.reputation} pts)</div>
-                    <div style="color:#888;font-size:0.8em;margin-top:6px;">Tu historial se mantiene para futuras ofertas</div>
-                </div>
-                <p style="color:#ccc;font-size:0.9em;margin-bottom:24px;">
-                    Espera una nueva oferta de trabajo basada en tu reputación actual...
-                </p>
-                <button id="pmFiredContinue" style="
-                    background:linear-gradient(135deg,#e94560,#c0392b);
-                    color:#fff;border:none;border-radius:8px;
-                    padding:14px 32px;font-size:1em;font-weight:bold;cursor:pointer;
-                    box-shadow:0 4px 15px rgba(233,69,96,0.4);
-                ">🔍 Esperar nueva oferta</button>
-            </div>
-        `;
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:inherit;';
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a0a0a,#2d0f0f);border:2px solid #e94560;border-radius:16px;padding:36px 28px;max-width:400px;width:92%;box-shadow:0 0 80px rgba(233,69,96,0.6);text-align:center;color:#fff;">'
+            + '<div style="font-size:58px;margin-bottom:10px;">🚪</div>'
+            + '<h2 style="color:#e94560;margin:0 0 8px;font-size:1.5em;">HAS SIDO DESPEDIDO</h2>'
+            + '<p style="color:#aaa;margin:0 0 16px;font-size:0.9em;">La directiva ha decidido prescindir de tus servicios.</p>'
+            + '<div style="background:rgba(233,69,96,0.1);border-radius:10px;padding:14px;margin-bottom:20px;">'
+            + '<div style="color:#ccc;font-size:0.86em;">Reputación conservada:</div>'
+            + '<div style="color:#f4c430;font-size:1.2em;font-weight:bold;margin-top:4px;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</div>'
+            + '<div style="color:#888;font-size:0.76em;margin-top:6px;">Tu historial se mantiene para futuras ofertas</div>'
+            + '</div>'
+            + '<button id="pmFC" style="background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:14px 30px;font-size:1em;font-weight:bold;cursor:pointer;">🔍 Buscar nueva oferta</button>'
+            + '</div>';
         document.body.appendChild(modal);
-        document.getElementById('pmFiredContinue').onclick = () => {
-            removeModal('pmFiredModal');
-            onContinue();
-        };
+        document.getElementById('pmFC').onclick = function() { removeModal('pmFiredModal'); onContinue(); };
     }
 
-    // ─────────────────────────────────────────────
-    // MODAL: Primera oferta (inicio de Promanager)
-    // ─────────────────────────────────────────────
-
-    function showInitialOfferModal(offer, onAccept) {
-        removeModal('pmInitialModal');
-        const modal = document.createElement('div');
-        modal.id = 'pmInitialModal';
-        modal.style.cssText = `
-            position:fixed;inset:0;background:rgba(0,0,0,0.9);
-            display:flex;align-items:center;justify-content:center;
-            z-index:99999;font-family:inherit;
-        `;
-        modal.innerHTML = `
-            <div style="
-                background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);
-                border:2px solid #667eea;border-radius:16px;
-                padding:36px 32px;max-width:500px;width:92%;
-                box-shadow:0 0 80px rgba(102,126,234,0.5);
-                text-align:center;color:#fff;
-            ">
-                <div style="font-size:56px;margin-bottom:10px;">🚀</div>
-                <h2 style="color:#667eea;margin:0 0 4px;font-size:1.6em;">Liga Promanager</h2>
-                <p style="color:#aaa;margin:0 0 24px;font-size:0.9em;">
-                    No tienes historial. Empieza desde abajo y demuestra tu valía.
-                </p>
-
-                <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:18px;margin-bottom:20px;text-align:left;">
-                    <div style="color:#aaa;font-size:0.82em;margin-bottom:12px;">📋 PRIMERA OFERTA DE TRABAJO</div>
-                    <div style="margin-bottom:8px;">
-                        <span style="color:#888;font-size:0.85em;">EQUIPO</span><br>
-                        <strong style="font-size:1.2em;">🏟️ ${offer.team}</strong>
-                    </div>
-                    <div>
-                        <span style="color:#888;font-size:0.85em;">DIVISIÓN</span><br>
-                        <strong style="color:#f4c430;">📊 ${DIVISION_LABELS[offer.division]}</strong>
-                    </div>
-                </div>
-
-                <div style="background:rgba(102,126,234,0.1);border-radius:8px;padding:12px;margin-bottom:22px;font-size:0.85em;color:#ccc;">
-                    💡 <strong>Cómo funciona:</strong> Gana partidos para subir tu reputación y recibir ofertas de equipos mejores.
-                    Si los resultados son malos, podrías ser despedido. Tu carrera se guarda en la nube.
-                </div>
-
-                <button id="pmInitialAccept" style="
-                    background:linear-gradient(135deg,#667eea,#764ba2);
-                    color:#fff;border:none;border-radius:10px;
-                    padding:14px 36px;font-size:1.1em;font-weight:bold;cursor:pointer;
-                    box-shadow:0 4px 20px rgba(102,126,234,0.5);
-                    width:100%;
-                ">🎯 ¡Acepto el reto!</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById('pmInitialAccept').onclick = () => {
-            removeModal('pmInitialModal');
-            onAccept(offer);
-        };
-    }
-
-    // ─────────────────────────────────────────────
-    // MODAL: Pantalla de espera (despedido, buscando oferta)
-    // ─────────────────────────────────────────────
-
-    function showWaitingForOfferScreen() {
+    // ── Pantalla esperando oferta ──
+    async function showWaitingScreen(offers) {
         removeModal('pmWaitingModal');
-        const modal = document.createElement('div');
-        modal.id = 'pmWaitingModal';
-        modal.style.cssText = `
-            position:fixed;inset:0;background:rgba(0,0,0,0.95);
-            display:flex;align-items:center;justify-content:center;
-            z-index:99998;font-family:inherit;
-        `;
-        modal.innerHTML = `
-            <div style="text-align:center;color:#fff;max-width:400px;padding:40px;">
-                <div style="font-size:60px;margin-bottom:16px;">📞</div>
-                <h2 style="color:#f4c430;margin:0 0 10px;">Esperando oferta...</h2>
-                <p style="color:#aaa;font-size:0.95em;">
-                    Estás en el mercado de entrenadores.<br>
-                    Tu reputación: <strong style="color:#4caf50;">${getRepLabel(pmState.reputation)} (${pmState.reputation} pts)</strong>
-                </p>
-                <div style="margin-top:24px;color:#666;font-size:0.85em;">
-                    Simula jornadas para que lleguen nuevas ofertas...
-                </div>
-                <button id="pmWaitSimulate" style="
-                    margin-top:24px;
-                    background:linear-gradient(135deg,#e94560,#c0392b);
-                    color:#fff;border:none;border-radius:8px;
-                    padding:12px 28px;font-size:1em;font-weight:bold;cursor:pointer;
-                ">⏩ Pasar tiempo</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById('pmWaitSimulate').onclick = () => {
-            // Intentar generar una nueva oferta al "pasar tiempo"
-            tryGenerateNewOffer(true);
-        };
+        if (offers && offers.length > 0) {
+            var logos = await Promise.all(offers.map(function(o){ return getTeamLogo(o.team); }));
+            var cardsHTML = offers.map(function(offer, i) {
+                return '<div onclick="window._pmWP(' + i + ')" style="background:rgba(255,255,255,0.06);border:2px solid rgba(233,69,96,0.4);border-radius:12px;padding:18px 12px;cursor:pointer;text-align:center;flex:1;min-width:140px;max-width:180px;transition:all 0.2s;" onmouseover="this.style.borderColor=\'#e94560\';this.style.background=\'rgba(233,69,96,0.12)\';this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.borderColor=\'rgba(233,69,96,0.4)\';this.style.background=\'rgba(255,255,255,0.06)\';this.style.transform=\'translateY(0)\'">'
+                    + '<div style="display:flex;justify-content:center;margin-bottom:10px;">' + shieldHTML(logos[i], offer.team, 52) + '</div>'
+                    + '<div style="font-weight:bold;font-size:0.88em;color:#fff;margin-bottom:5px;line-height:1.2;">' + offer.team + '</div>'
+                    + '<div style="font-size:0.74em;color:#f4c430;">' + DIVISION_LABELS[offer.division] + '</div>'
+                    + '</div>';
+            }).join('');
+            var modal = document.createElement('div');
+            modal.id = 'pmWaitingModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99998;font-family:inherit;';
+            modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:28px 22px;max-width:540px;width:95%;box-shadow:0 0 60px rgba(233,69,96,0.4);color:#fff;text-align:center;">'
+                + '<div style="font-size:46px;margin-bottom:8px;">📞</div>'
+                + '<h3 style="color:#e94560;margin:0 0 4px;">Nuevas ofertas recibidas</h3>'
+                + '<p style="color:#aaa;font-size:0.83em;margin:0 0 20px;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
+                + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' + cardsHTML + '</div>'
+                + '</div>';
+            document.body.appendChild(modal);
+            window._pmWP = function(idx) { delete window._pmWP; removeModal('pmWaitingModal'); assignTeam(offers[idx]); };
+        } else {
+            var modal2 = document.createElement('div');
+            modal2.id = 'pmWaitingModal';
+            modal2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99998;font-family:inherit;';
+            modal2.innerHTML = '<div style="text-align:center;color:#fff;max-width:360px;padding:40px;">'
+                + '<div style="font-size:54px;margin-bottom:12px;">📞</div>'
+                + '<h3 style="color:#f4c430;margin:0 0 10px;">Esperando oferta...</h3>'
+                + '<p style="color:#aaa;font-size:0.9em;">Ningún club ha contactado aún.</p>'
+                + '<p style="color:#ccc;font-size:0.85em;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
+                + '<button id="pmWT" style="margin-top:18px;background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.93em;font-weight:bold;cursor:pointer;">⏩ Pasar tiempo</button>'
+                + '</div>';
+            document.body.appendChild(modal2);
+            document.getElementById('pmWT').onclick = function() { removeModal('pmWaitingModal'); tryGenerateNewOffers(); };
+        }
     }
 
-    function removeModal(id) {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-    }
-
-    // ─────────────────────────────────────────────
-    // INICIO DE PROMANAGER
-    // ─────────────────────────────────────────────
-
+    // ── Inicio modo Promanager ──
     async function startPromanagerMode() {
-        // Crear nueva sesión (historial fresco)
         pmState = {
-            active: true,
-            sessionId: 'pm_' + Date.now(),
-            reputation: 0,
-            gamesManaged: 0,
-            wins: 0,
-            draws: 0,
-            losses: 0,
-            seasonsCompleted: 0,
-            currentTeam: null,
-            currentDivision: null,
-            firebaseSaved: false,
-            lastOfferWeek: -99,
-            pendingOffer: null,
-            firedThisSeason: false,
-            consecutiveLosses: 0,
-            weeklyPoints: [],
-            unemployed: true   // empieza en paro
+            active: true, sessionId: 'pm_' + Date.now(), reputation: 0,
+            gamesManaged: 0, wins: 0, draws: 0, losses: 0,
+            currentTeam: null, currentDivision: null,
+            lastOfferWeek: -99, firedThisSeason: false,
+            consecutiveLosses: 0, weeklyPoints: [], unemployed: true
         };
-
-        // Esperar a que TEAMS_DATA esté disponible
-        await waitForTeamsData();
-
-        // Generar primera oferta (solo RFEF)
-        const offer = pickOfferTeam(['rfef_grupo2', 'rfef_grupo1'], null);
-        if (!offer) {
-            alert('Error: no hay equipos disponibles para el modo Promanager.');
-            return;
-        }
-
-        showInitialOfferModal(offer, (acceptedOffer) => {
-            assignTeam(acceptedOffer);
-        });
-    }
-
-    async function waitForTeamsData() {
-        let tries = 0;
-        while (!window.TEAMS_DATA && tries < 30) {
-            await new Promise(r => setTimeout(r, 200));
-            tries++;
-        }
+        var tries = 0;
+        while (!window.TEAMS_DATA && tries++ < 30) await new Promise(function(r){ setTimeout(r, 200); });
+        var offers = pickOffers(['rfef_grupo2', 'rfef_grupo1'], null, 3);
+        if (!offers.length) { alert('Error: no hay equipos disponibles.'); return; }
+        await showInitialOfferModal(offers, function(accepted) { assignTeam(accepted); });
     }
 
     function assignTeam(offer) {
@@ -421,281 +238,154 @@ console.log('🎯 Injector Promanager cargando...');
         pmState.consecutiveLosses = 0;
         pmState.firedThisSeason = false;
         pmState.lastOfferWeek = -99;
-
-        // Usar la función estándar del juego para cargar el equipo
-        const gameMode = 'promanager';
-        window.gameMode = gameMode;
+        window.gameMode = 'promanager';
 
         if (window.gameLogic && window.gameLogic.selectTeamWithInitialSquad) {
-            window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, gameMode);
-            if (window.ui && window.ui.refreshUI) {
-                window.ui.refreshUI(window.gameLogic.getGameState());
-            }
-            // Cerrar modales de selección de equipo si estuvieran abiertos
-            ['selectTeam', 'gameMode'].forEach(m => {
-                try { window.closeModal(m); } catch (e) {}
-            });
-            // Ir al dashboard
-            setTimeout(() => {
-                const btn = document.querySelector('.menu-item[onclick*="dashboard"]');
+            window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager');
+            try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
+            ['selectTeam','gameMode'].forEach(function(m){ try { window.closeModal(m); } catch(e) {} });
+            setTimeout(function() {
+                var btn = document.querySelector('.menu-item[onclick*="dashboard"]');
                 if (btn && window.switchPage) window.switchPage('dashboard', btn);
                 else if (window.openPage) window.openPage('dashboard');
+                updateRepBadge();
             }, 300);
         }
-
         saveCareerToFirebase();
-
-        // Noticia de bienvenida
-        setTimeout(() => {
+        setTimeout(function() {
             if (window.gameLogic && window.gameLogic.addNews) {
-                window.gameLogic.addNews(`🎯 [Promanager] Has sido contratado por ${offer.team} (${DIVISION_LABELS[offer.division]}). ¡Demuestra tu valía!`, 'info');
-                if (window.ui) window.ui.refreshUI(window.gameLogic.getGameState());
+                window.gameLogic.addNews('🎯 [Promanager] Contratado por ' + offer.team + ' (' + DIVISION_LABELS[offer.division] + '). ¡Demuestra tu valía!', 'info');
+                try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
             }
-        }, 600);
+        }, 700);
     }
 
-    // ─────────────────────────────────────────────
-    // HOOK: interceptar simulateWeek
-    // ─────────────────────────────────────────────
-
+    // ── Hook simulateWeek ──
     function hookSimulateWeek() {
-        const original = window.simulateWeek;
+        var original = window.simulateWeek;
         if (!original || original._pmHooked) return;
-
-        window.simulateWeek = async function () {
-            // Si no está en modo promanager, comportamiento normal
-            if (!pmState.active || pmState.unemployed) {
-                if (pmState.unemployed && pmState.active) {
-                    // Está desempleado: no puede simular, mostrar pantalla de espera
-                    tryGenerateNewOffer(true);
-                    return;
-                }
-                return original.apply(this, arguments);
-            }
-
-            // Simular normalmente
+        window.simulateWeek = async function() {
+            if (!pmState.active) return original.apply(this, arguments);
+            if (pmState.unemployed) { tryGenerateNewOffers(); return; }
             await original.apply(this, arguments);
-
-            // Analizar resultado después de la simulación
             await afterWeekPromanager();
         };
         window.simulateWeek._pmHooked = true;
+        console.log('[Promanager] hook simulateWeek ✓');
     }
 
     async function afterWeekPromanager() {
         if (!window.gameLogic) return;
-        const state = window.gameLogic.getGameState();
-        const history = state.matchHistory;
-        if (!history || history.length === 0) return;
+        var state = window.gameLogic.getGameState();
+        var history = state.matchHistory;
+        if (!history || !history.length) return;
+        var last = history[history.length - 1];
+        if (!last) return;
 
-        const lastMatch = history[history.length - 1];
-        if (!lastMatch) return;
-
-        // Detectar resultado del último partido del equipo del jugador
-        const myTeam = state.team;
-        let result = null;
-
-        if (lastMatch.home === myTeam) {
-            const [gh, ga] = lastMatch.score.split('-').map(Number);
-            result = gh > ga ? 'win' : gh === ga ? 'draw' : 'loss';
-        } else if (lastMatch.away === myTeam) {
-            const [gh, ga] = lastMatch.score.split('-').map(Number);
-            result = ga > gh ? 'win' : gh === ga ? 'draw' : 'loss';
-        }
-
+        var myTeam = state.team;
+        var result = null;
+        var parts = (last.score || '0-0').split('-').map(Number);
+        var gh = parts[0], ga = parts[1];
+        if (last.home === myTeam) result = gh > ga ? 'win' : gh === ga ? 'draw' : 'loss';
+        else if (last.away === myTeam) result = ga > gh ? 'win' : gh === ga ? 'draw' : 'loss';
         if (!result) return;
 
-        // Actualizar stats
-        const repGain = calcRepGain(result, state.division);
-        pmState.reputation = Math.max(0, Math.min(100, pmState.reputation + repGain));
+        var gain = calcRepGain(result, state.division);
+        pmState.reputation = Math.max(0, Math.min(100, pmState.reputation + gain));
         pmState.gamesManaged++;
         pmState.weeklyPoints.push(result === 'win' ? 3 : result === 'draw' ? 1 : 0);
         if (result === 'win') { pmState.wins++; pmState.consecutiveLosses = 0; }
         else if (result === 'draw') { pmState.draws++; pmState.consecutiveLosses = 0; }
         else { pmState.losses++; pmState.consecutiveLosses++; }
-
         pmState.currentTeam = myTeam;
         pmState.currentDivision = state.division;
-
+        updateRepBadge();
         await saveCareerToFirebase();
 
-        // ── ¿DESPIDO? ──
-        // Se dispara si: 5+ derrotas consecutivas, O últimas 10 jornadas < 20% de puntos posibles
-        const shouldFire = checkFiringCondition();
-        if (shouldFire && !pmState.firedThisSeason) {
+        // Despido
+        if (!pmState.firedThisSeason && checkFiring()) {
             pmState.firedThisSeason = true;
             pmState.unemployed = true;
-            // Penalización de reputación por despido
             pmState.reputation = Math.max(0, pmState.reputation - 5);
             await saveCareerToFirebase();
-
-            setTimeout(() => {
-                showFiredModal(() => {
-                    // Mostrar pantalla de espera de oferta
-                    tryGenerateNewOffer(true);
-                });
-            }, 500);
+            setTimeout(function() { showFiredModal(function(){ tryGenerateNewOffers(); }); }, 600);
             return;
         }
 
-        // ── ¿OFERTA? ──
-        // Solo si: no está en paro, han pasado al menos 8 jornadas desde la última oferta,
-        // tiene rep suficiente para una división mejor, y la probabilidad lo permite.
-        const currentWeek = state.week || 1;
-        const weeksSinceOffer = currentWeek - pmState.lastOfferWeek;
-        if (weeksSinceOffer >= 8) {
-            const shouldOffer = checkOfferCondition(state);
-            if (shouldOffer) {
-                pmState.lastOfferWeek = currentWeek;
-                const allowedDivs = getAllowedDivisions(pmState.reputation);
-                // Priorizar divisiones mejores que la actual
-                const currentRank = DIVISION_RANK[state.division] || 0;
-                const betterDivs = allowedDivs.filter(d => (DIVISION_RANK[d] || 0) > currentRank);
-                const offerPool = betterDivs.length > 0 ? betterDivs : allowedDivs;
-                const offer = pickOfferTeam(offerPool, myTeam);
-                if (offer) {
-                    pmState.pendingOffer = offer;
-                    setTimeout(() => {
-                        showOfferModal(
-                            offer,
-                            (accepted) => {
-                                // Aceptar: cambia de equipo
-                                assignTeam(accepted);
-                            },
-                            (rejected) => {
-                                // Rechazar: noticia
-                                if (window.gameLogic && window.gameLogic.addNews) {
-                                    window.gameLogic.addNews(`📋 [Promanager] Has rechazado la oferta de ${rejected.team}. Sigues al frente de ${myTeam}.`, 'info');
-                                    if (window.ui) window.ui.refreshUI(window.gameLogic.getGameState());
-                                }
-                                pmState.pendingOffer = null;
+        // Oferta espontánea
+        var week = state.week || 1;
+        if (week - pmState.lastOfferWeek >= 8 && checkOffer(state)) {
+            pmState.lastOfferWeek = week;
+            var allowed = getAllowedDivisions(pmState.reputation);
+            var rank = DIVISION_RANK[state.division] || 0;
+            var better = allowed.filter(function(d){ return (DIVISION_RANK[d] || 0) > rank; });
+            var pool = better.length ? better : allowed;
+            var offers = pickOffers(pool, myTeam, 1);
+            if (offers.length) {
+                setTimeout(function() {
+                    showOfferModal(offers[0],
+                        function(a) { assignTeam(a); },
+                        function(r) {
+                            if (window.gameLogic && window.gameLogic.addNews) {
+                                window.gameLogic.addNews('📋 [Promanager] Rechazaste la oferta de ' + r.team + '.', 'info');
+                                try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
                             }
-                        );
-                    }, 800);
-                }
+                        }
+                    );
+                }, 900);
             }
         }
     }
 
-    function checkFiringCondition() {
-        // 5 derrotas consecutivas
+    function checkFiring() {
         if (pmState.consecutiveLosses >= 5) return true;
-        // Últimas 10 jornadas: menos de 8 puntos sobre 30 posibles (~27%)
-        const last10 = pmState.weeklyPoints.slice(-10);
-        if (last10.length >= 10) {
-            const pts = last10.reduce((a, b) => a + b, 0);
-            if (pts < 8) return true;
-        }
+        var last10 = pmState.weeklyPoints.slice(-10);
+        if (last10.length >= 10 && last10.reduce(function(a,b){return a+b;},0) < 8) return true;
         return false;
     }
 
-    function checkOfferCondition(state) {
-        // Probabilidad base
-        let prob = 0;
-        const currentRank = DIVISION_RANK[state.division] || 0;
-
-        // Si hay divisiones mejores disponibles y la rep es buena → mayor probabilidad
-        const allowedDivs = getAllowedDivisions(pmState.reputation);
-        const hasBetterDiv = allowedDivs.some(d => (DIVISION_RANK[d] || 0) > currentRank);
-
-        if (hasBetterDiv) {
-            // Probabilidad según reputación y rendimiento reciente
-            const last5 = pmState.weeklyPoints.slice(-5);
-            const recentPts = last5.reduce((a, b) => a + b, 0);
-            prob = 0.08 + (pmState.reputation / 100) * 0.15 + (recentPts / 15) * 0.1;
-        } else {
-            // Puede recibir oferta lateral (mismo nivel) con poca frecuencia
-            prob = 0.03;
-        }
-
+    function checkOffer(state) {
+        var rank = DIVISION_RANK[state.division] || 0;
+        var allowed = getAllowedDivisions(pmState.reputation);
+        var hasBetter = allowed.some(function(d){ return (DIVISION_RANK[d]||0) > rank; });
+        var last5 = pmState.weeklyPoints.slice(-5).reduce(function(a,b){return a+b;},0);
+        var prob = hasBetter ? 0.08 + (pmState.reputation/100)*0.15 + (last5/15)*0.1 : 0.03;
         return Math.random() < prob;
     }
 
-    // ─────────────────────────────────────────────
-    // GENERAR NUEVA OFERTA (tras despido o pasar tiempo)
-    // ─────────────────────────────────────────────
-
-    function tryGenerateNewOffer(showWaiting) {
-        const allowedDivs = getAllowedDivisions(pmState.reputation);
-        // Con rep baja hay menos probabilidad de oferta inmediata
-        const prob = 0.4 + (pmState.reputation / 100) * 0.4;
-        const currentTeam = pmState.currentTeam;
-
+    function tryGenerateNewOffers() {
+        var allowed = getAllowedDivisions(pmState.reputation);
+        var prob = 0.4 + (pmState.reputation / 100) * 0.4;
         if (Math.random() < prob) {
-            const offer = pickOfferTeam(allowedDivs, currentTeam);
-            if (offer) {
-                removeModal('pmWaitingModal');
-                showOfferModal(
-                    offer,
-                    (accepted) => assignTeam(accepted),
-                    () => {
-                        // Rechaza → sigue esperando
-                        showWaitingForOfferScreen();
-                    }
-                );
-                return;
-            }
+            var count = pmState.reputation >= 20 ? 3 : Math.random() < 0.5 ? 2 : 1;
+            var offers = pickOffers(allowed, pmState.currentTeam, count);
+            if (offers.length) { showWaitingScreen(offers); return; }
         }
-
-        // No hay oferta aún
-        if (showWaiting) {
-            removeModal('pmWaitingModal');
-            showWaitingForOfferScreen();
-        }
+        showWaitingScreen([]);
     }
 
-    // ─────────────────────────────────────────────
-    // INTERCEPTAR EL BOTÓN DE PROMANAGER
-    // ─────────────────────────────────────────────
-
-    function interceptPromanagerButton() {
-        // El botón original llama a window.startGameMode('promanager')
-        // Lo reemplazamos para nuestro flujo
-        const originalStartGameMode = window.startGameMode;
-
-        window.startGameMode = function (mode) {
-            if (mode === 'promanager') {
-                // Cerrar el modal de selección de modo
-                try { window.closeModal('gameMode'); } catch (e) {}
-                // Iniciar nuestro flujo
-                startPromanagerMode();
-            } else {
-                // Liga Manager: comportamiento original intacto
-                if (originalStartGameMode) {
-                    originalStartGameMode.call(this, mode);
-                }
-                // Desactivar promanager si estaba activo
-                pmState.active = false;
-            }
-        };
-        window.startGameMode._pmPatched = true;
-    }
-
-    // ─────────────────────────────────────────────
-    // INDICADOR DE REPUTACIÓN EN EL HEADER
-    // ─────────────────────────────────────────────
-
+    // ── Badge reputación ──
     function injectRepBadge() {
         if (document.getElementById('pmRepBadge')) return;
-        const header = document.querySelector('.header-info');
+        var header = document.querySelector('.header-info');
         if (!header) return;
-        const badge = document.createElement('div');
+        var badge = document.createElement('div');
         badge.id = 'pmRepBadge';
         badge.className = 'info-box';
         badge.style.cssText = 'display:none;cursor:pointer;';
-        badge.title = 'Tu reputación como manager';
-        badge.innerHTML = `<span>Rep:</span><span id="pmRepValue" style="color:#f4c430;">0</span>`;
-        badge.onclick = () => showRepSummary();
+        badge.title = 'Tu reputación — haz clic para ver detalle';
+        badge.innerHTML = '<span>Rep:</span><span id="pmRepVal" style="color:#f4c430;">0</span>';
+        badge.onclick = function() { showRepSummary(); };
         header.appendChild(badge);
     }
 
     function updateRepBadge() {
-        const badge = document.getElementById('pmRepBadge');
-        const val = document.getElementById('pmRepValue');
+        var badge = document.getElementById('pmRepBadge');
+        var val = document.getElementById('pmRepVal');
         if (!badge || !val) return;
         if (pmState.active) {
             badge.style.display = '';
-            val.textContent = `${pmState.reputation} (${getRepLabel(pmState.reputation).split(' ')[0]})`;
+            val.textContent = pmState.reputation + 'pts ' + getRepLabel(pmState.reputation).split(' ')[0];
         } else {
             badge.style.display = 'none';
         }
@@ -703,93 +393,54 @@ console.log('🎯 Injector Promanager cargando...');
 
     function showRepSummary() {
         removeModal('pmRepModal');
-        const modal = document.createElement('div');
+        var wr = pmState.gamesManaged > 0 ? Math.round((pmState.wins / pmState.gamesManaged) * 100) : 0;
+        var modal = document.createElement('div');
         modal.id = 'pmRepModal';
-        modal.style.cssText = `
-            position:fixed;inset:0;background:rgba(0,0,0,0.8);
-            display:flex;align-items:center;justify-content:center;
-            z-index:99990;font-family:inherit;
-        `;
-        const wr = pmState.gamesManaged > 0
-            ? Math.round((pmState.wins / pmState.gamesManaged) * 100)
-            : 0;
-        modal.innerHTML = `
-            <div style="
-                background:linear-gradient(135deg,#1a1a2e,#0f3460);
-                border:2px solid #f4c430;border-radius:14px;
-                padding:30px;max-width:380px;width:90%;
-                text-align:center;color:#fff;
-            ">
-                <div style="font-size:48px;margin-bottom:8px;">📊</div>
-                <h3 style="color:#f4c430;margin:0 0 4px;">Tu Carrera Promanager</h3>
-                <div style="font-size:1.4em;margin-bottom:16px;">${getRepLabel(pmState.reputation)}</div>
-                <div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:14px;text-align:left;font-size:0.9em;line-height:1.8;">
-                    <div>🏟️ Equipo actual: <strong>${pmState.currentTeam || '-'}</strong></div>
-                    <div>📊 División: <strong>${DIVISION_LABELS[pmState.currentDivision] || '-'}</strong></div>
-                    <div>🔢 Reputación: <strong style="color:#f4c430;">${pmState.reputation} pts</strong></div>
-                    <div>🎮 Partidos gestionados: <strong>${pmState.gamesManaged}</strong></div>
-                    <div>✅ Victorias: <strong>${pmState.wins}</strong> | 🤝 Empates: <strong>${pmState.draws}</strong> | ❌ Derrotas: <strong>${pmState.losses}</strong></div>
-                    <div>📈 % victorias: <strong>${wr}%</strong></div>
-                </div>
-                <button onclick="document.getElementById('pmRepModal').remove()" style="
-                    margin-top:18px;background:rgba(244,196,48,0.2);
-                    color:#f4c430;border:1px solid #f4c430;border-radius:8px;
-                    padding:10px 24px;font-size:0.9em;cursor:pointer;
-                ">Cerrar</button>
-            </div>
-        `;
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:99990;font-family:inherit;';
+        modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #f4c430;border-radius:14px;padding:28px;max-width:340px;width:90%;text-align:center;color:#fff;">'
+            + '<div style="font-size:42px;margin-bottom:6px;">📊</div>'
+            + '<h3 style="color:#f4c430;margin:0 0 4px;">Tu Carrera Promanager</h3>'
+            + '<div style="font-size:1.2em;margin-bottom:14px;">' + getRepLabel(pmState.reputation) + '</div>'
+            + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px;text-align:left;font-size:0.86em;line-height:1.9;">'
+            + '<div>🏟️ Equipo: <strong>' + (pmState.currentTeam||'-') + '</strong></div>'
+            + '<div>📊 División: <strong>' + (DIVISION_LABELS[pmState.currentDivision]||'-') + '</strong></div>'
+            + '<div>🔢 Reputación: <strong style="color:#f4c430;">' + pmState.reputation + ' pts</strong></div>'
+            + '<div>🎮 Partidos: <strong>' + pmState.gamesManaged + '</strong></div>'
+            + '<div>✅ V: <strong>' + pmState.wins + '</strong> &nbsp;🤝 E: <strong>' + pmState.draws + '</strong> &nbsp;❌ D: <strong>' + pmState.losses + '</strong></div>'
+            + '<div>📈 % victorias: <strong>' + wr + '%</strong></div>'
+            + '</div>'
+            + '<button onclick="document.getElementById(\'pmRepModal\').remove()" style="margin-top:14px;background:rgba(244,196,48,0.15);color:#f4c430;border:1px solid #f4c430;border-radius:8px;padding:9px 22px;font-size:0.86em;cursor:pointer;">Cerrar</button>'
+            + '</div>';
         document.body.appendChild(modal);
     }
 
-    // ─────────────────────────────────────────────
-    // ACTUALIZAR BADGE CADA VEZ QUE SE REFRESCA LA UI
-    // ─────────────────────────────────────────────
-
-    function hookUIRefresh() {
-        const originalRefresh = window.ui && window.ui.refreshUI;
-        if (!originalRefresh || (originalRefresh && originalRefresh._pmHooked)) return;
-        window.ui.refreshUI = function (...args) {
-            originalRefresh.apply(window.ui, args);
-            updateRepBadge();
+    // ── Interceptar botón Promanager ──
+    function interceptButton() {
+        var orig = window.startGameMode;
+        window.startGameMode = function(mode) {
+            if (mode === 'promanager') {
+                try { window.closeModal('gameMode'); } catch(e) {}
+                startPromanagerMode();
+            } else {
+                pmState.active = false;
+                updateRepBadge();
+                if (orig) orig.call(this, mode);
+            }
         };
-        window.ui.refreshUI._pmHooked = true;
     }
 
-    // ─────────────────────────────────────────────
-    // INIT
-    // ─────────────────────────────────────────────
-
+    // ── Init ──
     function init() {
-        interceptPromanagerButton();
-        hookSimulateWeek();
+        interceptButton();
         injectRepBadge();
-
-        // Intentar hookear UI refresh (puede que aún no esté cargado)
-        const tryHookUI = setInterval(() => {
-            if (window.ui && window.ui.refreshUI && !window.ui.refreshUI._pmHooked) {
-                hookUIRefresh();
-                clearInterval(tryHookUI);
-            }
-        }, 300);
-
-        // También re-hookear simulateWeek si se reemplaza tarde
-        const tryHookSim = setInterval(() => {
-            if (window.simulateWeek && !window.simulateWeek._pmHooked) {
-                hookSimulateWeek();
-            }
-            if (window.simulateWeek && window.simulateWeek._pmHooked) {
-                clearInterval(tryHookSim);
-            }
-        }, 500);
-
+        var t = setInterval(function() {
+            if (window.simulateWeek && !window.simulateWeek._pmHooked) hookSimulateWeek();
+            if (window.simulateWeek && window.simulateWeek._pmHooked) clearInterval(t);
+        }, 400);
         console.log('✅ Injector Promanager listo');
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        // Si el DOM ya está listo, esperar un tick para que los otros scripts carguen
-        setTimeout(init, 100);
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else setTimeout(init, 100);
 
 })();
