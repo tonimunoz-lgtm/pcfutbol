@@ -633,11 +633,10 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">⏳ Cargando usuarios...</td></tr>';
 
             try {
-                const { getFirestore, collection, getDocs, orderBy, query } =
+                const { getFirestore, collection, getDocs } =
                     await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 const firestore = getFirestore();
-                const q = query(collection(firestore, 'game_users'), orderBy('createdAt', 'desc'));
-                const snap = await getDocs(q);
+                const snap = await getDocs(collection(firestore, 'game_users'));
 
                 if (snap.empty) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#666;">No hay usuarios registrados aún</td></tr>';
