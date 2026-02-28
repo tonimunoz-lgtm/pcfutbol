@@ -1,6 +1,5 @@
 // ============================================================
 // injector-last-result.js  v1.0
-//
 // - Renombra el botón "Resultados" del cuadrante top-left a
 //   "📰 Noticias" (sigue abriendo el dashboard)
 // - Añade un nuevo botón "Resultados" debajo de Calendario
