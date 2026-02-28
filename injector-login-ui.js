@@ -24,6 +24,23 @@
                 window.currentUser = userData;
                 window.currentUserId = userData.uid;
                 localStorage.setItem('currentUser', JSON.stringify(userData));
+
+                // Actualizar/crear perfil en game_users (para migrados sin email)
+                if (!isAdmin) {
+                    try {
+                        const { getFirestore, doc, setDoc, serverTimestamp } =
+                            await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const firestore = getFirestore();
+                        await setDoc(doc(firestore, 'game_users', user.uid), {
+                            email: user.email,
+                            name: user.displayName || user.email.split('@')[0],
+                            suspended: false,
+                            lastLogin: serverTimestamp()
+                        }, { merge: true }); // merge:true no sobreescribe campos existentes
+                    } catch(e) {
+                        console.warn('No se pudo actualizar game_users:', e);
+                    }
+                }
                 
                 console.log('✅ Login exitoso en Firebase:', user.email, '- Role:', userData.role);
                 return { success: true, user: userData };
@@ -55,25 +72,9 @@
                 const userCredential = await createUserWithEmailAndPassword(window.firebaseAuth, email, password);
                 const user = userCredential.user;
                 
-               // Actualizar perfil con el nombre
+                // Actualizar perfil con el nombre
                 if (name) {
                     await updateProfile(user, { displayName: name });
-                }
-
-                // Guardar en Firestore para que aparezca en el panel de admin
-                try {
-                    const { getFirestore, doc, setDoc, serverTimestamp } =
-                        await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                    const firestore = getFirestore();
-                    await setDoc(doc(firestore, 'game_users', user.uid), {
-                        email,
-                        name: name || email.split('@')[0],
-                        suspended: false,
-                        createdAt: serverTimestamp()
-                    });
-                } catch (fsErr) {
-                    console.warn('⚠️ No se pudo guardar en Firestore:', fsErr);
-                    // No bloqueamos el registro si falla Firestore
                 }
                 
                 console.log('✅ Usuario registrado en Firebase:', email);
