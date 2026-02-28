@@ -1441,8 +1441,8 @@ function endSeason() {
             seasonSummary += `¡Has ascendido a Segunda División! Felicidades.\n`;  
             nextDivisionKey = 'segunda';  
         } else if (myTeamRankInGroup > (teamsInMyGroup.length - promoReleConfig.relegate)) {  
-            seasonSummary += `¡Has descendido a Tercera RFEF! Es hora de reconstruir.\n`;  
-            nextDivisionKey = 'rfef_grupo1'; // Por ejemplo, volver al grupo 1 (o elegir aleatoriamente si hay más grupos)  
+            seasonSummary += `¡Has descendido a Liga Promesas! Es hora de reconstruir.\n`;  
+            nextDivisionKey = 'promesas';
         }  
         else {  
             seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
@@ -1451,8 +1451,26 @@ function endSeason() {
         const promotedTeams = sortedMyGroup.slice(0, numPromote);  
         seasonSummary += `Equipos que ascienden de tu grupo a Segunda: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
         const relegatedTeams = sortedMyGroup.slice(-promoReleConfig.relegate);  
-        seasonSummary += `Equipos que descienden de tu grupo a Tercera RFEF: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
+        seasonSummary += `Equipos que descienden de tu grupo a Liga Promesas: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
   
+    } else if (currentDivision === 'promesas') {
+        // 1º → asciende directo a rfef_grupo2
+        if (myTeamRank === 1) {
+            seasonSummary += `¡¡CAMPEÓN DE LIGA PROMESAS!! ¡Has ascendido a Primera RFEF Grupo 2!\n`;
+            nextDivisionKey = 'rfef_grupo2';
+        } else if (myTeamRank >= 2 && myTeamRank <= 5) {
+            // El playoff lo gestiona injector-promesas.js — leer su resultado
+            const playoffData = (() => { try { return JSON.parse(localStorage.getItem('playoff_promesas_v1')); } catch(e) { return null; } })();
+            if (playoffData?.myResult === 'promoted_playoff') {
+                seasonSummary += `¡Has ascendido vía playoff a Primera RFEF Grupo 1!\n`;
+                nextDivisionKey = 'rfef_grupo1';
+            } else {
+                seasonSummary += `Tu equipo permanece en Liga Promesas.\n`;
+            }
+        } else {
+            seasonSummary += `Tu equipo permanece en Liga Promesas.\n`;
+        }
+
     } else if (currentDivision === 'segunda') {  
         const numPromote = promoReleConfig.promote;  
         const promotedTeams = teams.slice(0, numPromote);  
