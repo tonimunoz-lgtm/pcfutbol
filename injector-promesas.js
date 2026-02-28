@@ -710,116 +710,6 @@
         return `${nom} ${cog1} ${cog2initial}.`;
     }
 
-    // ============================================================
-    // PASO 14: Parchar deals financieros para Liga Promesas
-    //   - TV: cadenas locales del Vallès Occidental
-    //   - Sponsor: empresas locales de la zona
-    //   - Montos acordes a liga escolar (200-2000€/año)
-    //   - Bloquear Copa del Rey y competiciones europeas
-    // ============================================================
-
-    // Cadenas de TV locales del Vallès Occidental
-    const PROMESAS_TV = [
-        { name: 'TV Sabadell Vallès',       logo: '📺' },
-        { name: 'Canal Terrassa Vallès',     logo: '📡' },
-        { name: 'TV Sant Cugat',            logo: '🎬' },
-        { name: 'Canal Català Vallès',       logo: '🔴' },
-        { name: 'Canal Català Vallès Occ.', logo: '🔴' },
-        { name: 'betevé',                   logo: '🏙️' },
-        { name: 'Vallès Visió',             logo: '👁️' },
-        { name: 'Rubí TV',                  logo: '📹' },
-    ];
-
-    // Empresas patrocinadoras locales del Vallès Occidental
-    const PROMESAS_SPONSORS = [
-        { name: 'Fruites Rosario Sabadell',      sector: 'Alimentació' },
-        { name: 'Hermeticline Sabadell',          sector: 'Finestres' },
-        { name: 'Mastercold Refrigeració',        sector: 'Industrial' },
-        { name: 'TUS Transports Urbans Sabadell', sector: 'Transport' },
-        { name: 'Vitaldent Sabadell',             sector: 'Salut' },
-        { name: 'Kisamba',                       sector: 'Alimentació' },
-        { name: 'Etixx Nutrició Esportiva',      sector: 'Nutrició' },
-        { name: 'Clínica Dental Terrassa',        sector: 'Salut' },
-        { name: 'Informàtica Rubí',              sector: 'Tecnologia' },
-        { name: 'Forn de Pa Can Verdaguer',      sector: 'Alimentació' },
-        { name: 'Ferreteria Vallès',             sector: 'Ferreteria' },
-        { name: 'Acadèmia d\'Idiomes Sabadell',  sector: 'Educació' },
-        { name: 'Clínica Fisio Sant Cugat',      sector: 'Salut' },
-        { name: 'Taxi Vallès',                   sector: 'Transport' },
-        { name: 'Bar Esportiu Can Puig',         sector: 'Hostaleria' },
-        { name: 'Impremta Gràfica Vallès',       sector: 'Impremta' },
-        { name: 'Assegurances Mútua Terrassa',   sector: 'Assegurances' },
-        { name: 'Grup Mastercold',               sector: 'Climatització' },
-    ];
-
-    function patchFinancialDeals() {
-        // Interceptar simulateWeek para sobreescribir las ofertas si división = promesas
-        const origSimWeek = window.simulateWeek;
-        if (origSimWeek && !window._promasasDealsHooked) {
-            window._promasasDealsHooked = true;
-            window.simulateWeek = async function() {
-                const result = await origSimWeek.apply(this, arguments);
-                if (getState()?.division === 'promesas') {
-                    overridePromasasDeals();
-                }
-                return result;
-            };
-        }
-
-        // Aplicar también en el momento de inicio de partida
-        setTimeout(() => {
-            if (getState()?.division === 'promesas') overridePromasasDeals();
-        }, 3000);
-
-        // Y también más tarde por si injector-financial-deals carga después
-        setTimeout(() => {
-            if (getState()?.division === 'promesas') overridePromasasDeals();
-        }, 5000);
-
-        // Bloquear Copa del Rey y Europa en promesas
-        blockCopaForPromesas();
-
-        console.log('✅ Promesas: deals financieros y Copa parchados');
-    }
-
-    function overridePromasasDeals() {
-        const DEALS_KEY = 'financial_deals_v3';
-        let d;
-        try { d = JSON.parse(localStorage.getItem(DEALS_KEY)) || {}; } catch(e) { d = {}; }
-
-        const rnd = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
-        const r500 = v => Math.round(v / 500) * 500;
-        const pickRand = arr => arr[Math.floor(Math.random() * arr.length)];
-
-        // Sponsor: reemplazar SIEMPRE las pendientes si no hay contrato activo
-        // (así sobrescribimos las de rfef que generó injector-financial-deals)
-        if (!d.sponsorDeal?.active) {
-            const usedNames = new Set();
-            d.pendingOffers = d.pendingOffers || {};
-            d.pendingOffers.sponsorOffers = [1, 2, 3].map(years => {
-                let co;
-                do { co = pickRand(PROMESAS_SPONSORS); } while (usedNames.has(co.name));
-                usedNames.add(co.name);
-                return { type: 'sponsor', years, company: co.name, sector: co.sector,
-                         annualAmount: r500(rnd(500, 2000)) };
-            });
-        }
-
-        // TV: igual, reemplazar siempre si no hay contrato activo
-        if (!d.tvDeal?.active) {
-            const usedNames = new Set();
-            d.pendingOffers = d.pendingOffers || {};
-            d.pendingOffers.tvOffers = [1, 2, 3].map(years => {
-                let co;
-                do { co = pickRand(PROMESAS_TV); } while (usedNames.has(co.name));
-                usedNames.add(co.name);
-                return { type: 'tv', years, company: co.name, logo: co.logo,
-                         annualAmount: r500(rnd(200, 800)) };
-            });
-        }
-
-        try { localStorage.setItem(DEALS_KEY, JSON.stringify(d)); } catch(e) {}
-    }
 
     function blockCopaForPromesas() {
         // Ocultar tabs de Copa y Europa en la UI de clasificación cuando estamos en promesas
@@ -865,7 +755,7 @@
         patchTeamSelectionModal();
         patchAdminPanel();
         patchStandingsTitle();
-        patchFinancialDeals();
+    
 
         // Esperar a que el sistema de competiciones esté listo
         function waitForComps() {
