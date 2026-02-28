@@ -417,7 +417,7 @@
             const adminBtn = document.createElement('button');
             adminBtn.id = 'adminButton';
             adminBtn.className = 'btn btn-sm';
-            adminBtn.innerHTML = 'Admin';
+            adminBtn.innerHTML = '⚙️ Admin';
             adminBtn.onclick = () => {
                 if (window.openAdminPanel) {
                     window.openAdminPanel();
@@ -440,6 +440,8 @@
             logoutBtn.innerHTML = '🚪 Salir';
             logoutBtn.onclick = window.logoutUser;
             logoutBtn.style.background = '#c73446';
+            logoutBtn.style.fontSize = '0.72em';
+            logoutBtn.style.padding = '3px 8px';
             headerInfo.appendChild(logoutBtn);
             console.log('✅ Botón de Logout añadido');
         }
