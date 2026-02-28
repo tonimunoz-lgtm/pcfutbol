@@ -251,7 +251,20 @@ function phaseName(p) { return { round1:'1ª Ronda Copa', round32:'Dieciseisavos
 
 function getMyRating() {
     try {
-        const sq = window.gameLogic?.getGameState()?.squad || [];
+        const gs = window.gameLogic?.getGameState();
+        if (!gs) return 75;
+        // Usar calculateTeamEffectiveOverall si está disponible (penalización por posición)
+        if (window.calculateTeamEffectiveOverallImproved && gs.lineup?.length >= 11) {
+            return Math.round(window.calculateTeamEffectiveOverallImproved(
+                gs.lineup.slice(0,11), gs.formation || '433'
+            ));
+        }
+        // Fallback: media del once o de la plantilla
+        if (gs.lineup?.length >= 11) {
+            const starters = gs.lineup.slice(0,11);
+            return Math.round(starters.reduce((a,b) => a+(b.overall||70), 0) / starters.length);
+        }
+        const sq = gs.squad || [];
         if (!sq.length) return 75;
         return Math.round(sq.reduce((a,b) => a+(b.overall||70), 0) / sq.length);
     } catch(e) { return 75; }
