@@ -143,7 +143,7 @@ window.injectMatchSummary = function(matchResult) {
         for (let i = 0; i < numYellow; i++) {
             cards.push({
                 type: 'yellow',
-                player: players[Math.floor(Math.random() * namePool.length)],
+                player: players[Math.floor(Math.random() * players.length)],
                 minute: Math.floor(Math.random() * 90) + 1,
                 team: team
             });
@@ -152,7 +152,7 @@ window.injectMatchSummary = function(matchResult) {
         for (let i = 0; i < numRed; i++) {
             cards.push({
                 type: 'red',
-                player: players[Math.floor(Math.random() * namePool.length)],
+                player: players[Math.floor(Math.random() * players.length)],
                 minute: Math.floor(Math.random() * 90) + 1,
                 team: team
             });
