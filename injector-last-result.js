@@ -47,6 +47,7 @@
         const orig = window.injectMatchSummary;
         window.injectMatchSummary = function(matchResult) {
             window._lastMatchResult = matchResult;
+            window._lastMatchTimestamp = Date.now();
             const ret = orig.call(this, matchResult);
 
             // Capturar el outerHTML completo del modal una vez añadido al DOM
@@ -192,11 +193,71 @@
         console.log('[LastResult] página #last-result creada ✓');
     }
 
+    // ── Construir HTML para resultado de copa/europa/promoción ────
+    function buildCupResultHTML(d) {
+        const goalsHTML = d.goals.length
+            ? `<div style="margin-bottom:20px">
+                <h3 style="color:${d.cfg.accentColor};font-size:.85em;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">⚽ Goles</h3>
+                ${d.goals.map(g => `
+                <div style="display:flex;align-items:center;gap:8px;padding:7px;border-radius:7px;margin-bottom:5px;background:rgba(255,255,255,.05);border-left:3px solid ${g.mine?'#4CAF50':'#f44336'}">
+                    <span style="color:#FFD700;font-weight:bold;min-width:32px;font-size:.88em">${g.min}'</span>
+                    <span style="color:#fff;flex:1;font-weight:600">${g.name}</span>
+                    <span style="color:rgba(255,255,255,.45);font-size:.82em">(${g.team})</span>
+                </div>`).join('')}
+               </div>`
+            : '';
+
+        const statsHTML = `
+            <div style="margin-bottom:16px">
+                <h3 style="color:${d.cfg.accentColor};font-size:.85em;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">📊 Estadísticas</h3>
+                ${[
+                    [`${d.poss}%`, 'Posesión', `${100-d.poss}%`],
+                    [d.shots.my, 'Remates', d.shots.opp],
+                    [d.myGoals+Math.floor(Math.random()*2)+1, 'A puerta', d.oppGoals+Math.floor(Math.random()*2)+1],
+                    [Math.floor(Math.random()*6)+2, 'Corners', Math.floor(Math.random()*6)+2]
+                ].map(([l,c,r]) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.88em;color:#fff">
+                    <strong>${l}</strong><span style="color:rgba(255,255,255,.5);flex:1;text-align:center">${c}</span><strong>${r}</strong>
+                </div>`).join('')}
+            </div>`;
+
+        return `
+        <div style="background:${d.cfg.gradient};border:2px solid ${d.cfg.color}66;border-radius:20px;padding:24px 20px;max-width:500px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:16px">
+                <div style="font-size:.76em;font-weight:700;letter-spacing:2px;color:${d.cfg.accentColor};text-transform:uppercase;margin-bottom:4px">${d.cfg.emoji} ${d.cfg.shortName}</div>
+                <div style="font-size:.88em;color:rgba(255,255,255,.55);margin-bottom:2px">${d.phaseName}</div>
+                <div style="font-size:.78em;color:rgba(255,255,255,.35)">${d.locText}</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px">
+                <div style="flex:1;text-align:center">
+                    <div style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px">${d.myTeam}</div>
+                    <div style="font-size:3.8em;font-weight:900;color:${d.outColor}">${d.myGoals}</div>
+                </div>
+                <div style="font-size:1.8em;color:rgba(255,255,255,.25)">–</div>
+                <div style="flex:1;text-align:center">
+                    <div style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px">${d.opponent}</div>
+                    <div style="font-size:3.8em;font-weight:900;color:${d.oppGoals>d.myGoals?'#f44336':'rgba(255,255,255,.4)'}">${d.oppGoals}</div>
+                </div>
+            </div>
+            <div style="text-align:center;font-size:1.5em;font-weight:900;margin:10px 0 18px;color:${d.outColor}">${d.outEmoji} ${d.outLabel}</div>
+            ${goalsHTML}
+            ${statsHTML}
+            ${d.banner}
+        </div>`;
+    }
+
     // ── Abrir la página y rellenar el contenido ───────────────────
     window.openLastResultPage = function() {
         const content = document.getElementById('last-result-content');
 
-        if (!window._lastMatchResultHTML) {
+        // Determinar cuál fue el último partido (liga vs copa/europa)
+        const ligaTime  = window._lastMatchTimestamp || 0;
+        const copaTime  = window._lastCupMatchData?.timestamp || 0;
+        const hasCopa   = !!window._lastCupMatchData;
+        const hasLiga   = !!window._lastMatchResultHTML;
+
+        // Sin ningún partido
+        if (!hasLiga && !hasCopa) {
             if (content) content.innerHTML = `
                 <div style="text-align:center;padding:60px 20px;color:#555;">
                     <div style="font-size:3em;margin-bottom:16px;">📭</div>
@@ -206,12 +267,18 @@
             return;
         }
 
-        // Envolver con #last-result-embed para que apliquen los estilos
+        // Mostrar el más reciente
+        const showCopa = hasCopa && (!hasLiga || copaTime >= ligaTime);
+
         if (content) {
-            content.innerHTML = `
-                <div id="last-result-embed">
-                    <div class="match-container">${window._lastMatchResultHTML}</div>
-                </div>`;
+            if (showCopa) {
+                content.innerHTML = buildCupResultHTML(window._lastCupMatchData);
+            } else {
+                content.innerHTML = `
+                    <div id="last-result-embed">
+                        <div class="match-container">${window._lastMatchResultHTML}</div>
+                    </div>`;
+            }
         }
         if (window.openPage) window.openPage('last-result');
     };
