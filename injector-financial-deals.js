@@ -851,7 +851,15 @@
         if (confirm(`¿Solicitar préstamo de ${fmt(amt)}€ a ${wks} semanas?`)) requestLoan(amt, wks);
     };
 
-    window._fdSetBonus = () => {
+    window._fdSetBonus = (amountOrEvent) => {
+        // Si se llama con un número directamente (desde cup-matches), usarlo como importe
+        if (typeof amountOrEvent === 'number') {
+            const d = getD();
+            if (d.bonus > 0) return; // ya hay prima activa
+            setBonus(amountOrEvent);
+            return;
+        }
+        // Comportamiento original (desde el modal de finanzas)
         const amt = parseInt(document.getElementById('fd-bonus-amt')?.value || 0);
         if (!amt) return;
         const d = getD();
