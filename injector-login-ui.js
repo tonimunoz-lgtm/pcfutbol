@@ -447,7 +447,7 @@
             const userIndicator = document.createElement('div');
             userIndicator.id = 'userIndicator';
             userIndicator.className = 'info-box';
-            userIndicator.innerHTML = `👤 ${user.name}`;
+            userIndicator.innerHTML = `${user.name}`;
             headerInfo.insertBefore(userIndicator, headerInfo.firstChild);
             console.log('✅ Indicador de usuario añadido');
         }
