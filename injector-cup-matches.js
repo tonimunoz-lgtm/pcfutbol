@@ -821,6 +821,7 @@ function showResultModal(match,result,processed){
     return new Promise(resolve=>{
         const cfg=CUP_CONFIG[match.type]||CUP_CONFIG.copa;
         const phaseName=PHASE_NAMES[match.phase]||match.phase;
+        const locText=match.isHome?'🏟️ EN CASA':'✈️ A DOMICILIO';
         const myTeam=result.myTeam||'Tu Equipo';
         const win=result.win,draw=result.draw;
         const outLabel=win?'¡VICTORIA!':draw?'EMPATE':'DERROTA';
@@ -912,10 +913,34 @@ ${banner}
 <button class="cr-btn" id="cuResClose">✅ Continuar</button>
 </div>`;
         document.body.appendChild(el);
-        document.getElementById('cuResClose').onclick=()=>{
+
+        // Guardar datos para la página Resultados
+        window._lastCupMatchData = {
+            type: match.type,
+            cfg,
+            phaseName,
+            myTeam,
+            opponent: match.opponent,
+            myGoals: result.myGoals,
+            oppGoals: result.oppGoals,
+            win: result.win,
+            draw: result.draw,
+            outLabel,
+            outColor,
+            outEmoji,
+            goals,
+            poss,
+            shots,
+            banner,
+            locText,
+            timestamp: Date.now()
+        };
+
+        function closeModal() {
             el.style.opacity='0';el.style.transform='scale(.97)';el.style.transition='all .22s';
             setTimeout(()=>{el.remove();resolve();},220);
-        };
+        }
+        document.getElementById('cuResClose').onclick = closeModal;
         setTimeout(()=>{const e=document.getElementById('cupResModal');if(e){e.remove();resolve();}},30000);
     });
 }
