@@ -386,8 +386,12 @@ function getMyLeaguePos() {
 // ============================================================
 function simMatch(match) {
     const gs=getGS();
-    const myRating = gs?.squad?.length
-        ? Math.round(gs.squad.reduce((a,b)=>a+(b.overall||70),0)/gs.squad.length)
+    // Usar el once titular si existe, si no la plantilla completa
+    const ratingSource = (gs?.lineup?.length >= 11)
+        ? gs.lineup.slice(0,11)
+        : gs?.squad || [];
+    const myRating = ratingSource.length
+        ? Math.round(ratingSource.reduce((a,b)=>a+(b.overall||70),0)/ratingSource.length)
         : 75;
 
     const base={champions:82,europaLeague:76,conferenceLague:71,copa:70}[match.type]||73;
@@ -397,7 +401,7 @@ function simMatch(match) {
     }[match.phase]||0;
     const oppRating=base+pmod+(Math.floor(Math.random()*6)-3);
     const homeBonus=match.isHome?0.06:-0.03;
-    const wp=Math.max(0.12,Math.min(0.82,0.46+(myRating-oppRating)/100+homeBonus));
+    const wp=Math.max(0.12,Math.min(0.82,0.46+(myRating-oppRating)/60+homeBonus));
     const r=Math.random();
 
     let myG,opG;
