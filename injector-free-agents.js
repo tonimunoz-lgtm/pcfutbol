@@ -256,89 +256,125 @@
     };
 
     // ─────────────────────────────────────────────────────────────
-    // RENDERIZAR SECCIÓN DE AGENTES LIBRES
+    // INTEGRAR AGENTES LIBRES EN searchPlayersMarket
+    // En lugar de una sección separada al fondo, los agentes libres
+    // aparecen en la misma tabla con un checkbox "Libres" en filtros
     // ─────────────────────────────────────────────────────────────
 
-    function renderFreeAgentsPage() {
-        const state = gs();
-        if (!state) return;
+    function injectFreeAgentCheckbox() {
+        // Ya inyectado
+        if (document.getElementById('marketFreeAgents')) return;
 
-        const pool = state.freeAgentsPool || [];
-        const transfersPage = document.getElementById('transfers');
-        if (!transfersPage) return;
+        const loanLabel = document.querySelector('label[style*="align-items"]:last-of-type');
+        const filterRow = document.querySelector('#transfers div[style*="flex-wrap"]');
+        if (!filterRow) return;
 
-        // Buscar o crear la sección de agentes libres
-        let section = document.getElementById('free-agents-section');
-        if (!section) {
-            section = document.createElement('div');
-            section.id = 'free-agents-section';
-            transfersPage.appendChild(section);
+        // Añadir checkbox "Libres" junto a los otros filtros
+        const label = document.createElement('label');
+        label.style.cssText = 'display:flex; align-items:center; gap: 5px;';
+        label.innerHTML = `<input type="checkbox" id="marketFreeAgents" style="width:auto;"> 🔓 Libres`;
+        label.title = 'Agentes libres: sin coste de traspaso';
+
+        // Insertar antes del botón Buscar
+        const buscarBtn = filterRow.querySelector('button');
+        if (buscarBtn) {
+            filterRow.insertBefore(label, buscarBtn);
+        } else {
+            filterRow.appendChild(label);
         }
 
-        if (pool.length === 0) {
-            section.innerHTML = `
-                <h2 style="color: #e94560; margin-top: 30px;">🔓 Agentes Libres</h2>
-                <div class="alert alert-info">No hay agentes libres disponibles actualmente.</div>
-            `;
+        console.log('✅ Checkbox "Libres" añadido al mercado');
+    }
+
+    // Parchear searchPlayersMarket para incluir agentes libres en resultados
+    function patchSearchPlayersMarket() {
+        const orig = window.searchPlayersMarket;
+        if (!orig || window._faSearchPatched) return;
+        window._faSearchPatched = true;
+
+        window.searchPlayersMarket = function () {
+            // Leer el filtro de libres ANTES de llamar al original
+            const freeAgentsOnly = document.getElementById('marketFreeAgents')?.checked || false;
+
+            if (freeAgentsOnly) {
+                // Modo especial: solo mostrar agentes libres
+                const state = gs();
+                if (!state) return;
+                const pool = state.freeAgentsPool || [];
+                const position = document.getElementById('marketPosition')?.value || 'ALL';
+                const minOverall = parseInt(document.getElementById('marketMinOverall')?.value) || 0;
+                const maxAge = parseInt(document.getElementById('marketMaxAge')?.value) || 100;
+                const searchName = (document.getElementById('marketSearchName')?.value || '').toLowerCase();
+
+                let filtered = [...pool];
+                if (position !== 'ALL') filtered = filtered.filter(a => a.position === position);
+                if (minOverall) filtered = filtered.filter(a => (a.overall || 0) >= minOverall);
+                if (maxAge < 100) filtered = filtered.filter(a => (a.age || 99) <= maxAge);
+                if (searchName) filtered = filtered.filter(a => (a.name || '').toLowerCase().includes(searchName));
+
+                filtered.sort((a, b) => b.overall - a.overall);
+
+                renderFreeAgentsInMarketTable(filtered);
+                return;
+            }
+
+            // Comportamiento normal (original) + mezclar libres si no hay filtro exclusivo
+            orig.apply(this, arguments);
+
+            // Si no se filtró por transferibles/cedibles, añadir algunos libres al final
+            const transferFilter = document.getElementById('marketTransferListed')?.checked;
+            const loanFilter = document.getElementById('marketLoanListed')?.checked;
+            if (!transferFilter && !loanFilter) {
+                appendFreeAgentsToResults();
+            }
+        };
+
+        console.log('✅ searchPlayersMarket parcheado para agentes libres');
+    }
+
+    // Renderizar agentes libres dentro del contenedor de resultados del mercado
+    function renderFreeAgentsInMarketTable(agents) {
+        const container = document.getElementById('availablePlayersSearchResult');
+        if (!container) return;
+
+        if (agents.length === 0) {
+            container.innerHTML = `<div class="alert alert-info">No hay agentes libres disponibles con esos filtros.</div>`;
             return;
         }
 
-        const posFilter = document.getElementById('fa-pos-filter')?.value || 'ALL';
-        const filtered = posFilter === 'ALL' ? pool : pool.filter(a => a.position === posFilter);
-        const sorted = [...filtered].sort((a, b) => b.overall - a.overall);
-
-        const positions = [...new Set(pool.map(a => a.position))].sort();
-
-        section.innerHTML = `
-            <h2 style="color: #e94560; margin-top: 30px;">🔓 Agentes Libres <span style="font-size:0.7em; color:#aaa;">(${pool.length} disponibles)</span></h2>
-            <div class="alert alert-info" style="margin-bottom: 15px;">
-                💡 Los agentes libres no tienen coste de traspaso. Solo pagas su salario desde el primer día.
+        let html = `
+            <div class="alert alert-info" style="margin-bottom:10px;">
+                🔓 <strong>Agentes Libres</strong> — Sin coste de traspaso. Solo pagas su salario.
             </div>
-
-            <div style="margin-bottom: 15px;">
-                <label style="color: #aaa; margin-right: 10px;">Filtrar por posición:</label>
-                <select id="fa-pos-filter" onchange="window._renderFreeAgents()" style="padding: 5px 10px;">
-                    <option value="ALL">Todas</option>
-                    ${positions.map(p => `<option value="${p}" ${posFilter === p ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
                 <thead>
-                    <tr style="background: rgba(233,69,96,0.2); color: #e94560;">
-                        <th style="padding: 8px; text-align: left;">Jugador</th>
-                        <th style="padding: 8px; text-align: center;">Pos</th>
-                        <th style="padding: 8px; text-align: center;">OVR</th>
-                        <th style="padding: 8px; text-align: center;">Edad</th>
-                        <th style="padding: 8px; text-align: right;">Salario/sem</th>
-                        <th style="padding: 8px; text-align: center;">Acción</th>
+                    <tr style="background:rgba(233,69,96,0.2); color:#e94560;">
+                        <th style="padding:8px; text-align:left;">Jugador</th>
+                        <th style="padding:8px; text-align:center;">Pos</th>
+                        <th style="padding:8px; text-align:center;">OVR</th>
+                        <th style="padding:8px; text-align:center;">Edad</th>
+                        <th style="padding:8px; text-align:right;">Salario/sem</th>
+                        <th style="padding:8px; text-align:center;">Traspaso</th>
+                        <th style="padding:8px; text-align:center;">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${sorted.map(agent => `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                            <td style="padding: 8px;">
-                                <strong>${agent.name}</strong>
-                                ${agent.isFreeAgent === true && !agent.age ? '' : ''}
+                    ${agents.map(a => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <td style="padding:8px;"><strong>${a.name}</strong></td>
+                            <td style="padding:8px; text-align:center;">
+                                <span style="background:#e94560;color:white;padding:2px 7px;border-radius:4px;font-size:0.85em;">${a.position}</span>
                             </td>
-                            <td style="padding: 8px; text-align: center;">
-                                <span style="
-                                    background: #e94560;
-                                    color: white;
-                                    padding: 2px 8px;
-                                    border-radius: 4px;
-                                    font-size: 0.85em;
-                                ">${agent.position}</span>
+                            <td style="padding:8px; text-align:center; font-weight:bold; color:${a.overall>=75?'#4CAF50':a.overall>=65?'#FF9800':'#aaa'};">${a.overall}</td>
+                            <td style="padding:8px; text-align:center; color:${a.age>32?'#FF9800':'#ccc'};">${a.age}</td>
+                            <td style="padding:8px; text-align:right; color:#4CAF50;">${(a.salary||0).toLocaleString('es-ES')}€</td>
+                            <td style="padding:8px; text-align:center;">
+                                <span style="color:#4CAF50; font-weight:bold;">GRATIS</span>
                             </td>
-                            <td style="padding: 8px; text-align: center; font-weight: bold; color: ${agent.overall >= 75 ? '#4CAF50' : agent.overall >= 65 ? '#FF9800' : '#aaa'};">
-                                ${agent.overall}
-                            </td>
-                            <td style="padding: 8px; text-align: center; color: ${agent.age > 32 ? '#FF9800' : '#ccc'};">${agent.age}</td>
-                            <td style="padding: 8px; text-align: right; color: #4CAF50;">${agent.salary.toLocaleString('es-ES')}€</td>
-                            <td style="padding: 8px; text-align: center;">
-                                <button class="btn" style="background: #4CAF50; padding: 4px 12px; font-size: 0.85em;"
-                                    onclick="window.signFreeAgent('${agent.id}')">
-                                    ✅ Fichar Gratis
+                            <td style="padding:8px; text-align:center;">
+                                <button class="btn" style="background:#4CAF50;padding:4px 12px;font-size:0.85em;"
+                                    onclick="window.signFreeAgent('${a.id}')">
+                                    ✅ Fichar
                                 </button>
                             </td>
                         </tr>
@@ -346,9 +382,60 @@
                 </tbody>
             </table>
         `;
+        container.innerHTML = html;
     }
 
-    window._renderFreeAgents = renderFreeAgentsPage;
+    // Añadir una fila separadora + agentes libres al final de la tabla normal
+    function appendFreeAgentsToResults() {
+        const state = gs();
+        if (!state) return;
+        const pool = (state.freeAgentsPool || []).slice(0, 5); // máximo 5 libres en vista mixta
+        if (pool.length === 0) return;
+
+        const container = document.getElementById('availablePlayersSearchResult');
+        if (!container) return;
+
+        // No duplicar
+        if (container.querySelector('#fa-inline-section')) return;
+
+        const section = document.createElement('div');
+        section.id = 'fa-inline-section';
+        section.style.marginTop = '20px';
+        section.innerHTML = `
+            <div style="
+                border-top: 1px solid rgba(233,69,96,0.3);
+                padding-top: 12px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <span style="color:#4CAF50; font-weight:bold; font-size:0.9em;">🔓 Agentes Libres destacados</span>
+                <span style="color:#aaa; font-size:0.8em;">(activa el filtro "Libres" para ver todos)</span>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+                <tbody>
+                    ${pool.sort((a,b)=>b.overall-a.overall).map(a => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:7px;"><strong>${a.name}</strong></td>
+                            <td style="padding:7px; text-align:center;">
+                                <span style="background:#e94560;color:white;padding:1px 6px;border-radius:4px;font-size:0.8em;">${a.position}</span>
+                            </td>
+                            <td style="padding:7px; text-align:center; font-weight:bold; color:${a.overall>=75?'#4CAF50':a.overall>=65?'#FF9800':'#aaa'};">${a.overall}</td>
+                            <td style="padding:7px; text-align:center; color:#ccc;">${a.age} años</td>
+                            <td style="padding:7px; text-align:right; color:#4CAF50;">${(a.salary||0).toLocaleString('es-ES')}€/sem</td>
+                            <td style="padding:7px; text-align:center;"><span style="color:#4CAF50;font-weight:bold;">GRATIS</span></td>
+                            <td style="padding:7px; text-align:center;">
+                                <button class="btn" style="background:#4CAF50;padding:3px 10px;font-size:0.8em;"
+                                    onclick="window.signFreeAgent('${a.id}')">✅ Fichar</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        container.appendChild(section);
+    }
 
     // ─────────────────────────────────────────────────────────────
     // HOOK simulateWeek
@@ -386,8 +473,24 @@
         window.openPage = function (pageId, ...args) {
             origOpen.call(this, pageId, ...args);
             if (pageId === 'transfers') {
-                setTimeout(renderFreeAgentsPage, 200);
+                setTimeout(() => {
+                    injectFreeAgentCheckbox();
+                    patchSearchPlayersMarket();
+                    patchClearFilters();
+                }, 150);
             }
+        };
+    }
+
+    function patchClearFilters() {
+        const orig = window.clearPlayerMarketFilters;
+        if (!orig || window._faClearPatched) return;
+        window._faClearPatched = true;
+        window.clearPlayerMarketFilters = function () {
+            orig.apply(this, arguments);
+            const cb = document.getElementById('marketFreeAgents');
+            if (cb) cb.checked = false;
+            document.getElementById('fa-inline-section')?.remove();
         };
     }
 
