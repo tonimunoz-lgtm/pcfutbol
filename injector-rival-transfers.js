@@ -1,5 +1,5 @@
 // ============================================================
-// injector-rival-ai.js  (ya existe uno, este lo complementa)
+// injector-rival-transfers.js  (ya existe uno, este lo complementa)
 //
 // MEJORA: Los equipos rivales ahora tienen actividad en el
 // mercado de fichajes:
