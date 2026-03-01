@@ -118,7 +118,7 @@
                 title: '¡Saldo negativo!',
                 desc: `Balance: ${state.balance.toLocaleString('es-ES')}€. Riesgo de problemas financieros.`,
                 color: '#f44336',
-                action: `openPage('finances')`,
+                action: `openPage('finance')`,
                 actionLabel: 'Ver finanzas',
             });
         } else if (state.balance < (state.weeklyExpenses || 0) * 4) {
@@ -129,7 +129,7 @@
                 title: 'Saldo muy bajo',
                 desc: `Solo tienes dinero para ~${Math.floor(state.balance / (state.weeklyExpenses || 1))} semanas de gastos`,
                 color: '#FF9800',
-                action: `openPage('finances')`,
+                action: `openPage('finance')`,
                 actionLabel: 'Ver finanzas',
             });
         }
@@ -291,16 +291,29 @@
         const total = criticals + warnings;
         if (total === 0) return;
 
+        // No mostrar badge si el dashboard está abierto (el usuario ya lo está viendo)
+        const dashboard = document.getElementById('dashboard');
+        if (dashboard && dashboard.classList.contains('active')) return;
+
         const badge = document.createElement('span');
         badge.className = 'urgent-badge';
         badge.style.cssText = `
             background: ${criticals > 0 ? '#f44336' : '#FF9800'};
             color: white;
-            border-radius: 10px;
-            padding: 1px 6px;
-            font-size: 0.7em;
-            margin-left: 4px;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
             font-weight: bold;
+            margin-left: 4px;
+            vertical-align: middle;
+            flex-shrink: 0;
+            line-height: 1;
+            box-sizing: border-box;
         `;
         badge.textContent = total;
         dashBtn.appendChild(badge);
@@ -384,12 +397,6 @@
         window.openPage = function (pageId, ...args) {
             origOpen.call(this, pageId, ...args);
             if (pageId === 'dashboard') {
-                // Limpiar badge al abrir dashboard (el usuario ya va a ver las urgentes)
-                const dashBtn = document.querySelector('[onclick*="dashboard"]');
-                if (dashBtn) {
-                    const old = dashBtn.querySelector('.urgent-badge');
-                    if (old) old.remove();
-                }
                 setTimeout(() => {
                     injectPanelContainer();
                     renderUrgentPanel();
