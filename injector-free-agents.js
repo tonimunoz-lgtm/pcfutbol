@@ -120,9 +120,9 @@
 
         // Generar pool inicial
         const pool = [];
-        for (let i = 0; i < 8;  i++) pool.push(generateFreeAgent(70, 82));
-        for (let i = 0; i < 12; i++) pool.push(generateFreeAgent(58, 72));
-        for (let i = 0; i < 10; i++) pool.push(generateFreeAgent(45, 60));
+        for (let i = 0; i < 3;  i++) pool.push(generateFreeAgent(70, 82));
+        for (let i = 0; i < 4; i++) pool.push(generateFreeAgent(58, 72));
+        for (let i = 0; i < 3; i++) pool.push(generateFreeAgent(45, 60));
 
         saveFreeAgents(pool);
         console.log(`🔓 Pool inicial de ${pool.length} agentes libres generado`);
