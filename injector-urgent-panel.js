@@ -344,16 +344,33 @@
     // HOOKS
     // ─────────────────────────────────────────────────────────────
 
+    // NOTA: window.ui es un módulo ES6 con propiedades readonly.
+    // No se puede parchear window.ui.refreshUI directamente.
+    // En su lugar, usamos MutationObserver sobre el newsFeed:
+    // cada vez que el DOM del newsFeed cambia (lo hace refreshUI),
+    // re-renderizamos el panel urgente.
     function hookRefreshUI() {
         if (window._urgentPanelRefreshHooked) return;
-        const origRefresh = window.ui?.refreshUI;
-        if (!origRefresh) return;
+
+        const newsFeed = document.getElementById('newsFeed');
+        if (!newsFeed) {
+            // Reintentar si el DOM no está listo
+            setTimeout(hookRefreshUI, 500);
+            return;
+        }
 
         window._urgentPanelRefreshHooked = true;
-        window.ui.refreshUI = function (...args) {
-            origRefresh.apply(this, args);
-            setTimeout(renderUrgentPanel, 100);
-        };
+
+        const observer = new MutationObserver(() => {
+            // Solo actualizar si el dashboard está visible
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard && dashboard.classList.contains('active')) {
+                setTimeout(renderUrgentPanel, 50);
+            }
+        });
+
+        observer.observe(newsFeed, { childList: true, subtree: true });
+        console.log('✅ MutationObserver en newsFeed para urgent-panel');
     }
 
     function hookOpenPage() {
