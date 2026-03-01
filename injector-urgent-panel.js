@@ -30,13 +30,15 @@
     // RECOPILAR ALERTAS URGENTES
     // ─────────────────────────────────────────────────────────────
 
-    // Tipos de alerta que el usuario ha gestionado (pulsó su botón de acción)
-    // Se resetea al simular jornada (nuevas situaciones = nuevas alertas)
+    // Set de alertas ya gestionadas, identificadas por "type:title" único
+    // Así gestionar "contrato_expired:Jugador A" no afecta a "contract_expired:Jugador B"
+    // Se limpia al simular jornada (nuevas jornadas = nuevas situaciones)
     const _dismissedAlerts = new Set();
 
-    function dismissAlert(type, pageId) {
-        _dismissedAlerts.add(type);
-        // Reducir badge en 1
+    function dismissAlert(alertId, pageId) {
+        _dismissedAlerts.add(alertId);
+
+        // Bajar badge en 1 directamente
         const dashBtn = document.querySelector('[onclick*="dashboard"]');
         if (dashBtn) {
             const badge = dashBtn.querySelector('.urgent-badge');
@@ -49,12 +51,37 @@
                 }
             }
         }
+
+        // Quitar SOLO este elemento del DOM sin re-renderizar todo el panel
+        // (re-renderizar llamaría updateDashboardBadge y resetearía el badge)
+        const container = document.getElementById('urgent-panel');
+        if (container) {
+            const btn = container.querySelector(`[data-alert-id="${alertId}"]`);
+            if (btn) {
+                const row = btn.closest('div[style*="border-left"]');
+                if (row) row.remove();
+            }
+            // Si ya no quedan alertas, mostrar el mensaje de todo OK
+            if (!container.querySelector('div[style*="border-left"]')) {
+                container.innerHTML = `
+                    <div style="
+                        background: rgba(76, 175, 80, 0.1);
+                        border: 1px solid #4CAF50;
+                        border-radius: 8px;
+                        padding: 12px 16px;
+                        color: #4CAF50;
+                        font-size: 0.9em;
+                    ">✅ Todo en orden — no hay acciones urgentes pendientes</div>
+                `;
+            }
+        }
+
         // Navegar a la página destino
         if (pageId) window.openPage(pageId);
     }
     window._urgentDismissAlert = dismissAlert;
 
-    function collectAlerts() {
+        function collectAlerts() {
         const state = gs();
         if (!state) return [];
 
@@ -211,13 +238,13 @@
             });
         }
 
-        // Filtrar alertas ya gestionadas en esta sesión de dashboard
-        const filtered = alerts.filter(a => !_dismissedAlerts.has(a.type));
+        // Filtrar las ya gestionadas por id único (type:title)
+        const visible = alerts.filter(a => !_dismissedAlerts.has(a.type + ':' + a.title));
 
         // Ordenar por prioridad
-        filtered.sort((a, b) => a.priority - b.priority);
+        visible.sort((a, b) => a.priority - b.priority);
 
-        return filtered;
+        return visible;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -251,6 +278,25 @@
         const infos     = alerts.filter(a => a.priority === 3);
 
         function renderAlert(a) {
+            const alertId = (a.type + ':' + a.title).replace(/"/g, '');
+            const pageTarget = a.action ? (a.action.match(/'([^']+)'/)?.[1] || '') : '';
+            const btnHtml = a.action
+                ? `<button
+                        data-alert-id="${alertId}"
+                        data-page="${pageTarget}"
+                        class="urgent-action-btn"
+                        style="
+                            background: ${a.color};
+                            color: white;
+                            border: none;
+                            padding: 4px 10px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8em;
+                            white-space: nowrap;
+                            flex-shrink: 0;
+                        ">${a.actionLabel}</button>`
+                : '';
             return `
                 <div style="
                     display: flex;
@@ -267,19 +313,7 @@
                         <div style="font-weight: bold; color: ${a.color}; font-size: 0.9em;">${a.title}</div>
                         <div style="color: #bbb; font-size: 0.8em; margin-top: 2px;">${a.desc}</div>
                     </div>
-                    ${a.action ? `
-                        <button onclick="window._urgentDismissAlert('${a.type}', '${a.action.match(/'([^']+)'/)?.[1] || ''}')" style="
-                            background: ${a.color};
-                            color: white;
-                            border: none;
-                            padding: 4px 10px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 0.8em;
-                            white-space: nowrap;
-                            flex-shrink: 0;
-                        ">${a.actionLabel}</button>
-                    ` : ''}
+                    ${btnHtml}
                 </div>
             `;
         }
@@ -303,8 +337,14 @@
 
         container.innerHTML = html;
 
-        // Actualizar badge del menú dashboard
-        updateDashboardBadge(criticals.length, warnings.length);
+        // Event delegation: capturar clicks en botones de acción
+        container.querySelectorAll('.urgent-action-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const alertId = btn.dataset.alertId;
+                const pageId  = btn.dataset.page;
+                dismissAlert(alertId, pageId);
+            });
+        });
     }
 
     function updateDashboardBadge(criticals, warnings) {
@@ -438,9 +478,15 @@
 
         window.simulateWeek = async function (...args) {
             const result = await orig.apply(this, args);
-            // Resetear alertas gestionadas: nueva jornada = nuevas situaciones
-            _dismissedAlerts.clear();
-            setTimeout(renderUrgentPanel, 200);
+            _dismissedAlerts.clear(); // Nueva jornada = alertas frescas
+            setTimeout(() => {
+                renderUrgentPanel();
+                // Recalcular badge con el total real tras la jornada
+                const alerts = collectAlerts();
+                const criticals = alerts.filter(a => a.priority === 1).length;
+                const warnings  = alerts.filter(a => a.priority === 2).length;
+                updateDashboardBadge(criticals, warnings);
+            }, 200);
             return result;
         };
     }
@@ -462,6 +508,11 @@
                 setTimeout(() => {
                     injectPanelContainer();
                     renderUrgentPanel();
+                    // Badge inicial con total real
+                    const alerts = collectAlerts();
+                    const criticals = alerts.filter(a => a.priority === 1).length;
+                    const warnings  = alerts.filter(a => a.priority === 2).length;
+                    updateDashboardBadge(criticals, warnings);
                 }, 500);
                 console.log('✅ injector-urgent-panel listo');
             }
