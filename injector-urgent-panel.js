@@ -30,6 +30,30 @@
     // RECOPILAR ALERTAS URGENTES
     // ─────────────────────────────────────────────────────────────
 
+    // Tipos de alerta que el usuario ha gestionado (pulsó su botón de acción)
+    // Se resetea al simular jornada (nuevas situaciones = nuevas alertas)
+    const _dismissedAlerts = new Set();
+
+    function dismissAlert(type, pageId) {
+        _dismissedAlerts.add(type);
+        // Reducir badge en 1
+        const dashBtn = document.querySelector('[onclick*="dashboard"]');
+        if (dashBtn) {
+            const badge = dashBtn.querySelector('.urgent-badge');
+            if (badge) {
+                const current = parseInt(badge.textContent) || 0;
+                if (current <= 1) {
+                    badge.remove();
+                } else {
+                    badge.textContent = current - 1;
+                }
+            }
+        }
+        // Navegar a la página destino
+        if (pageId) window.openPage(pageId);
+    }
+    window._urgentDismissAlert = dismissAlert;
+
     function collectAlerts() {
         const state = gs();
         if (!state) return [];
@@ -187,10 +211,13 @@
             });
         }
 
-        // Ordenar por prioridad
-        alerts.sort((a, b) => a.priority - b.priority);
+        // Filtrar alertas ya gestionadas en esta sesión de dashboard
+        const filtered = alerts.filter(a => !_dismissedAlerts.has(a.type));
 
-        return alerts;
+        // Ordenar por prioridad
+        filtered.sort((a, b) => a.priority - b.priority);
+
+        return filtered;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -241,7 +268,7 @@
                         <div style="color: #bbb; font-size: 0.8em; margin-top: 2px;">${a.desc}</div>
                     </div>
                     ${a.action ? `
-                        <button onclick="${a.action}" style="
+                        <button onclick="window._urgentDismissAlert('${a.type}', '${a.action.match(/'([^']+)'/)?.[1] || ''}')" style="
                             background: ${a.color};
                             color: white;
                             border: none;
@@ -290,10 +317,6 @@
 
         const total = criticals + warnings;
         if (total === 0) return;
-
-        // No mostrar badge si el dashboard está abierto (el usuario ya lo está viendo)
-        const dashboard = document.getElementById('dashboard');
-        if (dashboard && dashboard.classList.contains('active')) return;
 
         const badge = document.createElement('span');
         badge.className = 'urgent-badge';
@@ -415,6 +438,8 @@
 
         window.simulateWeek = async function (...args) {
             const result = await orig.apply(this, args);
+            // Resetear alertas gestionadas: nueva jornada = nuevas situaciones
+            _dismissedAlerts.clear();
             setTimeout(renderUrgentPanel, 200);
             return result;
         };
