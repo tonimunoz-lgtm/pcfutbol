@@ -323,6 +323,61 @@
     // En su lugar, usamos MutationObserver sobre el newsFeed:
     // cada vez que el DOM del newsFeed cambia (lo hace refreshUI),
     // re-renderizamos el panel urgente.
+
+    // ─────────────────────────────────────────────────────────────
+    // BADGE DE NOTICIAS EN EL BOTÓN "NOTICIAS"
+    // ui.js busca 'switchPage' pero el botón usa 'openPage' →
+    // el selector de ui.js nunca encuentra el botón.
+    // Lo gestionamos aquí con el selector correcto.
+    // ─────────────────────────────────────────────────────────────
+
+    function getNoticiasBtn() {
+        // Selector exacto del botón en index.html
+        return document.querySelector('button[onclick="openPage('dashboard')"]');
+    }
+
+    function updateNewsBadge() {
+        const state = gs();
+        const btn = getNoticiasBtn();
+        if (!btn) return;
+
+        const count = state?.unreadNewsCount || 0;
+
+        // Limpiar badge anterior
+        const old = btn.querySelector('.news-badge');
+        if (old) old.remove();
+
+        if (count > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'news-badge';
+            badge.style.cssText = `
+                background: #ff3333;
+                color: white;
+                border-radius: 50%;
+                padding: 1px 6px;
+                font-size: 0.72em;
+                margin-left: 5px;
+                font-weight: bold;
+                vertical-align: middle;
+                display: inline-block;
+                min-width: 18px;
+                text-align: center;
+                line-height: 18px;
+            `;
+            badge.textContent = count > 99 ? '99+' : count;
+            btn.appendChild(badge);
+        }
+        // Si count === 0 no añadimos nada → el badge desaparece
+    }
+
+    // Limpiar badge al abrir dashboard (markNewsAsRead ya se llama en openPage)
+    function clearNewsBadge() {
+        const btn = getNoticiasBtn();
+        if (!btn) return;
+        const badge = btn.querySelector('.news-badge');
+        if (badge) badge.remove();
+    }
+
     function hookRefreshUI() {
         if (window._urgentPanelRefreshHooked) return;
 
@@ -336,7 +391,10 @@
         window._urgentPanelRefreshHooked = true;
 
         const observer = new MutationObserver(() => {
-            // Solo actualizar si el dashboard está visible
+            // Actualizar badge siempre (hay noticias nuevas aunque el dashboard no esté abierto)
+            setTimeout(updateNewsBadge, 50);
+
+            // Solo actualizar el panel urgente si el dashboard está visible
             const dashboard = document.getElementById('dashboard');
             if (dashboard && dashboard.classList.contains('active')) {
                 setTimeout(renderUrgentPanel, 50);
@@ -358,6 +416,7 @@
         window.openPage = function (pageId, ...args) {
             origOpen.call(this, pageId, ...args);
             if (pageId === 'dashboard') {
+                clearNewsBadge();  // Limpiar badge al leer noticias
                 setTimeout(() => {
                     injectPanelContainer();
                     renderUrgentPanel();
@@ -377,6 +436,7 @@
         window.simulateWeek = async function (...args) {
             const result = await orig.apply(this, args);
             setTimeout(renderUrgentPanel, 200);
+            setTimeout(updateNewsBadge, 300);  // Actualizar badge con nuevas noticias
             return result;
         };
     }
@@ -398,6 +458,7 @@
                 setTimeout(() => {
                     injectPanelContainer();
                     renderUrgentPanel();
+                    updateNewsBadge();  // Badge inicial al arrancar
                 }, 500);
                 console.log('✅ injector-urgent-panel listo');
             }
