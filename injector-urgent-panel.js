@@ -384,6 +384,12 @@
         window.openPage = function (pageId, ...args) {
             origOpen.call(this, pageId, ...args);
             if (pageId === 'dashboard') {
+                // Limpiar badge al abrir dashboard (el usuario ya va a ver las urgentes)
+                const dashBtn = document.querySelector('[onclick*="dashboard"]');
+                if (dashBtn) {
+                    const old = dashBtn.querySelector('.urgent-badge');
+                    if (old) old.remove();
+                }
                 setTimeout(() => {
                     injectPanelContainer();
                     renderUrgentPanel();
