@@ -277,33 +277,7 @@
         container.innerHTML = html;
 
         // Actualizar badge del menú dashboard
-        updateDashboardBadge(criticals.length, warnings.length);
-    }
-
-    function updateDashboardBadge(criticals, warnings) {
-        const dashBtn = document.querySelector('[onclick*="dashboard"]');
-        if (!dashBtn) return;
-
-        // Limpiar badge anterior del sistema de urgencias
-        const oldBadge = dashBtn.querySelector('.urgent-badge');
-        if (oldBadge) oldBadge.remove();
-
-        const total = criticals + warnings;
-        if (total === 0) return;
-
-        const badge = document.createElement('span');
-        badge.className = 'urgent-badge';
-        badge.style.cssText = `
-            background: ${criticals > 0 ? '#f44336' : '#FF9800'};
-            color: white;
-            border-radius: 10px;
-            padding: 1px 6px;
-            font-size: 0.7em;
-            margin-left: 4px;
-            font-weight: bold;
-        `;
-        badge.textContent = total;
-        dashBtn.appendChild(badge);
+        // Badge gestionado por ui.js (unreadNewsCount) — no duplicar aquí
     }
 
     // ─────────────────────────────────────────────────────────────
