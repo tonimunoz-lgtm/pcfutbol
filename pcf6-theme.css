@@ -456,3 +456,282 @@ input[type="checkbox"], input[type="radio"] { width: auto; box-shadow: none; }
 
 a { color: var(--pcf-gold); text-decoration: none; }
 a:hover { color: #fff; text-decoration: underline; }
+
+/* ============================================================
+   ARMONÍA DE CABECERA
+   ============================================================ */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    height: 58px;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    flex: 0 0 auto;
+}
+
+.header-info .info-box {
+    height: 38px;
+    min-width: 104px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0 10px;
+    font-size: .72rem;
+    line-height: 1.05;
+}
+.header-info .info-box span { display: block; }
+.header-info .info-box span:first-child { font-size: .78em; letter-spacing: .1em; color: #2a4a78; }
+.header-info .info-box span:last-child  { font-size: 1.1em; letter-spacing: .02em; }
+.header-info .info-box span:only-child  { font-size: 1.02em; letter-spacing: .04em; }
+
+.team-logo-header {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    padding: 2px;
+}
+
+.header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(.95rem, 1.7vw, 1.5rem);
+}
+
+/* ============================================================
+   PANTALLAS SECUNDARIAS — ritmo y tamaños comunes
+   ============================================================ */
+.page {
+    top: 58px;
+    height: calc(100vh - 58px);
+    padding: 16px clamp(12px, 2.6vw, 30px) 36px;
+}
+
+.page-header {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.page-header h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: clamp(1rem, 1.6vw, 1.45rem);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page h2 { font-size: clamp(.95rem, 1.3vw, 1.15rem); margin: 18px 0 8px; }
+.page h3 { font-size: clamp(.9rem, 1.2vw, 1.02rem); }
+.page > p, .page > div > p { font-size: .95rem; }
+
+/* Botonería uniforme */
+.btn, .page-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 6px 16px;
+    font-size: .82rem;
+    white-space: nowrap;
+}
+.btn-sm { min-height: 28px; padding: 4px 11px; font-size: .74rem; }
+
+.center-option { min-height: 32px; min-width: 122px; padding: 6px 12px; }
+
+/* Rejillas y cajas */
+.data-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.data-box { min-height: 82px; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px; }
+.data-label { font-size: .72rem; margin-bottom: 0; }
+.data-value { font-size: clamp(1.1rem, 1.8vw, 1.6rem); line-height: 1.1; }
+
+.facility-section { padding: 16px; margin-bottom: 20px; }
+
+/* Fichas de jugador / candidatos / listas */
+.player-card {
+    padding: 10px 12px;
+    margin: 6px 0;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.player-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+.player-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; margin-top: 8px; }
+.player-attributes { display: grid; grid-template-columns: repeat(auto-fit, minmax(66px, 1fr)); gap: 6px; margin-top: 8px; }
+.player-attributes input, .attr-input { max-width: 100%; padding: 4px 6px; font-size: .78rem; }
+
+.staff-candidate {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    margin: 6px 0;
+    background: linear-gradient(180deg, rgba(36,80,142,.5) 0%, rgba(7,22,48,.72) 100%);
+    border: 1px solid #06142e;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 0 rgba(0,0,0,.3);
+}
+
+.settings-container {
+    background: linear-gradient(180deg, rgba(36,80,142,.5) 0%, rgba(7,22,48,.72) 100%);
+    border: 1px solid #06142e;
+    border-radius: 3px;
+    padding: 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+/* Formularios */
+.form-group { margin: 10px 0; }
+.form-group label { font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; color: #b9cdea; }
+input, select { min-height: 32px; padding: 5px 8px; font-size: .86rem; }
+input[type="range"] { min-height: 0; padding: 0; background: transparent; box-shadow: none; border: 0; }
+
+/* Modales */
+.modal-content, .player-modal-content {
+    padding: clamp(16px, 2.4vw, 28px);
+    max-height: 86vh;
+}
+.modal-content h1, .modal-content h2, .modal-content h3,
+.player-modal-content h2, .player-modal-content h3 {
+    color: var(--pcf-gold) !important;
+    font-family: 'Saira Condensed', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    text-shadow: 0 1px 0 #000;
+}
+.modal-content h1 { font-size: clamp(1.05rem, 1.7vw, 1.4rem); margin-bottom: 14px; }
+.modal-close, .player-modal-close {
+    width: 28px; height: 28px; line-height: 26px; font-size: 1.2rem;
+    top: 10px; right: 12px;
+}
+.player-modal-close { position: absolute; }
+.modal-header img { border: 2px solid #06142e; border-radius: 3px; }
+.modal-body h3 { border-bottom: 1px dashed rgba(122,160,212,.6); }
+.modal-body p { color: #d7e3f6; }
+
+/* Botones inyectados (selección de partida, panel urgente, admin) */
+.game-selection-btn, .urgent-action-btn, .admin-tab {
+    background: linear-gradient(180deg, #9cbce6 0%, #4f77b0 46%, #2f5384 54%, #14315c 100%) !important;
+    border: 1px solid #06142e !important;
+    border-radius: 3px !important;
+    color: #fff !important;
+    font-family: 'Saira Condensed', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.45), 2px 2px 0 rgba(0,0,0,.35) !important;
+}
+.game-selection-btn:hover, .urgent-action-btn:hover, .admin-tab:hover { filter: brightness(1.18); }
+.admin-tab { min-height: 32px; padding: 6px 14px !important; font-size: .8rem; }
+.tab-content { padding-top: 12px; }
+
+/* ============================================================
+   RESPONSIVE — portátil
+   ============================================================ */
+@media (max-width: 1280px) {
+    .header-info .info-box { min-width: 92px; font-size: .68rem; }
+    .menu-button { padding-left: 46px; }
+    .center-option { min-width: 106px; font-size: .74rem; }
+}
+
+@media (max-width: 1024px) {
+    .data-grid { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+    .page table { font-size: .86rem; }
+    th, td { padding: 5px 7px; }
+}
+
+/* ============================================================
+   RESPONSIVE — móvil
+   ============================================================ */
+@media (max-width: 640px) {
+    .header {
+        height: 52px;
+        padding: 0 8px;
+        gap: 6px;
+    }
+    .header-title {
+        font-size: .82rem;
+        letter-spacing: .06em;
+    }
+    .header-info { gap: 5px; }
+    .header-info .info-box {
+        height: 34px;
+        min-width: 64px;
+        padding: 0 6px;
+        font-size: .58rem;
+    }
+    .team-logo-header { width: 30px; height: 30px; flex: 0 0 30px; }
+
+    .section-title { letter-spacing: .1em; }
+
+    .menu-button {
+        width: 52px; height: 52px; min-width: 52px;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.45), 2px 2px 0 rgba(0,0,0,.35);
+    }
+    .menu-button::before { width: 30px; height: 30px; }
+
+    .main-center-row { background: rgba(6,20,46,.55); border-color: rgba(122,160,212,.35); }
+    .center-option { min-height: 30px; min-width: 0; font-size: .62rem; padding: 4px 6px; }
+
+    .page {
+        top: 52px;
+        height: calc(100vh - 52px);
+        padding: 10px 10px 28px;
+    }
+    .page-header { flex-wrap: nowrap; gap: 8px; padding: 6px 8px; margin-bottom: 12px; }
+    .page-header h1 { font-size: .9rem; letter-spacing: .06em; }
+    .page-close-btn { min-height: 30px; padding: 4px 9px; font-size: .68rem; }
+
+    .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .data-box { min-height: 66px; padding: 9px; }
+    .data-value { font-size: 1.15rem; }
+
+    .page table { font-size: .74rem; }
+    th { padding: 5px 4px; letter-spacing: .04em; }
+    td { padding: 4px; }
+
+    .btn { min-height: 38px; padding: 6px 12px; font-size: .76rem; }
+    .btn-sm { min-height: 32px; font-size: .7rem; }
+    input, select { min-height: 38px; max-width: 100%; font-size: .9rem; }
+
+    .modal-content, .player-modal-content {
+        width: 96%;
+        max-width: 96%;
+        max-height: 92vh;
+        padding: 14px;
+        margin: 10px auto;
+    }
+    .modal-content h1 { font-size: 1rem; padding-right: 34px; }
+    .player-inputs, .player-attributes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .staff-candidate { flex-direction: column; align-items: stretch; }
+
+    .facility-section { padding: 12px; }
+    .facility-section div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+    .lineup-main-container, #tactic-container { flex-direction: column; align-items: stretch; }
+    #tactic-bench { width: 100%; }
+}
+
+/* Tablas anchas: permitir deslizar en lugar de romper el layout */
+@media (max-width: 860px) {
+    .page > table,
+    .page > div > table { display: block; overflow-x: auto; white-space: nowrap; }
+}
