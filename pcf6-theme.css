@@ -1,0 +1,458 @@
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   PCF6 SKIN — capa estética retro (90s manager)
+   Cargar DESPUÉS de style.css. No cambia estructura ni lógica.
+   ============================================================ */
+
+:root {
+    --pcf-navy:      #06142e;
+    --pcf-navy-2:    #0b2549;
+    --pcf-blue:      #143c78;
+    --pcf-blue-mid:  #2a5fa4;
+    --pcf-steel:     #7aa0d4;
+    --pcf-chrome-hi: #d8e5f7;
+    --pcf-chrome-lo: #081a36;
+    --pcf-gold:      #ffd24a;
+    --pcf-gold-dk:   #b98a12;
+    --pcf-paper:     #e8eef8;
+    --pcf-paper-2:   #d3deef;
+    --pcf-ink:       #0a1a35;
+    --pcf-green:     #3f7a33;
+    --pcf-amber:     #8f5a1c;
+    --pcf-maroon:    #7c2323;
+}
+
+* {
+    text-shadow: none;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
+}
+
+body {
+    color: #e6eefc;
+    background:
+        radial-gradient(ellipse at 18% 8%,  rgba(140,185,240,.30), transparent 60%),
+        radial-gradient(ellipse at 82% 72%, rgba(70,125,200,.28), transparent 55%),
+        repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, #0e2d5c 0%, #071734 58%, #0a2149 100%);
+    background-attachment: fixed;
+}
+
+/* ---------- Cabecera ---------- */
+.header {
+    height: 62px;
+    background: linear-gradient(180deg, #2f5f9e 0%, #163d74 48%, #0c2449 52%, #061530 100%);
+    border-bottom: 2px solid #000;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 8px rgba(0,0,0,.6);
+}
+
+.header-title {
+    font-family: 'Saira Condensed', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .14em;
+    font-size: 1.5em;
+    text-shadow: 0 2px 0 #06142e, 0 0 12px rgba(120,180,255,.5);
+}
+
+.info-box {
+    background: linear-gradient(180deg, #e9f0fb 0%, #bdcee8 48%, #93aed3 52%, #6a8cbb 100%);
+    border: 1px solid #06142e;
+    border-radius: 2px;
+    color: var(--pcf-ink);
+    font-weight: 700;
+    font-size: .8em;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 1px 1px 0 rgba(0,0,0,.45);
+}
+
+.team-logo-header {
+    border: 2px solid #06142e;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px #fff, 1px 1px 0 rgba(0,0,0,.5);
+}
+
+/* ---------- Cuadrantes ---------- */
+.quadrant,
+.quadrant.top-left, .quadrant.top-right,
+.quadrant.bottom-left, .quadrant.bottom-right {
+    background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, rgba(18,50,98,.55) 0%, rgba(6,20,46,.65) 100%);
+    border: 1px solid rgba(122,160,212,.35);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.55);
+}
+
+.section-title {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: .16em;
+    color: var(--pcf-gold);
+    background: linear-gradient(180deg, #0f2c58 0%, #061530 100%);
+    border: 1px solid #000;
+    border-radius: 2px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 0 rgba(0,0,0,.4);
+    text-shadow: 0 1px 0 #000;
+}
+
+/* ---------- Botones de menú (barras metálicas) ---------- */
+.menu-button,
+.center-option,
+.btn,
+.page-close-btn {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    border: 1px solid #06142e;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,.75);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -2px 3px rgba(0,0,0,.45),
+        2px 2px 0 rgba(0,0,0,.35);
+    transition: filter .12s ease, transform .12s ease;
+}
+
+.menu-button {
+    background: linear-gradient(180deg, #9cbce6 0%, #4f77b0 46%, #2f5384 54%, #14315c 100%);
+}
+.menu-button:hover {
+    filter: brightness(1.18);
+    transform: none;
+    border-color: var(--pcf-gold);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.7),
+        inset 0 -2px 3px rgba(0,0,0,.45),
+        0 0 8px rgba(255,210,74,.55);
+}
+
+.menu-button.blue-button   { background: linear-gradient(180deg,#9cbce6 0%,#4f77b0 46%,#2f5384 54%,#14315c 100%); }
+.menu-button.green-button  { background: linear-gradient(180deg,#b6d79b 0%,#6f9a4e 46%,#4b7434 54%,#26451c 100%); }
+.menu-button.orange-button { background: linear-gradient(180deg,#e8c48f 0%,#b98446 46%,#8f5a1c 54%,#4c2f0b 100%); }
+.menu-button.red-button    { background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%); }
+.menu-button.blue-button:hover,
+.menu-button.green-button:hover,
+.menu-button.orange-button:hover,
+.menu-button.red-button:hover { background-color: transparent; }
+
+/* Iconos: rutas relativas (las absolutas /assets/ no cargan) */
+.menu-button::before {
+    width: 26px; height: 26px;
+    filter: drop-shadow(1px 1px 1px rgba(0,0,0,.6));
+}
+.results-icon::before        { background-image: url('assets/iconos/marcador.png'); }
+.classification-icon::before { background-image: url('assets/iconos/podio.png'); }
+.calendar-icon::before       { background-image: url('assets/iconos/calendario.png'); }
+.lineup-icon::before         { background-image: url('assets/iconos/alineacion.png'); }
+.tactics-icon::before        { background-image: url('assets/iconos/tactica.png'); }
+.transfer-icon::before       { background-image: url('assets/iconos/fichar.png'); }
+.squad-icon::before          { background-image: url('assets/iconos/plantilla.png'); }
+.staff-icon::before          { background-image: url('assets/iconos/empleados.png'); }
+.cash-icon::before           { background-image: url('assets/iconos/caja.png'); }
+.decisions-icon::before      { background-image: url('assets/iconos/entradas.png'); }
+.stadium-icon::before        { background-image: url('assets/iconos/estadio.png'); }
+.noticias-icon::before       { background-image: url('assets/iconos/noticias.png'); }
+.rival-icon::before          { background-image: url('assets/iconos/rival.png'); }
+.entreno-icon::before        { background-image: url('assets/iconos/entrenamiento.png'); }
+.cantera-icon::before        { background-image: url('assets/iconos/cantera.png'); content: ''; font-size: 0; }
+.renovation-icon::before     { background-image: url('assets/iconos/entradas.png'); content: ''; font-size: 0; }
+
+/* ---------- Fila central ---------- */
+.center-option {
+    background: linear-gradient(180deg, #8fb0dd 0%, #46699e 46%, #2a4a78 54%, #112a50 100%);
+    font-size: .8em;
+}
+.center-option:hover { filter: brightness(1.15); border-color: var(--pcf-gold); background-color: transparent; }
+.center-option.simulate-btn { background: linear-gradient(180deg,#cfe89f 0%,#7fae4a 46%,#527d2c 54%,#2b4614 100%); color:#fff; }
+.center-option.save-btn     { background: linear-gradient(180deg,#9cbce6 0%,#4f77b0 46%,#2f5384 54%,#14315c 100%); color:#fff; }
+.center-option.exit-btn     { background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%); }
+
+.main-center-circle {
+    background:
+        radial-gradient(circle at 34% 26%, rgba(255,255,255,.35), transparent 55%),
+        linear-gradient(180deg, #2c5c9c 0%, #0d2a56 60%, #061630 100%);
+    border: 3px solid #06142e;
+    box-shadow:
+        inset 0 0 0 2px rgba(216,229,247,.55),
+        inset 0 -8px 18px rgba(0,0,0,.6),
+        0 0 22px rgba(0,0,0,.75);
+}
+
+.next-match-title {
+    font-family: 'Saira Condensed', sans-serif;
+    letter-spacing: .12em;
+    color: var(--pcf-gold);
+    text-shadow: 0 1px 0 #000;
+}
+#nextMatchDate { color: #ffb15c; letter-spacing: .06em; }
+#nextMatchTeams { text-shadow: 0 1px 0 #000; }
+
+/* ---------- Páginas ---------- */
+.page {
+    background:
+        radial-gradient(ellipse at 20% 0%, rgba(140,185,240,.22), transparent 60%),
+        repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, #0c2a56 0%, #061530 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.page-header {
+    background: linear-gradient(180deg, #2f5f9e 0%, #163d74 48%, #0c2449 52%, #061530 100%);
+    border: 1px solid #000;
+    border-bottom: 2px solid #000;
+    border-radius: 3px;
+    padding: 8px 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 rgba(0,0,0,.35);
+}
+
+.page-header h1 { margin-bottom: 0; padding-bottom: 0; }
+
+.page-close-btn { background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%); }
+.page-close-btn:hover { filter: brightness(1.15); border-color: var(--pcf-gold); background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%); }
+
+h1 {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #fff;
+    text-shadow: 0 2px 0 #06142e;
+}
+
+h2, h3 {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--pcf-gold);
+    text-shadow: 0 1px 0 #000;
+}
+
+/* ---------- Tablas (estilo "papel" del clasificación) ---------- */
+table {
+    background: var(--pcf-paper);
+    border: 2px solid #06142e;
+    border-collapse: collapse;
+    box-shadow: 0 3px 0 rgba(0,0,0,.35);
+}
+
+th {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--pcf-gold);
+    background: linear-gradient(180deg, #1b4483 0%, #0a1f42 100%);
+    border: 1px solid #06142e;
+    padding: 7px 9px;
+    text-shadow: 0 1px 0 #000;
+}
+
+td {
+    background: var(--pcf-paper);
+    color: var(--pcf-ink);
+    border: 1px solid #a8bcda;
+    padding: 5px 9px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+tr:nth-child(even) td { background: var(--pcf-paper-2); }
+tr:hover td { background: #fff3c4; }
+td strong, td b { color: #0a1a35; }
+
+/* ---------- Cajas de datos ---------- */
+.data-box,
+.facility-section,
+.player-card,
+.negotiation-player-info,
+.training-player-info,
+.renewal-player-info,
+.team-selection-list,
+#newsFeed {
+    background: linear-gradient(180deg, rgba(36,80,142,.55) 0%, rgba(7,22,48,.75) 100%);
+    border: 1px solid #06142e;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -3px 10px rgba(0,0,0,.5), 0 2px 0 rgba(0,0,0,.3);
+}
+
+.data-label {
+    font-family: 'Saira Condensed', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #b9cdea;
+}
+
+.data-value {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700;
+    color: var(--pcf-gold);
+    text-shadow: 0 1px 0 #000;
+}
+.data-value.negative { color: #ff7b6b; }
+
+/* ---------- Botones genéricos ---------- */
+.btn {
+    background: linear-gradient(180deg, #9cbce6 0%, #4f77b0 46%, #2f5384 54%, #14315c 100%);
+}
+.btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #9cbce6 0%, #4f77b0 46%, #2f5384 54%, #14315c 100%);
+    filter: brightness(1.18);
+    transform: none;
+    border-color: var(--pcf-gold);
+}
+
+/* ---------- Inputs ---------- */
+input, select, textarea {
+    background: #dfe7f4;
+    color: var(--pcf-ink);
+    border: 1px solid #06142e;
+    border-radius: 2px;
+    font-weight: 600;
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,.35), inset -1px -1px 0 rgba(255,255,255,.7);
+}
+input:focus, select:focus {
+    border-color: var(--pcf-gold-dk);
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,.35), 0 0 0 2px rgba(255,210,74,.5);
+}
+input[type="checkbox"], input[type="radio"] { width: auto; box-shadow: none; }
+
+/* ---------- Avisos (tiras de mensaje) ---------- */
+.alert {
+    background: #06142e;
+    border: 1px solid #000;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(122,160,212,.45);
+    font-weight: 600;
+    letter-spacing: .03em;
+}
+.alert-info    { color: #9fc4f2; }
+.alert-success { color: #a8e07f; }
+.alert-warning { color: #ffc861; }
+.alert-error   { color: #ff8a7a; }
+
+/* ---------- Modales ---------- */
+.modal { background: rgba(3,10,24,.8); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+.modal-content,
+.player-modal-content,
+#matchSummaryModal .match-container {
+    background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, #14396f 0%, #071733 100%);
+    border: 2px solid #06142e;
+    border-radius: 4px;
+    box-shadow:
+        inset 0 1px 0 rgba(216,229,247,.5),
+        inset 0 -6px 16px rgba(0,0,0,.55),
+        0 8px 24px rgba(0,0,0,.8);
+}
+
+.modal-close, .player-modal-close {
+    color: var(--pcf-gold);
+    background: linear-gradient(180deg,#a85252,#3f0e0e);
+    border: 1px solid #000;
+    border-radius: 2px;
+}
+
+#matchSummaryModal h1 { color: var(--pcf-gold); text-shadow: 0 2px 0 #000; }
+#matchSummaryModal .team-score { color: var(--pcf-gold); font-family: 'Saira Condensed', sans-serif; text-shadow: 0 2px 0 #000; }
+#matchSummaryModal .btn-continue {
+    background: linear-gradient(180deg,#cfe89f 0%,#7fae4a 46%,#527d2c 54%,#2b4614 100%);
+    border: 1px solid #06142e; border-radius: 3px;
+    font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: .1em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 2px 2px 0 rgba(0,0,0,.35);
+}
+
+/* ---------- Alineación / táctica ---------- */
+.pitch-container, #tactic-field {
+    border: 2px solid #06142e;
+    border-radius: 3px;
+    box-shadow: inset 0 0 25px rgba(0,0,0,.65), 0 3px 0 rgba(0,0,0,.35);
+}
+
+.pitch-position-placeholder {
+    background: rgba(6,20,46,.25);
+    border: 1px dashed rgba(255,255,255,.55);
+    border-radius: 2px;
+    font-family: 'Saira Condensed', sans-serif;
+    letter-spacing: .08em;
+}
+
+.pitch-player, .draggable-player {
+    background: linear-gradient(180deg, #9cbce6 0%, #4f77b0 46%, #2f5384 54%, #14315c 100%);
+    border: 1px solid #06142e;
+    border-radius: 2px;
+    color: #fff;
+    font-family: 'Saira Condensed', sans-serif;
+    letter-spacing: .04em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 1px 1px 0 rgba(0,0,0,.4);
+}
+.pitch-player.injured, .draggable-player.injured {
+    background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%);
+    border-color: #06142e;
+}
+
+.reserves-list {
+    background: rgba(6,20,46,.45);
+    border: 1px solid rgba(122,160,212,.4);
+    border-radius: 3px;
+}
+.reserves-container { border-left-color: rgba(122,160,212,.5); }
+
+.bench-player {
+    background: linear-gradient(180deg,#e9f0fb,#bdcee8);
+    color: var(--pcf-ink);
+    border: 1px solid #06142e;
+    border-radius: 2px;
+    font-weight: 700;
+}
+
+.player {
+    background: linear-gradient(180deg, #9cbce6 0%, #2f5384 100%);
+    border: 2px solid #06142e;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* ---------- Botones de icono / chips ---------- */
+.action-icon-btn {
+    background: linear-gradient(180deg, #8fb0dd 0%, #46699e 46%, #2a4a78 54%, #112a50 100%);
+    border: 1px solid #06142e;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 1px 1px 0 rgba(0,0,0,.4);
+}
+.action-icon-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #a6c3e9 0%, #5276ab 46%, #325887 54%, #16335e 100%);
+    border-color: var(--pcf-gold);
+    transform: none;
+}
+
+.tc-xi-chip {
+    background: linear-gradient(180deg, rgba(216,229,247,.18), rgba(6,20,46,.5));
+    border: 1px solid rgba(122,160,212,.5);
+    border-radius: 3px;
+}
+
+/* ---------- Badges ---------- */
+.yellow-card-badge, .red-card-badge, .suspended-badge, .injured-badge, .warning-badge {
+    font-family: 'Saira Condensed', sans-serif;
+    border-radius: 2px;
+    letter-spacing: .06em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 1px 1px 0 rgba(0,0,0,.4);
+}
+
+/* ---------- Ajustes menores ---------- */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: #061530; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,#6f96cc,#1b4483);
+    border: 1px solid #06142e;
+}
+
+a { color: var(--pcf-gold); text-decoration: none; }
+a:hover { color: #fff; text-decoration: underline; }
