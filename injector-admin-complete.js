@@ -12,8 +12,99 @@
         'rfef_grupo2': 'Primera RFEF Grupo 2'
     };
 
-    const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MCD', 'MP', 'EXT', 'DC', 'SD'];
+    // Mismas posiciones que el juego (config.js)
+    const POSITIONS = ['POR', 'DFC', 'LI', 'LD', 'MC', 'MCO', 'MD', 'MI', 'EXT', 'DC'];
     const ATTRIBUTES = ['EN', 'VE', 'RE', 'AG', 'CA', 'EF', 'MO', 'AT', 'DF'];
+    // Posiciones que se usaban antes en el Admin o en JSON externos → equivalente del juego
+    const POSITION_ALIASES = {
+        GK: 'POR', PT: 'POR', CB: 'DFC', DF: 'DFC', LB: 'LI', LWB: 'LI', RB: 'LD', RWB: 'LD',
+        MCD: 'MC', CDM: 'MC', DM: 'MC', CM: 'MC', MP: 'MCO', CAM: 'MCO', AM: 'MCO',
+        LM: 'MI', RM: 'MD', LW: 'EXT', RW: 'EXT', EI: 'EXT', ED: 'EXT',
+        SD: 'DC', ST: 'DC', CF: 'DC', DEL: 'DC'
+    };
+    const POSITION_WEIGHTS = {
+        POR: { EN: .1, VE: .1, RE: .1, AG: .1, CA: .2, EF: .1, MO: .1, AT: .05, DF: .15 },
+        DFC: { EN: .2, VE: .1, RE: .15, AG: .1, CA: .15, EF: .1, MO: .1, AT: .05, DF: .15 },
+        LI:  { EN: .15, VE: .15, RE: .2, AG: .1, CA: .05, EF: .05, MO: .1, AT: .1, DF: .1 },
+        LD:  { EN: .15, VE: .15, RE: .2, AG: .1, CA: .05, EF: .05, MO: .1, AT: .1, DF: .1 },
+        MC:  { EN: .1, VE: .1, RE: .2, AG: .1, CA: .1, EF: .1, MO: .1, AT: .1, DF: .1 },
+        MCO: { EN: .05, VE: .15, RE: .15, AG: .15, CA: .1, EF: .15, MO: .1, AT: .15, DF: .05 },
+        MD:  { EN: .05, VE: .2, RE: .15, AG: .15, CA: .05, EF: .1, MO: .1, AT: .15, DF: .05 },
+        MI:  { EN: .05, VE: .2, RE: .15, AG: .15, CA: .05, EF: .1, MO: .1, AT: .15, DF: .05 },
+        EXT: { EN: .05, VE: .2, RE: .15, AG: .15, CA: .05, EF: .15, MO: .1, AT: .15, DF: .05 },
+        DC:  { EN: .05, VE: .15, RE: .1, AG: .1, CA: .15, EF: .2, MO: .1, AT: .15, DF: 0 }
+    };
+
+    // ── Utilidades ──────────────────────────────────────────────
+    function esc(v) {
+        return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function leagueKeys() {
+        return window.pcfLeagues ? window.pcfLeagues.keys() : Object.keys(window.TEAMS_DATA || {});
+    }
+    function leagueName(k) {
+        return window.pcfLeagues ? window.pcfLeagues.name(k) : (DIVISIONS[k] || k);
+    }
+    function leagueTeams(k) {
+        return (window.pcfLeagues ? window.pcfLeagues.teams(k) : (window.TEAMS_DATA?.[k] || [])).filter(Boolean);
+    }
+    function squadSizeCached(team) {
+        try { const d = JSON.parse(localStorage.getItem(`team_data_${team}`) || 'null'); return (d && d.squad && d.squad.length) || 0; }
+        catch (e) { return 0; }
+    }
+    function toast(msg) {
+        const status = document.getElementById('adminDivisionImportStatus');
+        if (status && window.adminBackend && window.adminBackend.currentTab === 'leagues') status.textContent = msg;
+        else console.log(msg);
+    }
+    function downloadJSON(obj, filename) {
+        const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    function weightedOverall(p) {
+        const w = POSITION_WEIGHTS[p.position];
+        if (!w) return calculateOverall(p);
+        let sum = 0, tw = 0;
+        for (const a in w) { sum += (parseInt(p[a]) || 0) * w[a]; tw += w[a]; }
+        return tw ? Math.round(sum / tw) : 0;
+    }
+    // Deja un jugador con todos los campos que espera el juego
+    function normalizePlayer(raw) {
+        const p = { ...(raw || {}) };
+        p.name = String(p.name || 'Jugador').trim();
+        let pos = String(p.position || 'MC').toUpperCase().trim();
+        if (!POSITIONS.includes(pos)) pos = POSITION_ALIASES[pos] || 'MC';
+        p.position = pos;
+        p.age = Math.min(45, Math.max(15, parseInt(p.age) || 25));
+        ATTRIBUTES.forEach(a => { p[a] = Math.min(99, Math.max(1, parseInt(p[a]) || 50)); });
+        p.foot = p.foot || 'Diestro';
+        p.contractType = p.contractType === 'loaned' ? 'loaned' : 'owned';
+        p.contractYears = Math.min(10, Math.max(0, parseInt(p.contractYears ?? 3) || 0)) || (p.contractType === 'loaned' ? 1 : 3);
+        p.salary = Math.max(0, parseInt(p.salary) || 1000);
+        p.releaseClause = Math.max(0, parseInt(p.releaseClause) || 0);
+        p.isInjured = !!p.isInjured; p.weeksOut = parseInt(p.weeksOut) || 0;
+        p.isSuspended = !!p.isSuspended; p.suspensionWeeks = parseInt(p.suspensionWeeks) || 0;
+        p.yellowCards = parseInt(p.yellowCards) || 0; p.redCards = parseInt(p.redCards) || 0;
+        p.overall = weightedOverall(p);
+        return p;
+    }
+    // Copia los datos de un equipo a otro nombre y borra el documento antiguo
+    async function moveTeamData(oldName, newName) {
+        const r = window.getTeamDataFromFirebase ? await window.getTeamDataFromFirebase(oldName) : null;
+        const data = r && r.data;
+        if (data) {
+            const res = await window.saveTeamDataToFirebase(newName, data);
+            if (res && res.success === false) throw new Error(res.error || 'no se pudo guardar con el nuevo nombre');
+            try {
+                const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                await deleteDoc(doc(getFirestore(), 'teams_data', oldName));
+            } catch (e) { console.warn('No se pudo borrar el documento antiguo:', e); }
+        }
+        localStorage.removeItem(`team_data_${oldName}`);
+    }
 
     // Función para verificar si el usuario actual es administrador
     function isUserAdmin() {
@@ -69,135 +160,174 @@
             modal.id = 'adminModal';
             modal.className = 'modal';
             modal.innerHTML = `
-                <<div class="modal-content" style="max-width: 1200px; width: 95vw; max-height: 90vh; overflow-y: auto; overflow-x: hidden;">
+                <div class="modal-content admin-modal-content" style="max-width: 1200px; width: 95vw; max-height: 90vh; overflow-y: auto; overflow-x: hidden;">
                     <span class="modal-close" onclick="document.getElementById('adminModal').classList.remove('active')">&times;</span>
-                    <h1 style="color: #e94560;">🔧 Panel de Administración</h1>
-                    
+                    <h1>🔧 Panel de Administración</h1>
+
                     <!-- Tabs -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e94560;">
-                        <button id="tabTeamData" class="admin-tab active" onclick="window.adminBackend.switchTab('teamData')">
-                            🏟️ Datos del Equipo
-                        </button>
-                        <button id="tabSquad" class="admin-tab" onclick="window.adminBackend.switchTab('squad')">
-                            👥 Plantilla
-                        </button>
-                        <button id="tabUsers" class="admin-tab" onclick="window.adminBackend.switchTab('users')">
-                            🧑‍💼 Usuarios
-                        </button>
+                    <div class="admin-tabs">
+                        <button id="tabTeamData" class="admin-tab active" onclick="window.adminBackend.switchTab('teamData')">🏟️ Datos del Equipo</button>
+                        <button id="tabSquad" class="admin-tab" onclick="window.adminBackend.switchTab('squad')">👥 Plantilla</button>
+                        <button id="tabLeagues" class="admin-tab" onclick="window.adminBackend.switchTab('leagues')">🏆 Ligas y Equipos</button>
+                        <button id="tabUsers" class="admin-tab" onclick="window.adminBackend.switchTab('users')">🧑‍💼 Usuarios</button>
                     </div>
 
-                    <div style="margin-bottom: 30px;">
-                        <h2>Seleccionar Equipo</h2>
-                        <label>División:</label>
-                        <select id="adminDivisionSelect" onchange="window.adminBackend.loadTeamsFromDivision()" style="margin-bottom: 10px;">
-                            <option value="">-- Selecciona una división --</option>
-                            <option value="primera">Primera División</option>
-                            <option value="segunda">Segunda División</option>
-                            <option value="rfef_grupo1">Primera RFEF Grupo 1</option>
-                            <option value="rfef_grupo2">Primera RFEF Grupo 2</option>
-                        </select>
-                        
-                        <label>Equipo:</label>
-                        <select id="adminTeamSelect" onchange="window.adminBackend.loadTeamData()">
-                            <option value="">-- Selecciona un equipo --</option>
-                        </select>
+                    <div id="adminTeamSelector" class="admin-box">
+                        <div class="admin-row">
+                            <label>División
+                                <select id="adminDivisionSelect" onchange="window.adminBackend.loadTeamsFromDivision()">
+                                    <option value="">-- Selecciona una división --</option>
+                                </select>
+                            </label>
+                            <label id="adminTeamSelectLabel">Equipo
+                                <select id="adminTeamSelect" onchange="window.adminBackend.loadTeamData()">
+                                    <option value="">-- Selecciona un equipo --</option>
+                                </select>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- TAB: Datos del Equipo -->
                     <div id="tabContentTeamData" class="tab-content" style="display: block;">
                         <div id="adminTeamDataContainer" style="display: none;">
                             <h2>Datos del Equipo: <span id="adminCurrentTeamName"></span></h2>
-                            
-                            <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+
+                            <div class="admin-box">
                                 <h3>🏟️ Estadio</h3>
-                                <div style="margin-bottom: 10px;">
-                                    <label>Nombre del estadio:</label>
-                                    <input id="adminStadiumName" type="text" placeholder="Ej: Santiago Bernabéu">
-                                </div>
-                                <div style="margin-bottom: 10px;">
-                                    <label>Capacidad:</label>
-                                    <input id="adminStadiumCapacity" type="number" step="1000" min="1000">
-                                </div>
-                                <div style="margin-bottom: 10px;">
-                                    <label>Foto del estadio (.png/.jpg - máx 500KB):</label>
-                                    <input id="adminStadiumImage" type="file" accept="image/png,image/jpeg">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
-                                    <div id="adminStadiumPreview" style="margin-top: 10px;"></div>
-                                </div>
+                                <label>Nombre del estadio:</label>
+                                <input id="adminStadiumName" type="text" placeholder="Ej: Santiago Bernabéu">
+                                <label>Capacidad:</label>
+                                <input id="adminStadiumCapacity" type="number" step="1000" min="1000">
+                                <label>Foto del estadio (.png/.jpg - máx 500KB):</label>
+                                <input id="adminStadiumImage" type="file" accept="image/png,image/jpeg">
+                                <small class="admin-muted">Se guardará como Base64 en Firestore</small>
+                                <div id="adminStadiumPreview" style="margin-top: 10px;"></div>
                             </div>
 
-                            <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                            <div class="admin-box">
                                 <h3>🛡️ Escudo</h3>
-                                <div style="margin-bottom: 10px;">
-                                    <label>Escudo del equipo (.png/.jpg - máx 200KB):</label>
-                                    <input id="adminTeamLogo" type="file" accept="image/png,image/jpeg">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Se guardará como Base64 en Firestore</small>
-                                    <div id="adminLogoPreview" style="margin-top: 10px;"></div>
-                                </div>
+                                <label>Escudo del equipo (.png/.jpg - máx 200KB):</label>
+                                <input id="adminTeamLogo" type="file" accept="image/png,image/jpeg">
+                                <small class="admin-muted">Se le quita el fondo blanco automáticamente y se guarda como Base64 en Firestore</small>
+                                <div id="adminLogoPreview" style="margin-top: 10px;"></div>
                             </div>
 
-                            <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                            <div class="admin-box">
                                 <h3>💰 Presupuesto Inicial</h3>
-                                <div style="margin-bottom: 10px;">
-                                    <label>Presupuesto inicial (€):</label>
-                                    <input id="adminInitialBudget" type="number" step="1000000" min="0">
-                                    <small style="display: block; color: #999; margin-top: 5px;">Este será el presupuesto al iniciar con este equipo</small>
-                                </div>
+                                <label>Presupuesto inicial (€):</label>
+                                <input id="adminInitialBudget" type="number" step="1000000" min="0">
+                                <small class="admin-muted">Será el dinero disponible al empezar una partida con este equipo</small>
                             </div>
 
-                            <div style="margin-top: 20px;">
-                                <button class="btn" onclick="window.adminBackend.saveTeamData()">💾 Guardar Datos del Equipo</button>
-                            </div>
+                            <button class="btn" onclick="window.adminBackend.saveTeamData()">💾 Guardar Datos del Equipo</button>
                         </div>
+                        <p id="adminTeamDataEmpty" class="admin-muted">Selecciona una división y un equipo para editar sus datos.</p>
                     </div>
 
                     <!-- TAB: Plantilla -->
                     <div id="tabContentSquad" class="tab-content" style="display: none;">
                         <div id="adminSquadContainer" style="display: none;">
                             <h2>Plantilla de: <span id="adminSquadTeamName"></span></h2>
-                            
-                            <div style="background: rgba(233, 69, 96, 0.1); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                                <h3>⚽ Gestión de Jugadores</h3>
-                                <p style="color: #999;">Define la plantilla real del equipo. Si no defines jugadores, se generarán aleatoriamente.</p>
-                                
-                                <div style="margin-bottom: 20px;">
-                                    <button class="btn" onclick="window.adminBackend.addPlayer()" style="background: #00aa00;">
-                                        ➕ Añadir Jugador
-                                    </button>
-                                    <button class="btn" onclick="window.adminBackend.importSquadJSON()" style="background: #0088cc;">
-                                        📥 Importar JSON
-                                    </button>
-                                    <button class="btn" onclick="window.adminBackend.exportSquadJSON()" style="background: #ff9500;">
-                                        📤 Exportar JSON
-                                    </button>
+
+                            <details class="admin-help">
+                                <summary>ℹ️ ¿Qué hacen Importar / Exportar JSON de la plantilla?</summary>
+                                <p><b>Exportar JSON</b> descarga la plantilla de <b>este equipo</b> como un archivo <code>.json</code> (una lista de jugadores). Sirve para hacer una copia o editarla con calma fuera del juego.</p>
+                                <p><b>Importar JSON</b> carga un archivo de ese mismo formato y <b>sustituye la lista</b> que ves en pantalla. No se guarda hasta que pulses <b>💾 Guardar Plantilla</b>.</p>
+                                <p>Formato: una lista de jugadores. Campos mínimos: <code>name</code>, <code>position</code> (POR, DFC, LI, LD, MC, MCO, MD, MI, EXT, DC) y <code>age</code>. Opcionales: <code>EN VE RE AG CA EF MO AT DF</code> (1-99), <code>foot</code>, <code>contractType</code> (owned / loaned), <code>contractYears</code>, <code>salary</code> (semanal), <code>releaseClause</code>. Lo que falte se rellena con valores por defecto.</p>
+                                <p>Para cargar <b>todos los equipos de una división a la vez</b> usa la pestaña <b>🏆 Ligas y Equipos</b>.</p>
+                            </details>
+
+                            <div class="admin-box">
+                                <div class="admin-actions">
+                                    <button class="btn admin-btn-green" onclick="window.adminBackend.addPlayer()">➕ Añadir Jugador</button>
+                                    <button class="btn admin-btn-blue" onclick="window.adminBackend.importSquadJSON()">📥 Importar JSON</button>
+                                    <button class="btn admin-btn-orange" onclick="window.adminBackend.exportSquadJSON()">📤 Exportar JSON</button>
                                     <input type="file" id="squadImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.handleSquadImport(event)">
                                 </div>
-
-                                <div id="playersListContainer" style="max-height: 500px; overflow-y: auto;">
-                                    <!-- Aquí se renderizarán los jugadores -->
-                                </div>
+                                <div id="playersListContainer" style="max-height: 500px; overflow-y: auto;"></div>
                             </div>
 
-                            <div style="margin-top: 20px;">
+                            <div class="admin-actions">
                                 <button class="btn" onclick="window.adminBackend.saveSquadData()">💾 Guardar Plantilla</button>
-                                <button class="btn" style="background: #c73446;" onclick="window.adminBackend.clearSquad()">🗑️ Limpiar Plantilla (volver a aleatorio)</button>
+                                <button class="btn admin-btn-red" onclick="window.adminBackend.clearSquad()">🗑️ Limpiar Plantilla (volver a aleatorio)</button>
                             </div>
+                        </div>
+                        <p id="adminSquadEmpty" class="admin-muted">Selecciona una división y un equipo para editar su plantilla.</p>
+                    </div>
+
+                    <!-- TAB: Ligas y Equipos -->
+                    <div id="tabContentLeagues" class="tab-content" style="display: none;">
+                        <details class="admin-help" open>
+                            <summary>ℹ️ Cómo funciona esta pestaña</summary>
+                            <p>Aquí decides <b>qué equipos juegan en cada división</b> y cómo se llama cada división. Los cambios se guardan en Firebase y los ve todo el mundo al empezar una <b>partida nueva</b> o una <b>temporada nueva</b>; las partidas ya empezadas mantienen su liga actual.</p>
+                            <p>Selecciona una división arriba. Para cada equipo puedes: <b>✏️ Renombrar</b> (sus datos, escudo y plantilla pasan al nuevo nombre), <b>Mover</b> a otra división, <b>🗑️ Quitar</b> de la división (sus datos no se borran) o <b>⚙️ Editar</b> sus datos y plantilla.</p>
+                            <p>Las divisiones internas (<code>primera</code>, <code>segunda</code>, <code>rfef_grupo1</code>…) son fijas porque el juego las usa para ascensos y descensos; sí puedes cambiar el <b>nombre que se muestra</b>.</p>
+                        </details>
+
+                        <div id="adminLeagueEmpty" class="admin-muted">Selecciona una división arriba para ver y editar sus equipos.</div>
+
+                        <div id="adminLeagueBox" class="admin-box" style="display:none;">
+                            <h3>Nombre de la división <small class="admin-muted">(clave interna: <code id="adminDivisionKey"></code>)</small></h3>
+                            <div class="admin-row">
+                                <input id="adminDivisionName" type="text">
+                                <button class="btn" onclick="window.adminBackend.renameDivision()">💾 Guardar nombre</button>
+                            </div>
+
+                            <h3 style="margin-top:16px;">Equipos (<span id="adminLeagueCount">0</span>)</h3>
+                            <div id="adminLeagueWarning" class="admin-warning" style="display:none;"></div>
+                            <div id="adminLeagueTeams" class="admin-team-list"></div>
+
+                            <div class="admin-row" style="margin-top:12px;">
+                                <input id="adminNewTeamName" type="text" placeholder="Nombre del equipo a añadir"
+                                       onkeydown="if(event.key==='Enter') window.adminBackend.addTeamToDivision()">
+                                <button class="btn admin-btn-green" onclick="window.adminBackend.addTeamToDivision()">➕ Añadir equipo</button>
+                            </div>
+                        </div>
+
+                        <div class="admin-box">
+                            <h3>📦 Importar una división completa (JSON)</h3>
+                            <details class="admin-help">
+                                <summary>ℹ️ Qué hace y qué formato tiene</summary>
+                                <p>Carga de golpe <b>todos los equipos de una división</b>: qué equipos la forman, sus datos (estadio, aforo, presupuesto) y, si vienen, sus plantillas. Antes de aplicar nada te enseña un resumen y te pide confirmación.</p>
+                                <ul>
+                                    <li><code>"mode": "replace"</code> → la división queda <b>exactamente</b> con los equipos del archivo. Los que ya no estén se quitan de la división (sus datos no se borran).</li>
+                                    <li><code>"mode": "merge"</code> → solo añade o actualiza equipos; no quita ninguno.</li>
+                                    <li>Si un equipo del archivo estaba en otra división, <b>se mueve</b> a esta.</li>
+                                    <li>Si un equipo trae <code>squad</code>, su plantilla se sustituye. Si no lo trae, se conserva la que tuviera (o se genera aleatoria).</li>
+                                    <li>Escudo y foto del estadio se conservan salvo que el archivo traiga <code>logo</code> / <code>stadiumImage</code>.</li>
+                                </ul>
+                                <pre class="admin-code">{
+  "format": "pcfutbol-division",
+  "division": "primera",
+  "divisionName": "Primera División",
+  "mode": "replace",
+  "teams": [
+    { "name": "FC Barcelona", "stadiumName": "Spotify Camp Nou",
+      "stadiumCapacity": 105000, "initialBudget": 60000000,
+      "squad": [ { "name": "Pedri", "position": "MC", "age": 23, "EN": 85, "...": "..." } ] }
+  ]
+}</pre>
+                            </details>
+                            <div class="admin-actions">
+                                <button class="btn admin-btn-blue" onclick="document.getElementById('divisionImportFile').click()">📥 Importar JSON de división</button>
+                                <button class="btn admin-btn-orange" onclick="window.adminBackend.exportDivisionJSON()">📤 Exportar división seleccionada</button>
+                                <button class="btn" onclick="window.adminBackend.downloadDivisionTemplate()">📄 Descargar ejemplo</button>
+                                <button class="btn admin-btn-red" onclick="window.adminBackend.resetLeagues()">↩️ Restaurar ligas originales</button>
+                                <input type="file" id="divisionImportFile" accept=".json" style="display:none;" onchange="window.adminBackend.handleDivisionImport(event)">
+                            </div>
+                            <div id="adminDivisionImportStatus" class="admin-status"></div>
                         </div>
                     </div>
 
                     <!-- TAB: Usuarios -->
                     <div id="tabContentUsers" class="tab-content" style="display: none;">
-                        <h2 style="color:#e94560;">🧑‍💼 Gestión de Usuarios</h2>
-                        <p style="color:#999;margin-bottom:15px;">Usuarios registrados en la aplicación.</p>
+                        <h2>🧑‍💼 Gestión de Usuarios</h2>
+                        <p class="admin-muted" style="margin-bottom:15px;">Usuarios registrados en la aplicación.</p>
 
                         <div style="margin-bottom:15px;">
-                            <button class="btn" onclick="window.adminBackend.loadUsers()" style="background:#0088cc;">
-                                🔄 Recargar lista
-                            </button>
-                            <button class="btn" onclick="window.adminBackend.migrateUsers()" style="background:#7b2fbe;">
-                                🔀 Migrar usuarios existentes
-                            </button>
-                            <p style="color:#666;font-size:.8em;margin-top:6px;">
+                            <button class="btn admin-btn-blue" onclick="window.adminBackend.loadUsers()">🔄 Recargar lista</button>
+                            <button class="btn" style="background:#7b2fbe;" onclick="window.adminBackend.migrateUsers()">🔀 Migrar usuarios existentes</button>
+                            <p class="admin-muted" style="font-size:.8em;margin-top:6px;">
                                 "Migrar" busca en las partidas guardadas y crea los perfiles de usuarios que se registraron antes de este sistema.
                             </p>
                         </div>
@@ -205,7 +335,7 @@
                         <div style="overflow-x:auto;">
                             <table id="adminUsersTable" style="width:100%;border-collapse:collapse;font-size:.88em;">
                                 <thead>
-                                    <tr style="border-bottom:2px solid #e94560;color:#e94560;">
+                                    <tr>
                                         <th style="padding:8px;text-align:left;">Nombre</th>
                                         <th style="padding:8px;text-align:left;">Email</th>
                                         <th style="padding:8px;text-align:left;">Registro</th>
@@ -220,68 +350,67 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e94560;">
-                        <h3>📦 Importar/Exportar Todo</h3>
-                        <button class="btn" style="background: #ff9500;" onclick="window.adminBackend.exportAllData()">📦 Exportar Todos los Datos</button>
-                        <button class="btn" style="background: #00aa00;" onclick="document.getElementById('adminImportFile').click()">📥 Importar Datos</button>
-                        <input type="file" id="adminImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.importAllData(event)">
+                    <div class="admin-box" style="margin-top: 24px;">
+                        <h3>📦 Importar / Exportar Todo y Mercado</h3>
+                        <div class="admin-actions">
+                            <button class="btn admin-btn-orange" onclick="window.adminBackend.exportAllData()">📦 Exportar Todos los Datos</button>
+                            <button class="btn admin-btn-green" onclick="document.getElementById('adminImportFile').click()">📥 Importar Datos</button>
+                            <input type="file" id="adminImportFile" accept=".json" style="display: none;" onchange="window.adminBackend.importAllData(event)">
+                        </div>
+                        <details class="admin-help">
+                            <summary>ℹ️ ¿Qué hace cada botón?</summary>
+                            <p><b>📦 Exportar Todos los Datos</b> descarga un único archivo <code>pcfutbol_data_FECHA.json</code> con <b>todo lo que hay en la base de datos</b>: cada equipo (estadio, aforo, presupuesto, escudo, foto del estadio y plantilla) y la estructura de ligas. Es tu <b>copia de seguridad</b> completa.</p>
+                            <p><b>📥 Importar Datos</b> lee un archivo generado con el botón anterior y <b>sobrescribe</b> en la base de datos cada equipo que aparezca en él (los que no aparezcan no se tocan). Si el archivo incluye la estructura de ligas, también la restaura. No sirve para el JSON de plantilla de un equipo ni para el de una división: cada uno tiene su botón.</p>
+                            <p><b>🔄 Sync Mercado Fichajes</b> recorre todos los equipos que tienen <b>plantilla real guardada</b> y pone <b>2 jugadores al azar de cada uno</b> en el mercado de fichajes compartido, sustituyendo los que ese equipo tuviera antes. Úsalo después de importar o cambiar plantillas para que el mercado muestre los jugadores nuevos. (También se hace solo al guardar la plantilla de un equipo y al cargar el juego.)</p>
+                        </details>
                     </div>
 
-                    <button class="btn" style="background: #c73446; margin-top: 20px;" onclick="document.getElementById('adminModal').classList.remove('active')">Cerrar</button>
+                    <button class="btn admin-btn-red" style="margin-top: 20px;" onclick="document.getElementById('adminModal').classList.remove('active')">Cerrar</button>
                 </div>
-                
-                 <style>
-                    .admin-tab {
-                        flex: 1;
-                        padding: 12px;
-                        border: none;
-                        background: rgba(233, 69, 96, 0.3);
-                        color: white;
-                        cursor: pointer;
-                        border-radius: 5px 5px 0 0;
-                        transition: all 0.3s;
-                    }
-                    .admin-tab.active {
-                        background: #e94560;
-                    }
-                    .admin-tab:hover {
-                        opacity: 0.8;
-                    }
-                    .player-card {
-                        background: rgba(255, 255, 255, 0.05);
-                        padding: 15px;
-                        margin-bottom: 10px;
-                        border-radius: 5px;
-                        border: 1px solid rgba(233, 69, 96, 0.3);
-                    }
-                    .player-card-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 10px;
-                    }
-                    .player-inputs {
-                        display: grid;
-                        grid-template-columns: 110px 60px 55px;
-                        gap: 5px;
-                        margin-bottom: 10px;
-                    }
-                    .player-attributes {
-                        display: grid;
-                        grid-template-columns: repeat(9, 40px);
-                        gap: 5px;
-                    }
-                    .attr-input {
-                        width: 100%;
-                        min-width: 20px; /* asegura que el input no se colapse */
-                        padding: 5px;
-                        text-align: center;
-                    }
+
+                <style>
+                    #adminModal h1 { margin-bottom: 14px; }
+                    #adminModal label { display: block; margin: 8px 0 4px; }
+                    #adminModal .admin-row label { margin: 0; flex: 1; min-width: 200px; }
+                    #adminModal .admin-row label select { display: block; width: 100%; min-width: 260px; margin-top: 4px; }
+                    #adminModal .admin-row > input[type="text"] { flex: 1 1 320px; min-width: 220px; width: auto; }
+                    .admin-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+                    .admin-tab { flex: 1; min-width: 140px; padding: 10px 12px; cursor: pointer; }
+                    .admin-tab.active { filter: brightness(1.25); outline: 2px solid var(--pcf-gold, #ffd24a); }
+                    .admin-box { background: rgba(255,255,255,.05); border: 1px solid rgba(122,160,212,.35); border-radius: 4px; padding: 14px; margin-bottom: 16px; }
+                    .admin-box h3 { margin-top: 0; }
+                    .admin-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+                    .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+                    .admin-muted { color: #9fb3d1; }
+                    .admin-help { background: rgba(255,210,74,.08); border: 1px solid rgba(255,210,74,.35); border-radius: 4px; padding: 8px 12px; margin: 8px 0 14px; }
+                    .admin-help summary { cursor: pointer; font-weight: 700; color: var(--pcf-gold, #ffd24a); }
+                    .admin-help p, .admin-help li { margin: 8px 0; line-height: 1.45; color: #dbe6f6; }
+                    .admin-help ul { padding-left: 20px; }
+                    .admin-help code, .admin-box code { background: rgba(0,0,0,.35); padding: 1px 5px; border-radius: 3px; }
+                    .admin-code { background: rgba(0,0,0,.45); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: .8em; color: #cfe0ff; white-space: pre; }
+                    .admin-warning { background: rgba(255,160,0,.15); border: 1px solid rgba(255,160,0,.5); padding: 8px 10px; border-radius: 4px; margin-bottom: 10px; color: #ffd9a0; }
+                    .admin-status { white-space: pre-line; font-size: .9em; color: #cfe0ff; }
+                    .admin-team-list { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
+                    .admin-team-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 8px; background: rgba(0,0,0,.25); border: 1px solid rgba(122,160,212,.25); border-radius: 3px; }
+                    .admin-team-row .team-name { flex: 1 1 220px; font-weight: 700; }
+                    .admin-team-row .team-badge { font-size: .75em; padding: 2px 6px; border-radius: 10px; background: rgba(255,255,255,.1); color: #bcd; }
+                    .admin-team-row .team-badge.real { background: rgba(80,200,120,.2); color: #9ef0b8; }
+                    .admin-team-row select { min-height: 28px; padding: 2px 6px; font-size: .8em; }
+                    .admin-btn-green { background: linear-gradient(180deg,#b6d79b 0%,#6f9a4e 46%,#4b7434 54%,#26451c 100%) !important; }
+                    .admin-btn-blue  { background: linear-gradient(180deg,#9cbce6 0%,#4f77b0 46%,#2f5384 54%,#14315c 100%) !important; }
+                    .admin-btn-orange{ background: linear-gradient(180deg,#ffd59a 0%,#f0a33a 46%,#cf7a0e 54%,#7d4500 100%) !important; }
+                    .admin-btn-red   { background: linear-gradient(180deg,#e0a3a3 0%,#a85252 46%,#7c2323 54%,#3f0e0e 100%) !important; }
+                    .player-card { background: rgba(255,255,255,.05); padding: 15px; margin-bottom: 10px; border-radius: 5px; border: 1px solid rgba(122,160,212,.3); }
+                    .player-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+                    .player-inputs { display: grid; grid-template-columns: minmax(140px, 1fr) 80px 70px; gap: 5px; margin-bottom: 10px; }
+                    .player-attributes { display: grid; grid-template-columns: repeat(9, minmax(44px, 1fr)); gap: 5px; }
+                    .attr-input { width: 100%; min-width: 20px; padding: 5px; text-align: center; }
                 </style>
             `;
             document.body.appendChild(modal);
         }
 
+        window.adminBackend.populateDivisionSelect();
         document.getElementById('adminModal').classList.add('active');
     };
 
@@ -292,79 +421,353 @@
         squadPlayers: [],
 
         switchTab: function(tab) {
-            // Ocultar todos
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
-            // Mostrar el seleccionado
-            const content = document.getElementById('tabContent' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            document.querySelectorAll('#adminModal .tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#adminModal .admin-tab').forEach(el => el.classList.remove('active'));
+            const cap = tab.charAt(0).toUpperCase() + tab.slice(1);
+            const content = document.getElementById('tabContent' + cap);
             if (content) content.style.display = 'block';
-            const tabBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            const tabBtn = document.getElementById('tab' + cap);
             if (tabBtn) tabBtn.classList.add('active');
-            // Cargar usuarios automáticamente al abrir el tab
+            this.currentTab = tab;
+            // El selector de división/equipo no aplica a Usuarios; en Ligas solo hace falta la división
+            const selector = document.getElementById('adminTeamSelector');
+            if (selector) selector.style.display = tab === 'users' ? 'none' : 'block';
+            const teamLbl = document.getElementById('adminTeamSelectLabel');
+            if (teamLbl) teamLbl.style.display = tab === 'leagues' ? 'none' : '';
             if (tab === 'users') window.adminBackend.loadUsers();
+            if (tab === 'leagues') this.renderLeagueEditor();
+        },
+
+        // ── Selectores ───────────────────────────────────────────
+        populateDivisionSelect: function() {
+            const sel = document.getElementById('adminDivisionSelect');
+            if (!sel) return;
+            const prev = sel.value || this.currentDivision || '';
+            sel.innerHTML = '<option value="">-- Selecciona una división --</option>' +
+                leagueKeys().map(k => `<option value="${esc(k)}">${esc(leagueName(k))} (${leagueTeams(k).length})</option>`).join('');
+            if (prev && leagueKeys().includes(prev)) sel.value = prev;
         },
 
         loadTeamsFromDivision: function() {
             const divisionKey = document.getElementById('adminDivisionSelect').value;
             const teamSelect = document.getElementById('adminTeamSelect');
-            
-            if (!divisionKey) {
-                teamSelect.innerHTML = '<option value="">-- Selecciona un equipo --</option>';
-                document.getElementById('adminTeamDataContainer').style.display = 'none';
-                document.getElementById('adminSquadContainer').style.display = 'none';
-                return;
-            }
+            this.currentDivision = divisionKey || null;
+            this.currentTeam = null;
 
-            this.currentDivision = divisionKey;
-            const teams = window.TEAMS_DATA[divisionKey] || [];
-            
-            teamSelect.innerHTML = '<option value="">-- Selecciona un equipo --</option>' + 
-                teams.map(team => `<option value="${team}">${team}</option>`).join('');
-            
-            document.getElementById('adminTeamDataContainer').style.display = 'none';
-            document.getElementById('adminSquadContainer').style.display = 'none';
+            const teams = divisionKey ? leagueTeams(divisionKey) : [];
+            teamSelect.innerHTML = '<option value="">-- Selecciona un equipo --</option>' +
+                teams.map(team => `<option value="${esc(team)}">${esc(team)}</option>`).join('');
+
+            this.showTeamPanels(false);
+            this.renderLeagueEditor();
+        },
+
+        showTeamPanels: function(show) {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v; };
+            set('adminTeamDataContainer', show ? 'block' : 'none');
+            set('adminSquadContainer', show ? 'block' : 'none');
+            set('adminTeamDataEmpty', show ? 'none' : 'block');
+            set('adminSquadEmpty', show ? 'none' : 'block');
         },
 
         loadTeamData: async function() {
             const teamName = document.getElementById('adminTeamSelect').value;
-            if (!teamName) {
-                document.getElementById('adminTeamDataContainer').style.display = 'none';
-                document.getElementById('adminSquadContainer').style.display = 'none';
-                return;
-            }
+            if (!teamName) { this.currentTeam = null; this.showTeamPanels(false); return; }
 
             this.currentTeam = teamName;
             document.getElementById('adminCurrentTeamName').textContent = teamName;
             document.getElementById('adminSquadTeamName').textContent = teamName;
-            document.getElementById('adminTeamDataContainer').style.display = 'block';
-            document.getElementById('adminSquadContainer').style.display = 'block';
+            this.showTeamPanels(true);
 
-            // Cargar datos del equipo
             const teamData = await window.getTeamData(teamName);
 
-            // Rellenar formulario de datos del equipo
             document.getElementById('adminStadiumName').value = teamData.stadiumName || '';
             document.getElementById('adminStadiumCapacity').value = teamData.stadiumCapacity || 10000;
             document.getElementById('adminInitialBudget').value = teamData.initialBudget || 5000000;
+            document.getElementById('adminTeamLogo').value = '';
+            document.getElementById('adminStadiumImage').value = '';
 
-            // Mostrar previews
-            if (teamData.logo) {
-                document.getElementById('adminLogoPreview').innerHTML = 
-                    `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px; border: 2px solid #e94560; border-radius: 5px;">`;
-            } else {
-                document.getElementById('adminLogoPreview').innerHTML = '<p style="color: #999;">No hay escudo cargado</p>';
-            }
+            document.getElementById('adminLogoPreview').innerHTML = teamData.logo
+                ? `<img src="${teamData.logo}" style="max-width: 100px; max-height: 100px;">`
+                : '<p class="admin-muted">No hay escudo cargado</p>';
+            document.getElementById('adminStadiumPreview').innerHTML = teamData.stadiumImage
+                ? `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border-radius: 4px;">`
+                : '<p class="admin-muted">No hay foto del estadio</p>';
 
-            if (teamData.stadiumImage) {
-                document.getElementById('adminStadiumPreview').innerHTML = 
-                    `<img src="${teamData.stadiumImage}" style="max-width: 200px; max-height: 150px; border: 2px solid #e94560; border-radius: 5px;">`;
-            } else {
-                document.getElementById('adminStadiumPreview').innerHTML = '<p style="color: #999;">No hay foto del estadio</p>';
-            }
-
-            // Cargar plantilla
-            this.squadPlayers = teamData.squad || [];
+            this.squadPlayers = (teamData.squad || []).map(normalizePlayer);
             this.renderSquadList();
+        },
+
+        // Abre un equipo concreto en la pestaña indicada
+        openTeam: async function(teamName, tab) {
+            const div = window.pcfLeagues ? window.pcfLeagues.findDivision(teamName) : this.currentDivision;
+            if (div) {
+                document.getElementById('adminDivisionSelect').value = div;
+                this.loadTeamsFromDivision();
+            }
+            document.getElementById('adminTeamSelect').value = teamName;
+            this.switchTab(tab || 'teamData');
+            await this.loadTeamData();
+        },
+
+        // ── Ligas y equipos ──────────────────────────────────────
+        renderLeagueEditor: function() {
+            const box = document.getElementById('adminLeagueBox');
+            const empty = document.getElementById('adminLeagueEmpty');
+            if (!box) return;
+            const key = this.currentDivision;
+            if (!key) { box.style.display = 'none'; empty.style.display = 'block'; return; }
+            box.style.display = 'block'; empty.style.display = 'none';
+
+            document.getElementById('adminDivisionKey').textContent = key;
+            document.getElementById('adminDivisionName').value = leagueName(key);
+
+            const teams = leagueTeams(key);
+            document.getElementById('adminLeagueCount').textContent = teams.length;
+            const warn = document.getElementById('adminLeagueWarning');
+            const msgs = [];
+            if (teams.length < 2) msgs.push('Una liga necesita al menos 2 equipos.');
+            if (teams.length % 2 !== 0) msgs.push('Hay un número impar de equipos: cada jornada descansará uno.');
+            warn.style.display = msgs.length ? 'block' : 'none';
+            warn.textContent = '⚠️ ' + msgs.join(' ');
+
+            const others = leagueKeys().filter(k => k !== key);
+            document.getElementById('adminLeagueTeams').innerHTML = teams.map((t, i) => {
+                const n = squadSizeCached(t);
+                const badge = n > 0
+                    ? `<span class="team-badge real">plantilla real · ${n}</span>`
+                    : `<span class="team-badge">plantilla aleatoria</span>`;
+                return `
+                <div class="admin-team-row">
+                    <span class="team-name">${i + 1}. ${esc(t)}</span>${badge}
+                    <button class="btn btn-sm" title="Editar datos y plantilla" onclick="window.adminBackend.openTeam(decodeURIComponent('${encodeURIComponent(t)}'), 'teamData')">⚙️ Editar</button>
+                    <button class="btn btn-sm" onclick="window.adminBackend.renameTeam(decodeURIComponent('${encodeURIComponent(t)}'))">✏️ Renombrar</button>
+                    <select title="Mover a otra división" onchange="window.adminBackend.moveTeam(decodeURIComponent('${encodeURIComponent(t)}'), this.value); this.value='';">
+                        <option value="">Mover a…</option>
+                        ${others.map(k => `<option value="${esc(k)}">${esc(leagueName(k))}</option>`).join('')}
+                    </select>
+                    <button class="btn btn-sm admin-btn-red" onclick="window.adminBackend.removeTeamFromDivision(decodeURIComponent('${encodeURIComponent(t)}'))">🗑️ Quitar</button>
+                </div>`;
+            }).join('') || '<p class="admin-muted">Esta división no tiene equipos.</p>';
+        },
+
+        afterLeaguesChange: function() {
+            this.populateDivisionSelect();
+            const keepTeam = this.currentTeam;
+            const sel = document.getElementById('adminTeamSelect');
+            if (this.currentDivision) {
+                const teams = leagueTeams(this.currentDivision);
+                sel.innerHTML = '<option value="">-- Selecciona un equipo --</option>' +
+                    teams.map(team => `<option value="${esc(team)}">${esc(team)}</option>`).join('');
+                if (keepTeam && teams.includes(keepTeam)) sel.value = keepTeam;
+                else { this.currentTeam = null; this.showTeamPanels(false); }
+            }
+            this.renderLeagueEditor();
+        },
+
+        saveLeagues: async function(cfg, okMsg) {
+            const r = await window.pcfLeagues.save(cfg);
+            this.afterLeaguesChange();
+            if (!r.success) alert('⚠️ Cambios aplicados en este navegador, pero no se pudieron guardar en Firebase: ' + r.error);
+            else if (okMsg) toast(okMsg);
+            return r;
+        },
+
+        renameDivision: async function() {
+            const key = this.currentDivision; if (!key) return;
+            const name = document.getElementById('adminDivisionName').value.trim();
+            if (!name) return alert('El nombre no puede estar vacío');
+            const cfg = window.pcfLeagues.get();
+            cfg.divisions[key].name = name;
+            await this.saveLeagues(cfg, `✅ División renombrada a "${name}"`);
+        },
+
+        addTeamToDivision: async function() {
+            const key = this.currentDivision; if (!key) return alert('Selecciona una división');
+            const input = document.getElementById('adminNewTeamName');
+            const name = input.value.trim();
+            if (!name) return;
+            const cfg = window.pcfLeagues.get();
+            const from = Object.keys(cfg.divisions).find(k => cfg.divisions[k].teams.includes(name));
+            if (from === key) return alert('Ese equipo ya está en esta división');
+            if (from && !confirm(`"${name}" está ahora en ${cfg.divisions[from].name}. ¿Moverlo a ${cfg.divisions[key].name}?`)) return;
+            if (from) cfg.divisions[from].teams = cfg.divisions[from].teams.filter(t => t !== name);
+            cfg.divisions[key].teams.push(name);
+            input.value = '';
+            await this.saveLeagues(cfg, `✅ ${name} añadido a ${cfg.divisions[key].name}`);
+        },
+
+        removeTeamFromDivision: async function(team) {
+            const key = this.currentDivision; if (!key) return;
+            if (!confirm(`¿Quitar "${team}" de ${leagueName(key)}?\n\nSus datos (escudo, estadio, plantilla) NO se borran: podrás volver a añadirlo cuando quieras.`)) return;
+            const cfg = window.pcfLeagues.get();
+            cfg.divisions[key].teams = cfg.divisions[key].teams.filter(t => t !== team);
+            await this.saveLeagues(cfg, `✅ ${team} quitado de ${cfg.divisions[key].name}`);
+        },
+
+        moveTeam: async function(team, toKey) {
+            if (!toKey) return;
+            const cfg = window.pcfLeagues.get();
+            Object.values(cfg.divisions).forEach(d => { d.teams = d.teams.filter(t => t !== team); });
+            cfg.divisions[toKey].teams.push(team);
+            await this.saveLeagues(cfg, `✅ ${team} movido a ${cfg.divisions[toKey].name}`);
+        },
+
+        renameTeam: async function(oldName) {
+            const newName = (prompt(`Nuevo nombre para "${oldName}":`, oldName) || '').trim();
+            if (!newName || newName === oldName) return;
+            if (window.pcfLeagues.allTeams().includes(newName)) return alert(`Ya existe un equipo llamado "${newName}"`);
+            if (!confirm(`Renombrar "${oldName}" → "${newName}".\n\nSus datos (escudo, estadio, plantilla) pasarán al nuevo nombre. Las partidas guardadas que ya usen "${oldName}" lo seguirán mostrando con el nombre antiguo.`)) return;
+            try {
+                await moveTeamData(oldName, newName);
+                const cfg = window.pcfLeagues.get();
+                Object.values(cfg.divisions).forEach(d => { d.teams = d.teams.map(t => t === oldName ? newName : t); });
+                if (this.currentTeam === oldName) this.currentTeam = newName;
+                await this.saveLeagues(cfg, `✅ Equipo renombrado a "${newName}"`);
+            } catch (e) {
+                alert('❌ Error al renombrar: ' + e.message);
+            }
+        },
+
+        resetLeagues: async function() {
+            if (!confirm('¿Restaurar las ligas originales del juego (las de config.js)?\n\nSe deshacen todos los cambios de equipos por división y nombres de división. Los datos y plantillas de los equipos NO se borran.')) return;
+            await this.saveLeagues(window.pcfLeagues.getDefaults(), '✅ Ligas restauradas');
+        },
+
+        // ── Importar / exportar división ─────────────────────────
+        downloadDivisionTemplate: function() {
+            const sample = {
+                format: 'pcfutbol-division', version: 1,
+                division: this.currentDivision || 'primera',
+                divisionName: leagueName(this.currentDivision || 'primera'),
+                season: '2026/27', mode: 'replace',
+                teams: [{
+                    name: 'Equipo de ejemplo CF', stadiumName: 'Estadio Municipal',
+                    stadiumCapacity: 20000, initialBudget: 10000000,
+                    squad: [{ name: 'Jugador Ejemplo', position: 'DC', age: 25, foot: 'Diestro',
+                        EN: 70, VE: 75, RE: 72, AG: 74, CA: 73, EF: 76, MO: 70, AT: 75, DF: 40,
+                        contractType: 'owned', contractYears: 3, salary: 20000, releaseClause: 10000000 }]
+                }]
+            };
+            downloadJSON(sample, 'ejemplo_division.json');
+        },
+
+        exportDivisionJSON: async function() {
+            const key = this.currentDivision;
+            if (!key) return alert('Selecciona primero una división');
+            const withImages = confirm('¿Incluir escudos y fotos de estadio?\n\nAceptar = sí (archivo mucho más grande)\nCancelar = no (más fácil de editar)');
+            const status = document.getElementById('adminDivisionImportStatus');
+            status.textContent = '⏳ Preparando exportación…';
+            const teams = [];
+            for (const name of leagueTeams(key)) {
+                const r = window.getTeamDataFromFirebase ? await window.getTeamDataFromFirebase(name) : null;
+                const d = (r && r.data) || {};
+                const t = { name, stadiumName: d.stadiumName, stadiumCapacity: d.stadiumCapacity, initialBudget: d.initialBudget };
+                if (d.squad && d.squad.length) t.squad = d.squad;
+                if (withImages) { if (d.logo) t.logo = d.logo; if (d.stadiumImage) t.stadiumImage = d.stadiumImage; }
+                teams.push(t);
+            }
+            downloadJSON({ format: 'pcfutbol-division', version: 1, division: key, divisionName: leagueName(key),
+                exportedAt: new Date().toISOString(), mode: 'replace', teams }, `division_${key}.json`);
+            status.textContent = `✅ Exportados ${teams.length} equipos de ${leagueName(key)}`;
+        },
+
+        handleDivisionImport: function(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let data;
+                try { data = JSON.parse(e.target.result); }
+                catch (err) { return alert('❌ El archivo no es un JSON válido: ' + err.message); }
+                this.importDivision(data);
+            };
+            reader.readAsText(file);
+        },
+
+        importDivision: async function(data) {
+            const status = document.getElementById('adminDivisionImportStatus');
+            if (Array.isArray(data)) data = { teams: data };
+            if (!data || !Array.isArray(data.teams)) {
+                return alert('❌ Formato no reconocido. El archivo debe tener una lista "teams" (descarga el ejemplo para ver el formato).');
+            }
+            const key = data.division || this.currentDivision;
+            if (!key) return alert('❌ El archivo no indica "division" y no hay ninguna división seleccionada.');
+            if (!leagueKeys().includes(key)) {
+                return alert(`❌ La división "${key}" no existe. Válidas: ${leagueKeys().join(', ')}`);
+            }
+            const mode = data.mode === 'merge' ? 'merge' : 'replace';
+            const teams = data.teams.filter(t => t && String(t.name || '').trim());
+            const names = [...new Set(teams.map(t => String(t.name).trim()))];
+            if (!names.length) return alert('❌ El archivo no contiene equipos con nombre.');
+
+            const cfg = window.pcfLeagues.get();
+            const divName = data.divisionName || cfg.divisions[key].name;
+            const currentTeams = cfg.divisions[key].teams;
+            const moved = [];
+            names.forEach(n => {
+                const from = Object.keys(cfg.divisions).find(k => k !== key && cfg.divisions[k].teams.includes(n));
+                if (from) moved.push(`${n} (desde ${cfg.divisions[from].name})`);
+            });
+            const added = names.filter(n => !currentTeams.includes(n) && !moved.some(m => m.startsWith(n + ' (')));
+            const removed = mode === 'replace' ? currentTeams.filter(t => !names.includes(t)) : [];
+            const withSquad = teams.filter(t => Array.isArray(t.squad) && t.squad.length);
+            const totalPlayers = withSquad.reduce((s, t) => s + t.squad.length, 0);
+
+            const summary =
+                `División: ${divName} (${key})\nModo: ${mode === 'replace' ? 'REEMPLAZAR equipos de la división' : 'AÑADIR / ACTUALIZAR'}\n` +
+                `Equipos en el archivo: ${names.length}\n` +
+                `Con plantilla: ${withSquad.length} equipos · ${totalPlayers} jugadores\n` +
+                (added.length ? `\n➕ Nuevos en la división (${added.length}): ${added.join(', ')}` : '') +
+                (moved.length ? `\n↕ Se mueven aquí (${moved.length}): ${moved.join(', ')}` : '') +
+                (removed.length ? `\n➖ Salen de la división (${removed.length}): ${removed.join(', ')}\n   (sus datos no se borran; quedan sin división hasta que los añadas a otra)` : '');
+            if (!confirm(summary + '\n\n¿Aplicar la importación?')) return;
+
+            status.textContent = '⏳ Importando…';
+            let ok = 0; const errors = [];
+            for (let i = 0; i < teams.length; i++) {
+                const t = teams[i];
+                const name = String(t.name).trim();
+                status.textContent = `⏳ Guardando ${i + 1}/${teams.length}: ${name}`;
+                try {
+                    const r = window.getTeamDataFromFirebase ? await window.getTeamDataFromFirebase(name) : null;
+                    const existing = (r && r.data) || {};
+                    const merged = { ...existing };
+                    if (t.stadiumName) merged.stadiumName = String(t.stadiumName);
+                    if (t.stadiumCapacity) merged.stadiumCapacity = parseInt(t.stadiumCapacity) || merged.stadiumCapacity || 10000;
+                    if (t.initialBudget != null) merged.initialBudget = parseInt(t.initialBudget) || 0;
+                    if (t.logo) merged.logo = window.cleanCrestDataURL ? await window.cleanCrestDataURL(t.logo) : t.logo;
+                    if (t.stadiumImage) merged.stadiumImage = t.stadiumImage;
+                    if (Array.isArray(t.squad)) merged.squad = t.squad.map(normalizePlayer);
+                    ['logo', 'stadiumImage'].forEach(k => { if (merged[k] === undefined) merged[k] = null; });
+                    if (!merged.stadiumName) merged.stadiumName = 'Estadio Municipal';
+                    if (!merged.stadiumCapacity) merged.stadiumCapacity = 10000;
+                    if (merged.initialBudget == null) merged.initialBudget = 5000000;
+                    if (!merged.squad) merged.squad = [];
+                    const res = await window.saveTeamDataToFirebase(name, merged);
+                    if (res && res.success === false) throw new Error(res.error || 'error al guardar');
+                    ok++;
+                } catch (err) {
+                    errors.push(`${name}: ${err.message}`);
+                }
+            }
+
+            // Estructura de ligas
+            Object.keys(cfg.divisions).forEach(k => {
+                if (k !== key) cfg.divisions[k].teams = cfg.divisions[k].teams.filter(t => !names.includes(t));
+            });
+            cfg.divisions[key].teams = mode === 'replace' ? names : [...new Set([...currentTeams, ...names])];
+            cfg.divisions[key].name = divName;
+            this.currentDivision = key;
+            document.getElementById('adminDivisionSelect').value = key;
+            const lr = await this.saveLeagues(cfg);
+
+            status.textContent =
+                `✅ Importación terminada: ${ok}/${teams.length} equipos guardados en ${divName}.` +
+                (withSquad.length ? `\n👥 ${totalPlayers} jugadores cargados. Pulsa "🔄 Sync Mercado Fichajes" para llevarlos al mercado.` : '') +
+                (lr && lr.success ? '' : '\n⚠️ La estructura de ligas solo se guardó en este navegador.') +
+                (errors.length ? `\n❌ Errores:\n${errors.join('\n')}` : '');
         },
 
         renderSquadList: function() {
@@ -378,13 +781,13 @@
             container.innerHTML = this.squadPlayers.map((player, index) => `
                 <div class="player-card">
                     <div class="player-card-header">
-                        <strong style="color: #e94560;">#${index + 1} - OVR: ${player.overall || calculateOverall(player)}</strong>
+                        <strong style="color: #e94560;">#${index + 1} · ${esc(player.name || '')} · ${player.position} · OVR ${player.overall || weightedOverall(player)}</strong>
                         <button class="btn" style="background: #c73446; padding: 2px 6px;" onclick="window.adminBackend.removePlayer(${index})">🗑️</button>
                     </div>
                     
                     <!-- Datos básicos -->
                     <div class="player-inputs">
-                        <input type="text" placeholder="Nombre" value="${player.name || ''}" onchange="window.adminBackend.updatePlayer(${index}, 'name', this.value)">
+                        <input type="text" placeholder="Nombre" value="${esc(player.name || '')}" onchange="window.adminBackend.updatePlayer(${index}, 'name', this.value)">
                         <select onchange="window.adminBackend.updatePlayer(${index}, 'position', this.value)">
                             ${POSITIONS.map(pos => `<option value="${pos}" ${player.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}
                         </select>
@@ -460,7 +863,7 @@
 
         updatePlayerAttr: function(index, attr, value) {
             this.squadPlayers[index][attr] = Math.min(99, Math.max(1, value));
-            this.squadPlayers[index].overall = calculateOverall(this.squadPlayers[index]);
+            this.squadPlayers[index].overall = weightedOverall(this.squadPlayers[index]);
             this.renderSquadList();
         },
 
@@ -500,13 +903,15 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    const imported = JSON.parse(e.target.result);
+                    let imported = JSON.parse(e.target.result);
+                    // Se acepta una lista de jugadores o un objeto con "squad"
+                    if (!Array.isArray(imported) && imported && Array.isArray(imported.squad)) imported = imported.squad;
                     if (!Array.isArray(imported)) {
-                        alert('❌ El archivo debe contener un array de jugadores');
+                        alert('❌ El archivo debe contener una lista de jugadores. Para importar una división completa usa la pestaña 🏆 Ligas y Equipos.');
                         return;
                     }
                     
-                    this.squadPlayers = imported;
+                    this.squadPlayers = imported.map(normalizePlayer);
                     this.renderSquadList();
                     alert(`✅ Plantilla importada: ${imported.length} jugadores`);
                 } catch (error) {
@@ -620,7 +1025,10 @@
                         window.saveTeamDataToFirebase(teamName, data[teamName])
                     );
                     await Promise.all(promises);
-                    alert(`✅ Importados ${Object.keys(data).length} equipos`);
+                    const leaguesDoc = window.pcfLeagues && data[window.pcfLeagues.DOC_ID];
+                    if (leaguesDoc) await this.saveLeagues(leaguesDoc);
+                    const nTeams = Object.keys(data).filter(k => !(window.pcfLeagues && window.pcfLeagues.isLeaguesDoc(k))).length;
+                    alert(`✅ Importados ${nTeams} equipos` + (leaguesDoc ? ' y la estructura de ligas' : ''));
                     if (this.currentTeam) await this.loadTeamData();
                 } catch (error) {
                     alert('❌ Error: ' + error.message);
