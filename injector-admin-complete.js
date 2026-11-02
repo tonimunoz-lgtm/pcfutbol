@@ -545,6 +545,10 @@
                         return;
                     }
                     teamData.logo = await fileToBase64(logoFile);
+                    // Quitar fondo blanco y recortar el escudo antes de guardarlo
+                    if (window.cleanCrestDataURL) {
+                        teamData.logo = await window.cleanCrestDataURL(teamData.logo);
+                    }
                 }
 
                 if (stadiumFile) {
@@ -829,8 +833,10 @@
                             adminBtn.className = 'btn btn-sm';
                             adminBtn.innerHTML = '⚙️ Admin';
                             adminBtn.onclick = () => window.openAdminPanel();
-                            adminBtn.style.background = '#ff9500';
-                            headerInfo.appendChild(adminBtn);
+                            // Estilo en pcf6-theme.css (#adminButton)
+                            const logoutBtn = document.getElementById('logoutButton');
+                            if (logoutBtn) headerInfo.insertBefore(adminBtn, logoutBtn);
+                            else headerInfo.appendChild(adminBtn);
                             console.log('✅ Botón de administrador añadido');
                         }
                     }

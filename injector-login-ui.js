@@ -425,9 +425,7 @@
                     alert('El panel de administración aún no está cargado');
                 }
             };
-            adminBtn.style.background = '#ff9500';
-            adminBtn.style.fontSize = '0.72em';
-            adminBtn.style.padding = '3px 8px';
+            // Estilo en pcf6-theme.css (#adminButton)
             headerInfo.insertBefore(adminBtn, headerInfo.firstChild);
             console.log('✅ Botón de Admin añadido');
         }
@@ -439,9 +437,7 @@
             logoutBtn.className = 'btn btn-sm';
             logoutBtn.innerHTML = '🚪 Salir';
             logoutBtn.onclick = window.logoutUser;
-            logoutBtn.style.background = '#c73446';
-            logoutBtn.style.fontSize = '0.72em';
-            logoutBtn.style.padding = '3px 8px';
+            // Estilo en pcf6-theme.css (#logoutButton)
             headerInfo.appendChild(logoutBtn);
             console.log('✅ Botón de Logout añadido');
         }

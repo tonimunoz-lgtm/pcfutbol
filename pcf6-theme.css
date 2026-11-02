@@ -735,3 +735,194 @@ input[type="range"] { min-height: 0; padding: 0; background: transparent; box-sh
     .page > table,
     .page > div > table { display: block; overflow-x: auto; white-space: nowrap; }
 }
+
+/* ============================================================
+   PANTALLA PRINCIPAL — fila central en su propia franja
+   Antes la fila central (círculo + Cargar/Guardar/Nuevo/Seguir)
+   iba en position:absolute sobre los cuadrantes y, en pantallas
+   bajas (portátiles 15-16"), tapaba y bloqueaba los botones
+   Calendario, Resultados, Ver Rival, Entrenamiento, Cantera,
+   Plantilla, Decisiones y Estadio. Ahora ocupa una fila propia
+   del grid y nunca se superpone. (El móvil ≤640px no cambia.)
+   ============================================================ */
+@media (min-width: 641px) {
+    .main-layout {
+        height: calc(100vh - 58px);
+        height: calc(100dvh - 58px);
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-areas:
+            "tl tr"
+            "center center"
+            "bl br";
+    }
+    .main-layout > .quadrant.top-left     { grid-area: tl; }
+    .main-layout > .quadrant.top-right    { grid-area: tr; }
+    .main-layout > .quadrant.bottom-left  { grid-area: bl; }
+    .main-layout > .quadrant.bottom-right { grid-area: br; }
+
+    .main-layout > .quadrant {
+        min-height: 0;
+        padding: clamp(8px, 1.8vh, 20px) 20px;
+    }
+
+    .main-layout > .main-center-row {
+        grid-area: center;
+        position: relative;
+        top: auto; left: auto; right: auto;
+        transform: none;
+        pointer-events: auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: clamp(4px, 1vh, 10px) clamp(16px, 4vw, 80px);
+        background:
+            repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
+            linear-gradient(180deg, rgba(6,20,46,.75) 0%, rgba(12,36,73,.75) 50%, rgba(6,20,46,.75) 100%);
+        border-top: 1px solid rgba(122,160,212,.35);
+        border-bottom: 1px solid rgba(122,160,212,.35);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.5);
+    }
+
+    .main-center-row .center-buttons {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 12px;
+        flex: 1 1 0;
+    }
+    .main-center-row .center-buttons.left  { justify-content: flex-start; }
+    .main-center-row .center-buttons.right { justify-content: flex-end; }
+
+    .main-center-row .center-option {
+        width: auto;
+        min-width: 132px;
+        min-height: 36px;
+        padding: 6px 14px;
+        font-size: .8rem;
+        white-space: nowrap;
+        pointer-events: auto;
+    }
+
+    .main-center-row .main-center-circle {
+        flex: 0 0 auto;
+        width: clamp(118px, 19vh, 200px);
+        height: clamp(118px, 19vh, 200px);
+        gap: 2px;
+    }
+    #nextMatchInfo { line-height: 1.3; padding: 0 10px; max-width: 100%; }
+    .main-center-circle .next-match-title { font-size: clamp(11px, 1.9vh, 18px); margin-bottom: clamp(2px, .8vh, 10px); white-space: nowrap; }
+    .main-center-circle #nextMatchTeams  { font-size: clamp(11px, 1.7vh, 16px); white-space: pre-line; }
+    .main-center-circle #nextMatchDate   { font-size: clamp(10px, 1.4vh, 14px); }
+
+    /* Botones de los cuadrantes: altura proporcional a la pantalla */
+    .main-layout .quadrant .menu-button {
+        line-height: clamp(18px, 2.6vh, 24px);
+        padding-top: clamp(4px, .9vh, 8px);
+        padding-bottom: clamp(4px, .9vh, 8px);
+        margin-top: clamp(2px, .6vh, 5px);
+        margin-bottom: clamp(3px, .9vh, 10px);
+        flex-shrink: 0;
+    }
+    .main-layout .section-title {
+        flex-shrink: 0;
+        padding-top: clamp(3px, .6vh, 5px);
+        padding-bottom: clamp(3px, .6vh, 5px);
+        margin-top: clamp(4px, 1vh, 10px);
+        margin-bottom: clamp(2px, .6vh, 6px);
+    }
+}
+
+/* Portátil estrecho: botones centrales apilados para dejar sitio al círculo */
+@media (min-width: 641px) and (max-width: 1100px) {
+    .main-center-row .center-buttons { flex-direction: column; gap: 6px; }
+    .main-center-row .center-buttons.left  { align-items: flex-start; }
+    .main-center-row .center-buttons.right { align-items: flex-end; }
+    .main-center-row .center-option { min-width: 120px; min-height: 32px; font-size: .74rem; }
+}
+
+/* ============================================================
+   CABECERA — todos los elementos con la misma altura y estilo
+   (usuario, Admin, equipo, Salir, Jornada, Dinero)
+   ============================================================ */
+.header-info .info-box,
+.header-info #adminButton,
+.header-info #logoutButton {
+    box-sizing: border-box;
+    height: 38px;
+    min-height: 38px;
+    min-width: 104px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid #06142e;
+    border-radius: 2px;
+    font-family: 'Saira Condensed', sans-serif;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    line-height: 1.05;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.header-info #adminButton,
+.header-info #logoutButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,.75);
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -2px 3px rgba(0,0,0,.45),
+        1px 1px 0 rgba(0,0,0,.45);
+}
+.header-info #adminButton  { background: linear-gradient(180deg, #ffd59a 0%, #f0a33a 46%, #cf7a0e 54%, #7d4500 100%); }
+.header-info #logoutButton { background: linear-gradient(180deg, #e0a3a3 0%, #a85252 46%, #7c2323 54%, #3f0e0e 100%); }
+.header-info #adminButton:hover,
+.header-info #logoutButton:hover { filter: brightness(1.15); border-color: var(--pcf-gold); }
+
+/* Caja del equipo con su escudo */
+#teamName {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+#teamName img {
+    width: 26px !important;
+    height: 26px !important;
+    margin: 0 !important;
+    object-fit: contain;
+    background: transparent;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.45));
+}
+
+/* Escudos: sin fondo ni recuadro blanco */
+.team-logo-header,
+img.crest-img {
+    background: transparent !important;
+}
+.team-logo-header { border: 0; box-shadow: none; padding: 0; }
+
+@media (max-width: 1280px) {
+    .header-info .info-box,
+    .header-info #adminButton,
+    .header-info #logoutButton { min-width: 92px; font-size: .68rem; }
+}
+
+@media (max-width: 640px) {
+    .header-info .info-box,
+    .header-info #adminButton,
+    .header-info #logoutButton {
+        height: 34px;
+        min-height: 34px;
+        min-width: 64px;
+        padding: 0 6px;
+        font-size: .58rem;
+    }
+    #teamName img { width: 20px !important; height: 20px !important; }
+}
