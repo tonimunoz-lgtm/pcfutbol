@@ -145,35 +145,14 @@
         if (forSale.length === 0) return;
         if (Math.random() > CONFIG.offerToPlayerChance) return;
 
-        // Elegir jugador aleatorio en venta
+        // Elegir jugador aleatorio en venta; la oferta la crea gameLogic con
+        // el valor de mercado (no un porcentaje del precio que pidas)
         const player = forSale[Math.floor(Math.random() * forSale.length)];
-        const club = randomTeam();
-
-        // Oferta entre 60% y 120% del precio pedido
-        const pct = 0.6 + Math.random() * 0.6;
-        const offerAmount = Math.round((player.askingPrice || player.value || 50000) * pct);
-
-        news(
-            `📨 [Mercado] ${club} ha preguntado por ${player.name}. Ofrecen ${offerAmount.toLocaleString('es-ES')}€ (pedías ${(player.askingPrice || player.value || 0).toLocaleString('es-ES')}€)`,
-            offerAmount >= (player.askingPrice || 0) ? 'success' : 'info'
-        );
-
-        // Si el gameLogic tiene sistema de ofertas pendientes, añadir ahí también
-        if (window.gameLogic && state.pendingOffers !== undefined) {
-            const offer = {
-                type: 'transfer',
-                player: player,
-                club,
-                amount: offerAmount,
-                originalAskingPrice: player.askingPrice || player.value || 50000,
-                timestamp: Date.now(),
-                fromRivalAI: true,
-            };
-
-            state.pendingOffers = state.pendingOffers || [];
-            state.pendingOffers.push(offer);
-            window.gameLogic.updateGameState?.(state);
-
+        if (window.pcfEconomy?.makeOffer) {
+            window.pcfEconomy.makeOffer(player.name);
+            return;
+        }
+        {
             // Mostrar modal de ofertas si existe
             setTimeout(() => {
                 if (typeof window.showOffersModal === 'function') {

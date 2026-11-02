@@ -64,7 +64,8 @@
     }
 
     // Posiciones disponibles
-    const POSITIONS = ['POR', 'LD', 'LI', 'DFC', 'MCD', 'MC', 'MCO', 'ED', 'EI', 'DC'];
+    // Mismas posiciones que el juego (config.js)
+    const POSITIONS = ['POR', 'LD', 'LI', 'DFC', 'DFC', 'MC', 'MC', 'MCO', 'EXT', 'DC'];
 
     // Nombres aleatorios para agentes libres generados
     const FIRSTNAMES = ['Marcos','Adrián','Pablo','Sergio','Javier','Carlos','Álvaro','Miguel','Roberto','Diego','Iván','Pedro','Luis','Antonio','Fernando','Raúl','David','Alejandro','Rubén','Jorge'];
@@ -80,7 +81,12 @@
         const overall = overallMin + Math.floor(Math.random() * (overallMax - overallMin));
         const pos = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];
         const age = 26 + Math.floor(Math.random() * 10); // 26-35 (por algo son libres)
-        const salary = Math.round(overall * 25 + Math.random() * 150);
+        const division = gs()?.division || 'segunda';
+        const salary = window.pcfEconomy
+            ? window.pcfEconomy.expectedSalary({ overall }, division)
+            : Math.round(overall * 25 + Math.random() * 150);
+        // Atributos alrededor de su media (antes eran aleatorios 50-80)
+        const around = () => Math.max(20, Math.min(95, overall - 6 + Math.floor(Math.random() * 13)));
 
         return {
             id: `fa_${Date.now()}_${Math.random().toString(36).substr(2,6)}`,
@@ -90,22 +96,15 @@
             overall,
             potential: overall + Math.floor(Math.random() * 8),
             salary,
-            value: Math.round(overall * 400 + Math.random() * 50000),
+            value: window.pcfEconomy ? window.pcfEconomy.marketValue({ overall, age, contractYears: 3 }) : Math.round(overall * 400 + Math.random() * 50000),
             releaseClause: 0,
             contractType: 'free_agent',
             contractYears: 0,
             club: 'Sin club',
             isFreeAgent: true,
-            // Atributos básicos
-            EN: 50 + Math.floor(Math.random() * 30),
-            VE: 50 + Math.floor(Math.random() * 30),
-            RE: 50 + Math.floor(Math.random() * 30),
-            AG: 50 + Math.floor(Math.random() * 30),
-            CA: 50 + Math.floor(Math.random() * 30),
-            EF: 50 + Math.floor(Math.random() * 30),
-            MO: 50 + Math.floor(Math.random() * 30),
-            AT: 50 + Math.floor(Math.random() * 30),
-            DF: 50 + Math.floor(Math.random() * 30),
+            // Atributos básicos (en torno a la media)
+            EN: around(), VE: around(), RE: around(), AG: around(), CA: around(),
+            EF: around(), MO: around(), AT: pos === 'POR' ? 30 : around(), DF: pos === 'DC' ? 35 : around(),
             isInjured: false,
             weeksOut: 0,
             form: 70 + Math.floor(Math.random() * 15),
@@ -218,6 +217,10 @@
         }
 
         const agent = pool[agentIdx];
+        if ((state.squad || []).length >= 25) {
+            alert('No tienes hueco en la plantilla (máximo 25 jugadores).');
+            return;
+        }
 
         // Confirmar
         const confirmed = confirm(

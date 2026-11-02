@@ -65,9 +65,8 @@
         if (player.age > 30 && offer.newYears >= 3) prob += 0.1;
         if (player.contractYears <= 1) prob += 0.15;
 
-        const secretaryEffect = state.staff?.secretario
-            ? (window.STAFF_LEVEL_EFFECTS?.[state.staff.secretario.level]?.negotiation || 0.1)
-            : 0;
+        // Secretario: de +0 (nivel 1) a +0,15 (nivel 5)
+        const secretaryEffect = window.pcfEconomy ? window.pcfEconomy.secretaryBonus(state) : 0;
         prob += secretaryEffect;
 
         return Math.max(0, Math.min(1, prob));

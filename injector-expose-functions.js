@@ -965,8 +965,8 @@ window.submitRenewalOffer = function() {
     if (player.contractYears <= 1) acceptanceChance += 0.15;
     
     // Efecto secretario
-    const secretaryEffect = state.staff.secretario ? 
-        (window.STAFF_LEVEL_EFFECTS[state.staff.secretario.level]?.negotiation || 0.1) : 0;
+    // Secretario: de +0 (nivel 1) a +0,15 (nivel 5)
+    const secretaryEffect = window.pcfEconomy ? window.pcfEconomy.secretaryBonus(state) : 0;
     acceptanceChance += secretaryEffect;
     
     // Limitar entre 0 y 1

@@ -408,7 +408,8 @@ function simMatch(match) {
 
     // Aplicar boost de prima si existe
     const bonus = window._fdGetMatchBonus ? window._fdGetMatchBonus() : 0;
-    const bonusBoost = bonus > 0 ? Math.min(25, Math.round(Math.sqrt(bonus/50000)*2)) : 0;
+    // Prima: como mucho +3 de media (antes hasta +25, muy por encima de la liga)
+    const bonusBoost = bonus > 0 ? Math.min(3, Math.round(Math.sqrt(bonus/50000))) : 0;
     myRating = Math.min(99, myRating + bonusBoost);
 
     const base={champions:80,europaLeague:75,conferenceLague:70,copa:68}[match.type]||72;

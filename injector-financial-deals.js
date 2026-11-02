@@ -473,8 +473,10 @@
         const base = DEAL_BASE[div] || DEAL_BASE.rfef_grupo1;
         const rat  = avgRating();
         const pop  = s?.popularity || 50;
-        const mult = Math.max(0.4, Math.min(2.2,
-            0.6 + (rat - 60) / 40 * 0.9 + (pop - 50) / 100 * 0.5));
+        // Tamaño del club (aforo como referencia): un club grande cobra más TV y patrocinio
+        const sizeF = Math.max(0.8, Math.min(1.5, 0.75 + (s?.stadiumCapacity || 15000) / 120000));
+        const mult = Math.max(0.4, Math.min(2.6,
+            (0.6 + (rat - 60) / 40 * 0.9 + (pop - 50) / 100 * 0.5) * sizeF));
         const rnd     = () => 0.82 + Math.random() * 0.36;
         const r100k   = v => Math.round(v / 100_000) * 100_000;
         const r50k    = v => Math.round(v / 50_000)  * 50_000;

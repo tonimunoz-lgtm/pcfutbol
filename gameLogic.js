@@ -446,6 +446,18 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     // ===== PRIMERA PLANTILLA =====
     gameState.squad = gameState.squad.filter(p => {
         p.age++;  
+        // Jugadores que cediste: vuelven al acabar la temporada de cesión
+        if (p.contractType === 'loaned_out' && p.loanSeasonsLeft !== undefined) {
+            p.loanSeasonsLeft--;
+            if (p.loanSeasonsLeft <= 0) {
+                const loanedClub = p.loanedTo || 'su club de cesión';
+                p.contractType = 'owned';
+                if (p.originalSalary) { p.salary = p.originalSalary; delete p.originalSalary; }
+                delete p.loanedTo; delete p.loanSeasonsLeft;
+                p.loanListed = false; p.transferListed = false;
+                addNews(`🔄 ${p.name} vuelve tras su cesión al ${loanedClub}.`, 'info');
+            }
+        }
         p.matches = 0;  
         p.form = 70 + Math.floor(Math.random() * 20);  
         p.isInjured = false;  
@@ -582,6 +594,8 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         gameState.stadiumCapacity = teamData.stadiumCapacity || 10000;
         gameState.balance = teamData.initialBudget || gameState.balance;
     }
+    gameState.fanbase = Math.round(gameState.stadiumCapacity * (ECONOMY.fanbaseFactor[divisionType] ?? 0.8));
+    gameState.popularity = 50;
 
     // Cargar equipos y calendario
     // Estructura de ligas propia de esta partida (copia de la configuración del Admin)
@@ -604,6 +618,114 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
 
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
+}
+
+
+// ============================================================
+// ECONOMÍA: valor de mercado, salarios y secretario técnico
+// Un único cálculo usado en fichajes, ventas, ofertas de la IA y cláusulas.
+// Referencias (jugador de 26 años con 3 años de contrato):
+//   media 60 → 0,3 M · 70 → 2 M · 75 → 5 M · 80 → 13 M · 85 → 35 M · 90 → 90 M
+// ============================================================
+const ECONOMY = {
+    valueBase: 300000,
+    valueGrowth: 1.21,
+    minValue: 25000,
+    // Lo máximo que puede pagar por un jugador un club de cada división
+    maxSpend: { primera: 120000000, segunda: 8000000, rfef_grupo1: 1500000, rfef_grupo2: 1500000, promesas: 150000 },
+    // Escala de sueldos del personal según división (multiplica config.js)
+    staffSalaryScale: { primera: 8, segunda: 3, rfef_grupo1: 1.2, rfef_grupo2: 1.2, promesas: 0.8 },
+    // Afición inicial = aforo × factor
+    fanbaseFactor: { primera: 1.6, segunda: 1.0, rfef_grupo1: 0.6, rfef_grupo2: 0.6, promesas: 0.3 },
+    offerLifetimeWeeks: 3,
+    maxOffersPerPlayer: 3
+};
+const DIVISION_RANK = { primera: 0, segunda: 1, rfef_grupo1: 2, rfef_grupo2: 2, promesas: 3 };
+
+function roundMoney(v) {
+    const step = v >= 10000000 ? 500000 : v >= 1000000 ? 100000 : v >= 100000 ? 10000 : 1000;
+    return Math.max(0, Math.round(v / step) * step);
+}
+
+function marketValue(p) {
+    if (!p) return 0;
+    const ovr = p.overall || calculatePlayerOverall(p) || 50;
+    const age = p.age || 26;
+    let v = ECONOMY.valueBase * Math.pow(ECONOMY.valueGrowth, ovr - 60);
+    v *= age <= 21 ? 1.35 : age <= 24 ? 1.2 : age <= 27 ? 1.0 : age <= 29 ? 0.85 : age <= 31 ? 0.65 : age <= 33 ? 0.45 : 0.25;
+    if (age <= 23 && p.potential > ovr) v *= Math.min(1.5, 1 + (p.potential - ovr) * 0.03);
+    const years = p.contractYears;
+    if (p.contractType === 'owned' || p.contractType === undefined) {
+        v *= years === 0 ? 0.3 : years === 1 ? 0.7 : years === 2 ? 0.9 : 1;
+    }
+    return roundMoney(Math.max(ECONOMY.minValue, v));
+}
+
+// Salario semanal que un jugador espera según su nivel y la división del club
+function expectedSalary(p, division) {
+    const ovr = p.overall || calculatePlayerOverall(p) || 50;
+    const divFactor = { primera: 1, segunda: 0.45, rfef_grupo1: 0.15, rfef_grupo2: 0.15, promesas: 0.05 }[division] ?? 0.5;
+    return roundMoney(Math.max(300, 1000 * Math.pow(1.18, ovr - 60) * 0.8 * Math.max(divFactor, 0.05)));
+}
+
+// Bonus del secretario técnico en negociaciones: de +0 (nivel 1) a +0,15 (nivel 5).
+// STAFF_LEVEL_EFFECTS[n].negotiation es un multiplicador (0,5–1,5), no un sumando.
+function secretaryBonus(state = gameState) {
+    const sec = state.staff && state.staff.secretario;
+    if (!sec) return 0;
+    const n = STAFF_LEVEL_EFFECTS[sec.level]?.negotiation ?? 1;
+    return Math.max(0, (n - 0.5) * 0.15);
+}
+
+function teamDivision(team) {
+    const leagues = gameState.leagues || {};
+    return Object.keys(leagues).find(k => (leagues[k] || []).includes(team)) || null;
+}
+
+// Completa y normaliza precios de un jugador del mercado (no propio)
+function normalizeMarketPlayer(p) {
+    if (!p) return p;
+    const c = { ...p };
+    if (!c.overall) c.overall = calculatePlayerOverall(c);
+    c.value = marketValue(c);
+    if (!c.askingPrice || c.askingPrice < c.value * 0.8) c.askingPrice = roundMoney(c.value * (1.05 + Math.random() * 0.25));
+    if (!c.salary) c.salary = expectedSalary(c, teamDivision(c.club) || 'segunda');
+    if (!c.releaseClause || c.releaseClause < c.value) c.releaseClause = roundMoney(c.value * 2.5);
+    return c;
+}
+
+// Sustituye en la alineación a un jugador que ya no está disponible por el
+// mejor disponible para ese puesto (mismo puesto > compatible > cualquiera)
+function replaceInLineup(playerName) {
+    const idx = (gameState.lineup || []).findIndex(p => p && p.name === playerName);
+    if (idx === -1) return;
+    const slot = getFormationLayout(gameState.formation || '433')[idx];
+    const inXI = new Set(gameState.lineup.filter(Boolean).map(p => p.name));
+    const pool = gameState.squad
+        .filter(p => !inXI.has(p.name) && !p.isInjured && !p.isSuspended && p.contractType !== 'loaned_out')
+        .sort((a, b) => (b.overall || 0) - (a.overall || 0));
+    const want = slot ? slot.pos : null;
+    const cand = pool.find(p => p.position === want)
+        || pool.find(p => want !== 'POR' && p.position !== 'POR' && (POSITION_COMPATIBILITY[want] || []).includes(p.position))
+        || pool.find(p => (want === 'POR') === (p.position === 'POR'))
+        || pool[0];
+    if (cand) gameState.lineup[idx] = cand;
+    else gameState.lineup.splice(idx, 1);
+}
+
+function pickBuyerClub(value, playerOverall) {
+    const leagues = gameState.leagues || buildLeaguesFromConfig();
+    // Divisiones que pueden pagarlo, preferidas según el nivel del jugador
+    const prefer = playerOverall >= 78 ? ['primera'] : playerOverall >= 70 ? ['primera', 'segunda']
+        : playerOverall >= 62 ? ['segunda', 'rfef_grupo1', 'rfef_grupo2'] : ['rfef_grupo1', 'rfef_grupo2', 'promesas'];
+    const affordable = prefer.filter(d => (ECONOMY.maxSpend[d] || 0) >= value && (leagues[d] || []).length);
+    const fallback = Object.keys(ECONOMY.maxSpend).filter(d => ECONOMY.maxSpend[d] >= value && (leagues[d] || []).length);
+    const divs = affordable.length ? affordable : fallback;
+    if (!divs.length) return null;
+    const div = divs[Math.floor(Math.random() * divs.length)];
+    const clubs = leagues[div].filter(t => t !== gameState.team);
+    if (!clubs.length) return null;
+    return { club: clubs[Math.floor(Math.random() * clubs.length)], division: div };
 }
 
   
@@ -721,9 +843,12 @@ function sellPlayer(name) {
     if (index === -1) {  
         return { success: false, message: 'Jugador no encontrado en la plantilla.' };  
     }  
-    const player = gameState.squad.splice(index, 1)[0];  
-  
-    const salePrice = Math.floor(player.overall * 2000 + (player.matches * 500) * (1 + Math.random() * 0.5));  
+    const player = gameState.squad[index];
+    // Venta inmediata: se acepta la primera oferta, por debajo del valor (60 %)
+    const salePrice = roundMoney(marketValue(player) * 0.6);
+    replaceInLineup(player.name);
+    gameState.squad.splice(index, 1);
+    gameState.pendingOffers = (gameState.pendingOffers || []).filter(o => o.player?.name !== player.name);
     gameState.balance += salePrice; 
     // ✅ REGISTRAR INGRESO POR VENTA
 if (!gameState.playerSalesIncome) gameState.playerSalesIncome = 0;
@@ -739,7 +864,7 @@ function startNegotiation(player) {
     gameState.playerOffer = null;  
     gameState.clubOffer = null;  
   
-    gameState.negotiatingPlayer = player;  
+    gameState.negotiatingPlayer = player.isFreeAgent || player.clausePaid ? { ...player } : normalizeMarketPlayer(player);
     gameState.negotiationStep = 1;  
   
     return { success: true, message: `Iniciando negociación con ${player.name}.` };  
@@ -751,7 +876,8 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
   
     let acceptanceChance = 0.5;  
   
-    const salaryFactor = offeredSalary / player.salary;  
+    const refSalary = Math.max(player.salary || 0, expectedSalary(player, gameState.division)) || 1;
+    const salaryFactor = offeredSalary / refSalary;  
     if (salaryFactor > 1.5) acceptanceChance += 0.3;  
     else if (salaryFactor > 1.2) acceptanceChance += 0.15;  
     else if (salaryFactor < 0.8) acceptanceChance -= 0.2;  
@@ -764,10 +890,15 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
   
     if (player.overall > 80 && gameState.popularity < 60) acceptanceChance -= 0.1;  
     if (player.loanListed && offeredSalary >= player.salary) acceptanceChance += 0.2;  
+    // Bajar de categoría cuesta: -0,2 por cada división por debajo de la suya
+    const hisDiv = teamDivision(player.club);
+    if (hisDiv && DIVISION_RANK[gameState.division] > DIVISION_RANK[hisDiv]) {
+        acceptanceChance -= 0.2 * (DIVISION_RANK[gameState.division] - DIVISION_RANK[hisDiv]);
+    }
+    if (salaryFactor < 0.6) acceptanceChance = 0;
   
     const roll = Math.random();  
-    const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;  
-    acceptanceChance += secretaryEffect;  
+    acceptanceChance += acceptanceChance > 0 ? secretaryBonus() : 0;  
   
     const accepted = roll < acceptanceChance;  
   
@@ -820,6 +951,11 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
+    const leaving = (playerExchange || []).length;
+    if (gameState.squad.length - leaving + 1 > 25) {
+        return { success: false, message: 'No tienes hueco en la plantilla (máximo 25). Vende o cede a alguien antes.', type: 'error' };
+    }
+
     if (player.loanListed && isLoan) {  
         const myWageContribution = offerAmount;  
         if (myWageContribution < 0 || myWageContribution > 100) {  
@@ -853,33 +989,26 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         }  
   
     } else {  
-        const playerAskingPrice = player.askingPrice;  
-  
-        let acceptanceChance = 0.5;  
-        const offerFactor = offerAmount / playerAskingPrice;  
-        if (offerFactor >= 1) acceptanceChance += 0.3;  
-        else if (offerFactor >= 0.8) acceptanceChance += 0.1;  
-        else if (offerFactor < 0.6) acceptanceChance -= 0.3;  
-  
-        if (playerExchange.length > 0) {  
-            const totalExchangeValue = playerExchange.reduce((sum, pName) => {  
-                const p = gameState.squad.find(s => s.name === pName);  
-                return sum + (p ? p.value : 0);  
-            }, 0);  
-            acceptanceChance += (totalExchangeValue / player.value) * 0.1;  
-        }  
-  
+        offerAmount = Math.max(0, Number(offerAmount) || 0);
+        if (gameState.balance < offerAmount) {
+            return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };
+        }
+        const playerAskingPrice = player.askingPrice > 0 ? player.askingPrice : roundMoney(marketValue(player) * 1.1);
+
+        // Los jugadores ofrecidos a cambio cuentan al 80 % de su valor
+        const exchangeValue = (playerExchange || []).reduce((sum, pName) => {
+            const p = gameState.squad.find(s => s.name === pName);
+            return sum + (p ? marketValue(p) * 0.8 : 0);
+        }, 0);
+        const offerFactor = (offerAmount + exchangeValue) / playerAskingPrice;
+
+        let acceptanceChance = offerFactor >= 1 ? 0.85 : offerFactor >= 0.9 ? 0.55 : offerFactor >= 0.8 ? 0.3 : offerFactor >= 0.7 ? 0.1 : 0;
+        if (acceptanceChance > 0) acceptanceChance += secretaryBonus();
+
         const roll = Math.random();  
-        const secretaryEffect = gameState.staff.secretario ? (STAFF_LEVEL_EFFECTS[gameState.staff.secretario.level]?.negotiation || 0.1) : 0;  
-        acceptanceChance += secretaryEffect;  
-  
         const accepted = roll < acceptanceChance;  
   
         if (accepted) {  
-            if (gameState.balance < offerAmount) {  
-                endNegotiation();  
-                return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };  
-            }  
             gameState.balance -= offerAmount;
 // ✅ REGISTRAR GASTO EN FICHAJES
 if (!gameState.playerPurchases) gameState.playerPurchases = 0;
@@ -900,9 +1029,9 @@ playerExchange.forEach(pName => {
             endNegotiation(true);  
             return signPlayer(newPlayer);  
         } else {  
-            if (roll > 0.8) {  
+            if (offerFactor < 0.6 || roll > 0.9) {  
                 endNegotiation();  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name}.`, type: 'error' };  
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name} por esa cantidad.`, type: 'error' };  
             } else {  
                 return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
             }  
@@ -996,7 +1125,7 @@ function applyWeeklyTraining() {
   
 function getPlayerMarket(filters = {}) {  
     const scoutLevel = gameState.staff.scout?.level || 0;  
-    return getPlayerMarketData(filters, scoutLevel);  
+    return getPlayerMarketData(filters, scoutLevel).map(normalizeMarketPlayer);  
 }  
   
 function getYoungsterMarket(filters = {}) {  
@@ -1475,7 +1604,8 @@ function boardMessages() {
     const teamStats = gameState.standings[gameState.team];  
     if (teamStats && teamStats.pj > 0) {  
         satisfaction += (teamStats.pts / teamStats.pj) - 2;  
-        satisfaction += gameState.balance / 100000;  
+        const weeklyCost = Math.max(1, gameState.weeklyExpenses || 1);
+        satisfaction += Math.max(-2, Math.min(1, gameState.balance / (weeklyCost * 20) - 1)) * 0.5;  
         satisfaction += gameState.popularity / 10 - 5;  
   
         let message = '';  
@@ -2273,10 +2403,11 @@ function generateStaffCandidates(role, forceNew = false) {
   
     for (let i = 0; i < 3; i++) {  
         const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
-        const salary = Math.floor(roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5));  
+        const salaryScale = ECONOMY.staffSalaryScale[gameState.division] ?? 1;
+        const salary = Math.floor((roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5)) * salaryScale);  
         const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
   
-        let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * (0.8 + Math.random() * 0.4));  
+        let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * salaryScale * (0.8 + Math.random() * 0.4));  
   
         if (level === 1 && Math.random() < 0.5) {  
             clausula = 0;  
@@ -2535,93 +2666,82 @@ function firePlayer(playerName) {
 
 // Función que se ejecuta cada semana para generar ofertas
 function generateAIOffers() {
-    // ✅ FILTRAR: solo jugadores propios (owned) que estén en venta/cesión
-    const playersForSale = gameState.squad.filter(p => 
-        (p.transferListed || p.loanListed) && 
-        p.contractType === 'owned'
-    );
-    
-    if (playersForSale.length === 0) return;
-    
-    playersForSale.forEach(player => {
-        // Aumentar probabilidad según tiempo en mercado
-        let offerChance = 0.7;
-        
-        if (player.weeksOnMarket >= 2) offerChance = 0.9; // 90% si lleva 2+ semanas
-        if (player.weeksOnMarket >= 4) offerChance = 1.0; // 100% si lleva 4+ semanas
-        
-        if (Math.random() < offerChance) {
-            generateOfferForPlayer(player);
-        }
+    const week = gameState.week;
+    // Caducan las ofertas antiguas y las de jugadores que ya no están en venta
+    gameState.pendingOffers = (gameState.pendingOffers || []).filter(o => {
+        const p = gameState.squad.find(x => x.name === o.player?.name);
+        if (!p || p.contractType !== 'owned') return false;
+        if (o.type === 'transfer' && !p.transferListed) return false;
+        if (o.type === 'loan' && !p.loanListed) return false;
+        return o.season !== gameState.currentSeason || (week - (o.week ?? week)) < ECONOMY.offerLifetimeWeeks;
     });
+
+    const playersForSale = gameState.squad.filter(p =>
+        (p.transferListed || p.loanListed) && p.contractType === 'owned'
+    );
+    if (playersForSale.length === 0) return;
+
+    let created = 0;
+    playersForSale.forEach(player => {
+        if (makeOfferForPlayer(player, { silent: true })) created++;
+    });
+    if (created) showOffersModal();
 }
 
+// Interés de la IA según lo razonable que sea el precio pedido.
+// Devuelve la oferta creada o null.
+function makeOfferForPlayer(player, { silent = false } = {}) {
+    const offers = gameState.pendingOffers || (gameState.pendingOffers = []);
+    if (offers.filter(o => o.player?.name === player.name).length >= ECONOMY.maxOffersPerPlayer) return null;
 
+    const value = marketValue(player);
+    let offer = null;
 
-// Generar oferta específica para un jugador
-function generateOfferForPlayer(player) {
-    // Seleccionar club oferente aleatorio
-    const allClubs = [
-        ...TEAMS_DATA.primera,
-        ...TEAMS_DATA.segunda,
-        ...TEAMS_DATA.rfef_grupo1,
-        ...TEAMS_DATA.rfef_grupo2
-    ].filter(club => club !== gameState.team);
-    
-    const offeringClub = allClubs[Math.floor(Math.random() * allClubs.length)];
-    
-    let offer = {};
-    
     if (player.transferListed) {
-        // Oferta de COMPRA
-        // La IA ofrece entre 70% y 110% del precio solicitado
-        const offerPercentage = 0.7 + Math.random() * 0.4; // 70% - 110%
-        const offerAmount = Math.round(player.askingPrice * offerPercentage);
-        
+        const asking = player.askingPrice > 0 ? player.askingPrice : value;
+        const ratio = asking / Math.max(1, value);
+        let chance = ratio <= 1 ? 0.6 : ratio <= 1.3 ? 0.3 : ratio <= 1.6 ? 0.08 : 0;
+        if ((player.weeksOnMarket || 0) >= 4 && ratio <= 1.3) chance += 0.15;
+        if (Math.random() >= chance) {
+            if (ratio > 1.6 && player.weeksOnMarket === 4) {
+                addNews(`[Secretario Técnico] Nadie pregunta por ${player.name}: pides ${asking.toLocaleString('es-ES')}€ y su valor de mercado ronda ${value.toLocaleString('es-ES')}€.`, 'warning');
+            }
+            return null;
+        }
+        const buyer = pickBuyerClub(Math.min(asking, value), player.overall || 60);
+        if (!buyer || offers.some(o => o.player?.name === player.name && o.club === buyer.club)) return null;
+
+        // Nunca más de lo que piden ni más de lo que el club puede pagar
+        const maxAmount = Math.min(ECONOMY.maxSpend[buyer.division], roundMoney(value * 1.15));
+        const amount = roundMoney(Math.min(asking, maxAmount, value * (0.8 + Math.random() * 0.35)));
+        if (amount <= 0) return null;
         offer = {
-            type: 'transfer',
-            player: player,
-            club: offeringClub,
-            amount: offerAmount,
-            originalAskingPrice: player.askingPrice,
-            timestamp: Date.now()
+            type: 'transfer', player, club: buyer.club, amount,
+            originalAskingPrice: asking, maxAmount: Math.min(maxAmount, Math.max(amount, asking)),
+            week: gameState.week, season: gameState.currentSeason, timestamp: Date.now()
         };
-        
-        // Noticia
-        addNews(
-            `📨 ¡Oferta recibida! ${offeringClub} ofrece ${offerAmount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${player.askingPrice.toLocaleString('es-ES')}€)`,
-            offerAmount >= player.askingPrice ? 'success' : 'info'
-        );
-        
+        addNews(`📨 ¡Oferta recibida! ${buyer.club} ofrece ${amount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${asking.toLocaleString('es-ES')}€)`,
+            amount >= asking ? 'success' : 'info');
     } else if (player.loanListed) {
-        // Oferta de CESIÓN
-        // La IA asume entre 30% y 70% del salario
-        const wagePercentage = 0.3 + Math.random() * 0.4; // 30% - 70%
+        if (Math.random() >= 0.4) return null;
+        const buyer = pickBuyerClub(0, player.overall || 60);
+        if (!buyer || offers.some(o => o.player?.name === player.name && o.club === buyer.club)) return null;
+        const wagePercentage = 0.3 + Math.random() * 0.4;
         const wageContribution = Math.round(player.salary * wagePercentage);
-        
         offer = {
-            type: 'loan',
-            player: player,
-            club: offeringClub,
-            wageContribution: wageContribution,
-            totalSalary: player.salary,
-            timestamp: Date.now()
+            type: 'loan', player, club: buyer.club, wageContribution, totalSalary: player.salary,
+            week: gameState.week, season: gameState.currentSeason, timestamp: Date.now()
         };
-        
-        // Noticia
-        addNews(
-            `📨 ¡Oferta de cesión! ${offeringClub} quiere ceder a ${player.name} y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`,
-            'info'
-        );
+        addNews(`📨 ¡Oferta de cesión! ${buyer.club} quiere a ${player.name} cedido y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`, 'info');
     }
-    
-    // Guardar oferta en el estado
-    if (!gameState.pendingOffers) gameState.pendingOffers = [];
-    gameState.pendingOffers.push(offer);
-    
-    // Abrir modal de ofertas
-    showOffersModal();
+    if (!offer) return null;
+    offers.push(offer);
+    if (!silent) showOffersModal();
+    return offer;
 }
+
+// Compatibilidad: nombre anterior
+function generateOfferForPlayer(player) { return makeOfferForPlayer(player); }
 
 // Mostrar modal con todas las ofertas pendientes
 function showOffersModal() {
@@ -2731,17 +2851,24 @@ function acceptOffer(offerIndex) {
     }
     
     const offer = gameState.pendingOffers[offerIndex];
-    
+    const current = gameState.squad.find(p => p.name === offer.player?.name);
+    if (!current || current.contractType !== 'owned') {
+        gameState.pendingOffers.splice(offerIndex, 1);
+        alert(`La oferta ya no es válida: ${offer.player?.name || 'el jugador'} no está disponible.`);
+        renderOffersList();
+        return;
+    }
+    // Las demás ofertas por el mismo jugador dejan de valer
+    const otherOffers = gameState.pendingOffers.filter((o, i) => i !== offerIndex && o.player?.name !== current.name);
+
     if (offer.type === 'transfer') {
         // Venta
         gameState.balance += offer.amount;
         gameState.playerSalesIncome = (gameState.playerSalesIncome || 0) + offer.amount;
         
-        // Eliminar jugador de plantilla
-        const playerIndex = gameState.squad.findIndex(p => p.name === offer.player.name);
-        if (playerIndex !== -1) {
-            gameState.squad.splice(playerIndex, 1);
-        }
+        // Eliminar jugador de plantilla (y de la alineación)
+        replaceInLineup(current.name);
+        gameState.squad = gameState.squad.filter(p => p.name !== current.name);
         
         addNews(
             `✅ ¡Venta cerrada! Has vendido a ${offer.player.name} al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}€`,
@@ -2750,13 +2877,15 @@ function acceptOffer(offerIndex) {
         
     } else if (offer.type === 'loan') {
         // Cesión
-        const player = gameState.squad.find(p => p.name === offer.player.name);
-        if (player) {
-            player.contractType = 'loaned_out';
-            player.loanedTo = offer.club; // ✅ Corregido: loanedTo en lugar de loanedToClub
-            player.originalSalary = player.salary;
-            player.salary = player.salary - offer.wageContribution;
-        }
+        const player = current;
+        replaceInLineup(player.name);
+        player.contractType = 'loaned_out';
+        player.loanedTo = offer.club;
+        player.loanSeasonsLeft = 1;           // vuelve al terminar la temporada
+        player.originalSalary = player.salary;
+        player.salary = Math.max(0, player.salary - offer.wageContribution);
+        player.transferListed = false;
+        player.loanListed = false;
         
         addNews(
             `✅ ¡Cesión cerrada! Has cedido a ${offer.player.name} al ${offer.club}. Asumen ${offer.wageContribution.toLocaleString('es-ES')}€/sem del salario`,
@@ -2764,8 +2893,8 @@ function acceptOffer(offerIndex) {
         );
     }
     
-    // Eliminar oferta
-    gameState.pendingOffers.splice(offerIndex, 1);
+    // Eliminar esta oferta y las demás por el mismo jugador
+    gameState.pendingOffers = otherOffers;
     
     // ✅ GUARDAR CAMBIOS
     updateWeeklyFinancials();
@@ -2840,9 +2969,9 @@ function counterOffer(offerIndex) {
         return;
     }
     
-    // 50% probabilidad de que acepten si es razonable
-    const isReasonable = counter <= offer.amount * 1.2;
-    const accepted = isReasonable && Math.random() < 0.5;
+    // Aceptan si no supera lo máximo que están dispuestos a pagar
+    const maxAmount = offer.maxAmount || roundMoney(offer.amount * 1.1);
+    const accepted = counter <= maxAmount && Math.random() < (counter <= offer.amount * 1.05 ? 0.9 : 0.6);
     
     if (accepted) {
         // Aceptan contraoferta
@@ -2952,6 +3081,15 @@ export {
 // ✅ Exponer funciones de ofertas globalmente
 if (typeof window !== 'undefined') {
     window.sortStandings = sortStandings;
+    window.STAFF_LEVEL_EFFECTS = STAFF_LEVEL_EFFECTS;
+    window.pcfEconomy = {
+        ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        makeOffer: (playerName) => {
+            const p = gameState.squad.find(x => x.name === playerName);
+            return p ? makeOfferForPlayer(p) : null;
+        },
+        replaceInLineup
+    };
     window.divisionName = divisionName;
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;

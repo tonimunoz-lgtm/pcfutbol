@@ -34,7 +34,8 @@
             firestoreMarketPlayers = players
                 .filter(p => !myNames.has((p.name || '').toLowerCase()))
                 .map(p => {
-                    const c = { ...p };
+                    // Precios con el valor de mercado común del juego
+                    const c = window.pcfEconomy ? window.pcfEconomy.normalizeMarketPlayer(p) : { ...p };
                     if (!c.value)         c.value         = Math.floor((c.overall || 70) * 2000);
                     if (!c.salary)        c.salary        = Math.floor((c.overall || 70) * 100);
                     if (!c.askingPrice)   c.askingPrice   = Math.floor(c.value * (1 + Math.random() * 0.5));
@@ -153,7 +154,8 @@
                     !myNames.has(p.name.toLowerCase())
                 );
 
-            let all = [...myListed, ...firestoreFiltered, ...generated];
+            // Tus propios jugadores en venta no aparecen en la lista de compra
+            let all = [...firestoreFiltered, ...generated];
 
             if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);

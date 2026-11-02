@@ -75,7 +75,10 @@
     function calcSatisfaction(player, state) {
         if (!player || player.contractType !== 'owned') return 75; // cedidos/libres siempre OK
 
-        const fairSalary = player.overall * CONFIG.salaryPerOverallPoint;
+        // Sueldo justo: el mismo que esperan los jugadores al negociar
+        const fairSalary = window.pcfEconomy
+            ? window.pcfEconomy.expectedSalary(player, gs()?.division || 'segunda') * 0.75
+            : player.overall * CONFIG.salaryPerOverallPoint;
         const ratio = (player.salary || 0) / (fairSalary || 1);
 
         // Base: 50 + ajuste por ratio salarial
@@ -150,7 +153,8 @@
             if (player.satisfaction < CONFIG.unhappyTransferRequest) {
                 if (Math.random() < CONFIG.transferRequestChance) {
                     player.transferListed = true;
-                    player.askingPrice = Math.round((player.value || 50000) * 0.85);
+                    const value = window.pcfEconomy ? window.pcfEconomy.marketValue(player) : (player.value || 50000);
+                    player.askingPrice = Math.round(value * 0.85);
                     player.weeksOnMarket = 0;
 
                     news(
