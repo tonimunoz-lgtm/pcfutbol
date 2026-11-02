@@ -837,7 +837,11 @@
     <!-- SCRIPTS DEL JUEGO -->
     <script type="module">
         
-        import * as gameLogic from './gameLogic.js';
+        import * as gameLogicModule from './gameLogic.js';
+        // Objeto normal (no el módulo ES, que no se puede modificar) para que
+        // los injectors puedan envolver funciones y que index.html use esas versiones.
+        const gameLogic = { ...gameLogicModule };
+        window.gameLogic = gameLogic; // (ya asignado al importar; objeto ampliable)
         import * as ui from './ui.js';
         import { TEAMS_DATA, FORMATIONS, POSITIONS, ATTRIBUTES, STAFF_ROLES, PRESEASON_WEEKS } from './config.js';
         import { getPlayerMarket, getYoungsterMarket } from './players.js';
@@ -1068,7 +1072,7 @@ window.renderTeamSelectors = renderTeamSelectors;
 // -------------------------
 // Selección de equipo y arranque
 // -------------------------
-window.selectTeamAndStart = function(teamName, division) {
+window.selectTeamAndStart = async function(teamName, division) {
     if (!teamName || !division) {
         alert('⚠️ Equipo o división inválidos');
         return;
@@ -1076,7 +1080,8 @@ window.selectTeamAndStart = function(teamName, division) {
 
     console.log('Seleccionando equipo:', teamName, 'Division:', division);
 
-    gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
+    // Se usa window.gameLogic para respetar los módulos que envuelven esta función
+    await window.gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
     ui.refreshUI(gameLogic.getGameState());
     window.closeModal('selectTeam');
 
@@ -2240,7 +2245,6 @@ window.onclick = function(event) {
     <script src="./injector-login-ui.js"></script>
     <script src="./injector-cloud-load.js"></script>
     <script src="injector-login-game-selection.js"></script>
-    <script src="./injector-budget.js"></script>
     <script src="./injector-player-arrows.js"></script>
     <script src="./injector-leagues.js"></script>
     <script src="./injector-admin-complete.js"></script>

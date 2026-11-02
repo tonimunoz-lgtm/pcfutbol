@@ -536,11 +536,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     });  
   
     // Reestablecer alineación
-    const availablePlayers = gameState.squad
-        .filter(p => !p.isInjured)
-        .sort((a, b) => b.overall - a.overall);  
-
-    setLineup(availablePlayers.slice(0, 11));  
+    setLineup(pickBestXI(gameState.squad, gameState.formation || '433').filter(Boolean));
 }
  
   
@@ -587,6 +583,10 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.leagueTeams = teamsInDivision;
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
+
+    // Alineación inicial automática: mejor once en la formación actual
+    gameState.lineup = pickBestXI(gameState.squad, gameState.formation || '433').filter(Boolean);
+    if (gameState.lineup.length < 11) setLineup(gameState.lineup);
 
     addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     updateWeeklyFinancials();
@@ -1105,50 +1105,93 @@ async function generateAISquad(teamName, division) {
 }
 
 
-// ✅ MEJORA 2: Cálculo mejorado del overall del equipo
+// ========================================
+// MEJOR ONCE POR POSICIONES
+// Elige, para cada puesto de la formación, al mejor jugador disponible:
+// 1º de su posición exacta, 2º de una posición compatible, 3º cualquiera
+// de campo (o cualquiera si falta portero). Devuelve 11 huecos en el
+// mismo orden que el layout de la formación (null si no hay jugador).
+// ========================================
+function getFormationLayout(formation) {
+    const all = (typeof window !== 'undefined' && window.FORMATIONS) || FORMATIONS;
+    return (all[formation] || all['433'] || FORMATIONS['433']).layout;
+}
+
+function pickBestXI(squad, formation = '433') {
+    const layout = getFormationLayout(formation);
+    const ovr = p => p.overall || calculatePlayerOverall(p);
+    const pool = (squad || [])
+        .filter(p => p && !p.isInjured && !p.isSuspended && p.contractType !== 'loaned_out')
+        .sort((a, b) => ovr(b) - ovr(a));
+    const used = new Set();
+    const xi = new Array(layout.length).fill(null);
+    const passes = [
+        (slot, p) => p.position === slot,
+        (slot, p) => slot !== 'POR' && p.position !== 'POR' && (POSITION_COMPATIBILITY[slot] || []).includes(p.position),
+        (slot, p) => slot === 'POR' || p.position !== 'POR'
+    ];
+    for (const fits of passes) {
+        layout.forEach((slot, i) => {
+            if (xi[i]) return;
+            const cand = pool.find(p => !used.has(p.name) && fits(slot.pos, p));
+            if (cand) { xi[i] = cand; used.add(cand.name); }
+        });
+    }
+    return xi;
+}
+
+// La IA elige la formación que mejor encaja con su plantilla
+function chooseAIFormation(squad) {
+    let best = '433', bestValue = -1;
+    for (const f of ['433', '442', '451', '352', '541']) {
+        const value = calculateTeamEffectiveOverall(pickBestXI(squad, f), f);
+        if (value > bestValue) { bestValue = value; best = f; }
+    }
+    return best;
+}
+
+// Media efectiva del once: penaliza jugar fuera de posición y los huecos
 function calculateTeamEffectiveOverall(lineup, formation = '433') {
     if (!lineup || lineup.length === 0) return 40;
-    
-    const formationLayout = window.FORMATIONS?.[formation]?.layout || [];
-    if (formationLayout.length === 0) {
-        // Fallback: cálculo simple si no hay formación
-        const availablePlayers = lineup.filter(p => !p.isInjured);
-        if (availablePlayers.length === 0) return 40;
-        return availablePlayers.reduce((sum, p) => sum + p.overall, 0) / availablePlayers.length;
-    }
-    
-    let totalOverall = 0;
-    let playerCount = 0;
-    
-    lineup.forEach((player, index) => {
-        if (!player || player.isInjured) return;
-        
-        const tacticalPosition = formationLayout[index]?.pos;
-        if (!tacticalPosition) return;
-        
-        // ⚠️ PENALIZACIÓN POR POSICIÓN INCORRECTA
-        let positionPenalty = 1.0;
-        
-        if (player.position === tacticalPosition) {
-            // ✅ Posición perfecta
-            positionPenalty = 1.0;
-        } else if (POSITION_COMPATIBILITY[tacticalPosition]?.includes(player.position)) {
-            // ⚠️ Posición compatible (ej: DFC de LI)
-            positionPenalty = 0.85; // -15%
-        } else {
-            // ❌ Posición totalmente incorrecta (ej: POR de DC)
-            positionPenalty = 0.50; // -50%
-        }
-        
-        const effectiveOverall = player.overall * positionPenalty;
-        totalOverall += effectiveOverall;
-        playerCount++;
+    const layout = getFormationLayout(formation);
+    let total = 0;
+    layout.forEach((slot, index) => {
+        const player = lineup[index];
+        if (!player || player.isInjured) return; // hueco = 0 (jugar con 10 se nota)
+        let factor = 0.5;
+        if (player.position === slot.pos) factor = 1.0;
+        else if ((POSITION_COMPATIBILITY[slot.pos] || []).includes(player.position)) factor = 0.85;
+        total += (player.overall || calculatePlayerOverall(player)) * factor;
     });
-    
-    return playerCount > 0 ? totalOverall / playerCount : 40;
+    return total / layout.length;
 }
-  
-  
+
+// ========================================
+// MOTOR DE GOLES (distribución de Poisson)
+// Cada equipo tiene unos goles esperados según la diferencia de fuerza,
+// la localía, la formación/mentalidad y los modificadores que añadan
+// otros módulos (táctica, primas...). Calibrado a LaLiga: ~2,6 goles por
+// partido; con equipos iguales ~45 % local, ~27 % empate, ~28 % visitante.
+// ========================================
+const MATCH_ENGINE = {
+    baseHomeGoals: 1.36,
+    baseAwayGoals: 1.06,
+    strengthSlope: 0.40,   // sensibilidad por cada 10 puntos de media de diferencia
+    maxGoals: 9
+};
+
+function poissonSample(lambda) {
+    const limit = Math.exp(-lambda);
+    let k = 0, p = 1;
+    do { k++; p *= Math.random(); } while (p > limit);
+    return k - 1;
+}
+
+function formFactor(form) {
+    const f = Math.max(0, Math.min(100, Number(form) || 75));
+    return 0.9 + f / 750; // forma 75 → 1,00 · 99 → 1,03 · 50 → 0,97
+}
+
 function calculateMatchOutcomeImproved({
     teamOverall,
     opponentOverall,
@@ -1158,102 +1201,116 @@ function calculateMatchOutcomeImproved({
     opponentMentality = 'balanced',
     isHome = true,
     teamForm = 75,
-    opponentForm = 75
+    opponentForm = 75,
+    teamAttackMod = 1,
+    teamDefenseMod = 1,
+    opponentAttackMod = 1,
+    opponentDefenseMod = 1
 }) {
-    // Factores base
-    let teamFactor = (teamOverall / 100) * (teamForm / 100);
-    let opponentFactor = (opponentOverall / 100) * (opponentForm / 100);
-    
-    // Ventaja de local
-    if (isHome) {
-        teamFactor *= 1.12; // +12%
-    } else {
-        opponentFactor *= 1.12;
-    }
-    
-    // Modificadores de formación
-    const teamMods = getFormationModifiers(teamFormation, teamMentality);
-    const oppMods = getFormationModifiers(opponentFormation, opponentMentality);
-    
-    // Aplicar bonus tácticos
-    const teamAttack = teamFactor * teamMods.attackBonus;
-    const teamDefense = teamFactor * teamMods.defenseBonus;
-    const oppAttack = opponentFactor * oppMods.attackBonus;
-    const oppDefense = opponentFactor * oppMods.defenseBonus;
-    
-    // Cálculo de goles (ataque propio vs defensa rival)
-    let teamGoalChance = teamAttack / oppDefense;
-    let oppGoalChance = oppAttack / teamDefense;
-    
-    // Aleatoriedad controlada (±15%)
-    teamGoalChance *= (0.85 + Math.random() * 0.3);
-    oppGoalChance *= (0.85 + Math.random() * 0.3);
-    
-    // Convertir a goles (más realista: 0-5 goles típicamente)
-    const teamGoals = Math.min(7, Math.max(0, Math.round(teamGoalChance * 3)));
-    const oppGoals = Math.min(7, Math.max(0, Math.round(oppGoalChance * 3)));
-    
+    const teamStrength = (teamOverall || 50) * formFactor(teamForm);
+    const oppStrength = (opponentOverall || 50) * formFactor(opponentForm);
+    const diff = (teamStrength - oppStrength) / 10;
+
+    const tm = getFormationModifiers(teamFormation, teamMentality);
+    const om = getFormationModifiers(opponentFormation, opponentMentality);
+
+    const teamBase = isHome ? MATCH_ENGINE.baseHomeGoals : MATCH_ENGINE.baseAwayGoals;
+    const oppBase = isHome ? MATCH_ENGINE.baseAwayGoals : MATCH_ENGINE.baseHomeGoals;
+
+    const clamp = x => Math.max(0.12, Math.min(5, x));
+    const teamXG = clamp(teamBase * Math.exp(MATCH_ENGINE.strengthSlope * diff)
+        * tm.attackBonus * teamAttackMod / (om.defenseBonus * opponentDefenseMod));
+    const oppXG = clamp(oppBase * Math.exp(-MATCH_ENGINE.strengthSlope * diff)
+        * om.attackBonus * opponentAttackMod / (tm.defenseBonus * teamDefenseMod));
+
     return {
-        teamGoals,
-        opponentGoals: oppGoals
+        teamGoals: Math.min(MATCH_ENGINE.maxGoals, poissonSample(teamXG)),
+        opponentGoals: Math.min(MATCH_ENGINE.maxGoals, poissonSample(oppXG)),
+        teamXG: Math.round(teamXG * 100) / 100,
+        opponentXG: Math.round(oppXG * 100) / 100
     };
 }
 
+// ========================================
+// PARTIDO DE LIGA
+// - La IA alinea su mejor once por posiciones con la formación que
+//   mejor le encaja (antes alineaba los 11 primeros de la lista).
+// - Las plantillas rivales se cargan una vez por temporada.
+// - Se usan las versiones de window.* para que los módulos externos
+//   (Táctica, Primas, Promesas) puedan modificar el partido de verdad.
+// ========================================
+const aiSquadCache = new Map();
 
-  
-// ✅ MEJORA 6: Función playMatch mejorada
+async function getAISquadCached(teamName, division, season) {
+    const key = `${season}|${division}|${teamName}`;
+    if (!aiSquadCache.has(key)) {
+        const gen = (typeof window !== 'undefined' && window.generateAISquad) || generateAISquad;
+        aiSquadCache.set(key, gen(teamName, division));
+    }
+    try {
+        return await aiSquadCache.get(key);
+    } catch (e) {
+        aiSquadCache.delete(key);
+        return generateAISquad(teamName, division);
+    }
+}
+
+async function buildSide(teamName, gameState) {
+    if (teamName === gameState.team) {
+        const formation = gameState.formation || '433';
+        return {
+            lineup: gameState.lineup,
+            formation,
+            mentality: gameState.mentality || 'balanced',
+            isUser: true
+        };
+    }
+    const squad = await getAISquadCached(teamName, gameState.division, gameState.currentSeason);
+    const formation = chooseAIFormation(squad);
+    const r = Math.random();
+    return {
+        lineup: pickBestXI(squad, formation),
+        formation,
+        mentality: r < 0.2 ? 'offensive' : (r < 0.8 ? 'balanced' : 'defensive'),
+        isUser: false
+    };
+}
+
+function averageForm(lineup) {
+    const players = (lineup || []).filter(Boolean);
+    if (!players.length) return 75;
+    return players.reduce((sum, p) => sum + (p.form || 75), 0) / players.length;
+}
+
 async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
-    let homeSquad, awaySquad;
-    let homeFormation = '433', awayFormation = '433';
-    let homeMentality = 'balanced', awayMentality = 'balanced';
-    
-    // EQUIPO LOCAL
-    if (homeTeamName === gameState.team) {
-        homeSquad = gameState.lineup;
-        homeFormation = gameState.formation || '433';
-        homeMentality = gameState.mentality || 'balanced';
-    } else {
-        // ✅ Generar plantilla IA realista
-        homeSquad = await generateAISquad(homeTeamName, gameState.division);
-        homeFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
-        homeMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
-    }
-    
-    // EQUIPO VISITANTE
-    if (awayTeamName === gameState.team) {
-        awaySquad = gameState.lineup;
-        awayFormation = gameState.formation || '433';
-        awayMentality = gameState.mentality || 'balanced';
-    } else {
-        // ✅ Generar plantilla IA realista
-        awaySquad = await generateAISquad(awayTeamName, gameState.division);
-        awayFormation = ['433', '442', '541'][Math.floor(Math.random() * 3)];
-        awayMentality = Math.random() > 0.7 ? 'offensive' : (Math.random() > 0.5 ? 'balanced' : 'defensive');
-    }
-    
-    // ✅ Calcular overall REAL de cada equipo
-    const homeOverall = calculateTeamEffectiveOverall(homeSquad, homeFormation);
-    const awayOverall = calculateTeamEffectiveOverall(awaySquad, awayFormation);
-    
-    // Forma promedio de los jugadores
-    const homeForm = homeSquad.reduce((sum, p) => sum + (p.form || 75), 0) / homeSquad.length;
-    const awayForm = awaySquad.reduce((sum, p) => sum + (p.form || 75), 0) / awaySquad.length;
-    
-    // ✅ Calcular resultado con el motor mejorado
-    const { teamGoals: homeGoals, opponentGoals: awayGoals } = calculateMatchOutcomeImproved({
+    const home = await buildSide(homeTeamName, gameState);
+    const away = await buildSide(awayTeamName, gameState);
+
+    const homeOverall = calculateTeamEffectiveOverall(home.lineup, home.formation);
+    const awayOverall = calculateTeamEffectiveOverall(away.lineup, away.formation);
+
+    const outcomeFn = (typeof window !== 'undefined' && window.calculateMatchOutcomeImproved) || calculateMatchOutcomeImproved;
+    const outcome = outcomeFn({
         teamOverall: homeOverall,
         opponentOverall: awayOverall,
-        teamFormation: homeFormation,
-        opponentFormation: awayFormation,
-        teamMentality: homeMentality,
-        opponentMentality: awayMentality,
+        teamFormation: home.formation,
+        opponentFormation: away.formation,
+        teamMentality: home.mentality,
+        opponentMentality: away.mentality,
         isHome: true,
-        teamForm: homeForm,
-        opponentForm: awayForm
+        teamForm: averageForm(home.lineup),
+        opponentForm: averageForm(away.lineup),
+        // Para que los módulos externos sepan de qué lado está el usuario
+        homeTeamName,
+        awayTeamName,
+        homeIsUser: home.isUser,
+        awayIsUser: away.isUser
     });
-    
-    console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)} OVR, ${homeFormation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)} OVR, ${awayFormation})`);
-    
+    const homeGoals = outcome.teamGoals;
+    const awayGoals = outcome.opponentGoals;
+
+    console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)}, ${home.formation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)}, ${away.formation})`);
+
     return {
         homeTeam: homeTeamName,
         awayTeam: awayTeamName,
@@ -1261,8 +1318,10 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         awayGoals,
         homeOverall,
         awayOverall,
-        homeFormation,
-        awayFormation
+        homeFormation: home.formation,
+        awayFormation: away.formation,
+        homeXG: outcome.teamXG,
+        awayXG: outcome.opponentXG
     };
 }
 
@@ -1272,6 +1331,9 @@ if (typeof window !== 'undefined') {
     window.playMatchImproved = playMatchImproved;
     window.calculateMatchOutcomeImproved = calculateMatchOutcomeImproved;
     window.generateAISquad = generateAISquad;
+    window.pickBestXI = pickBestXI;
+    window.chooseAIFormation = chooseAIFormation;
+    window.MATCH_ENGINE = MATCH_ENGINE;
 }
 
 console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
@@ -2670,7 +2732,8 @@ export {
     setLineup,  
     validateLineup,
     generateLeagueCalendar,  
-    getSeasonCalendar  
+    getSeasonCalendar,
+    pickBestXI
 }; 
 
 // ✅ Exponer funciones de ofertas globalmente

@@ -230,12 +230,14 @@
         window._fdMatchHooked = true;
         const origCalc = window.calculateMatchOutcomeImproved;
         window.calculateMatchOutcomeImproved = function(params) {
-            const bonus = window._fdGetMatchBonus() || 0;
+            // La prima solo motiva a NUESTRO equipo, sea local o visitante
+            const side = params.homeIsUser ? 'teamForm' : (params.awayIsUser ? 'opponentForm' : null);
+            const bonus = side ? (window._fdGetMatchBonus() || 0) : 0;
             if (bonus > 0) {
-                // Escalar bonus: 50k€ → +2 form, 250k€ → +8 form, 1M€ → +18 form (máx +25)
+                // Escalar bonus: 50k€ → +2 forma, 250k€ → +8, 1M€ → +18 (máx +25)
                 const boost = Math.min(25, Math.round(Math.sqrt(bonus / 50000) * 2));
-                params = { ...params, teamForm: Math.min(100, (params.teamForm || 75) + boost) };
-                console.log(`[FinDeals] Prima ${Math.round(bonus/1000)}k€ → boost form +${boost}`);
+                params = { ...params, [side]: Math.min(100, (params[side] || 75) + boost) };
+                console.log(`[FinDeals] Prima ${Math.round(bonus/1000)}k€ → forma +${boost}`);
             }
             return origCalc.call(this, params);
         };

@@ -159,6 +159,12 @@
 
     // ── Alineación probable (11 titulares por posición) ───────────
     function getStartingXI(squad) {
+        // Mismo once que usará el motor de partidos (mejor once por posiciones
+        // en la formación que mejor encaja con la plantilla)
+        if (window.pickBestXI && window.chooseAIFormation) {
+            const xi = window.pickBestXI(squad, window.chooseAIFormation(squad)).filter(Boolean);
+            if (xi.length) return xi;
+        }
         const byPos = {};
         squad.forEach(p => {
             if (!byPos[p.position]) byPos[p.position] = [];

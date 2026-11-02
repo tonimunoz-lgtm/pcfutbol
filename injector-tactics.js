@@ -497,25 +497,21 @@
         const orig = window.calculateMatchOutcomeImproved;
         window.calculateMatchOutcomeImproved = function(params) {
             const s = gs();
-            if (s) {
+            // Solo afecta al partido del usuario y a SU lado (local o visitante)
+            const side = params.homeIsUser ? 'team' : (params.awayIsUser ? 'opponent' : null);
+            if (s && side) {
                 const press   = s.pressStyle          || 'medium';
                 const instr   = s.specialInstruction  || 'none';
                 const pd = PRESS_DATA[press]       || PRESS_DATA['medium'];
                 const id = INSTRUCTION_DATA[instr] || INSTRUCTION_DATA['none'];
-
-                const ourFormation = s.formation || '433';
-                if (params.teamFormation === ourFormation) {
-                    const atkMod = pd.attackBonus  * id.attackBonus;
-                    const defMod = pd.defenseBonus * id.defenseBonus;
-                    const formBoost = Math.round((atkMod - 1) * 20);
-                    const defBoost  = Math.round((defMod - 1) * 20);
-                    params = {
-                        ...params,
-                        teamForm: Math.min(100, Math.max(0, (params.teamForm || 75) + formBoost + defBoost))
-                    };
-                    if (formBoost !== 0 || defBoost !== 0) {
-                        console.log(`[Tactics] Presión "${press}" + Instrucción "${instr}" → form ${formBoost > 0 ? '+' : ''}${formBoost + defBoost}`);
-                    }
+                const atkMod = pd.attackBonus  * id.attackBonus;
+                const defMod = pd.defenseBonus * id.defenseBonus;
+                // Ataque: multiplica nuestros goles esperados. Defensa: divide los del rival.
+                params = { ...params };
+                params[side + 'AttackMod']  = (params[side + 'AttackMod']  || 1) * atkMod;
+                params[side + 'DefenseMod'] = (params[side + 'DefenseMod'] || 1) * defMod;
+                if (atkMod !== 1 || defMod !== 1) {
+                    console.log(`[Tactics] Presión "${press}" + Instrucción "${instr}" → ataque ×${atkMod.toFixed(2)}, defensa ×${defMod.toFixed(2)}`);
                 }
             }
             return orig.call(this, params);
