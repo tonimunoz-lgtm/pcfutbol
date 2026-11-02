@@ -96,15 +96,16 @@ function simulateMatchInjuries(player, staff) {
     
     let probability = INJURIES_CONFIG.BASE_PROBABILITY;
     
-    // PREPARADOR FÍSICO: Reduce probabilidad de lesión
-    if (staff?.preparadorFisico) {
-        const level = staff.preparadorFisico.level || 1;
-        const reduction = 1 - (level * 0.1);
-        probability *= reduction;
-        console.log(`💪 Prep.Físico nivel ${level}: ${(reduction * 100).toFixed(0)}% probabilidad`);
+    // ENTRENADOR FÍSICO (rol 'entrenador'): -8 % de riesgo por nivel; sin él, +20 %
+    const physical = staff?.entrenador || staff?.preparadorFisico;
+    if (physical) {
+        probability *= 1 - (physical.level || 1) * 0.08;
     } else {
-        probability *= 1.3;
-        console.log('⚠️ Sin preparador físico: +30% probabilidad lesión');
+        probability *= 1.2;
+    }
+    // FISIOTERAPEUTA: prevención, -5 % de riesgo por nivel
+    if (staff?.fisio) {
+        probability *= 1 - (staff.fisio.level || 1) * 0.05;
     }
     
     // Edad: solo penaliza a partir de 32
@@ -218,10 +219,15 @@ function hookSimulateWeek() {
     console.log('✅ Hook aplicado con validación integrada');
     
     window.simulateWeek = async function() {
+        // El segundo entrenador cubre bajas (lesión, sanción, venta...) antes de validar
+        const pre = window.gameLogic?.getGameState();
+        if (pre && pre.seasonType !== 'preseason' && typeof window.gameLogic.autoFixLineup === 'function') {
+            window.gameLogic.autoFixLineup();
+        }
         const state = window.gameLogic?.getGameState();
         
-        // VALIDACIÓN ANTES DE SIMULAR
-        if (state && state.lineup) {
+        // VALIDACIÓN ANTES DE SIMULAR (en pretemporada no hay partido oficial)
+        if (state && state.lineup && state.seasonType !== 'preseason') {
             console.log('🔍 Validando alineación antes de simular...');
             
             const errors = [];
@@ -301,7 +307,8 @@ function hookSimulateWeek() {
         
         console.log(`📅 Semana global ${globalWeekCounter} (anterior: ${previousGlobalWeek}, last processed: ${lastProcessedGlobalWeek}), Semana ${state?.week}, Pretemporada: ${isPreseason}`);
         
-        if (state && globalWeekCounter !== lastProcessedGlobalWeek) {
+        // Las sanciones solo se cumplen en partidos oficiales
+        if (state && !isPreseason && globalWeekCounter !== lastProcessedGlobalWeek) {
             console.log(`🔄 Procesando sanciones para semana global ${globalWeekCounter}`);
             
             const recoveredSuspensions = processWeeklySuspensions(state.squad);

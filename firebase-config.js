@@ -175,12 +175,9 @@ async function getTeamDataFromFirebase(teamName) {
             localStorage.setItem(`team_data_${teamName}`, JSON.stringify(data));  
             return { success: true, data };  
         } else {  
-            const localData = localStorage.getItem(`team_data_${teamName}`);  
-            if (localData) {  
-                const data = JSON.parse(localData);  
-                await setDoc(doc(db, 'teams_data', teamName), data);  
-                return { success: true, data };  
-            }  
+            // El documento no existe en Firebase (equipo sin datos, renombrado o
+            // borrado desde el Admin): no se vuelve a subir la copia local.
+            localStorage.removeItem(`team_data_${teamName}`);
             return { success: false, data: null };  
         }  
     } catch (error) {  

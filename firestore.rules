@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore para PC Fútbol Manager.
+// Se publican en: Firebase Console → Firestore Database → Reglas.
+// Si añades administradores, añade su correo a la lista de isAdmin().
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in ['tonaco92@gmail.com'];
+    }
+
+    // Equipos (estadio, escudo, presupuesto, plantilla) y estructura de ligas
+    // (documento pcf_leagues_config): todos leen, solo el administrador escribe.
+    match /teams_data/{teamId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Mercado de fichajes compartido: el juego lo sincroniza desde cada navegador
+    // al cargar y al vender jugadores, así que cualquier usuario identificado escribe.
+    match /transfer_market/{teamId} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
+    // Perfil de cada usuario: él mismo; el administrador puede verlos todos y
+    // suspenderlos (pestaña Usuarios del Admin).
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow read, write: if isAdmin();
+
+      // Partidas guardadas: solo su dueño (y el administrador, para "Migrar usuarios")
+      match /saved_games/{gameId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+        allow read: if isAdmin();
+      }
+    }
+  }
+}

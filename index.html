@@ -1152,60 +1152,27 @@ window.selectTeamAndStart = async function(teamName, division) {
         // Simulación
         window.simulateWeek = async function() {
             const state = gameLogic.getGameState();
-            const lineupValidation = gameLogic.validateLineup(state.lineup);
-            
-            if (!lineupValidation.success) {
-                if (state.staff.segundoEntrenador) {
-                    alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada.`);
-                    gameLogic.addNews(`[Segundo Entrenador - CRÍTICO] Alineación inválida: ${lineupValidation.message}. Por favor, corrige.`, 'error');
-                    window.openPage('lineup');
-                    return;
-                } else {
-                    alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida.`);
-                    gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
+            // En pretemporada no hay partido oficial: no hace falta validar
+            if (state.seasonType !== 'preseason') {
+                if (gameLogic.autoFixLineup) gameLogic.autoFixLineup();
+                const lineupValidation = gameLogic.validateLineup(gameLogic.getGameState().lineup);
+                if (!lineupValidation.success) {
+                    if (state.staff.segundoEntrenador) {
+                        alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada.`);
+                        gameLogic.addNews(`[Segundo Entrenador - CRÍTICO] Alineación inválida: ${lineupValidation.message}. Por favor, corrige.`, 'error');
+                        window.openPage('lineup');
+                        return;
+                    } else {
+                        alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida.`);
+                        gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
+                    }
                 }
             }
-            
-            const simulationResult = gameLogic.simulateFullWeek();
+
+            // Se espera a que termine la jornada (y el fin de temporada, si toca).
+            // El resumen del partido lo muestra injectMatchSummary.
+            await gameLogic.simulateFullWeek();
             ui.refreshUI(gameLogic.getGameState());
-
-            if (simulationResult && simulationResult.myMatch) {
-                const myMatch = simulationResult.myMatch;
-                const matchResultTitle = document.getElementById('matchResultTitle');
-                const matchResultDetails = document.getElementById('matchResultDetails');
-                const matchResultMessage = document.getElementById('matchResultMessage');
-
-                matchResultDetails.innerHTML = `${myMatch.home} ${myMatch.score} ${myMatch.away}`;
-                
-                if (myMatch.home === state.team) {
-                    if (parseInt(myMatch.score.split('-')[0]) > parseInt(myMatch.score.split('-')[1])) {
-                        matchResultTitle.textContent = '¡VICTORIA!';
-                        matchResultTitle.style.color = '#00ff00';
-                    } else if (parseInt(myMatch.score.split('-')[0]) === parseInt(myMatch.score.split('-')[1])) {
-                        matchResultTitle.textContent = 'EMPATE';
-                        matchResultTitle.style.color = 'orange';
-                    } else {
-                        matchResultTitle.textContent = 'DERROTA';
-                        matchResultTitle.style.color = 'red';
-                    }
-                } else {
-                    if (parseInt(myMatch.score.split('-')[1]) > parseInt(myMatch.score.split('-')[0])) {
-                        matchResultTitle.textContent = '¡VICTORIA!';
-                        matchResultTitle.style.color = '#00ff00';
-                    } else if (parseInt(myMatch.score.split('-')[1]) === parseInt(myMatch.score.split('-')[0])) {
-                        matchResultTitle.textContent = 'EMPATE';
-                        matchResultTitle.style.color = 'orange';
-                    } else {
-                        matchResultTitle.textContent = 'DERROTA';
-                        matchResultTitle.style.color = 'red';
-                    }
-                }
-
-                window.openModal('matchResult');
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                window.closeModal('matchResult');
-            }
-
             window.openPage('dashboard');
         };
 
@@ -2291,9 +2258,10 @@ window.onclick = function(event) {
 <script>
 // Limpiar localStorage de partidas al cargar la página
 (function() {
-    const gameKeys = Object.keys(localStorage).filter(k => 
-        k.includes('pcfutbol') || k.includes('game') || k === 'pcfutbol-save'
-    );
+    // Solo restos de versiones antiguas. Se conservan las partidas guardadas en
+    // local como respaldo (user_games_*) y las ligas del Admin (pcf_leagues_config).
+    const OLD_KEYS = ['pcfutbol-save', 'pcfutbol_gamestate', 'pcfutbol_game', 'gameState', 'currentGame'];
+    const gameKeys = Object.keys(localStorage).filter(k => OLD_KEYS.includes(k));
     
     if (gameKeys.length > 0) {
         console.log('🗑️ Limpiando localStorage:', gameKeys);

@@ -57,6 +57,8 @@
                     const container = modal.querySelector('.match-container');
                     if (container) {
                         window._lastMatchResultHTML = container.innerHTML;
+                        // Se guarda en la partida para verlo tras recargar
+                        window.gameLogic?.updateGameState?.({ lastMatchResultHTML: container.innerHTML, lastMatchResultAt: Date.now() });
                     }
                 }
             }, 600);
@@ -250,6 +252,11 @@
         const content = document.getElementById('last-result-content');
 
         // Determinar cuál fue el último partido (liga vs copa/europa)
+        const gsNow = window.gameLogic?.getGameState?.();
+        if (!window._lastMatchResultHTML && gsNow?.lastMatchResultHTML) {
+            window._lastMatchResultHTML = gsNow.lastMatchResultHTML;
+            window._lastMatchTimestamp = gsNow.lastMatchResultAt || 1;
+        }
         const ligaTime  = window._lastMatchTimestamp || 0;
         const copaTime  = window._lastCupMatchData?.timestamp || 0;
         const hasCopa   = !!window._lastCupMatchData;

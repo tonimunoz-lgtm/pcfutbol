@@ -31,7 +31,7 @@
     // Tipos de noticias de mercado rival (plantillas)
     const TRANSFER_TEMPLATES = [
         (p, club, fee) => `🔄 ${club} ficha a ${p} por ${fee.toLocaleString('es-ES')}€`,
-        (p, club)      => `📋 ${club} renueva el contrato de ${p} hasta ${2026 + Math.floor(Math.random()*3)}`,
+        (p, club)      => `📋 ${club} renueva el contrato de ${p} hasta ${(parseInt(String(window.gameLogic?.getGameState?.()?.currentSeason || '2026/2027').split('/')[1]) || 2027) + 1 + Math.floor(Math.random()*3)}`,
         (p, club, fee) => `💰 ${club} vende a ${p} por ${fee.toLocaleString('es-ES')}€`,
         (p, club)      => `🔒 ${club} blinda a ${p} con una cláusula millonaria`,
         (p, club)      => `🏟️ ${club} presenta a su nuevo fichaje ${p}`,
@@ -43,7 +43,8 @@
         'Rodríguez','Martín','García','López','Hernández','Jiménez','Moreno',
         'Álvarez','Romero','Torres','Navarro','Domínguez','Serrano','Ruiz',
         'Medina','Castillo','Ortega','Delgado','Vega','Moya','Pizarro',
-        'Iniesta','Pedri','Gavi','Bellingham','Valverde','Modric','Kimmich',
+        // (sin apellidos de futbolistas famosos: evitaba noticias tipo "Iván Bellingham")
+        'Prieto','Cabrera','Sanz','Rubio','Gil','Marín','Peña',
     ];
 
     const FIRST_NAMES = [

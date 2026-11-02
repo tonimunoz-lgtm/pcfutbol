@@ -84,8 +84,13 @@
         const pending = state.pendingRenewals || [];
         if (pending.length === 0) return;
 
-        const toProcess = pending.filter(r => r.responseWeek <= currentWeek);
-        const remaining = pending.filter(r => r.responseWeek > currentWeek);
+        // Una oferta se resuelve si llega su jornada o si ha cambiado la fase de la
+        // temporada (de regular a pretemporada o viceversa): las jornadas se reinician
+        const phase = `${state.currentSeason}|${state.seasonType}`;
+        const isDue = r => r.responseWeek <= currentWeek || (r.phase && r.phase !== phase) ||
+            (!r.phase && r.offeredWeek !== undefined && currentWeek < r.offeredWeek);
+        const toProcess = pending.filter(isDue);
+        const remaining = pending.filter(r => !isDue(r));
 
         toProcess.forEach(renewal => {
             // Buscar al jugador en la plantilla actual
@@ -129,9 +134,13 @@
             }
         });
 
-        // Actualizar el estado con las renovaciones procesadas eliminadas
-        state.pendingRenewals = remaining;
-        window.gameLogic?.updateGameState?.(state);
+        // Guardar solo lo que cambia aquí: si se guardara el estado entero (una
+        // copia tomada antes de añadir las noticias), se borrarían esas noticias.
+        window.gameLogic?.updateGameState?.({
+            squad: state.squad,
+            balance: state.balance,
+            pendingRenewals: remaining
+        });
         refreshUI();
     }
 
@@ -274,7 +283,8 @@
                 hasCar,
                 hasHouse,
                 responseWeek,
-                offeredWeek: state.week
+                offeredWeek: state.week,
+                phase: `${state.currentSeason}|${state.seasonType}`
             };
 
             updateState(s => {
