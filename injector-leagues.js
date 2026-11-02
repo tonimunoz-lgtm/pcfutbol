@@ -4,7 +4,8 @@
 //
 // - Guarda qué equipos hay en cada división y el nombre visible
 //   de cada división en Firestore (colección teams_data, documento
-//   especial "__leagues__") y en localStorage como copia.
+//   especial "pcf_leagues_config") y en localStorage como copia.
+//   (Firestore no permite ids con formato __xxx__: están reservados.)
 // - Al arrancar, sustituye window.TEAMS_DATA por esa estructura, así
 //   que la selección de equipo, los calendarios, ascensos/descensos
 //   y ofertas usan los equipos que hayas definido en el Admin.
@@ -15,7 +16,7 @@
 (function () {
     'use strict';
 
-    const DOC_ID = '__leagues__';
+    const DOC_ID = 'pcf_leagues_config';
     const LS_KEY = 'pcf_leagues_config';
 
     const DEFAULT_NAMES = {
@@ -173,6 +174,12 @@
             apply(remote);
             try { localStorage.setItem(LS_KEY, JSON.stringify(current)); } catch (e) { /* ignorar */ }
             console.log('[Leagues] Estructura de ligas cargada desde Firebase ✓');
+        } else if (localStorage.getItem(LS_KEY) && current && current.updatedAt) {
+            // Cambios hechos en el Admin que no llegaron a Firebase (p. ej. por el id
+            // reservado de la versión anterior): se suben ahora.
+            const r = await save(current);
+            console.log(r.success ? '[Leagues] Cambios locales subidos a Firebase ✓'
+                                  : '[Leagues] No se pudieron subir los cambios locales: ' + r.error);
         }
     })();
 
