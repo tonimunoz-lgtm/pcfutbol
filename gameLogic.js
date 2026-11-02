@@ -10,6 +10,9 @@ import { getPlayerMarket as getPlayerMarketData, getYoungsterMarket as getYoungs
 import { getTeamData, saveTeamData } from './teamData.js';
 
 
+// Primera temporada de una partida nueva
+const FIRST_SEASON = '2026/2027';
+
 // Estado global del juego  
 const gameState = {  
     team: null, 
@@ -61,7 +64,7 @@ const gameState = {
     },  
     newsFeed: [],  
     unreadNewsCount: 0,  
-    currentSeason: '2025/2026',  
+    currentSeason: '2026/2027',  
     seasonType: 'preseason',  
     leagueTeams: [],  
     nextOpponent: null,  
@@ -84,7 +87,7 @@ function updateGameState(newState) {
   
 function addNews(message, type = 'info', read = false) {  
     gameState.newsFeed.unshift({ week: gameState.week, message: message, timestamp: Date.now(), type: type, read: read });  
-    if (gameState.newsFeed.length > 20) {  
+    if (gameState.newsFeed.length > 40) {  
         gameState.newsFeed.pop();  
     }  
     if (type !== 'system' && !read) { // Solo incrementar contador si no es una noticia del sistema  
@@ -417,23 +420,25 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     gameState.currentSeason = newSeasonName;  
     gameState.division = nextDivisionKey;  
   
-    let teamsInNewDivision = TEAMS_DATA[nextDivisionKey];  
-    if (!teamsInNewDivision) {  
-        console.error(`División no encontrada en TEAMS_DATA: ${nextDivisionKey}. Usando Primera por defecto.`);  
-        teamsInNewDivision = TEAMS_DATA.primera;  
-        gameState.division = 'primera';  
-    }  
-  
-    if (!teamsInNewDivision.includes(gameState.team)) {  
-        teamsInNewDivision.push(gameState.team);  
-    }  
-    gameState.leagueTeams = teamsInNewDivision;  
-    gameState.standings = initStandings(teamsInNewDivision);  
-  
-    gameState.seasonCalendar = generateLeagueCalendar(teamsInNewDivision);  
-    gameState.maxSeasonWeeks = teamsInNewDivision.length * 2 - 2;  
-  
-    addNews(`¡Comienza la ${newSeasonName} en ${gameState.division}! Es tiempo de pretemporada.`, 'success');  
+    const leagues = gameState.leagues || buildLeaguesFromConfig();
+    gameState.leagues = leagues;
+    if (!Array.isArray(leagues[nextDivisionKey])) {
+        console.error(`División no encontrada: ${nextDivisionKey}. Se mantiene ${prevSeasonDivision}.`);
+        nextDivisionKey = prevSeasonDivision;
+        gameState.division = nextDivisionKey;
+    }
+    if (!leagues[nextDivisionKey].includes(gameState.team)) {
+        Object.keys(leagues).forEach(k => { leagues[k] = leagues[k].filter(t => t !== gameState.team); });
+        leagues[nextDivisionKey].push(gameState.team);
+    }
+    const teamsInNewDivision = [...leagues[nextDivisionKey]];
+    gameState.leagueTeams = teamsInNewDivision;
+    gameState.standings = initStandings(teamsInNewDivision);
+
+    gameState.seasonCalendar = generateLeagueCalendar(teamsInNewDivision);
+    gameState.maxSeasonWeeks = seasonLength(gameState.seasonCalendar);
+
+    addNews(`¡Comienza la ${newSeasonName} en ${divisionName(nextDivisionKey)}! Es tiempo de pretemporada.`, 'success');
   
     initPlayerDatabase();  
     initYoungsterDatabase();  
@@ -547,10 +552,12 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
         team: teamName,
         division: divisionType,
         gameMode: gameMode,
-        currentSeason: '2025/2026',
+        currentSeason: FIRST_SEASON,
         seasonType: 'preseason',
         week: 1,
         matchHistory: [],
+        leagues: null,
+        lastSeasonSummary: null,
         standings: {},
         newsFeed: [],
         unreadNewsCount: 0,
@@ -577,12 +584,19 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     }
 
     // Cargar equipos y calendario
-    let teamsInDivision = TEAMS_DATA[divisionType] || TEAMS_DATA.primera;
-    if (!teamsInDivision.includes(teamName)) teamsInDivision.push(teamName);
+    // Estructura de ligas propia de esta partida (copia de la configuración del Admin)
+    gameState.leagues = buildLeaguesFromConfig();
+    if (!gameState.leagues[divisionType]) gameState.leagues[divisionType] = [];
+    Object.keys(gameState.leagues).forEach(k => {
+        if (k !== divisionType) gameState.leagues[k] = gameState.leagues[k].filter(t => t !== teamName);
+    });
+    if (!gameState.leagues[divisionType].includes(teamName)) gameState.leagues[divisionType].push(teamName);
+    const teamsInDivision = [...gameState.leagues[divisionType]];
 
     gameState.leagueTeams = teamsInDivision;
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
+    gameState.maxSeasonWeeks = seasonLength(gameState.seasonCalendar);
 
     // Alineación inicial automática: mejor once en la formación actual
     gameState.lineup = pickBestXI(gameState.squad, gameState.formation || '433').filter(Boolean);
@@ -1481,104 +1495,297 @@ function boardMessages() {
     }  
 }  
   
-function endSeason() {  
-    const currentDivision = gameState.division;  
-    const currentSeason = gameState.currentSeason;  
-    const teams = Object.entries(gameState.standings).sort((a, b) => b[1].pts - a[1].pts);  
-    const myTeamRank = teams.findIndex(([name]) => name === gameState.team) + 1;  
-  
-    let nextDivisionKey = currentDivision;  
-  
-    let seasonSummary = `¡Fin de la temporada ${currentSeason}!\n`;  
-  
-    const promoReleConfig = PROMOTION_RELEGATION[currentDivision];  
-  
-    if (currentDivision.includes('rfef')) { // Aplica tanto para rfef_grupo1 como rfef_grupo2  
-        const numPromote = promoReleConfig.promote;  
-        const teamsInMyGroup = gameState.leagueTeams;  
-        const sortedMyGroup = teams.filter(([teamName]) => teamsInMyGroup.includes(teamName));  
-        const myTeamRankInGroup = sortedMyGroup.findIndex(([name]) => name === gameState.team) + 1;  
-  
-        if (myTeamRankInGroup <= numPromote) {  
-            seasonSummary += `¡Has ascendido a Segunda División! Felicidades.\n`;  
-            nextDivisionKey = 'segunda';  
-        } else if (myTeamRankInGroup > (teamsInMyGroup.length - promoReleConfig.relegate)) {  
-            seasonSummary += `¡Has descendido a Liga Promesas! Es hora de reconstruir.\n`;  
-            nextDivisionKey = 'promesas';
-        }  
-        else {  
-            seasonSummary += `Tu equipo permanece en Primera RFEF.\n`;  
-        }  
-            
-        const promotedTeams = sortedMyGroup.slice(0, numPromote);  
-        seasonSummary += `Equipos que ascienden de tu grupo a Segunda: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
-        const relegatedTeams = sortedMyGroup.slice(-promoReleConfig.relegate);  
-        seasonSummary += `Equipos que descienden de tu grupo a Liga Promesas: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
-  
-    } else if (currentDivision === 'promesas') {
-        // 1º → asciende directo a rfef_grupo2
-        if (myTeamRank === 1) {
-            seasonSummary += `¡¡CAMPEÓN DE LIGA PROMESAS!! ¡Has ascendido a Primera RFEF Grupo 2!\n`;
-            nextDivisionKey = 'rfef_grupo2';
-        } else if (myTeamRank >= 2 && myTeamRank <= 5) {
-            // El playoff lo gestiona injector-promesas.js — leer su resultado
-            const playoffData = (() => { try { return JSON.parse(localStorage.getItem('playoff_promesas_v1')); } catch(e) { return null; } })();
-            if (playoffData?.myResult === 'promoted_playoff') {
-                seasonSummary += `¡Has ascendido vía playoff a Primera RFEF Grupo 1!\n`;
-                nextDivisionKey = 'rfef_grupo1';
-            } else {
-                seasonSummary += `Tu equipo permanece en Liga Promesas.\n`;
-            }
-        } else {
-            seasonSummary += `Tu equipo permanece en Liga Promesas.\n`;
-        }
+// ============================================================
+// TEMPORADAS: ESTRUCTURA DE LIGAS, ASCENSOS, DESCENSOS Y PLAYOFFS
+// ------------------------------------------------------------
+// La composición de cada división se guarda en la propia partida
+// (gameState.leagues), así cada partida evoluciona por su cuenta y la
+// configuración global del Admin (TEAMS_DATA) solo sirve de punto de
+// partida para las partidas nuevas.
+//
+// Reglas (iguales para el usuario y para la IA):
+//   Primera ........ bajan los 3 últimos a Segunda
+//   Segunda ........ suben 1º y 2º; playoff 3º-6º (doble partido) → 1 plaza
+//                    bajan los 4 últimos a Primera RFEF (repartidos entre grupos)
+//   Primera RFEF ... sube el 1º de cada grupo; playoff cruzado 2º-5º de
+//                    ambos grupos → 2 plazas; baja el último de cada grupo
+//                    a Liga Promesas (si existe)
+//   Liga Promesas .. el 1º sube al Grupo 2; playoff 2º-5º → 1 plaza al Grupo 1
+// Desempate en todas las tablas: puntos, diferencia de goles, goles a favor.
+// ============================================================
+const DIVISION_DEFAULT_NAMES = {
+    primera: 'Primera División', segunda: 'Segunda División',
+    rfef_grupo1: 'Primera RFEF Grupo 1', rfef_grupo2: 'Primera RFEF Grupo 2',
+    promesas: 'Liga Promesas'
+};
 
-    } else if (currentDivision === 'segunda') {  
-        const numPromote = promoReleConfig.promote;  
-        const promotedTeams = teams.slice(0, numPromote);  
-        if (myTeamRank <= numPromote) {  
-            seasonSummary += `¡Has ascendido a Primera División! ¡Un logro enorme!\n`;  
-            nextDivisionKey = 'primera';  
-        }  
-  
-        const numRelegate = promoReleConfig.relegate;  
-        const relegatedTeams = teams.slice(-numRelegate);  
-        if (myTeamRank > teams.length - numRelegate) {  
-            seasonSummary += `¡Has descendido a Primera RFEF! Es hora de reconstruir.\n`;  
-            nextDivisionKey = Math.random() < 0.5 ? 'rfef_grupo1' : 'rfef_grupo2';  
-        } else if (myTeamRank > numPromote) {  
-            seasonSummary += `Tu equipo permanece en Segunda División.\n`;  
-        }  
-        seasonSummary += `Equipos que ascienden a Primera: ${promotedTeams.map(t => t[0]).join(', ')}.\n`;  
-        seasonSummary += `Equipos que descienden a Primera RFEF: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
-  
-  
-    } else if (currentDivision === 'primera') {  
-        const numRelegate = promoReleConfig.relegate;  
-        const relegatedTeams = teams.slice(-numRelegate);  
-        if (myTeamRank > teams.length - numRelegate) {  
-            seasonSummary += `¡Has descendido a Segunda División! A trabajar para volver.\n`;  
-            nextDivisionKey = 'segunda';  
-        } else {  
-            seasonSummary += `Tu equipo permanece en Primera División.\n`;  
-        }  
-        seasonSummary += `Equipos que descienden a Segunda: ${relegatedTeams.map(t => t[0]).join(', ')}.\n`;  
-  
-        const topPositions = [1, 2, 3, 4, 5, 6, 7];  
-        if (topPositions.slice(0, 4).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Champions League!\n`;  
-        } else if (topPositions.slice(4, 6).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Europa League!\n`;  
-        } else if (topPositions.slice(6, 7).includes(myTeamRank)) {  
-            seasonSummary += `¡Te has clasificado para la Conference League!\n`;  
-        }  
-    }  
-  
-    alert(seasonSummary);  
-    addNews(seasonSummary, 'info');  
-    setupNewSeason(currentDivision, nextDivisionKey);  
-}  
-  
+function divisionName(key) {
+    const fromLeagues = typeof window !== 'undefined' && window.pcfLeagues && window.pcfLeagues.name(key);
+    return (fromLeagues && fromLeagues !== key ? fromLeagues : DIVISION_DEFAULT_NAMES[key]) || key;
+}
+
+function sortStandings(standings) {
+    return Object.entries(standings || {}).sort((a, b) => {
+        const A = a[1] || {}, B = b[1] || {};
+        return (B.pts || 0) - (A.pts || 0)
+            || ((B.gf || 0) - (B.gc || 0)) - ((A.gf || 0) - (A.gc || 0))
+            || (B.gf || 0) - (A.gf || 0)
+            || a[0].localeCompare(b[0]);
+    });
+}
+
+function seasonLength(calendar) {
+    return (calendar || []).reduce((max, m) => Math.max(max, m.week || 0), 0);
+}
+
+// Copia de la estructura global (Admin / config.js) sin duplicados
+function buildLeaguesFromConfig() {
+    const leagues = {};
+    const seen = new Set();
+    const keys = ['primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2', 'promesas']
+        .concat(Object.keys(TEAMS_DATA).filter(k => !['primera', 'segunda', 'rfef_grupo1', 'rfef_grupo2', 'promesas'].includes(k)));
+    keys.forEach(key => {
+        if (!Array.isArray(TEAMS_DATA[key])) return;
+        leagues[key] = TEAMS_DATA[key].filter(t => t && !seen.has(t) && seen.add(t));
+    });
+    return leagues;
+}
+
+// Garantiza gameState.leagues coherente con la liga que se está jugando
+// (las partidas guardadas antes de esta versión no la tienen)
+function ensureLeagueStructure() {
+    if (!gameState.leagues || typeof gameState.leagues !== 'object') {
+        gameState.leagues = buildLeaguesFromConfig();
+    }
+    const div = gameState.division;
+    if (div && Array.isArray(gameState.leagueTeams) && gameState.leagueTeams.length) {
+        const current = new Set(gameState.leagueTeams);
+        Object.keys(gameState.leagues).forEach(k => {
+            if (k !== div) gameState.leagues[k] = gameState.leagues[k].filter(t => !current.has(t));
+        });
+        gameState.leagues[div] = [...gameState.leagueTeams];
+    }
+    return gameState.leagues;
+}
+
+// Simula una liga completa entre equipos de la IA (para las divisiones
+// en las que no juega el usuario). Usa el mismo motor que los partidos.
+async function simulateLeagueTable(teams, division, season) {
+    const strength = {};
+    for (const team of teams) {
+        const squad = await getAISquadCached(team, division, season);
+        const formation = chooseAIFormation(squad);
+        strength[team] = {
+            overall: calculateTeamEffectiveOverall(pickBestXI(squad, formation), formation),
+            formation
+        };
+    }
+    const standings = initStandings(teams);
+    for (const m of generateLeagueCalendar(teams)) {
+        const h = strength[m.home], a = strength[m.away];
+        const r = calculateMatchOutcomeImproved({
+            teamOverall: h.overall, opponentOverall: a.overall,
+            teamFormation: h.formation, opponentFormation: a.formation, isHome: true
+        });
+        addResultToStandings(standings, m.home, m.away, r.teamGoals, r.opponentGoals);
+    }
+    return standings;
+}
+
+function addResultToStandings(standings, home, away, hg, ag) {
+    const H = standings[home], A = standings[away];
+    if (!H || !A) return;
+    H.pj++; A.pj++;
+    H.gf += hg; H.gc += ag; A.gf += ag; A.gc += hg;
+    if (hg > ag) { H.g++; H.pts += 3; A.p++; }
+    else if (hg < ag) { A.g++; A.pts += 3; H.p++; }
+    else { H.e++; A.e++; H.pts++; A.pts++; }
+}
+
+// Eliminatoria a doble partido. teamA = mejor clasificado (juega la vuelta
+// en casa y pasa si hay empate en el global, como en el playoff real).
+async function playTwoLegTie(teamA, teamB, division) {
+    const ctx = { ...gameState, division };
+    const leg1 = await playMatchImproved(teamB, teamA, ctx);
+    const leg2 = await playMatchImproved(teamA, teamB, ctx);
+    const totalA = leg1.awayGoals + leg2.homeGoals;
+    const totalB = leg1.homeGoals + leg2.awayGoals;
+    return {
+        teamA, teamB,
+        leg1: { hg: leg1.homeGoals, ag: leg1.awayGoals },
+        leg2: { hg: leg2.homeGoals, ag: leg2.awayGoals },
+        totalA, totalB,
+        winner: totalA >= totalB ? teamA : teamB
+    };
+}
+
+// Playoff de 4 equipos ordenados por clasificación: 1º-4º y 2º-3º, final
+async function playFourTeamPlayoff(seeds, division) {
+    const [s1, s2, s3, s4] = seeds;
+    if (!s4) return null;
+    const sf1 = await playTwoLegTie(s1, s4, division);
+    const sf2 = await playTwoLegTie(s2, s3, division);
+    const rank = t => seeds.indexOf(t);
+    const [fa, fb] = [sf1.winner, sf2.winner].sort((x, y) => rank(x) - rank(y));
+    const final = await playTwoLegTie(fa, fb, division);
+    return { seeds, sf1, sf2, final, winner: final.winner };
+}
+
+async function resolveSeasonEnd() {
+    const season = gameState.currentSeason;
+    const userDiv = gameState.division;
+    const leagues = ensureLeagueStructure();
+
+    // 1) Clasificaciones finales de todas las divisiones
+    const tables = {};
+    for (const [div, teams] of Object.entries(leagues)) {
+        if (!Array.isArray(teams) || teams.length < 2) continue;
+        const standings = div === userDiv ? gameState.standings : await simulateLeagueTable(teams, div, season);
+        tables[div] = sortStandings(standings).map(([team, s]) => ({
+            team, pts: s.pts || 0, gf: s.gf || 0, gc: s.gc || 0, g: s.g || 0, e: s.e || 0, p: s.p || 0
+        }));
+    }
+    const order = div => (tables[div] || []).map(r => r.team);
+
+    // 2) Ascensos, descensos y playoffs
+    const moves = [];
+    const playoffs = {};
+    const move = (team, from, to, reason) => { if (team && to && (leagues[to] || to === 'rfef')) moves.push({ team, from, to, reason }); };
+
+    const primera = order('primera'), segunda = order('segunda');
+    const g1 = order('rfef_grupo1'), g2 = order('rfef_grupo2'), promesas = order('promesas');
+
+    if (primera.length && segunda.length) {
+        primera.slice(-3).forEach(t => move(t, 'primera', 'segunda', 'descenso'));
+        segunda.slice(0, 2).forEach(t => move(t, 'segunda', 'primera', 'ascenso directo'));
+        const po = await playFourTeamPlayoff(segunda.slice(2, 6), 'segunda');
+        if (po) {
+            playoffs.segunda = { ...po, direct: segunda.slice(0, 2) };
+            move(po.winner, 'segunda', 'primera', 'ascenso por playoff');
+        }
+    }
+
+    const rfefGroups = [['rfef_grupo1', g1], ['rfef_grupo2', g2]].filter(([, t]) => t.length);
+    if (segunda.length && rfefGroups.length) {
+        // Bajan 4 de Segunda (se reparten luego entre los grupos)
+        segunda.slice(-4).forEach(t => move(t, 'segunda', 'rfef', 'descenso'));
+        // Sube el campeón de cada grupo
+        rfefGroups.forEach(([key, t]) => move(t[0], key, 'segunda', 'ascenso directo'));
+        // Playoff cruzado 2º-5º: 2ºA-5ºB, 3ºA-4ºB, 2ºB-5ºA, 3ºB-4ºA; dos finales
+        if (g1.length >= 5 && g2.length >= 5) {
+            const r1 = [
+                await playTwoLegTie(g1[1], g2[4], 'rfef_grupo1'),
+                await playTwoLegTie(g1[2], g2[3], 'rfef_grupo1'),
+                await playTwoLegTie(g2[1], g1[4], 'rfef_grupo2'),
+                await playTwoLegTie(g2[2], g1[3], 'rfef_grupo2')
+            ];
+            const pos = t => (g1.includes(t) ? g1.indexOf(t) : g2.indexOf(t));
+            const seed = (x, y) => (pos(x) <= pos(y) ? [x, y] : [y, x]);
+            const finals = [
+                await playTwoLegTie(...seed(r1[0].winner, r1[3].winner), 'rfef_grupo1'),
+                await playTwoLegTie(...seed(r1[2].winner, r1[1].winner), 'rfef_grupo2')
+            ];
+            playoffs.rfef = { direct: rfefGroups.map(([, t]) => t[0]), round1: r1, finals, winners: finals.map(f => f.winner) };
+            finals.forEach(f => move(f.winner, g1.includes(f.winner) ? 'rfef_grupo1' : 'rfef_grupo2', 'segunda', 'ascenso por playoff'));
+        } else {
+            // Grupos demasiado pequeños: sube también el 2º de cada grupo
+            rfefGroups.forEach(([key, t]) => move(t[1], key, 'segunda', 'ascenso directo'));
+        }
+    }
+
+    if (promesas.length && rfefGroups.length) {
+        rfefGroups.forEach(([key, t]) => move(t[t.length - 1], key, 'promesas', 'descenso'));
+        move(promesas[0], 'promesas', leagues.rfef_grupo2 ? 'rfef_grupo2' : 'rfef_grupo1', 'ascenso directo');
+        const po = await playFourTeamPlayoff(promesas.slice(1, 5), 'promesas');
+        if (po) {
+            playoffs.promesas = { ...po, direct: [promesas[0]] };
+            move(po.winner, 'promesas', leagues.rfef_grupo1 ? 'rfef_grupo1' : 'rfef_grupo2', 'ascenso por playoff');
+        }
+    }
+
+    // 3) Aplicar movimientos (un equipo solo se mueve una vez)
+    const moved = new Set();
+    const finalMoves = moves.filter(m => !moved.has(m.team) && moved.add(m.team));
+    finalMoves.forEach(m => { leagues[m.from] = (leagues[m.from] || []).filter(t => t !== m.team); });
+    finalMoves.forEach(m => {
+        let to = m.to;
+        if (to === 'rfef') {
+            // Al grupo con menos equipos (equilibra tamaños)
+            const groups = rfefGroups.map(([k]) => k);
+            to = groups.sort((a, b) => leagues[a].length - leagues[b].length)[0];
+            m.to = to;
+        }
+        leagues[to].push(m.team);
+    });
+
+    const userMove = finalMoves.find(m => m.team === gameState.team);
+    const userRow = (tables[userDiv] || []).findIndex(r => r.team === gameState.team) + 1;
+
+    gameState.lastSeasonSummary = {
+        season, userDivision: userDiv, userPosition: userRow,
+        userMove: userMove || null,
+        tables, playoffs, moves: finalMoves
+    };
+    return gameState.lastSeasonSummary;
+}
+
+function buildSeasonSummaryText(summary) {
+    const { season, userDivision, userPosition, userMove, playoffs, moves } = summary;
+    const lines = [`🏁 Fin de la temporada ${season}`, `${gameState.team}: ${userPosition}º en ${divisionName(userDivision)}.`];
+    if (userMove) {
+        const up = userMove.reason.startsWith('ascenso');
+        lines.push(up ? `🎉 ¡Ascenso a ${divisionName(userMove.to)} (${userMove.reason})!`
+                      : `⬇️ Descenso a ${divisionName(userMove.to)}.`);
+    } else {
+        lines.push(`Sigues en ${divisionName(userDivision)}.`);
+    }
+    const userPO = [playoffs.segunda, playoffs.promesas].find(p => p && p.seeds.includes(gameState.team));
+    if (userPO) lines.push(userPO.winner === gameState.team ? '⭐ Has ganado el playoff de ascenso.' : '😞 Has caído en el playoff de ascenso.');
+    if (playoffs.rfef && [...playoffs.rfef.round1.flatMap(t => [t.teamA, t.teamB])].includes(gameState.team) && !playoffs.rfef.winners.includes(gameState.team)) {
+        lines.push('😞 Has caído en el playoff de ascenso.');
+    }
+    const byDest = {};
+    moves.forEach(m => { (byDest[`${m.from}>${m.to}`] = byDest[`${m.from}>${m.to}`] || []).push(m.team); });
+    const describe = (from, to) => {
+        const teams = byDest[`${from}>${to}`];
+        return teams && teams.length ? `${divisionName(from)} → ${divisionName(to)}: ${teams.join(', ')}` : null;
+    };
+    [['segunda', 'primera'], ['primera', 'segunda'], ['rfef_grupo1', 'segunda'], ['rfef_grupo2', 'segunda'],
+     ['segunda', 'rfef_grupo1'], ['segunda', 'rfef_grupo2'], ['rfef_grupo1', 'promesas'], ['rfef_grupo2', 'promesas'],
+     ['promesas', 'rfef_grupo1'], ['promesas', 'rfef_grupo2']].forEach(([f, t]) => {
+        const d = describe(f, t); if (d) lines.push(d);
+    });
+    return lines.join('\n');
+}
+
+async function endSeason() {
+    const currentDivision = gameState.division;
+    let summary;
+    try {
+        summary = await resolveSeasonEnd();
+    } catch (e) {
+        console.error('Error resolviendo el fin de temporada:', e);
+        summary = { season: gameState.currentSeason, userDivision: currentDivision, userPosition: 0, userMove: null, tables: {}, playoffs: {}, moves: [] };
+    }
+
+    const nextDivisionKey = summary.userMove ? summary.userMove.to : currentDivision;
+    const text = buildSeasonSummaryText(summary);
+
+    // Europa (solo informativo aquí; las competiciones las gestiona su módulo)
+    if (currentDivision === 'primera' && !summary.userMove) {
+        const pos = summary.userPosition;
+        if (pos >= 1 && pos <= 5) summary.europe = 'Champions League';
+        else if (pos >= 6 && pos <= 7) summary.europe = 'Europa League';
+        else if (pos === 8) summary.europe = 'Conference League';
+    }
+    const fullText = summary.europe ? `${text}\n🌍 Clasificado para la ${summary.europe}.` : text;
+
+    alert(fullText);
+    setupNewSeason(currentDivision, nextDivisionKey);
+    // El resumen se añade DESPUÉS de reiniciar las noticias de la nueva temporada
+    fullText.split('\n').slice(1).reverse().forEach(line => addNews(line, summary.userMove && summary.userMove.reason.startsWith('ascenso') ? 'success' : 'info'));
+    addNews(`🏁 Resumen de la temporada ${summary.season}`, 'info');
+}
 
 /*function simulateFullWeek() {  
     let myMatchResult = null;
@@ -1800,6 +2007,10 @@ async function simulateFullWeek() {
     let myMatchResult = null;
     let forcedLoss = false;  
 
+    // Partidas guardadas con la duración mal calculada (p. ej. Segunda a 38 jornadas)
+    const realLength = seasonLength(gameState.seasonCalendar);
+    if (realLength && gameState.maxSeasonWeeks !== realLength) gameState.maxSeasonWeeks = realLength;
+
     // ===== PRETEMPORADA =====
     if (gameState.seasonType === 'preseason') {  
         handlePreseasonWeek();  
@@ -1809,7 +2020,7 @@ async function simulateFullWeek() {
         if (gameState.week > PRESEASON_WEEKS) {  
             gameState.seasonType = 'regular';  
             gameState.week = 1;  
-            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${gameState.division}!`, 'success');  
+            addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${divisionName(gameState.division)}!`, 'success');  
         }  
 
         window.updateNextMatchInfo();
@@ -1976,7 +2187,7 @@ async function simulateFullWeek() {
 
     // ===== FIN DE TEMPORADA =====
     if (gameState.week > gameState.maxSeasonWeeks) {
-        endSeason();
+        await endSeason();
     }
         
     return { myMatch: myMatchResult, forcedLoss };
@@ -2733,11 +2944,15 @@ export {
     validateLineup,
     generateLeagueCalendar,  
     getSeasonCalendar,
-    pickBestXI
+    pickBestXI,
+    sortStandings,
+    divisionName
 }; 
 
 // ✅ Exponer funciones de ofertas globalmente
 if (typeof window !== 'undefined') {
+    window.sortStandings = sortStandings;
+    window.divisionName = divisionName;
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;
     window.counterOffer = counterOffer;

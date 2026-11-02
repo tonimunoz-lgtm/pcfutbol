@@ -340,19 +340,11 @@
             const result = await origSimWeek.apply(this, arguments);
             const after = getState();
 
-            if (before && after && before.currentSeason !== after.currentSeason) {
-                handlePromasasSeasonEnd(before, after);
-            } else if (after?.division === 'promesas' && after?.seasonType === 'regular') {
+            // Ascensos, descensos y playoff de Promesas los resuelve gameLogic al
+            // final de la liga (con la clasificación definitiva) y los anuncia en
+            // el resumen de temporada. Aquí solo se refrescan los colores.
+            if (after?.division === 'promesas' && after?.seasonType === 'regular') {
                 setTimeout(() => window.updateStandingsColorsPromesas?.(), 100);
-
-                const total = after.maxSeasonWeeks || 38;
-                if (after.week === total - 1) {
-                    const po = storeP.get();
-                    if (po && !po.simulated) {
-                        const res = runPromasasPlayoff(after.team);
-                        notifyPromasasPlayoff(res);
-                    }
-                }
             }
             return result;
         };
@@ -412,6 +404,7 @@
     // PASO 6: Render del Playoff en la UI
     // ============================================================
     function renderPromasasPlayoff() {
+        if (typeof window.CompetitionsSystem?.renderPlayoff === 'function') return window.CompetitionsSystem.renderPlayoff();
         const panel = document.getElementById('comp-playoff-panel');
         if (!panel) return;
         const state = getState();

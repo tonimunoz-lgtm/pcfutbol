@@ -88,12 +88,12 @@ const COMPETITION_CONFIG = {
     rfef_grupo1: {
         promoteAuto:    [1],
         promotePlayoff: [2, 3, 4, 5],
-        relegate:       0
+        relegate:       1
     },
     rfef_grupo2: {
         promoteAuto:    [1],
         promotePlayoff: [2, 3, 4, 5],
-        relegate:       0
+        relegate:       1
     }
 };
 
@@ -304,8 +304,19 @@ function sortSt(st) {
 // ============================================================
 // DETECTAR COMPETICIÓN EUROPEA AL INICIO
 // ============================================================
+// Plazas europeas reales para 2026/27 (clasificación final de LaLiga 2025-26:
+// 1 Barcelona, 2 Real Madrid, 3 Villarreal, 4 Atlético, 5 Betis → Champions;
+// Real Sociedad (campeón de Copa) y Celta → Europa League; Getafe → Conference)
+const EUROPE_2026_27 = {
+    'FC Barcelona': 'champions', 'Real Madrid CF': 'champions', 'Villarreal CF': 'champions',
+    'Atlético de Madrid': 'champions', 'Real Betis Balompié': 'champions',
+    'Real Sociedad': 'europaLeague', 'Celta de Vigo': 'europaLeague',
+    'Getafe CF': 'conferenceLague'
+};
+
 function detectInitialEuropean(teamName, division, season) {
     if (division !== 'primera') return null;
+    if (season === '2026/2027') return EUROPE_2026_27[teamName] || null;
     if (season === '2025/2026') {
         const data = LALIGA_2024_25_FINAL[teamName];
         if (data?.european) return data.european;
@@ -339,7 +350,7 @@ function initCompetitionsForSeason(myTeam, division, season, forceEuropean) {
     if (isRFEF) {
         const state = window.gameLogic?.getGameState();
         const standings = state?.standings || {};
-        const sorted = Object.entries(standings).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
+        const sorted = window.sortStandings ? window.sortStandings(standings) : Object.entries(standings).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
         const myPos = sorted.findIndex(([n])=>n===myTeam) + 1;
         // Si no hay clasificación aún (inicio de temporada), asumir clasificado si el equipo
         // era top 5 la temporada anterior — simplificación: clasificar siempre para juego fluido
@@ -1060,30 +1071,78 @@ function renderCopa() {
 // ============================================================
 // RENDER: PLAYOFF
 // ============================================================
+function sortedStandingsOf(state) {
+    return window.sortStandings ? window.sortStandings(state.standings || {})
+        : Object.entries(state.standings || {}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
+}
+
+function poName(t, myTeam, pos) {
+    return `${t || '—'}${pos ? ` <span style="opacity:.5">(${pos}º)</span>` : ''}${t && t===myTeam ? ' ⭐' : ''}`;
+}
+
 function renderPlayoff() {
     const panel = document.getElementById('comp-playoff-panel');
     if (!panel) return;
     const state = window.gameLogic?.getGameState();
     if (!state) return;
+    const my = state.team, div = state.division;
+    const dn = k => window.divisionName ? window.divisionName(k) : k;
+    const played = Object.values(state.standings || {}).some(st => (st.pj || 0) > 0);
+    const sorted = played ? sortedStandingsOf(state).map(([n]) => n) : [];
+    let html = played || !['segunda','rfef_grupo1','rfef_grupo2','promesas'].includes(div) ? '' :
+        `<div style="text-align:center;padding:20px;color:rgba(255,255,255,.5)">⬆️ La proyección del playoff aparecerá tras la primera jornada.</div>`;
 
-    // Regenerar con standings actuales SOLO si el playoff no se ha jugado todavía
-    const existing = store.getPlayoff();
-    const alreadySimulated = existing?.simulated === true;
-    if (!alreadySimulated) {
-        const sorted = Object.entries(state.standings||{}).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
-        if (sorted.length > 0) {
-            initPlayoffForDiv(state, sorted, state.currentSeason);
+    // ── Temporada en curso: proyección con la clasificación actual ──
+    if (div === 'segunda' && sorted.length >= 6) {
+        html += `<h3 style="color:#FFD700;margin:10px 0">⬆️ Ascenso a ${dn('primera')} — ${state.currentSeason}</h3>
+            <div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:8px">Si la liga acabara hoy · suben 1º y 2º, playoff 3º-6º a doble partido</div>
+            <div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+            <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSO DIRECTO</div>
+            <div style="color:#fff">🥇 ${poName(sorted[0], my, 1)}</div><div style="color:#fff">🥈 ${poName(sorted[1], my, 2)}</div></div>
+            <div class="po-wrap">${matchPending('Semifinal 1', poName(sorted[2], my, 3), poName(sorted[5], my, 6))}
+            ${matchPending('Semifinal 2', poName(sorted[3], my, 4), poName(sorted[4], my, 5))}
+            ${matchPending('Final', 'Ganador SF1', 'Ganador SF2', '#FFD700')}</div>`;
+    } else if ((div === 'rfef_grupo1' || div === 'rfef_grupo2') && sorted.length >= 5) {
+        html += `<h3 style="color:#FFD700;margin:10px 0">⬆️ Ascenso a ${dn('segunda')} — ${state.currentSeason}</h3>
+            <div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:8px">Si la liga acabara hoy · sube el 1º; del 2º al 5º juegan un playoff cruzado con el otro grupo (2 plazas) · baja el último</div>
+            <div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+            <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSO DIRECTO</div>
+            <div style="color:#fff">🥇 ${poName(sorted[0], my, 1)}</div></div>
+            <div style="color:#fff;margin-bottom:8px">⭐ Playoff: ${[1,2,3,4].map(i => poName(sorted[i], my, i+1)).join(' · ')}</div>`;
+    } else if (div === 'promesas' && sorted.length >= 5) {
+        html += `<h3 style="color:#FFD700;margin:10px 0">⬆️ Ascenso a Primera RFEF — ${state.currentSeason}</h3>
+            <div style="color:rgba(255,255,255,.6);font-size:.82em;margin-bottom:8px">Si la liga acabara hoy · el 1º sube al ${dn('rfef_grupo2')}; playoff 2º-5º → ${dn('rfef_grupo1')}</div>
+            <div style="color:#fff;margin-bottom:8px">🥇 ${poName(sorted[0], my, 1)}</div>
+            <div class="po-wrap">${matchPending('Semifinal 1', poName(sorted[1], my, 2), poName(sorted[4], my, 5))}
+            ${matchPending('Semifinal 2', poName(sorted[2], my, 3), poName(sorted[3], my, 4))}
+            ${matchPending('Final', 'Ganador SF1', 'Ganador SF2', '#FFD700')}</div>`;
+    }
+
+    // ── Temporada anterior: resultados reales ──
+    const last = state.lastSeasonSummary;
+    const po = last && last.playoffs;
+    if (po && (po.segunda || po.rfef || po.promesas)) {
+        html += `<h3 style="color:#FFD700;margin:18px 0 10px">📜 Playoffs de la temporada ${last.season}</h3>`;
+        if (po.segunda) {
+            html += `<div style="color:#fff;font-weight:bold;margin:6px 0">${dn('segunda')} → ${dn('primera')}</div>
+                <div class="po-wrap">${matchResult('Semifinal 1', po.segunda.sf1, my)}${matchResult('Semifinal 2', po.segunda.sf2, my)}${matchResult('⭐ FINAL', po.segunda.final, my, '#FFD700')}</div>`;
+        }
+        if (po.rfef) {
+            html += `<div style="color:#fff;font-weight:bold;margin:12px 0 6px">Primera RFEF → ${dn('segunda')}</div>
+                <div class="po-wrap">${po.rfef.round1.map((t,i) => matchResult(`Eliminatoria ${i+1}`, t, my)).join('')}
+                ${po.rfef.finals.map((t,i) => matchResult(`⭐ Final ${i+1}`, t, my, '#FFD700')).join('')}</div>`;
+        }
+        if (po.promesas) {
+            html += `<div style="color:#fff;font-weight:bold;margin:12px 0 6px">${dn('promesas')} → ${dn('rfef_grupo1')}</div>
+                <div class="po-wrap">${matchResult('Semifinal 1', po.promesas.sf1, my)}${matchResult('Semifinal 2', po.promesas.sf2, my)}${matchResult('⭐ FINAL', po.promesas.final, my, '#FFD700')}</div>`;
+        }
+        if (last.userMove) {
+            html += resultBanner(last.userMove.reason === 'ascenso por playoff' ? 'promoted_playoff'
+                : last.userMove.reason === 'ascenso directo' ? 'promoted_direct' : 'not_qualified');
         }
     }
 
-    const po = store.getPlayoff();
-    if (!po) {
-        panel.innerHTML=`<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5)"><div style="font-size:2em">⬆️</div><div style="margin-top:10px">El playoff de ascenso se disputará al final de la temporada regular.</div></div>`;
-        return;
-    }
-
-    if (po.type==='segunda') renderSegundaPlayoff(panel, po);
-    else if (po.type==='rfef') renderRFEFPlayoff(panel, po);
+    panel.innerHTML = html || `<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5)"><div style="font-size:2em">⬆️</div><div style="margin-top:10px">Tu división no tiene playoff de ascenso.</div></div>`;
 }
 
 function renderSegundaPlayoff(panel, po) {
@@ -1213,22 +1272,8 @@ function processWeeklyComps(state) {
         const tw=Math.round(total*(copaW[comp.copaPhase]||0));
         if (tw && w===tw) simulateCopa(myTeam, comp.copaPhase);
     }
-    // Playoff Segunda — semana penúltima
-    if (state.division==='segunda' && w===total-1) {
-        const po=store.getPlayoff();
-        if(po&&po.type==='segunda'&&!po.simulated){
-            const res=runSegundaPlayoff(myTeam);
-            notifySegundaPO(res);
-        }
-    }
-    // Playoff RFEF
-    if ((state.division==='rfef_grupo1'||state.division==='rfef_grupo2') && w===total-1) {
-        const po=store.getPlayoff();
-        if(po&&po.type==='rfef'&&!po.simulated){
-            const res=runRFEFPlayoff(myTeam);
-            notifyRFEFPO(res);
-        }
-    }
+    // Los playoffs de ascenso se juegan al terminar la liga, con la
+    // clasificación definitiva (gameLogic.endSeason). Aquí no se simulan.
 }
 
 function notifySegundaPO(po) {
@@ -1304,12 +1349,8 @@ function onNewSeason(before, after) {
 }
 
 function initPlayoffForDiv(state, sorted, season) {
-    const div=state.division;
-    if(div==='segunda') initSegundaPlayoff(state.team, sorted, season);
-    else if(div==='rfef_grupo1'||div==='rfef_grupo2'){
-        const otherKey=div==='rfef_grupo1'?'rfef_grupo2':'rfef_grupo1';
-        initRFEFPlayoff(state.team, sorted, generateFakeOtherGroup(otherKey), season);
-    }
+    // Sin efecto: el playoff lo calcula gameLogic al final de la temporada
+    // y el panel lo pinta desde gameState (ver renderPlayoff).
 }
 
 // ============================================================
