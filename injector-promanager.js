@@ -276,7 +276,7 @@ console.log('🎯 Injector Promanager cargando...');
         saveCareerToFirebase();
         setTimeout(function() {
             if (window.gameLogic && window.gameLogic.addNews) {
-                window.gameLogic.addNews('🎯 [Promanager] Contratado por ' + offer.team + ' (' + DIVISION_LABELS[offer.division] + '). ¡Demuestra tu valía!', 'info');
+                window.gameLogic.addNews('🎯 [Carrera] Contratado por ' + offer.team + ' (' + DIVISION_LABELS[offer.division] + '). ¡Demuestra tu valía!', 'info');
                 try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
             }
         }, 700);
@@ -401,7 +401,7 @@ console.log('🎯 Injector Promanager cargando...');
                         function(a) { assignTeam(a); },
                         function(r) {
                             if (window.gameLogic && window.gameLogic.addNews) {
-                                window.gameLogic.addNews('📋 [Promanager] Rechazaste la oferta de ' + r.team + '.', 'info');
+                                window.gameLogic.addNews('📋 [Carrera] Rechazaste la oferta de ' + r.team + '.', 'info');
                                 try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
                             }
                         }
@@ -475,7 +475,7 @@ console.log('🎯 Injector Promanager cargando...');
         modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #f4c430;border-radius:14px;padding:28px;max-width:360px;width:90%;text-align:center;color:#fff;">'
             + '<div style="font-size:42px;margin-bottom:6px;">📊</div>'
             + '<h3 style="color:#f4c430;margin:0 0 2px;">Carrera de ' + managerName + '</h3>'
-            + '<div style="color:#888;font-size:0.78em;margin-bottom:10px;">Liga Promanager</div>'
+            + '<div style="color:#888;font-size:0.78em;margin-bottom:10px;">Carrera de entrenador</div>'
             + '<div style="font-size:1.2em;margin-bottom:14px;">' + getRepLabel(pmState.reputation) + '</div>'
             + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px;text-align:left;font-size:0.86em;line-height:1.9;">'
             + '<div>🏟️ Equipo: <strong>' + (pmState.currentTeam||'-') + '</strong></div>'

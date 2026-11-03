@@ -40,7 +40,11 @@
             const container = document.getElementById('savedGamesListContainer');
             
             if (!games || games.length === 0) {
-                container.innerHTML = '<div class="alert alert-warning">No tienes partidas guardadas en la nube.</div>';
+                container.innerHTML = `<div class="alert alert-warning">Todavía no tienes partidas guardadas en la nube.</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                        <button class="btn" onclick="document.getElementById('savedGamesModal').classList.remove('active'); setTimeout(()=>window.openModal && window.openModal('gameMode'), 200)">🎮 Empezar una partida nueva</button>
+                        <button class="btn page-close-btn" onclick="document.getElementById('savedGamesModal').classList.remove('active'); setTimeout(()=>window.showGameSelectionModal && window.showGameSelectionModal(), 200)">← Volver</button>
+                    </div>`;
                 return;
             }
 

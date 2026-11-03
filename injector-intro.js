@@ -316,13 +316,34 @@
     }
     function watchForGame() {
         const status = $('.pcfi-status');
+        let idleSince = null;
         const iv = setInterval(() => {
             const modal = anyStartModalOpen();
-            status.classList.toggle('in', !modal && !gameStarted());
-            if (gameStarted() && !modal) {
+            const started = gameStarted();
+            if (started && !modal) {
                 clearInterval(iv);
                 finish();
+                return;
             }
+            // Sin ventana abierta ni partida (p. ej. cerraste "Cargar partida" sin partidas):
+            // tras un momento, volver a mostrar las opciones en lugar de quedarse esperando
+            if (!modal && !started) {
+                idleSince = idleSince || Date.now();
+                const user = window.currentUser;
+                if (Date.now() - idleSince > 900) {
+                    if (user && typeof window.showGameSelectionModal === 'function') {
+                        window.showGameSelectionModal();
+                        idleSince = null;
+                    } else if (user === null && document.getElementById('loginModal')) {
+                        document.getElementById('loginModal').classList.add('active');
+                        idleSince = null;
+                    }
+                }
+            } else {
+                idleSince = null;
+            }
+            // "Conectando…" solo mientras se comprueba la sesión
+            status.classList.toggle('in', !modal && !started && window.currentUser === undefined);
         }, 300);
     }
     function finish() {

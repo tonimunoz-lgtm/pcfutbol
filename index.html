@@ -655,9 +655,23 @@
     <div id="gameModeModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="window.closeModal('gameMode')">&times;</span>
-            <h1>Modo de Juego</h1>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('manager')">🏅 Liga Manager (Empezar con equipo preexistente)</button>
-            <button class="btn" style="width: 100%; padding: 20px; margin-top: 20px;" onclick="window.startGameMode('promanager')">🚀 Liga Promanager (Empezar desde abajo)</button>
+            <h1>¿Cómo quieres jugar?</h1>
+            <div class="pcf-mode-grid">
+                <button class="pcf-mode-card" onclick="window.startGameMode('manager')">
+                    <span class="pcf-mode-icon">🏟️</span>
+                    <span class="pcf-mode-title">Elige tu club</span>
+                    <span class="pcf-mode-tag">Modo clásico</span>
+                    <span class="pcf-mode-desc">Escoge cualquier equipo de Primera, Segunda o Primera RFEF y dirígelo desde el primer día, con su plantilla y su presupuesto reales.</span>
+                    <span class="pcf-mode-ideal">Ideal si quieres llevar a tu equipo favorito.</span>
+                </button>
+                <button class="pcf-mode-card" onclick="window.startGameMode('promanager')">
+                    <span class="pcf-mode-icon">🚀</span>
+                    <span class="pcf-mode-title">Carrera de entrenador</span>
+                    <span class="pcf-mode-tag">Empieza desde abajo</span>
+                    <span class="pcf-mode-desc">Eres un técnico sin experiencia: solo te llaman clubes de categorías inferiores. Gana partidos, sube tu reputación y recibirás ofertas de equipos más grandes… pero si los resultados no llegan, te pueden destituir.</span>
+                    <span class="pcf-mode-ideal">Ideal si buscas un reto a largo plazo.</span>
+                </button>
+            </div>
         </div>
     </div>
 
