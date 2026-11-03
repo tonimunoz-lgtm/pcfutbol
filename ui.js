@@ -414,9 +414,10 @@ function renderPlayerMarketList(players) {
     `;  
   
     let playersHtml = players.map((p, idx) => {  
-        const estado = p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
-        const askingPrice = p.transferListed ? p.askingPrice.toLocaleString('es-ES') + '€' : '-';  
-        const clauseAmount = p.releaseClause || (p.value * 3);
+        const free = !!p.isFreeAgent;
+        const estado = free ? 'Libre' : p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
+        const askingPrice = free ? 'GRATIS' : p.transferListed ? (p.askingPrice || 0).toLocaleString('es-ES') + '€' : '-';  
+        const clauseAmount = free ? null : (p.releaseClause || ((p.value || 0) * 3));
         
         return `  
             <tr>  
@@ -427,16 +428,18 @@ function renderPlayerMarketList(players) {
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.club}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-                <td>${p.value.toLocaleString('es-ES')}€</td>  
-                <td style="color: #FF9800; font-weight: bold;">
-                    ${clauseAmount.toLocaleString('es-ES')}€
+                <td>${free ? 'Sin club' : p.club}</td>  
+                <td>${(p.salary || 0).toLocaleString('es-ES')}€</td>  
+                <td>${(p.value || 0).toLocaleString('es-ES')}€</td>  
+                <td style="color: #b45f06; font-weight: bold;">
+                    ${clauseAmount == null ? '—' : clauseAmount.toLocaleString('es-ES') + '€'}
                 </td>
                 <td>${askingPrice}</td>  
                 <td>${estado}</td>  
                 <td>  
-                    ${p.transferListed || p.loanListed ? `
+                    ${free ? `
+                        <button class="btn btn-sm" onclick="window.signFreeAgent('${p.id}')">✅ Fichar</button>
+                    ` : p.transferListed || p.loanListed ? `
                         <button class="btn btn-sm" onclick="window.startNegotiationUI('${encodeURIComponent(JSON.stringify(p))}')">  
                             Negociar  
                         </button>
@@ -633,9 +636,10 @@ function renderCalendarPage(state) {
   
         if (jornadaMatches.length === 0) continue; // Si no hay partidos para esta semana, saltar  
   
+        const myMatch = jornadaMatches.find(m => m.home === state.team || m.away === state.team);
         calendarHtml += `  
-            <h2 style="color: ${state.week === i ? '#00ff00' : '#e94560'};">Jornada ${i}</h2>  
-            <table>  
+            <h2 class="pcf-cal-week ${state.week === i ? 'current' : ''}" id="pcf-cal-j${i}">Jornada ${i}${state.week === i ? ' · próxima' : ''}${myMatch ? ` <span class="pcf-cal-mine">⭐ ${myMatch.home === state.team ? 'vs ' + myMatch.away + ' (casa)' : 'en ' + myMatch.home}</span>` : ''}</h2>  
+            <table class="pcf-cal-table">  
                 <thead>  
                     <tr>  
                         <th>Local</th>  
@@ -647,7 +651,7 @@ function renderCalendarPage(state) {
         `;  
         jornadaMatches.forEach(match => {  
             const isOurMatch = match.home === state.team || match.away === state.team;  
-            const rowStyle = isOurMatch ? 'background: rgba(233, 69, 96, 0.1); font-weight: bold;' : '';  
+            const rowStyle = '';  
   
             // Buscar el resultado en el matchHistory  
             const playedMatch = state.matchHistory.find(  
@@ -659,9 +663,9 @@ function renderCalendarPage(state) {
             const score = playedMatch ? playedMatch.score : '-';  
   
             calendarHtml += `  
-                <tr style="${rowStyle}">  
-                    <td>${match.home}</td>  
-                    <td>${match.away}</td>  
+                <tr class="${isOurMatch ? 'pcf-my-match' : 'pcf-other-match'}">  
+                    <td>${isOurMatch && match.home === state.team ? '⭐ ' : ''}${match.home}</td>  
+                    <td>${isOurMatch && match.away === state.team ? '⭐ ' : ''}${match.away}</td>  
                     <td>${score}</td>  
                 </tr>  
             `;  
@@ -672,7 +676,11 @@ function renderCalendarPage(state) {
         `;  
     }  
   
-    calendarContent.innerHTML = calendarHtml;  
+    const onlyMine = !!state.calendarOnlyMine;
+    calendarContent.innerHTML = `<div class="pcf-cal-toolbar">
+        <label><input type="checkbox" ${onlyMine ? 'checked' : ''} onchange="window.gameLogic.updateGameState({calendarOnlyMine:this.checked}); window.ui.renderCalendarPage(window.gameLogic.getGameState())"> Solo mis partidos</label>
+        <button class="btn btn-sm" onclick="document.getElementById('pcf-cal-j${state.week}')?.scrollIntoView({behavior:'smooth',block:'start'})">⏩ Ir a la próxima jornada</button>
+    </div><div class="${onlyMine ? 'pcf-cal-only-mine' : ''}">` + calendarHtml + `</div>`;
 }  
   
   

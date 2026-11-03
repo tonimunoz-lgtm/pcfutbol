@@ -1,0 +1,103 @@
+// ============================================================
+// injector-skin.js
+// 1) Aplica el estilo común del juego a las ventanas que se construyeron
+//    con colores propios (Centro de entrenamiento, Búsqueda de promesas,
+//    Gestión comercial): fondos, títulos, botones y textos del tema.
+// 2) Abreviaturas con su nombre completo al pasar el ratón, y "OVR"
+//    pasa a llamarse "MEDIA".
+// ============================================================
+(function () {
+    'use strict';
+
+    // ── Abreviaturas ────────────────────────────────────────────
+    const ABBR = {
+        OVR: 'Media: valoración global del jugador según su posición', MEDIA: 'Media: valoración global del jugador según su posición',
+        POT: 'Potencial: la media máxima que puede alcanzar', POS: 'Posición', PIE: 'Pie dominante', EDAD: 'Edad',
+        EN: 'Energía', VE: 'Velocidad', RE: 'Resistencia', AG: 'Agilidad', CA: 'Cabezazo', EF: 'Eficacia', MO: 'Moral', AT: 'Ataque', DF: 'Defensa',
+        PJ: 'Partidos jugados', G: 'Ganados', E: 'Empatados', P: 'Perdidos', GF: 'Goles a favor', GC: 'Goles en contra',
+        DG: 'Diferencia de goles', GD: 'Diferencia de goles', PTS: 'Puntos', PT: 'Puntos',
+        POR: 'Portero', DFC: 'Defensa central', LI: 'Lateral izquierdo', LD: 'Lateral derecho', MC: 'Centrocampista',
+        MCO: 'Mediapunta', MD: 'Interior derecho', MI: 'Interior izquierdo', EXT: 'Extremo', DC: 'Delantero centro',
+        'PRECIO P.': 'Precio que pide su club por el traspaso', 'CLÁUSULA': 'Cláusula de rescisión: pagándola, el club no puede negarse'
+    };
+    function labelHeaders(root) {
+        (root || document).querySelectorAll('th, .tc-xi-chip > span:first-child').forEach(el => {
+            const raw = el.textContent.trim();
+            const key = raw.toUpperCase();
+            if (key === 'OVR' && el.tagName === 'TH') { el.textContent = 'MEDIA'; }
+            const tip = ABBR[key];
+            if (tip && !el.title) { el.title = tip; el.style.cursor = 'help'; }
+        });
+    }
+
+    // ── Piel común ──────────────────────────────────────────────
+    const MUTED = /#(?:888|999|aaa|666|555|777|bbb|ccc)\b|rgba\(255,\s*255,\s*255,\s*0?\.[2-5]\d*\)/i;
+    function skin(root, sheet) {
+        if (!root) return;
+        if (sheet) sheet.classList.add('pcf-skin-sheet');
+        root.querySelectorAll('div').forEach(d => {
+            const st = d.getAttribute('style') || '';
+            if (/background:\s*(#0a1628|#0d0d1a|#1a1a2e|#16213e|#0d1117|rgba\(255,255,255,\.0[3-8]\))/i.test(st) && d !== sheet) {
+                d.classList.add('pcf-skin-box');
+            }
+            if (MUTED.test(st) && /color:/.test(st)) d.classList.add('pcf-skin-muted');
+        });
+        root.querySelectorAll('p, span, small, label').forEach(e => {
+            const st = e.getAttribute('style') || '';
+            if (MUTED.test(st)) e.classList.add('pcf-skin-muted');
+        });
+        root.querySelectorAll('h1, h2, h3').forEach(h => { h.style.color = ''; h.style.fontFamily = ''; });
+        root.querySelectorAll('button:not([data-pcf-skin])').forEach(b => {
+            b.dataset.pcfSkin = '1';
+            const txt = b.textContent.trim();
+            const close = /^✖|CERRAR|Cerrar|Cancelar/.test(txt);
+            b.classList.add(close ? 'page-close-btn' : 'btn');
+            if (close) b.classList.add('btn');
+            ['background', 'border', 'borderRadius', 'color', 'boxShadow', 'fontFamily'].forEach(k => { b.style[k] = ''; });
+        });
+        root.querySelectorAll('select, input').forEach(i => { ['background', 'color', 'border', 'borderRadius'].forEach(k => { i.style[k] = ''; }); });
+    }
+
+    function skinTraining() {
+        const panel = document.getElementById('trainingPanel');
+        if (!panel || panel.style.display === 'none') return;
+        const sheet = panel.firstElementChild;
+        if (sheet) { sheet.style.background = ''; sheet.style.maxWidth = '1100px'; }
+        skin(sheet, sheet);
+        // Texto que explica cómo conviven automático y manual
+        const p = panel.querySelector('#autoTrainingToggle')?.closest('div[style*="justify-content"]')?.querySelector('p');
+        if (p && !p.dataset.pcfText) {
+            p.dataset.pcfText = '1';
+            p.textContent = 'Cada semana se entrena a un jugador en un atributo. En automático lo elige tu cuerpo técnico (el entrenador de porteros y el segundo entrenador se alternan). Si eliges tú en Plantilla, el entrenamiento pasa a manual.';
+        }
+    }
+    function skinScout() {
+        const m = document.getElementById('scoutSearchModal');
+        if (!m || m.style.display === 'none') return;
+        const sheet = m.firstElementChild;
+        if (sheet) { sheet.style.background = ''; }
+        skin(sheet, sheet);
+    }
+    function skinCommercial() {
+        const page = document.getElementById('commercial');
+        if (!page || !page.classList.contains('active')) return;
+        page.querySelectorAll('#fd-section, [id^="fd-"]').forEach(sec => skin(sec, null));
+    }
+
+    let pending = false;
+    const obs = new MutationObserver(() => {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+            pending = false;
+            obs.disconnect();              // nuestros cambios no vuelven a disparar el observador
+            try { skinTraining(); skinScout(); skinCommercial(); labelHeaders(); } finally { observe(); }
+        });
+    });
+    const observe = () => obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    function start() {
+        observe();
+        labelHeaders();
+    }
+    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();

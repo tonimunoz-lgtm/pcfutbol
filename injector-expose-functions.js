@@ -826,7 +826,7 @@ window.counterOffer = function() {
 
 // ✅ AÑADIR
 
-window.firePlayerConfirm = function(playerName) {
+window.firePlayerConfirm = async function(playerName) {
     const state = window.gameLogic.getGameState();
     const player = state.squad.find(p => p.name === playerName);
     
@@ -837,20 +837,22 @@ window.firePlayerConfirm = function(playerName) {
     
     const compensation = player.salary * player.contractYears * 52;
     
-    const confirmed = confirm(
-        `¿Estás seguro de DESPEDIR a ${playerName}?\n\n` +
+    const fireMsg =
+        `¿Seguro que quieres despedir a ${playerName}?\n\n` +
         `Años restantes: ${player.contractYears}\n` +
         `Salario semanal: ${player.salary.toLocaleString('es-ES')}€\n` +
         `Indemnización total: ${compensation.toLocaleString('es-ES')}€\n\n` +
-        `⚠️ Esta acción NO se puede deshacer`
-    );
+        `⚠️ Esta acción no se puede deshacer.`;
+    const confirmed = window.pcfConfirm
+        ? await window.pcfConfirm('Despedir jugador', fireMsg, { okLabel: 'Despedir', danger: true })
+        : confirm(fireMsg);
     
     if (!confirmed) return;
     
     const result = window.gameLogic.firePlayer(playerName);
     
     if (result.success) {
-        alert(`${playerName} ha sido despedido.\n\nIndemnización pagada: ${result.compensation.toLocaleString('es-ES')}€`);
+        (window.pcfNotify ? (m => window.pcfNotify('Jugador despedido', m)) : alert)(`${playerName} ha sido despedido.\n\nIndemnización pagada: ${result.compensation.toLocaleString('es-ES')}€`);
         
         // Actualizar alineación si estaba en ella
         if (state.lineup.some(p => p && p.name === playerName)) {

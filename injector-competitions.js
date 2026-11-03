@@ -761,7 +761,7 @@ function injectCompUI() {
     tabs.innerHTML = html;
 
     const header = page.querySelector('.page-header');
-    if (header) header.appendChild(tabs);
+    if (header) header.insertAdjacentElement('afterend', tabs);
     else page.insertBefore(tabs, page.firstChild);
 
     // CSS
@@ -769,13 +769,18 @@ function injectCompUI() {
         const s = document.createElement('style');
         s.id = 'comp-css';
         s.textContent = `
-            .ctab{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.85em;transition:all .2s}
-            .ctab:hover{background:rgba(255,255,255,.2)}
-            .ctab.active{background:rgba(233,69,96,.6);border-color:#e94560}
+            .ctab{font-family:'Saira Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+                  padding:7px 16px;border-radius:3px;cursor:pointer;font-size:.82em;border:1px solid #06142e;text-shadow:0 1px 1px rgba(0,0,0,.75);
+                  background:linear-gradient(180deg,#9cbce6 0%,#4f77b0 46%,#2f5384 54%,#14315c 100%);
+                  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 3px rgba(0,0,0,.45),2px 2px 0 rgba(0,0,0,.35)}
+            .ctab:hover{filter:brightness(1.15)}
+            .ctab.active{background:linear-gradient(180deg,#ffd59a 0%,#f0a33a 46%,#cf7a0e 54%,#7d4500 100%);border-color:var(--pcf-gold,#ffd24a)}
             #comp-europa-panel,#comp-copa-panel,#comp-playoff-panel{display:none;padding:4px 0}
             #comp-europa-panel.on,#comp-copa-panel.on,#comp-playoff-panel.on{display:block}
             .cg-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.88em}
-            .cg-table th,.cg-table td{padding:7px;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);color:#fff}
+            .cg-table th,.cg-table td{padding:7px;text-align:center}
+            .cg-table td{color:var(--pcf-ink,#0a1a35)}
+            .cg-table tr.cg-me td{background:#ffe69a !important;font-weight:800}
             .cg-table th{color:#FFD700;font-size:.8em;text-transform:uppercase}
             .ccard{background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;margin:8px 0;border-left:3px solid #e94560}
             .ccard .ctitle{color:#FFD700;font-size:.82em;font-weight:bold;margin-bottom:4px}
@@ -905,12 +910,12 @@ function renderEuropa() {
                 : po   ? 'background:rgba(255,140,0,.08);'
                 : '';
             const posIcon = top8 ? '🔵' : po ? '🟠' : '🔴';
-            html += `<tr style="${rowBg}">
+            html += `<tr class="${me ? 'cg-me' : ''}">
                 <td style="font-size:.82em">${posIcon}${pos}</td>
-                <td style="text-align:left;${me?'font-weight:bold;color:#FFD700':''}">${me?'⭐ ':''}${t.name}</td>
+                <td style="text-align:left;${me?'font-weight:bold':''}">${me?'⭐ ':''}${t.name}</td>
                 <td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
                 <td>${t.gf}</td><td>${t.gc}</td>
-                <td style="${(t.gf-t.gc)>=0?'color:#4CAF50':'color:#f44336'}">${t.gf-t.gc>0?'+':''}${t.gf-t.gc}</td>
+                <td style="${(t.gf-t.gc)>=0?'color:#1b5e20':'color:#b71c1c'};font-weight:700">${t.gf-t.gc>0?'+':''}${t.gf-t.gc}</td>
                 <td><strong>${t.pts}</strong></td>
             </tr>`;
         });

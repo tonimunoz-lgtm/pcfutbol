@@ -926,3 +926,59 @@ img.crest-img {
     }
     #teamName img { width: 20px !important; height: 20px !important; }
 }
+
+/* ============================================================
+   BLOQUE C — HOMOGENEIZACIÓN DE ESTILOS
+   ============================================================ */
+
+/* Tablas dentro de ventanas oscuras (resumen del partido, copas):
+   el tema pinta las celdas en claro; aquí van oscuras con texto claro */
+#matchSummaryModal td, #matchSummaryModal .stats-table td,
+.cr-box td, .cu-box td {
+    background: rgba(255,255,255,.05) !important;
+    color: #e6eefb !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(122,160,212,.25) !important;
+}
+#matchSummaryModal tr:nth-child(even) td { background: rgba(255,255,255,.09) !important; }
+#matchSummaryModal tr:hover td { background: rgba(255,210,74,.12) !important; }
+#matchSummaryModal td strong, #matchSummaryModal td b { color: #fff !important; }
+
+/* Calendario: tus partidos destacados */
+.pcf-cal-toolbar { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin: 0 0 12px; }
+.pcf-cal-toolbar label { display:flex; gap:6px; align-items:center; cursor:pointer; }
+.pcf-cal-week { color: var(--pcf-gold) !important; scroll-margin-top: 70px; }
+.pcf-cal-week.current { color: #7CFC9A !important; }
+.pcf-cal-mine { font-size: .72em; color: #fff; background: rgba(255,210,74,.18); border: 1px solid rgba(255,210,74,.5);
+    border-radius: 3px; padding: 1px 8px; margin-left: 8px; letter-spacing: .04em; vertical-align: middle; }
+.pcf-cal-table tr.pcf-my-match td { background: #ffe69a !important; font-weight: 800; color: #0a1a35; }
+.pcf-cal-only-mine tr.pcf-other-match { display: none; }
+
+/* Piel común para ventanas con estilo propio (entrenamiento, promesas, comercial) */
+.pcf-skin-sheet {
+    background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, #14396f 0%, #071733 100%) !important;
+    border: 2px solid #06142e !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 0 rgba(216,229,247,.5), inset 0 -6px 16px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.8) !important;
+    color: #e6eefb !important;
+}
+.pcf-skin-box {
+    background: linear-gradient(180deg, rgba(36,80,142,.55) 0%, rgba(7,22,48,.75) 100%) !important;
+    border: 1px solid #06142e !important;
+    border-radius: 3px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -3px 10px rgba(0,0,0,.45) !important;
+}
+.pcf-skin-sheet h1, .pcf-skin-sheet h2, .pcf-skin-sheet h3 {
+    color: var(--pcf-gold) !important;
+    font-family: 'Saira Condensed', sans-serif !important;
+    text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 1px 0 #000;
+}
+.pcf-skin-sheet p, .pcf-skin-sheet span, .pcf-skin-sheet label, .pcf-skin-sheet small { color: inherit; }
+.pcf-skin-muted { color: rgba(230,238,251,.78) !important; }
+.pcf-skin-sheet select, .pcf-skin-sheet input[type=number], .pcf-skin-sheet input[type=text] {
+    background: #e8eef8 !important; color: #0a1a35 !important; border: 1px solid #06142e !important; border-radius: 3px !important;
+}
+#matchSummaryModal table, #matchSummaryModal .stats-section,
+.cr-box table, .cu-box table { background: transparent !important; box-shadow: none !important; border: 0 !important; }

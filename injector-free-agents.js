@@ -345,47 +345,15 @@
             return;
         }
 
-        let html = `
-            <div class="alert alert-info" style="margin-bottom:10px;">
-                🔓 <strong>Agentes Libres</strong> — Sin coste de traspaso. Solo pagas su salario.
-            </div>
-            <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
-                <thead>
-                    <tr style="background:rgba(233,69,96,0.2); color:#e94560;">
-                        <th style="padding:8px; text-align:left;">Jugador</th>
-                        <th style="padding:8px; text-align:center;">Pos</th>
-                        <th style="padding:8px; text-align:center;">OVR</th>
-                        <th style="padding:8px; text-align:center;">Edad</th>
-                        <th style="padding:8px; text-align:right;">Salario/sem</th>
-                        <th style="padding:8px; text-align:center;">Traspaso</th>
-                        <th style="padding:8px; text-align:center;">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${agents.map(a => `
-                        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-                            <td style="padding:8px;"><strong>${a.name}</strong></td>
-                            <td style="padding:8px; text-align:center;">
-                                <span style="background:#e94560;color:white;padding:2px 7px;border-radius:4px;font-size:0.85em;">${a.position}</span>
-                            </td>
-                            <td style="padding:8px; text-align:center; font-weight:bold; color:${a.overall>=75?'#4CAF50':a.overall>=65?'#FF9800':'#aaa'};">${a.overall}</td>
-                            <td style="padding:8px; text-align:center; color:${a.age>32?'#FF9800':'#ccc'};">${a.age}</td>
-                            <td style="padding:8px; text-align:right; color:#4CAF50;">${(a.salary||0).toLocaleString('es-ES')}€</td>
-                            <td style="padding:8px; text-align:center;">
-                                <span style="color:#4CAF50; font-weight:bold;">GRATIS</span>
-                            </td>
-                            <td style="padding:8px; text-align:center;">
-                                <button class="btn" style="background:#4CAF50;padding:4px 12px;font-size:0.85em;"
-                                    onclick="window.signFreeAgent('${a.id}')">
-                                    ✅ Fichar
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-        container.innerHTML = html;
+        // Misma tabla y columnas que el resto del mercado
+        if (window.ui?.renderPlayerMarketList) {
+            window.ui.renderPlayerMarketList(agents.map(a => ({
+                ...a, isFreeAgent: true, club: 'Sin club', potential: a.potential || a.overall,
+                value: window.pcfEconomy ? window.pcfEconomy.marketValue(a) : (a.value || 0)
+            })));
+            container.insertAdjacentHTML('afterbegin', `<div class="alert alert-info" style="margin-bottom:10px;">🔓 <strong>Agentes libres</strong>: sin coste de traspaso, solo pagas su salario.</div>`);
+            return;
+        }
     }
 
     // Añadir una fila separadora + agentes libres al final de la tabla normal
