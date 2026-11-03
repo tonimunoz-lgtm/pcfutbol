@@ -1398,7 +1398,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             document.getElementById('staffRoleDisplayName').textContent = STAFF_ROLES[role].displayName;
             document.getElementById('staffRoleDisplayNameInfo').textContent = STAFF_ROLES[role].displayName;
 
-            const candidates = gameLogic.generateStaffCandidates(role, true);
+            const candidates = gameLogic.generateStaffCandidates(role);
             const list = document.getElementById('staffCandidatesList');
             const state = gameLogic.getGameState();
             const existingStaff = state.staff[role];
@@ -1409,11 +1409,16 @@ window.selectTeamAndStart = async function(teamName, division) {
                 indemnizationMessage = `<p class="alert alert-warning">Al contratar a un nuevo ${STAFF_ROLES[role].displayName}, se despedirá a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}€ (salario de un año).</p>`;
             }
 
-            list.innerHTML = indemnizationMessage + candidates.map((c, idx) => `
+            const effect = (lvl) => window.staffEffectText ? window.staffEffectText(role, lvl) : '';
+            const currentTxt = existingStaff ? `<p style="margin:6px 0 12px;opacity:.85">ℹ️ Actual: <strong>${existingStaff.name}</strong> (nivel ${existingStaff.level}) — ${effect(existingStaff.level)}</p>` : `<p style="margin:6px 0 12px;opacity:.85">ℹ️ Sin ${STAFF_ROLES[role].displayName.toLowerCase()} contratado.</p>`;
+            list.innerHTML = indemnizationMessage + currentTxt +
+                `<p style="margin:0 0 10px;font-size:.85em;opacity:.7">Los candidatos se renuevan cada jornada.</p>` + candidates.map((c, idx) => `
                 <div class="staff-candidate">
                     <div>
-                        <strong>${c.name}</strong> (Nivel ${c.level})<br>
-                        Salario: ${c.salary.toLocaleString('es-ES')}€/semana | Cláusula: ${c.clausula.toLocaleString('es-ES')}€
+                        <strong>${c.name}</strong> (Nivel ${c.level})
+                        <span title="${effect(c.level).replace(/"/g, '&quot;')}" style="cursor:help;display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:var(--pcf-gold,#ffd24a);color:#06142e;font-weight:800;font-size:.75em;margin-left:4px">i</span><br>
+                        Salario: ${c.salary.toLocaleString('es-ES')}€/semana | Cláusula: ${c.clausula.toLocaleString('es-ES')}€<br>
+                        <small style="opacity:.8">${effect(c.level)}</small>
                     </div>
                     <button class="btn btn-sm" onclick="window.hireStaffConfirm('${encodeURIComponent(JSON.stringify(c))}')">Contratar</button>
                 </div>
@@ -1518,6 +1523,9 @@ window.selectTeamAndStart = async function(teamName, division) {
 
                 if (nameElem) nameElem.textContent = staff ? staff.name : 'No Contratado';
                 if (levelElem) levelElem.textContent = staff ? staff.level : '-';
+                // Al pasar el ratón: qué aporta este empleado con su nivel
+                const effTxt = staff && window.staffEffectText ? window.staffEffectText(role, staff.level) : '';
+                [nameElem, levelElem].forEach(el => { if (el) { el.title = effTxt; el.style.cursor = effTxt ? 'help' : ''; } });
                 if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '€' : '-';
                 if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-';
                 if (btnElem) {
@@ -2237,6 +2245,8 @@ window.onclick = function(event) {
     <script src="./injector-urgent-panel.js"></script>
     <script src="./injector-rival-transfers.js"></script>
     <script src="./injector-salary-mood.js"></script>
+    <script src="./injector-negotiations.js"></script>
+    <script src="./injector-sim-guard.js"></script>
 
   
 

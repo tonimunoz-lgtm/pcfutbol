@@ -277,7 +277,31 @@
     function news(msg, type) { try { gl()?.addNews?.(msg, type || 'info'); } catch(e){} }
 
     // ── Iniciar construcción ───────────────────────────────────────
-    function startConstruction(upgradeId, category) {
+
+    // ── Programa de obras del estadio por fases ─────────────────────
+    // Para pasar de cada aforo hay que tener antes ciertas mejoras. La última
+    // fase (hasta 105.000) exige TODO lo demás, estadio y centro de entrenamiento.
+    const MAX_STADIUM_CAPACITY = 105000;
+    const SEAT_PHASES = [
+        { upTo: 25000,  requires: [] },
+        { upTo: 40000,  requires: ['led_lights', 'fan_shop'] },
+        { upTo: 60000,  requires: ['led_lights', 'fan_shop', 'parking', 'restaurants', 'giant_screen'] },
+        { upTo: 80000,  requires: ['led_lights', 'fan_shop', 'parking', 'restaurants', 'giant_screen', 'vip_boxes', 'hybrid_pitch'] },
+        { upTo: MAX_STADIUM_CAPACITY, requires: 'ALL' }
+    ];
+    function seatRequirementsMissing(targetCapacity) {
+        const d = getFacData();
+        const phase = SEAT_PHASES.find(p => targetCapacity <= p.upTo) || SEAT_PHASES[SEAT_PHASES.length - 1];
+        const allIds = [...STADIUM_UPGRADES.filter(u => u.unique).map(u => ({ id: u.id, cat: 'stadium', name: u.name })),
+                        ...TRAINING_UPGRADES.filter(u => u.unique).map(u => ({ id: u.id, cat: 'training', name: u.name }))];
+        const needed = phase.requires === 'ALL' ? allIds : allIds.filter(u => phase.requires.includes(u.id));
+        return needed.filter(u => !(u.cat === 'stadium' ? d.stadiumDone : d.trainingDone).includes(u.id)).map(u => u.name);
+    }
+    function seatsInConstruction() {
+        return getFacData().construction.some(c => c.effects?.capacityAdd > 0);
+    }
+
+    async function startConstruction(upgradeId, category) {
         const s = gs();
         if (!s) return;
 
@@ -290,11 +314,11 @@
 
         // Comprobar si ya está construido (unique) o en construcción
         if (upg.unique && done.includes(upgradeId)) {
-            alert(`"${upg.name}" ya está construido.`);
+            (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`"${upg.name}" ya está construido.`);
             return;
         }
         if (d.construction.some(c => c.id === upgradeId)) {
-            alert(`"${upg.name}" ya está en construcción.`);
+            (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`"${upg.name}" ya está en construcción.`);
             return;
         }
 
@@ -302,13 +326,25 @@
         if (upg.maxBuilds) {
             const timesBuilt = done.filter(id => id === upgradeId).length;
             if (timesBuilt >= upg.maxBuilds) {
-                alert(`Has alcanzado el límite máximo de ampliaciones.`);
+                (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`Has alcanzado el límite máximo de ampliaciones.`);
                 return;
             }
         }
 
+        // Ampliaciones de asientos: una a la vez y con los requisitos de su fase
+        if (upg.capacityAdd > 0) {
+            if (seatsInConstruction()) {
+                (window.pcfNotify || alert)('Estadio', 'Ya hay una ampliación de asientos en obras. Espera a que termine antes de empezar otra.');
+                return;
+            }
+            const target = (s.stadiumCapacity || 5000) + upg.capacityAdd;
+            const missing = seatRequirementsMissing(Math.min(target, MAX_STADIUM_CAPACITY));
+            if (missing.length) {
+                (window.pcfNotify || alert)('Estadio', `Para ampliar hasta ${fmt(Math.min(target, MAX_STADIUM_CAPACITY))} asientos el estadio tiene que estar preparado. Falta construir:\n\n• ${missing.join('\n• ')}`);
+                return;
+            }
+        }
         // Comprobar límite máximo de capacidad (105.000 espectadores)
-        const MAX_STADIUM_CAPACITY = 105000;
         if (upg.capacityAdd > 0) {
             const currentCap = s.stadiumCapacity || 5000;
             // Sumar también lo que hay en construcción
@@ -318,20 +354,22 @@
             if (currentCap + pendingCap + upg.capacityAdd > MAX_STADIUM_CAPACITY) {
                 const remaining = MAX_STADIUM_CAPACITY - currentCap - pendingCap;
                 if (remaining <= 0) {
-                    alert(`El estadio ya ha alcanzado la capacidad máxima permitida de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.`);
+                    (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`El estadio ya ha alcanzado la capacidad máxima permitida de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.`);
                 } else {
-                    alert(`Esta ampliación superaría el límite máximo de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.\nCapacidad restante permitida: ${fmt(remaining)} espectadores.`);
+                    (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`Esta ampliación superaría el límite máximo de ${fmt(MAX_STADIUM_CAPACITY)} espectadores.\nCapacidad restante permitida: ${fmt(remaining)} espectadores.`);
                 }
                 return;
             }
         }
 
         if ((s.balance || 0) < upg.cost) {
-            alert(`No tienes saldo suficiente. Necesitas ${fmt(upg.cost)}€.`);
+            (window.pcfNotify ? (m => window.pcfNotify('Instalaciones', m)) : alert)(`No tienes saldo suficiente. Necesitas ${fmt(upg.cost)}€.`);
             return;
         }
 
-        if (!confirm(`¿Iniciar construcción de "${upg.name}"?\n\nCoste: ${fmt(upg.cost)}€\nDuración: ${upg.weeks} semanas\n\nEl importe se descuenta ahora del presupuesto.`)) return;
+        const confirmMsg = `¿Iniciar construcción de "${upg.name}"?\n\nCoste: ${fmt(upg.cost)}€\nDuración: ${upg.weeks} semanas\n\nEl importe se descuenta ahora del presupuesto.`;
+        const ok = window.pcfConfirm ? await window.pcfConfirm('Instalaciones', confirmMsg, { okLabel: 'Construir' }) : confirm(confirmMsg);
+        if (!ok) return;
 
         save({ balance: (s.balance || 0) - upg.cost });
 
@@ -608,7 +646,12 @@
             const inProgress = construction.some(c => c.id === upg.id && c.category === category);
             const canAfford  = balance >= upg.cost;
             const timesBuilt = done.filter(id => id === upg.id).length;
-            const atMax      = upg.maxBuilds && timesBuilt >= upg.maxBuilds;
+            const capNow     = s?.stadiumCapacity || 0;
+            const capFull    = upg.capacityAdd > 0 && capNow >= MAX_STADIUM_CAPACITY;
+            const atMax      = (upg.maxBuilds && timesBuilt >= upg.maxBuilds) || capFull;
+            const missingReq = upg.capacityAdd > 0 && !atMax
+                ? seatRequirementsMissing(Math.min(capNow + upg.capacityAdd, MAX_STADIUM_CAPACITY)) : [];
+            const seatBusy   = upg.capacityAdd > 0 && !construction.some(c => c.id === upg.id) && seatsInConstruction();
 
             let statusBadge = '';
             let btnDisabled = false;
@@ -622,6 +665,12 @@
                 statusBadge = `<span style="background:#2e7d32;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;">✓ COMPLETADO</span>`;
                 btnDisabled = true;
                 cardStyle = 'opacity:.6;';
+            } else if (missingReq.length) {
+                statusBadge = `<span title="Falta: ${missingReq.join(', ').replace(/"/g,'')}" style="background:#555;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;cursor:help;">🔒 Requisitos</span>`;
+                btnDisabled = true;
+            } else if (seatBusy) {
+                statusBadge = `<span style="color:#f5a623;font-size:.72em;">Otra ampliación en obras</span>`;
+                btnDisabled = true;
             } else if (!canAfford) {
                 statusBadge = `<span style="color:#f44336;font-size:.72em;">Sin fondos</span>`;
             }
@@ -648,6 +697,8 @@
                         ${statusBadge}
                     </div>
                     <div style="color:#888;font-size:.78em;margin-bottom:7px;line-height:1.4;">${upg.desc}</div>
+                    ${missingReq.length ? `<div style="color:#f5a623;font-size:.74em;margin-bottom:6px;line-height:1.35;">🔒 Antes hay que construir: ${missingReq.join(', ')}</div>` : ''}
+                    ${capFull ? `<div style="color:#4CAF50;font-size:.74em;margin-bottom:6px;">🏟️ Estadio completado (${fmt(MAX_STADIUM_CAPACITY)} asientos)</div>` : ''}
                     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
                         ${effects.map(e => `<span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.72em;color:#aaa;">${e}</span>`).join('')}
                     </div>

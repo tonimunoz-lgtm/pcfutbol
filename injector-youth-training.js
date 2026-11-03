@@ -143,6 +143,19 @@ console.log('🏫 Youth Training Injector cargando...');
     // ─────────────────────────────────────────────────────────────
     // CORE: Entrenamiento automático del primer equipo
     // ─────────────────────────────────────────────────────────────
+
+    // ── Entrenamiento automático: ajuste guardado en la PARTIDA ──
+    function isAutoTraining() {
+        const st = gs();
+        if (st && typeof st.autoTraining === 'boolean') return st.autoTraining;
+        return localStorage.getItem('autoTraining_enabled') === 'true';
+    }
+    function setAutoTraining(on) {
+        gl()?.updateGameState?.({ autoTraining: !!on });
+        localStorage.setItem('autoTraining_enabled', on ? 'true' : 'false');
+    }
+    window.isAutoTraining = isAutoTraining;
+
     function autoTrainFirstTeam() {
         const state = gs();
         if (!state) return;
@@ -154,8 +167,11 @@ console.log('🏫 Youth Training Injector cargando...');
         const availableSquad = state.squad.filter(p => p && !p.isInjured && !p.isSuspended);
         if (availableSquad.length === 0) return;
 
-        // El entrenador de porteros entrena al mejor portero disponible
-        if (porteroCoach) {
+        // Un único foco por semana. Con los dos entrenadores, alternan:
+        // semanas pares portero, impares jugador de campo.
+        const gkTurn = porteroCoach && (!segundoCoach || (state.week % 2 === 0));
+        // El entrenador de porteros entrena al portero con más margen de mejora
+        if (gkTurn) {
             const goalkeepers = availableSquad.filter(p => p.position === 'POR');
             if (goalkeepers.length > 0) {
                 const gk = goalkeepers.reduce((best, p) => {
@@ -178,7 +194,7 @@ console.log('🏫 Youth Training Injector cargando...');
         }
 
         // El segundo entrenador entrena al jugador de campo con más potencial sin explotar
-        if (segundoCoach) {
+        if (segundoCoach && !gkTurn) {
             const fieldPlayers = availableSquad.filter(p => p.position !== 'POR');
             if (fieldPlayers.length > 0) {
                 const best = fieldPlayers.reduce((best, p) => {
@@ -221,7 +237,7 @@ console.log('🏫 Youth Training Injector cargando...');
             const wasPreseason = before?.seasonType === 'preseason';
 
             // Si auto-training está activo, aplicar antes de simular
-            const autoOn = localStorage.getItem('autoTraining_enabled') === 'true';
+            const autoOn = isAutoTraining();
             if (autoOn && !wasPreseason) {
                 autoTrainFirstTeam();
             }
@@ -312,6 +328,11 @@ console.log('🏫 Youth Training Injector cargando...');
     }
 
     window.openYouthCoachModal = function () {
+        // Misma ventana, escala de sueldos y candidatos por jornada que el resto del personal
+        if (typeof window.openHireStaffModal === 'function') {
+            window.openHireStaffModal(YOUTH_ROLE);
+            return;
+        }
         const modal = document.getElementById('youthCoachModal');
         if (!modal) return;
 
@@ -469,9 +490,57 @@ console.log('🏫 Youth Training Injector cargando...');
     }
 
     window.toggleAutoTraining = function (enabled) {
-        localStorage.setItem('autoTraining_enabled', enabled ? 'true' : 'false');
+        const st = gs();
+        if (enabled && !st?.staff?.segundoEntrenador && !st?.staff?.entrenadorPorteros) {
+            (window.pcfNotify || alert)('Entrenamiento automático', 'Necesitas un Segundo Entrenador (jugadores de campo) o un Entrenador de Porteros para que elijan el entrenamiento cada semana.');
+            const t = document.getElementById('autoTrainingToggle'); if (t) t.checked = false;
+            return;
+        }
+        setAutoTraining(enabled);
         document.getElementById('autoTrainingLabel').textContent = enabled ? 'Activado ✓' : 'Desactivado';
+        gl()?.addNews?.(enabled
+            ? '🏋️ Entrenamiento automático activado: el cuerpo técnico elegirá cada semana a quién entrenar.'
+            : '🏋️ Entrenamiento en manual: elige a quién entrenar desde Plantilla.', 'info');
     };
+
+    // Aviso en el entrenamiento individual (Plantilla) cuando está en automático
+    function patchManualTraining() {
+        const wrapOpen = name => {
+            const orig = window[name];
+            if (typeof orig !== 'function' || orig._autoNotice) return;
+            window[name] = function (...args) {
+                const r = orig.apply(this, args);
+                const box = document.querySelector('#trainingModal .modal-content');
+                if (box) {
+                    let n = document.getElementById('autoTrainingNotice');
+                    if (!n) {
+                        n = document.createElement('p');
+                        n.id = 'autoTrainingNotice';
+                        n.className = 'alert alert-warning';
+                        box.insertBefore(n, box.querySelector('.training-player-info'));
+                    }
+                    n.style.display = isAutoTraining() ? '' : 'none';
+                    n.textContent = '🤖 El entrenamiento está en AUTOMÁTICO: el cuerpo técnico elige cada semana. Si eliges aquí un atributo, el entrenamiento pasará a manual.';
+                }
+                return r;
+            };
+            window[name]._autoNotice = true;
+        };
+        wrapOpen('setPlayerTrainingFocusUI');
+        wrapOpen('openTrainingModal');
+        const origSubmit = window.submitTrainingFocus;
+        if (typeof origSubmit === 'function' && !origSubmit._autoNotice) {
+            window.submitTrainingFocus = function (...args) {
+                if (isAutoTraining()) {
+                    setAutoTraining(false);
+                    gl()?.addNews?.('🏋️ Has elegido el entrenamiento a mano: el entrenamiento automático se ha desactivado.', 'info');
+                }
+                return origSubmit.apply(this, args);
+            };
+            window.submitTrainingFocus._autoNotice = true;
+        }
+    }
+    [2000, 4000].forEach(ms => setTimeout(patchManualTraining, ms));
 
     function openTrainingPanel() {
         const panel = document.getElementById('trainingPanel');
@@ -481,7 +550,7 @@ console.log('🏫 Youth Training Injector cargando...');
         if (!state) return;
 
         // Toggle state
-        const autoOn = localStorage.getItem('autoTraining_enabled') === 'true';
+        const autoOn = isAutoTraining();
         const toggle = document.getElementById('autoTrainingToggle');
         if (toggle) toggle.checked = autoOn;
         const label = document.getElementById('autoTrainingLabel');

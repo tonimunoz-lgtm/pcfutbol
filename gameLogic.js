@@ -930,7 +930,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
   
     const refSalary = Math.max(player.salary || 0, expectedSalary(player, gameState.division)) || 1;
     const salaryFactor = offeredSalary / refSalary;  
-    if (salaryFactor > 1.5) acceptanceChance += 0.3;  
+    if (salaryFactor > 1.5) acceptanceChance += 0.4;  
     else if (salaryFactor > 1.2) acceptanceChance += 0.15;  
     else if (salaryFactor < 0.8) acceptanceChance -= 0.2;  
   
@@ -990,7 +990,9 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             return { success: true, message: `${player.name} ha aceptado tu oferta personal. Ahora a negociar con su club, el ${player.club}.` };
         }
     } else {  
-        if (roll > 0.8) {  
+        // Ruptura definitiva solo ante ofertas claramente bajas; si la oferta es
+        // razonable, el jugador pide más y se puede volver a intentar
+        if (salaryFactor < 0.8 && roll > 0.85) {  
             endNegotiation();  
             return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.`, type: 'error' };  
         } else {  
@@ -1381,7 +1383,8 @@ function calculateMatchOutcomeImproved({
     teamAttackMod = 1,
     teamDefenseMod = 1,
     opponentAttackMod = 1,
-    opponentDefenseMod = 1
+    opponentDefenseMod = 1,
+    neutral = false          // final en campo neutral: sin ventaja de local
 }) {
     const teamStrength = (teamOverall || 50) * formFactor(teamForm);
     const oppStrength = (opponentOverall || 50) * formFactor(opponentForm);
@@ -1390,8 +1393,9 @@ function calculateMatchOutcomeImproved({
     const tm = getFormationModifiers(teamFormation, teamMentality);
     const om = getFormationModifiers(opponentFormation, opponentMentality);
 
-    const teamBase = isHome ? MATCH_ENGINE.baseHomeGoals : MATCH_ENGINE.baseAwayGoals;
-    const oppBase = isHome ? MATCH_ENGINE.baseAwayGoals : MATCH_ENGINE.baseHomeGoals;
+    const neutralBase = (MATCH_ENGINE.baseHomeGoals + MATCH_ENGINE.baseAwayGoals) / 2;
+    const teamBase = neutral ? neutralBase : (isHome ? MATCH_ENGINE.baseHomeGoals : MATCH_ENGINE.baseAwayGoals);
+    const oppBase = neutral ? neutralBase : (isHome ? MATCH_ENGINE.baseAwayGoals : MATCH_ENGINE.baseHomeGoals);
 
     const clamp = x => Math.max(0.12, Math.min(5, x));
     const teamXG = clamp(teamBase * Math.exp(MATCH_ENGINE.strengthSlope * diff)
@@ -1955,7 +1959,22 @@ async function endSeason() {
 
 
 
-async function simulateFullWeek() {  
+let simulationRunning = false;
+
+async function simulateFullWeek() {
+    if (simulationRunning) {
+        console.warn('Ya hay una jornada simulándose; se ignora la petición repetida');
+        return { myMatch: null, forcedLoss: false, ignored: true };
+    }
+    simulationRunning = true;
+    try {
+        return await simulateFullWeekInner();
+    } finally {
+        simulationRunning = false;
+    }
+}
+
+async function simulateFullWeekInner() {  
     let myMatchResult = null;
     let forcedLoss = false;  
 
@@ -2019,6 +2038,12 @@ async function simulateFullWeek() {
     let myTeamMatch = currentWeekMatches.find(
         match => match.home === gameState.team || match.away === gameState.team
     );
+    // Si este partido ya se procesó (dos simulaciones casi a la vez), no repetirlo
+    if (myTeamMatch && gameState.matchHistory.some(mh =>
+        mh.week === gameState.week && mh.home === myTeamMatch.home && mh.away === myTeamMatch.away)) {
+        console.warn('Partido del usuario ya procesado esta jornada; se ignora la repetición');
+        myTeamMatch = null;
+    }
 
     // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
@@ -2213,10 +2238,17 @@ function improveFacilities(cost = 30000, trainingLevelIncrease = 1) {
   
 let currentStaffCandidates = {};  
   
+// Los candidatos se mantienen hasta la jornada siguiente (antes cambiaban en
+// cada clic en "Contratar"). Se guardan en la partida para que sobrevivan a recargas.
+function staffCandidatesKey() {
+    return `${gameState.currentSeason}|${gameState.seasonType}|${gameState.week}`;
+}
+
 function generateStaffCandidates(role, forceNew = false) {  
-    if (currentStaffCandidates[role] && !forceNew) {  
-        return currentStaffCandidates[role];  
-    }  
+    const cache = gameState.staffCandidates || (gameState.staffCandidates = {});
+    if (cache[role] && cache[role].key === staffCandidatesKey() && Array.isArray(cache[role].list)) {
+        return cache[role].list;
+    }
   
     const candidates = [];  
     const roleConfig = STAFF_ROLES[role];  
@@ -2244,8 +2276,28 @@ function generateStaffCandidates(role, forceNew = false) {
         candidates.push({ name: name, level: level, salary: Math.round(salary), role: role, displayName: roleConfig.displayName, clausula: Math.round(clausula) });  
     }  
     currentStaffCandidates[role] = candidates;  
+    cache[role] = { key: staffCandidatesKey(), list: candidates };
     return candidates;  
 }  
+
+// Qué aporta cada empleado según su nivel (efectos reales del juego)
+function staffEffectText(role, level) {
+    const lv = Math.max(1, Math.min(5, level || 1));
+    const eff = STAFF_LEVEL_EFFECTS[lv] || {};
+    const pct = x => `${Math.round(x)} %`;
+    switch (role) {
+        case 'medico': return `Acorta las lesiones un ${pct(lv * 10)}.`;
+        case 'fisio': return `Reduce el riesgo de lesión un ${pct(lv * 5)} y da un ${pct(lv * 10)} de probabilidad de recuperar a un lesionado una semana antes.`;
+        case 'entrenador': return `Reduce el riesgo de lesión un ${pct(lv * 8)} (sin él, +20 %) y multiplica la progresión anual de los jóvenes ×${eff.training ?? 1} (sin él, ×0,8).`;
+        case 'entrenadorPorteros': return `Mejora el entrenamiento de los porteros en EN, CA y DF (nivel ${lv}).`;
+        case 'segundoEntrenador': return `Cubre automáticamente las bajas del once, avisa de alineaciones inválidas y de carencias en la plantilla. Con nivel alto, mejores sustitutos.`;
+        case 'analista': return `Informe del próximo rival antes de cada partido: nivel 1 datos básicos; nivel ${lv >= 4 ? lv + ' formación y mentalidad recomendadas' : lv + ' datos de ataque y defensa'}.`;
+        case 'scout': return `Muestra ${30 + lv * 10} jugadores en el mercado y encuentra promesas de media ${35 + lv * 5}-${50 + lv * 5}.`;
+        case 'secretario': return `Mejora un ${pct(Math.max(0, ((eff.negotiation ?? 1) - 0.5) * 15))} la probabilidad de cerrar fichajes y renovaciones, y avisa de precios de venta excesivos.`;
+        case 'entrenadorJuveniles': return `Hace progresar a los jugadores de la cantera cada semana (más rápido cuanto mayor el nivel).`;
+        default: return '';
+    }
+}
   
 function hireStaffFromCandidates(candidate) {  
     const existingStaff = gameState.staff[candidate.role];  
@@ -2268,10 +2320,14 @@ function hireStaffFromCandidates(candidate) {
     }  
   
     gameState.balance -= candidate.clausula;
-    if (!gameState.playerPurchases) gameState.playerPurchases = 0;
-    gameState.playerPurchases += candidate.clausula + indemnization;
+    // (La cláusula e indemnización del personal se registran en "Cláusulas + indem.
+    // staff"; antes se sumaban también a "Inversión en fichajes" y el balance las contaba dos veces.)
     gameState.staff[candidate.role] = candidate;  
     currentStaffCandidates[candidate.role] = null;  
+    if (gameState.staffCandidates?.[candidate.role]?.list) {
+        gameState.staffCandidates[candidate.role].list = gameState.staffCandidates[candidate.role].list
+            .filter(c => !(c.name === candidate.name && c.level === candidate.level));
+    }
     updateWeeklyFinancials();  
     addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${candidate.clausula.toLocaleString('es-ES')}€)`, 'success');  
     return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
@@ -2916,6 +2972,19 @@ if (typeof window !== 'undefined') {
         replaceInLineup
     };
     window.autoFixLineup = autoFixLineup;
+    // Para copas y competiciones: fuerza y plantilla reales de un equipo español
+    window.pcfTeamStrength = async (team, division) => {
+        const div = division || teamDivision(team) || 'segunda';
+        const squad = await getAISquadCached(team, div, gameState.currentSeason);
+        const formation = chooseAIFormation(squad);
+        return calculateTeamEffectiveOverall(pickBestXI(squad, formation), formation);
+    };
+    window.pcfTeamSquad = async (team, division) => {
+        const div = division || teamDivision(team) || 'segunda';
+        return getAISquadCached(team, div, gameState.currentSeason);
+    };
+    window.pcfTeamDivision = teamDivision;
+    window.staffEffectText = staffEffectText;
     window.divisionName = divisionName;
     window.acceptOffer = acceptOffer;
     window.rejectOffer = rejectOffer;

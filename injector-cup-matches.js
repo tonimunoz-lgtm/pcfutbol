@@ -276,8 +276,11 @@ function initCupCalendar() {
             });
         });
         // Pre-asignar rival Copa (cambia cada ronda)
+        const used=[];
         cal.filter(m=>m.type==='copa').forEach(m=>{
-            m.opponent = getCopaRival(division);
+            if (m.id==='copa_sf_2') { m.opponent = cal.find(x=>x.id==='copa_sf_1')?.opponent; return; }
+            m.opponent = getCopaRival(division, m.phase, used);
+            used.push(m.opponent);
         });
         console.log(`🥇 Copa del Rey calendario OK (${division})`);
     } else {
@@ -296,11 +299,155 @@ function initCupCalendar() {
     console.log(`📅 Total: ${cal.length} partidos.`, cal.slice(0,3).map(m=>`${m.type}@J${m.afterLigaWeek}`).join(', ')+'...');
 }
 
-function getCopaRival(division) {
-    const pool = division==='primera'
-        ? ['Real Sociedad','CA Osasuna','Rayo Vallecano','Getafe CF','RCD Mallorca','CD Leganés','Girona FC','Sevilla FC','Valencia CF']
-        : ['CD Cartagena','Burgos CF','SD Eibar','Real Zaragoza','Córdoba CF','UD Almería','SD Huesca'];
-    return pool[Math.floor(Math.random()*pool.length)];
+// ============================================================
+// RIVALES, FUERZA, PRÓRROGA Y PENALTIS
+// - Rivales de Copa: equipos reales de la estructura de ligas de la partida,
+//   de menos a más nivel según la ronda.
+// - Rivales europeos asignados al desbloquear cada eliminatoria (antes "null").
+// - Fuerza real de los equipos españoles (mismo motor que la liga) y por
+//   categorías para los extranjeros.
+// - Empates en eliminatoria: prórroga y penaltis. Final en campo neutral.
+// ============================================================
+const FOREIGN_TIERS = {
+    86: ['Liverpool FC','Arsenal FC','Manchester City','Bayern München','PSG','Inter de Milán'],
+    82: ['Chelsea FC','Bayer Leverkusen','B. Dortmund','Juventus FC','SSC Napoli','Atalanta BC','Tottenham Hotspur','Manchester United','RB Leipzig','AS Roma'],
+    78: ['Eintracht Frankfurt','AS Monaco','Olympique Marsella','PSV Eindhoven','Sporting CP','Benfica SL','FC Porto','SS Lazio','Fiorentina','Olympique Lyonnais','RC Lens','Galatasaray SK','Fenerbahçe SK','Feyenoord','Ajax','Club Bruges'],
+    73: ['Celtic FC','Rangers FC','Red Bull Salzburg','Shakhtar','Olympiacos','Braga','AZ Alkmaar','PAOK FC','Anderlecht','Union Saint-Gilloise','Dinamo Zagreb','Slavia Praha','Sparta Praha','FC Basel','Gent','FC Midtjylland','Sturm Graz']
+};
+function foreignRating(team) {
+    for (const [r, list] of Object.entries(FOREIGN_TIERS)) if (list.includes(team)) return Number(r);
+    return 68;
+}
+
+// Apellidos por país para los goleadores de equipos extranjeros
+const COUNTRY_OF = t =>
+    /Liverpool|Arsenal|Manchester|Chelsea|Tottenham/.test(t) ? 'en' :
+    /München|Leverkusen|Frankfurt|Dortmund|Leipzig/.test(t) ? 'de' :
+    /Milán|Atalanta|Juventus|Napoli|Roma|Lazio|Fiorentina|Sampdoria/.test(t) ? 'it' :
+    /PSG|Monaco|Marsella|Lyonnais|Lens/.test(t) ? 'fr' :
+    /Sporting|Benfica|Porto|Braga/.test(t) ? 'pt' :
+    /PSV|Ajax|Feyenoord|AZ /.test(t) ? 'nl' :
+    /Galatasaray|Fenerbahçe/.test(t) ? 'tr' : 'xx';
+const SURNAMES = {
+    en: ['Walker','Rice','Foden','Saka','Palmer','Gordon','Watkins','Bowen','Mainoo','James','Gallagher','Toney'],
+    de: ['Müller','Schmidt','Wagner','Becker','Hofmann','Krämer','Neumann','Brandt','Weber','Schulz','Fischer','Hahn'],
+    it: ['Rossi','Bianchi','Romano','Esposito','Ricci','Marino','Greco','Conti','Barella','Colombo','Ferri','Galli'],
+    fr: ['Martin','Bernard','Dubois','Moreau','Laurent','Girard','Lefèvre','Roux','Fournier','Mercier','Blanc','Faure'],
+    pt: ['Silva','Santos','Ferreira','Pereira','Costa','Oliveira','Rodrigues','Gomes','Lopes','Marques','Sousa','Pinto'],
+    nl: ['de Jong','Bakker','Visser','Smit','Meijer','de Boer','Mulder','Bos','Vos','Dekker','Peters','Hendriks'],
+    tr: ['Yılmaz','Kaya','Demir','Şahin','Çelik','Yıldız','Aydın','Öztürk','Arslan','Doğan','Kılıç','Aslan'],
+    xx: ['Novak','Horvat','Kovač','Petrov','Ivanov','Jensen','Nielsen','Larsen','Andersen','Popescu','Nagy','Kowalski']
+};
+
+function leaguesOfGame() {
+    const gs = getGS();
+    return gs?.leagues || window.TEAMS_DATA || {};
+}
+
+function getCopaRival(division, phase, exclude = []) {
+    const L = leaguesOfGame();
+    const gs = getGS();
+    const pools = {
+        copa_r1:   ['rfef_grupo1', 'rfef_grupo2', 'promesas'],
+        copa_r32:  ['segunda', 'rfef_grupo1', 'rfef_grupo2'],
+        copa_r16:  ['primera', 'segunda'],
+        copa_qf:   ['primera', 'primera', 'segunda'],
+        copa_sf:   ['primera'],
+        copa_final:['primera']
+    }[phase] || ['primera', 'segunda'];
+    const candidates = pools.flatMap(d => L[d] || []).filter(t => t && t !== gs?.team && !exclude.includes(t));
+    if (candidates.length) return candidates[Math.floor(Math.random() * candidates.length)];
+    const fallback = (L.primera || []).filter(t => t !== gs?.team);
+    return fallback[Math.floor(Math.random() * fallback.length)] || 'Real Valladolid';
+}
+
+function facedRivals() {
+    const comp = getCompState() || {};
+    const cal = getCal() || [];
+    return [...new Set([...(comp.europeanResults || []).map(r => r.rival), ...cal.filter(m => m.opponent).map(m => m.opponent)])];
+}
+
+// Garantiza que el partido tiene rival (ida/vuelta con el mismo)
+function ensureOpponent(m) {
+    if (m.opponent && m.opponent !== 'null') return;
+    const cal = getCal();
+    if (/_2$/.test(m.id)) {
+        const leg1 = cal.find(x => x.id === m.id.replace(/_2$/, '_1'));
+        if (leg1?.opponent) { m.opponent = leg1.opponent; return; }
+    }
+    if (m.type === 'copa') {
+        m.opponent = getCopaRival(getGS()?.division, m.phase, facedRivals());
+    } else {
+        const pool = (EU_POOLS[m.type] || EU_POOLS.champions).filter(t => !facedRivals().includes(t));
+        const list = pool.length ? pool : (EU_POOLS[m.type] || EU_POOLS.champions);
+        m.opponent = list[Math.floor(Math.random() * list.length)];
+    }
+}
+
+async function prepareMatch(m) {
+    ensureOpponent(m);
+    m.neutral = m.phase === 'copa_final' || m.id === 'eu_final';
+    const L = leaguesOfGame();
+    const spanishDiv = Object.keys(L).find(k => (L[k] || []).includes(m.opponent));
+    m.oppSquad = null;
+    if (spanishDiv && window.pcfTeamStrength) {
+        try {
+            m.oppRating = Math.round(await window.pcfTeamStrength(m.opponent, spanishDiv));
+            const squad = await window.pcfTeamSquad(m.opponent, spanishDiv);
+            m.oppSquad = (squad || []).map(p => ({ name: p.name, position: p.position }));
+        } catch (e) { m.oppRating = null; }
+    }
+    if (!m.oppRating) m.oppRating = foreignRating(m.opponent) + (Math.floor(Math.random() * 5) - 2);
+    if (m.neutral) {
+        // Sorteo de quién actúa como local en la final
+        m.drawnHome = Math.random() < 0.5;
+    }
+    return m;
+}
+
+function poisson(lambda) {
+    const L = Math.exp(-lambda); let k = 0, p = 1;
+    do { k++; p *= Math.random(); } while (p > L);
+    return k - 1;
+}
+
+// ¿Este partido decide la eliminatoria? (partido único o vuelta)
+function decidesTie(m) {
+    if (m.type === 'copa') return m.id !== 'copa_sf_1';
+    if (m.isFinal) return true;
+    return (m.isPlayoff || m.isKnockout) && /_2$/.test(m.id);
+}
+
+function aggregateBefore(m) {
+    if (!/_2$/.test(m.id)) return { my: 0, opp: 0 };
+    const cal = getCal();
+    const leg1 = cal.find(x => x.id === m.id.replace(/_2$/, '_1'));
+    return { my: leg1?.result?.myGoals || 0, opp: leg1?.result?.oppGoals || 0 };
+}
+
+function resolveTie(m, result) {
+    if (!decidesTie(m)) return result;
+    const agg = aggregateBefore(m);
+    let my = agg.my + result.myGoals, opp = agg.opp + result.oppGoals;
+    if (my !== opp) { result.qualified = my > opp; return result; }
+    // Prórroga (30 minutos ≈ un tercio de los goles esperados)
+    const etMy = poisson((result.myXG || 1.2) / 3), etOpp = poisson((result.oppXG || 1.2) / 3);
+    result.extraTime = { my: etMy, opp: etOpp };
+    result.myGoals += etMy; result.oppGoals += etOpp;
+    my += etMy; opp += etOpp;
+    if (my !== opp) { result.qualified = my > opp; }
+    else {
+        // Penaltis: 5 por equipo y muerte súbita
+        let pm = 0, po = 0, i = 0;
+        for (; i < 5; i++) { if (Math.random() < 0.76) pm++; if (Math.random() < 0.76) po++; }
+        while (pm === po && i < 30) { if (Math.random() < 0.76) pm++; if (Math.random() < 0.76) po++; i++; }
+        result.penalties = { my: pm, opp: po };
+        result.qualified = pm > po;
+    }
+    result.win = result.myGoals > result.oppGoals;
+    result.draw = result.myGoals === result.oppGoals;
+    result.loss = !result.win && !result.draw;
+    return result;
 }
 
 // ============================================================
@@ -385,52 +532,32 @@ function getMyLeaguePos() {
 // ============================================================
 function simMatch(match) {
     const gs=getGS();
-
-    // Usar calculateTeamEffectiveOverall si está disponible (incluye penalización por posición)
-    let myRating;
-    if (window.calculateTeamEffectiveOverallImproved && gs?.lineup?.length >= 11) {
-        myRating = Math.round(window.calculateTeamEffectiveOverallImproved(
-            gs.lineup.slice(0,11), gs.formation || '433'
-        ));
-    } else if (gs?.lineup?.length >= 11) {
-        const starters = gs.lineup.slice(0,11);
-        const squad = gs.squad || [];
-        const ratings = starters.map(p => {
-            const sp = squad.find(s => s.name === p.name);
-            return sp?.overall || p.overall || 70;
-        }).filter(r => r > 0);
-        myRating = ratings.length ? Math.round(ratings.reduce((a,b)=>a+b,0)/ratings.length) : 75;
+    let myRating = 75;
+    if (window.calculateTeamEffectiveOverallImproved && gs?.lineup?.length) {
+        myRating = window.calculateTeamEffectiveOverallImproved(gs.lineup.slice(0,11), gs.formation || '433');
     } else if (gs?.squad?.length) {
-        myRating = Math.round(gs.squad.reduce((a,b)=>a+(b.overall||70),0)/gs.squad.length);
-    } else {
-        myRating = 75;
+        myRating = gs.squad.reduce((a,b)=>a+(b.overall||70),0)/gs.squad.length;
     }
+    const oppRating = match.oppRating || 75;
+    const forms = (gs?.lineup||[]).map(p=>p.form||75);
+    const myForm = forms.length ? forms.reduce((a,b)=>a+b,0)/forms.length : 75;
 
-    // Aplicar boost de prima si existe
-    const bonus = window._fdGetMatchBonus ? window._fdGetMatchBonus() : 0;
-    // Prima: como mucho +3 de media (antes hasta +25, muy por encima de la liga)
-    const bonusBoost = bonus > 0 ? Math.min(3, Math.round(Math.sqrt(bonus/50000))) : 0;
-    myRating = Math.min(99, myRating + bonusBoost);
+    // Mismo motor que la liga (Poisson). "team" = nosotros; la prima y la
+    // táctica se aplican a nuestro lado (homeIsUser indica el lado "team").
+    const engine = window.calculateMatchOutcomeImproved;
+    const out = engine ? engine({
+        teamOverall: myRating, opponentOverall: oppRating,
+        teamFormation: gs?.formation || '433', teamMentality: gs?.mentality || 'balanced',
+        isHome: !!match.isHome, neutral: !!match.neutral, teamForm: myForm, opponentForm: 75,
+        homeIsUser: true, awayIsUser: false
+    }) : { teamGoals: Math.floor(Math.random()*3), opponentGoals: Math.floor(Math.random()*3), teamXG: 1.2, opponentXG: 1.2 };
 
-    const base={champions:80,europaLeague:75,conferenceLague:70,copa:68}[match.type]||72;
-    const pmod={
-        final:6,copa_final:5,playoffs:4,semifinals:3,quarterfinals:2,round16:1,
-        groups_md8:1,groups_md7:1,copa_sf:2,copa_qf:1,copa_r16:0,copa_r32:-1,copa_r1:-2
-    }[match.phase]||0;
-    const oppRating=base+pmod+(Math.floor(Math.random()*6)-3);
-    const homeBonus=match.isHome?0.07:-0.04;
-    const wp=Math.max(0.12,Math.min(0.85,0.46+(myRating-oppRating)/80+homeBonus));
-    const r=Math.random();
-
-    let myG,opG;
-    if(r<wp){myG=Math.floor(Math.random()*3)+1;opG=Math.max(0,myG-1-Math.floor(Math.random()*2));}
-    else if(r<wp+0.22){myG=opG=Math.floor(Math.random()*2)+1;}
-    else{opG=Math.floor(Math.random()*3)+1;myG=Math.max(0,opG-1-Math.floor(Math.random()*2));}
-
-    const win=myG>opG,draw=myG===opG;
-    console.log(`🏆 Cup simMatch: myRating=${myRating}(+${bonusBoost}boost) vs oppRating=${oppRating} → wp=${wp.toFixed(2)} → ${myG}-${opG}`);
-    return {myGoals:myG,oppGoals:opG,win,draw,loss:!win&&!draw,
-            myTeam:gs?.team,opponent:match.opponent,isHome:match.isHome};
+    const myG = out.teamGoals, opG = out.opponentGoals;
+    const result = { myGoals:myG, oppGoals:opG, myXG: out.teamXG, oppXG: out.opponentXG,
+        win: myG>opG, draw: myG===opG, loss: myG<opG,
+        myTeam: gs?.team, opponent: match.opponent, isHome: match.isHome, neutral: !!match.neutral };
+    console.log(`🏆 Copa/Europa: ${gs?.team} (${myRating.toFixed(1)}) ${myG}-${opG} ${match.opponent} (${oppRating})`);
+    return resolveTie(match, result);
 }
 
 // ============================================================
@@ -444,7 +571,15 @@ function processResult(match, result) {
 
     // ── COPA DEL REY ───────────────────────────────────────
     if(match.type==='copa'){
-        if(result.win){
+        // Ida de semifinales: no decide nada todavía
+        if(match.id==='copa_sf_1'){
+            const sf2=cal.find(m=>m.id==='copa_sf_2'); if(sf2){ sf2.opponent=match.opponent; }
+            comp.copaResults=[...(comp.copaResults||[]),{phase:'copa_sf',leg:1,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:result.win}];
+            saveCal(cal);saveCompState(comp);
+            return {advances:null,isLeg:true};
+        }
+        const qualified = result.qualified ?? result.win;
+        if(qualified){
             const order=['copa_r1','copa_r32','copa_r16','copa_qf','copa_sf','copa_final'];
             const idx=order.indexOf(match.phase);
             comp.copaPhase=order[idx+1]||'champion';
@@ -452,9 +587,9 @@ function processResult(match, result) {
             comp.copaPhase='eliminated';
             cal.filter(m=>m.type==='copa'&&!m.played).forEach(m=>m.eliminated=true);
         }
-        comp.copaResults=[...(comp.copaResults||[]),{phase:match.phase,rival:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:result.win}];
+        comp.copaResults=[...(comp.copaResults||[]),{phase:match.phase,leg:match.id==='copa_sf_2'?2:undefined,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:qualified,extraTime:result.extraTime||null,penalties:result.penalties||null}];
         saveCal(cal);saveCompState(comp);
-        return {advances:result.win};
+        return {advances:qualified};
     }
 
     // ── FASE LIGA EUROPEA ──────────────────────────────────
@@ -512,7 +647,7 @@ function processResult(match, result) {
         }else{
             const l1=d.playoff.leg1||{myGoals:0,oppGoals:0};
             const totMy=l1.myGoals+result.myGoals,totOp=l1.oppGoals+result.oppGoals;
-            const adv=totMy>totOp;
+            const adv=result.qualified ?? (totMy>totOp);
             d.playoff.leg2={myGoals:result.myGoals,oppGoals:result.oppGoals,advances:adv};
             if(adv){
                 comp.europeanPhase='round16';
@@ -531,10 +666,11 @@ function processResult(match, result) {
     // ── ELIMINATORIA EUROPEA ───────────────────────────────
     if(match.isKnockout){
         if(match.isFinal){
-            comp.europeanPhase=result.win?'champion':'eliminated';
-            if(result.win)window.gameLogic?.addNews(`🏆 ¡¡CAMPEONES DE LA ${(CUP_CONFIG[match.type]?.name||'').toUpperCase()}!!`,'success');
+            const won = result.qualified ?? result.win;
+            comp.europeanPhase=won?'champion':'eliminated';
+            if(won)window.gameLogic?.addNews(`🏆 ¡¡CAMPEONES DE LA ${(CUP_CONFIG[match.type]?.name||'').toUpperCase()}!!`,'success');
             saveCompState(comp);
-            return {advances:result.win};
+            return {advances:won};
         }
         const d=getCupData();
         const kk=`ko_${match.phase}`;
@@ -549,7 +685,7 @@ function processResult(match, result) {
         }else{
             const l1=d[kk].leg1||{myGoals:0,oppGoals:0};
             const totMy=l1.myGoals+result.myGoals,totOp=l1.oppGoals+result.oppGoals;
-            const adv=totMy>totOp;
+            const adv=result.qualified ?? (totMy>totOp);
             d[kk].leg2={myGoals:result.myGoals,oppGoals:result.oppGoals,advances:adv};
             if(adv){
                 const nextMap={round16:'quarterfinals',quarterfinals:'semifinals',semifinals:'final'};
@@ -573,7 +709,7 @@ function processResult(match, result) {
 // INGRESOS DE TAQUILLA EN PARTIDOS EN CASA
 // ============================================================
 function addMatchRevenue(match) {
-    if (!match.isHome) return 0;
+    if (!match.isHome || match.neutral) return 0;
     const gs=getGS();
     if (!gs) return 0;
     const mult={champions:1.8,europaLeague:1.4,conferenceLague:1.2,copa:1.1}[match.type]||1.1;
@@ -589,25 +725,30 @@ function addMatchRevenue(match) {
 // ============================================================
 // GOLEADORES
 // ============================================================
-function genScorers(team,n,isMine){
+function genScorers(team,n,isMine,squad){
     const gs=getGS();
     const out=[],used=new Set();
+    const weight=p=>p.position==='DC'?4:p.position==='EXT'||p.position==='MCO'?3:['MC','MI','MD'].includes(p.position)?2:p.position==='POR'?0:1;
+    const pickFrom=arr=>{
+        const pool=arr.filter(p=>weight(p)>0);
+        const tot=pool.reduce((a,p)=>a+weight(p),0);
+        let r=Math.random()*tot;
+        for(const p of pool){ r-=weight(p); if(r<=0) return p.name; }
+        return pool[0]?.name;
+    };
     for(let i=0;i<n;i++){
         let min;do{min=Math.floor(Math.random()*90)+1;}while(used.has(min));used.add(min);
         let name;
         if(isMine&&gs?.squad?.length){
-            const pool=gs.squad.filter(p=>p.pos!=='POR'&&!p.isInjured);
-            const arr=pool.length?pool:gs.squad;
-            const wt=arr.map(p=>['DC','EX'].includes(p.pos)?3:p.pos==='MC'?2:1);
-            const tot=wt.reduce((a,b)=>a+b,0);
-            let r=Math.random()*tot,pick=arr[0];
-            for(let j=0;j<arr.length;j++){r-=wt[j];if(r<=0){pick=arr[j];break;}}
-            name=pick.name;
+            const xi=(gs.lineup||[]).filter(Boolean);
+            name=pickFrom(xi.length?xi:gs.squad.filter(p=>!p.isInjured));
+        }else if(squad&&squad.length){
+            name=pickFrom(squad);                       // equipo español: su plantilla real
         }else{
-            const g=['Müller','Kane','Mbappé','Salah','De Bruyne','Vinicius','Bellingham','Haaland','Lewandowski','Ødegaard','Saka','Pedri','Gvardiol','Wirtz'];
-            name=g[Math.floor(Math.random()*g.length)];
+            const list=SURNAMES[COUNTRY_OF(team)]||SURNAMES.xx; // extranjero: apellido de su país
+            name=list[Math.floor(Math.random()*list.length)];
         }
-        out.push({name,min,team,mine:isMine});
+        out.push({name:name||'—',min,team,mine:isMine});
     }
     return out.sort((a,b)=>a.min-b.min);
 }
@@ -619,7 +760,9 @@ function showAnnouncementModal(match) {
     return new Promise(resolve => {
         const cfg = CUP_CONFIG[match.type] || CUP_CONFIG.copa;
         const phaseName = PHASE_NAMES[match.phase] || match.phase;
-        const locText = match.isHome ? '🏟️ EN CASA' : '✈️ A DOMICILIO';
+        const locText = match.neutral
+            ? `🏟️ CAMPO NEUTRAL · Sorteo: actúa como local ${match.drawnHome !== false ? (getGS()?.team || 'tu equipo') : match.opponent}`
+            : match.isHome ? '🏟️ EN CASA' : '✈️ A DOMICILIO';
         const gs = getGS();
         const myTeam = gs?.team || 'Tu Equipo';
 
@@ -730,9 +873,9 @@ function showAnnouncementModal(match) {
     <div class="cu-phase">${phaseName}</div>
   </div>
   <div class="cu-vs">
-    <div class="cu-team h">${myTeam}</div>
+    <div class="cu-team h">${(match.neutral ? match.drawnHome !== false : match.isHome) ? myTeam : match.opponent}</div>
     <div class="cu-vsbdg">VS</div>
-    <div class="cu-team a">${match.opponent}</div>
+    <div class="cu-team a">${(match.neutral ? match.drawnHome !== false : match.isHome) ? match.opponent : myTeam}</div>
   </div>
   <div class="cu-loc">${locText} · ${cfg.name}</div>
 
@@ -845,14 +988,23 @@ function showResultModal(match,result,processed){
     return new Promise(resolve=>{
         const cfg=CUP_CONFIG[match.type]||CUP_CONFIG.copa;
         const phaseName=PHASE_NAMES[match.phase]||match.phase;
-        const locText=match.isHome?'🏟️ EN CASA':'✈️ A DOMICILIO';
+        const locText=match.neutral?'🏟️ CAMPO NEUTRAL':match.isHome?'🏟️ EN CASA':'✈️ A DOMICILIO';
         const myTeam=result.myTeam||'Tu Equipo';
         const win=result.win,draw=result.draw;
-        const outLabel=win?'¡VICTORIA!':draw?'EMPATE':'DERROTA';
-        const outColor=win?'#4CAF50':draw?'#FFD700':'#f44336';
-        const outEmoji=win?'🎉':draw?'🤝':'😞';
+        const pens=result.penalties;
+        const outLabel=pens?(result.qualified?'¡PASAMOS EN LOS PENALTIS!':'ELIMINADOS EN LOS PENALTIS'):win?'¡VICTORIA!':draw?'EMPATE':'DERROTA';
+        const outColor=pens?(result.qualified?'#4CAF50':'#f44336'):win?'#4CAF50':draw?'#FFD700':'#f44336';
+        const outEmoji=pens?(result.qualified?'🎉':'😞'):win?'🎉':draw?'🤝':'😞';
 
-        const goals=[...genScorers(myTeam,result.myGoals,true),...genScorers(match.opponent,result.oppGoals,false)].sort((a,b)=>a.min-b.min);
+        const etMy=result.extraTime?.my||0, etOpp=result.extraTime?.opp||0;
+        const goals=[...genScorers(myTeam,result.myGoals-etMy,true),...genScorers(match.opponent,result.oppGoals-etOpp,false,match.oppSquad)]
+            .concat([...genScorers(myTeam,etMy,true),...genScorers(match.opponent,etOpp,false,match.oppSquad)].map(g=>({...g,min:91+Math.floor(Math.random()*29)})))
+            .sort((a,b)=>a.min-b.min);
+        // El local a la izquierda (en la final, el que salió en el sorteo)
+        const meLeft = match.neutral ? match.drawnHome !== false : !!match.isHome;
+        const extraLine = result.penalties
+            ? `<div style="color:#FFD700;font-weight:bold;margin:6px 0">Prórroga · Penaltis ${meLeft?`${result.penalties.my}-${result.penalties.opp}`:`${result.penalties.opp}-${result.penalties.my}`}</div>`
+            : result.extraTime ? `<div style="color:#FFD700;font-weight:bold;margin:6px 0">Tras la prórroga</div>` : '';
         const poss=win?52+Math.floor(Math.random()*14):draw?46+Math.floor(Math.random()*8):36+Math.floor(Math.random()*12);
         const shots={my:Math.max(result.myGoals*2,Math.floor(Math.random()*8)+5),opp:Math.max(result.oppGoals*2,Math.floor(Math.random()*8)+5)};
 
@@ -921,10 +1073,15 @@ function showResultModal(match,result,processed){
 <div class="cr-badge">${cfg.emoji} ${cfg.shortName}</div>
 <div class="cr-phase">${phaseName}</div>
 <div class="cr-score">
-  <div class="cr-tm"><div class="cr-tn">${myTeam}</div><div class="cr-g" style="color:${outColor}">${result.myGoals}</div></div>
-  <div class="cr-sep">–</div>
-  <div class="cr-tm"><div class="cr-tn">${match.opponent}</div><div class="cr-g" style="color:${result.oppGoals>result.myGoals?'#f44336':'rgba(255,255,255,.4)'}">${result.oppGoals}</div></div>
+  ${meLeft
+    ? `<div class="cr-tm"><div class="cr-tn">${myTeam}</div><div class="cr-g" style="color:${outColor}">${result.myGoals}</div></div>
+       <div class="cr-sep">–</div>
+       <div class="cr-tm"><div class="cr-tn">${match.opponent}</div><div class="cr-g" style="color:${result.oppGoals>result.myGoals?'#f44336':'rgba(255,255,255,.4)'}">${result.oppGoals}</div></div>`
+    : `<div class="cr-tm"><div class="cr-tn">${match.opponent}</div><div class="cr-g" style="color:${result.oppGoals>result.myGoals?'#f44336':'rgba(255,255,255,.4)'}">${result.oppGoals}</div></div>
+       <div class="cr-sep">–</div>
+       <div class="cr-tm"><div class="cr-tn">${myTeam}</div><div class="cr-g" style="color:${outColor}">${result.myGoals}</div></div>`}
 </div>
+${extraLine}
 <div class="cr-out" style="color:${outColor}">${outEmoji} ${outLabel}</div>
 ${goals.length?`<div class="cr-sec"><h4>⚽ Goles</h4>${goals.map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span><span class="cr-tt">(${g.team})</span></div>`).join('')}</div>`:''}
 <div class="cr-sec"><h4>📊 Estadísticas</h4>
@@ -987,6 +1144,8 @@ function hookCupSimulateWeek(){
 
         const pending=getPendingMatch(gs.week);
         if(!pending) return orig.apply(this,arguments);
+        await prepareMatch(pending);
+        { const cal=getCal(); const e=cal.find(m=>m.id===pending.id); if(e){ e.opponent=pending.opponent; saveCal(cal);} }
 
         // 1. Anuncio
         await showAnnouncementModal(pending);
@@ -1003,9 +1162,12 @@ function hookCupSimulateWeek(){
         // 5. Noticia
         const cfg=CUP_CONFIG[pending.type]||CUP_CONFIG.copa;
         const ph=PHASE_NAMES[pending.phase]||pending.phase;
+        const phTxt = String(ph).startsWith(cfg.shortName) ? ph : `${cfg.shortName} — ${ph}`;
+        const extraTxt = result.penalties ? ` (prórroga; penaltis ${result.penalties.my}-${result.penalties.opp}: ${result.qualified?'pasamos':'eliminados'})`
+            : result.extraTime ? ' (tras la prórroga)' : '';
         window.gameLogic?.addNews(
-            `${cfg.emoji} ${cfg.shortName} — ${ph}: ${result.win?'¡Victoria':result.draw?'Empate':'Derrota'} ${result.myGoals}-${result.oppGoals} vs ${pending.opponent}`,
-            result.win?'success':result.draw?'info':'error'
+            `${cfg.emoji} ${phTxt}: ${result.win?'¡Victoria':result.draw?'Empate':'Derrota'} ${result.myGoals}-${result.oppGoals} vs ${pending.opponent}${extraTxt}`,
+            (result.qualified ?? result.win)?'success':result.draw?'info':'error'
         );
 
         // 6. Refresh UI

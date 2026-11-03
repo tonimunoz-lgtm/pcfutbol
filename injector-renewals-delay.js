@@ -121,6 +121,7 @@
                     `✅ ¡${renewal.playerName} ha aceptado la renovación! Firmó por ${renewal.newYears} años a ${renewal.newSalary.toLocaleString('es-ES')}€/sem`,
                     'success'
                 );
+                news(`🗞️ PRENSA: ${renewal.playerName} renueva con el ${state.team} hasta ${(parseInt(String(state.currentSeason).split('/')[1]) || 2027) + renewal.newYears - 1}.`, 'info');
 
                 // Toast no-bloqueante en lugar de alert
                 showToast(`✅ ${renewal.playerName} ha renovado su contrato por ${renewal.newYears} años`, 'success');
@@ -254,6 +255,11 @@
             const player = state.squad.find(p => p.name === playerName);
             if (!player) {
                 window._originalSubmitRenewalOffer?.();
+                return;
+            }
+            // Una sola oferta pendiente por jugador
+            if ((state.pendingRenewals || []).some(r => r.playerName === player.name)) {
+                (window.pcfNotify || alert)('Renovación', `Ya enviaste una oferta a ${player.name}. Espera su respuesta.`);
                 return;
             }
 

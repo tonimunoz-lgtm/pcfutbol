@@ -773,9 +773,9 @@ function renderNegotiationsList(state) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>
                 <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
                 <td>
-                    <button class="btn btn-sm" onclick="window.openRenewalModal(${state.squad.indexOf(p)})">
-                        📝 Renovar
-                    </button>
+                    ${(state.pendingRenewals || []).some(r => r.playerName === p.name)
+                        ? `<button class="btn btn-sm" disabled style="opacity:.6;cursor:default" title="Responderá en las próximas jornadas">📨 Oferta enviada</button>`
+                        : `<button class="btn btn-sm" onclick="window.openRenewalModal(${state.squad.indexOf(p)})">📝 Renovar</button>`}
                 </td>
             </tr>
         `;

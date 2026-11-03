@@ -1024,6 +1024,12 @@ function renderEuropa() {
 // ============================================================
 // RENDER: COPA
 // ============================================================
+const COPA_PHASES = [
+    ['copa_r1', '1ª Ronda'], ['copa_r32', 'Dieciseisavos'], ['copa_r16', 'Octavos'],
+    ['copa_qf', 'Cuartos'], ['copa_sf', 'Semifinales (ida y vuelta)'], ['copa_final', 'Final (campo neutral)']
+];
+const COPA_ALIAS = { round1:'copa_r1', round32:'copa_r32', round16:'copa_r16', quarters:'copa_qf', semis:'copa_sf', final:'copa_final' };
+
 function renderCopa() {
     const panel = document.getElementById('comp-copa-panel');
     if (!panel) return;
@@ -1035,33 +1041,48 @@ function renderCopa() {
         return;
     }
 
-    const phase=comp.copaPhase;
-    const order=['round1','round32','round16','quarters','semis','final'];
-    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">🥇 Copa del Rey — ${state?.currentSeason||''}</h3>`;
+    // Fuente: calendario real de partidos de copa
+    const cupData = window.CupMatches?.getData() || state?.cupData || {};
+    const cal = (cupData.calendar || []).filter(m => m.type === 'copa');
+    const phase = COPA_ALIAS[comp.copaPhase] || comp.copaPhase;
+    const phaseLabel = p => (COPA_PHASES.find(([k]) => k === p) || [p, p])[1];
+    const score = (m) => {
+        const r = m.result; if (!r) return '';
+        return `${m.isHome ? r.myGoals + '-' + r.oppGoals : r.oppGoals + '-' + r.myGoals}`;
+    };
+    const resOf = (ph, leg) => (comp.copaResults || []).filter(r => r.phase === ph && (leg ? r.leg === leg : true)).slice(-1)[0];
 
+    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">🥇 Copa del Rey — ${state?.currentSeason||''}</h3>`;
     if (phase==='champion') {
         html+=`<div class="result-banner" style="background:rgba(255,215,0,.2);border-color:#FFD700;margin-bottom:12px"><div style="font-size:1.8em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.1em">¡CAMPEÓN DE LA COPA DEL REY!</div></div>`;
     } else if (phase==='eliminated') {
-        const last=comp.copaResults?.[comp.copaResults.length-1];
-        html+=`<div style="background:rgba(244,67,54,.12);border-left:3px solid #f44336;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#f44336">❌ ELIMINADO</strong>${last?` <span style="color:rgba(255,255,255,.7);font-size:.88em">en ${phaseName(last.phase)} vs ${last.opponent} (${last.myGoals}-${last.oppGoals})</span>`:''}</div>`;
+        const last=(comp.copaResults||[]).slice(-1)[0];
+        html+=`<div style="background:rgba(244,67,54,.12);border-left:3px solid #f44336;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#f44336">❌ ELIMINADO</strong>${last?` <span style="color:rgba(255,255,255,.8);font-size:.88em">en ${phaseLabel(last.phase)} contra ${last.rival||last.opponent}</span>`:''}</div>`;
     } else {
-        const nextOpp=comp.copaOpponents?.[phase];
-        html+=`<div style="background:rgba(76,175,80,.12);border-left:3px solid #4CAF50;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#4CAF50">✅ EN COMPETICIÓN</strong> <span style="color:rgba(255,255,255,.8);font-size:.88em;margin-left:8px">Próxima: <strong>${phaseName(phase)}</strong>${nextOpp?` · Rival posible: ${nextOpp}`:''}</span></div>`;
+        const next = cal.find(m => !m.played && !m.eliminated);
+        html+=`<div style="background:rgba(76,175,80,.12);border-left:3px solid #4CAF50;border-radius:6px;padding:10px 14px;margin-bottom:12px"><strong style="color:#4CAF50">✅ EN COMPETICIÓN</strong> <span style="color:rgba(255,255,255,.85);font-size:.88em;margin-left:8px">Próxima: <strong>${phaseLabel(next?.phase || phase)}</strong>${next?.opponent?` · contra ${next.opponent}`:''}${next?` · tras la jornada ${next.afterLigaWeek}`:''}</span></div>`;
     }
 
-    order.forEach(p=>{
-        const res=comp.copaResults?.find(r=>r.phase===p);
-        const opp=comp.copaOpponents?.[p];
-        const isCurrent=p===phase&&!['eliminated','champion'].includes(phase);
-        html+=`<div class="ccard" style="${isCurrent?'border-color:#FFD700':''}"><div class="ctitle">${phaseName(p)}</div>`;
-        if(res){
-            const w=res.myGoals>res.oppGoals;
-            html+=`<div class="${w?'cwin':'closs'}">${w?'✅':'❌'} vs ${res.opponent}: <strong>${res.myGoals}-${res.oppGoals}</strong></div>`;
-        } else if(isCurrent){
-            html+=`<div style="color:rgba(255,255,255,.5);font-style:italic;font-size:.88em">⏳ Pendiente${opp?` — Rival: ${opp}`:''}</div>`;
-        } else {
-            html+=`<div style="color:rgba(255,255,255,.3);font-size:.85em">— No alcanzado</div>`;
-        }
+    COPA_PHASES.forEach(([p]) => {
+        const matches = cal.filter(m => m.phase === p);
+        if (!matches.length) return; // ronda que tu equipo no juega (p. ej. Primera entra en dieciseisavos)
+        const isCurrent = matches.some(m => !m.played && !m.eliminated) && !['eliminated','champion'].includes(phase);
+        html+=`<div class="ccard" style="${isCurrent?'border-color:#FFD700':''}"><div class="ctitle">${phaseLabel(p)}</div>`;
+        matches.forEach((m, i) => {
+            const legTxt = matches.length > 1 ? (i === 0 ? 'Ida · ' : 'Vuelta · ') : '';
+            const venue = m.neutral || p === 'copa_final' ? 'campo neutral' : m.isHome ? 'en casa' : 'fuera';
+            if (m.played) {
+                const r = resOf(p, matches.length > 1 ? i + 1 : undefined) || {};
+                const extra = r.penalties ? ` · prórroga y penaltis ${r.penalties.my}-${r.penalties.opp}` : r.extraTime ? ' · tras prórroga' : '';
+                const decides = matches.length === 1 || i === 1;
+                const ok = decides ? r.win : m.result.myGoals >= m.result.oppGoals;
+                html+=`<div class="${ok?'cwin':'closs'}">${decides ? (r.win?'✅':'❌') : '⚽'} ${legTxt}vs ${m.opponent} (${venue}): <strong>${m.result.myGoals}-${m.result.oppGoals}</strong>${extra}</div>`;
+            } else if (m.eliminated) {
+                html+=`<div style="color:rgba(255,255,255,.35);font-size:.85em">— ${legTxt}No disputado</div>`;
+            } else {
+                html+=`<div style="color:rgba(255,255,255,.6);font-style:italic;font-size:.88em">⏳ ${legTxt}Pendiente${m.opponent?` — contra ${m.opponent} (${venue})`:''} · tras la jornada ${m.afterLigaWeek}</div>`;
+            }
+        });
         html+=`</div>`;
     });
 
@@ -1256,6 +1277,9 @@ function resultBanner(result) {
 function processWeeklyComps(state) {
     const comp = store.getComp();
     if (!comp || comp.season !== state.currentSeason) return;
+    // Copa y Europa se juegan partido a partido en injector-cup-matches.js.
+    // Simularlas también aquí pisaba su estado (fases con otros nombres).
+    if (window.CupMatches) return;
     const w=state.week, total=state.maxSeasonWeeks||38, myTeam=state.team;
 
     // Grupos Europa ~30% temporada

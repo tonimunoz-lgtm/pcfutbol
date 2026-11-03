@@ -412,8 +412,8 @@
 
         // Datos del rival
         const rivalPts = standings?.pts || 0;
-        const rivalPos = standings ? Object.entries(s.standings)
-            .sort((a,b) => (b[1].pts||0)-(a[1].pts||0))
+        const rivalPos = standings ? (window.sortStandings ? window.sortStandings(s.standings) : Object.entries(s.standings)
+            .sort((a,b) => (b[1].pts||0)-(a[1].pts||0)))
             .findIndex(([t]) => t === rival) + 1 : '?';
         const rivalGF  = standings?.gf || 0;
         const rivalGC  = standings?.gc || 0;
@@ -482,7 +482,11 @@
         }
 
         if (report) {
-            addN(`[Analista · Niv.${level}] ${report}`, level >= 4 ? 'success' : 'info');
+            // Un informe por partido: en semanas de copa la liga no avanza y no se repite
+            const key = `${s.currentSeason}|${nextMatch.week}|${rival}`;
+            if (s.analystLastReport === key) return;
+            window.gameLogic?.updateGameState?.({ analystLastReport: key });
+            addN(`[Analista · Niv.${level}] 📋 Próximo partido — Jornada ${nextMatch.week} ${isHome ? 'en casa' : 'fuera'} contra ${rival}. ${report}`, level >= 4 ? 'success' : 'info');
         }
     }
 
