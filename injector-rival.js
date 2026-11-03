@@ -243,7 +243,7 @@
                 </div>
                 <div style="text-align:right;">
                     <div style="color:${ovrColor(ovr)};font-weight:bold;font-size:.85em;">${ovr}</div>
-                    ${p.form ? `<div style="color:#555;font-size:.7em;">${Math.round(p.form)}fm</div>` : ''}
+                    ${p.form ? `<div style="color:#99a;font-size:.7em;" title="Forma actual">forma ${Math.round(p.form)}</div>` : ''}
                 </div>
             </div>`;
         };
@@ -410,21 +410,30 @@
         const notes = getNotes(rivalName);
 
         // Medias de los XI
-        const rivalAvg = xi.length ? Math.round(xi.reduce((sum,p)=>sum+quickOverall(p),0)/xi.length) : 70;
+        const effOf = (squad) => {
+            if (!window.pickBestXI || !window.calculateTeamEffectiveOverallImproved) return null;
+            const f = window.chooseAIFormation ? window.chooseAIFormation(squad) : '433';
+            return window.calculateTeamEffectiveOverallImproved(window.pickBestXI(squad, f), f);
+        };
+        const rivalEff = effOf(rivalSquad);
+        const myLineup = (s.lineup || []).map(l => mySquad.find(p => p.name === l.name) || l);
+        const myEff = window.calculateTeamEffectiveOverallImproved && myLineup.length
+            ? window.calculateTeamEffectiveOverallImproved(myLineup.map(p => (p.isInjured || p.isSuspended) ? null : p), s.formation || '433') : null;
+        const rivalAvg = rivalEff != null ? Math.round(rivalEff) : (xi.length ? Math.round(xi.reduce((sum,p)=>sum+quickOverall(p),0)/xi.length) : 70);
         const myXI     = getStartingXI(mySquad);
-        const myAvg    = myXI.length ? Math.round(myXI.reduce((sum,p)=>sum+quickOverall(p),0)/myXI.length) : 70;
+        const myAvg    = myEff != null ? Math.round(myEff) : (myXI.length ? Math.round(myXI.reduce((sum,p)=>sum+quickOverall(p),0)/myXI.length) : 70);
         const diff     = myAvg - rivalAvg;
         const diffStr  = diff > 0 ? `+${diff}` : `${diff}`;
         const diffColor = diff > 0 ? '#4CAF50' : diff < 0 ? '#f44336' : '#f5a623';
 
         const isHome = (() => {
             const cal = s.seasonCalendar || [];
-            const nw  = s.nextWeek || (s.week + 1);
-            const m   = cal.find(x => x.week === nw && (x.home === s.team || x.away === s.team));
+            // Próximo partido = el de la jornada actual (la jornada avanza al jugarse)
+            const m   = cal.filter(x => x.home === s.team || x.away === s.team).find(x => x.week >= s.week && (x.home === rivalName || x.away === rivalName));
             if (!m) return null;
             return m.home === s.team;
         })();
-        const locLabel = isHome === true ? '🏟️ LOCAL' : isHome === false ? '✈️ VISITANTE' : '';
+        const locLabel = isHome === true ? '🏟️ Jugamos en casa' : isHome === false ? '✈️ Jugamos fuera' : '';
 
         // ── Tabs internos ─────────────────────────────────────────
         container.innerHTML = `
@@ -479,9 +488,10 @@
                         <div style="color:#555;font-size:.7em;">${rivalName.split(' ')[0]}</div>
                     </div>
                 </div>
-                <div style="color:#555;font-size:.7em;margin-top:3px;">Media OVR XI</div>
+                <div style="color:#aab;font-size:.7em;margin-top:3px;" title="Media del once según la posición de cada jugador (tu once actual, sin lesionados ni sancionados)">Media efectiva del once</div>
             </div>
         </div>
+        ${renderMatchPreview(s, rivalName, rivalSquad, xi, myLineup, isHome, myEff, rivalEff)}
 
         <!-- TABS internos -->
         <div id="rival-tabs" style="display:flex;gap:4px;margin-bottom:0;">
@@ -616,6 +626,64 @@
 
     // ── Abrir/cerrar página rival — usa classList igual que las páginas nativas ──
     // NO hookear openPage/closePage para no romper la cadena de hooks de otros injectors.
+
+    // ── Resumen del partido: pronóstico, líneas, peligros y plan ──
+    function renderMatchPreview(s, rivalName, rivalSquad, rivalXI, myLineup, isHome, myEff, rivalEff) {
+        if (myEff == null || rivalEff == null || !window.calculateMatchOutcomeImproved) return '';
+        // Pronóstico con el mismo motor de los partidos
+        let w = 0, d = 0, l = 0;
+        const N = 3000;
+        for (let i = 0; i < N; i++) {
+            const r = window.calculateMatchOutcomeImproved({ teamOverall: myEff, opponentOverall: rivalEff, isHome: isHome !== false,
+                teamFormation: s.formation || '433', teamMentality: s.mentality || 'balanced' });
+            if (r.teamGoals > r.opponentGoals) w++; else if (r.teamGoals === r.opponentGoals) d++; else l++;
+        }
+        const pc = x => Math.round(x / N * 100);
+        // Comparación por líneas
+        const LINES = { 'Portería': ['POR'], 'Defensa': ['DFC', 'LI', 'LD'], 'Medio': ['MC', 'MCO', 'MD', 'MI'], 'Ataque': ['EXT', 'DC'] };
+        const lineAvg = (list, pos) => {
+            const xs = list.filter(p => p && pos.includes(p.position) && !p.isInjured && !p.isSuspended).map(p => p.overall || 60);
+            return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        };
+        const rows = Object.entries(LINES).map(([label, pos]) => {
+            const a = lineAvg(myLineup, pos), b = lineAvg(rivalXI, pos);
+            if (a == null || b == null) return '';
+            const better = a - b;
+            const col = better >= 2 ? '#4CAF50' : better <= -2 ? '#f44336' : '#f5a623';
+            return `<div style="display:grid;grid-template-columns:80px 36px 1fr 36px;gap:8px;align-items:center;font-size:.82em;margin:3px 0;">
+                <span style="color:#cfe0ff">${label}</span><strong style="text-align:right">${a.toFixed(0)}</strong>
+                <div style="display:flex;height:7px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.08)">
+                    <div style="width:${Math.max(5, Math.min(95, 50 + better * 4))}%;background:${col}"></div></div>
+                <strong>${b.toFixed(0)}</strong></div>`;
+        }).join('');
+        const dangers = [...rivalSquad].filter(p => !p.isInjured).sort((a, b) => (b.overall || 0) - (a.overall || 0)).slice(0, 3)
+            .map(p => `${p.name} (${p.position}, ${p.overall})`).join(' · ');
+        const sc = s.staff?.segundoEntrenador;
+        return `
+        <div style="background:rgba(255,210,74,.07);border:1px solid rgba(255,210,74,.3);border-radius:12px;padding:14px;margin-bottom:16px;
+                    display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
+            <div>
+                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">🔮 Pronóstico ${isHome === false ? '(fuera)' : '(en casa)'}</div>
+                <div style="display:flex;height:22px;border-radius:5px;overflow:hidden;font-size:.75em;font-weight:bold;">
+                    <div title="Victoria" style="width:${pc(w)}%;background:#2e7d32;display:flex;align-items:center;justify-content:center;">${pc(w)}%</div>
+                    <div title="Empate" style="width:${pc(d)}%;background:#8d6e00;display:flex;align-items:center;justify-content:center;">${pc(d)}%</div>
+                    <div title="Derrota" style="width:${pc(l)}%;background:#b71c1c;display:flex;align-items:center;justify-content:center;">${pc(l)}%</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:.72em;color:#aab;margin-top:3px;"><span>Victoria</span><span>Empate</span><span>Derrota</span></div>
+                <div style="font-size:.78em;color:#e6eefb;margin-top:10px;">⚠️ Más peligrosos: ${dangers || '—'}</div>
+            </div>
+            <div>
+                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;">📊 Líneas: nosotros · ellos</div>
+                ${rows || '<div style="color:#aab;font-size:.8em">Sin datos suficientes</div>'}
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;">
+                <div style="font-size:.8em;color:#e6eefb;line-height:1.4;">${sc
+                    ? `🧠 Tu segundo entrenador (nivel ${sc.level}) puede preparar el partido${sc.level >= 3 ? ': once, formación y mentalidad' : ': once y mentalidad'}.`
+                    : '🧠 Sin segundo entrenador: el botón elige el mejor once en tu formación actual.'}</div>
+                <button class="btn" onclick="window.pcfAutoLineup && window.pcfAutoLineup()">⚡ ${sc ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
+            </div>
+        </div>`;
+    }
     function openRivalPage() {
         console.log('[Rival] openRivalPage called');
         const s = gs();

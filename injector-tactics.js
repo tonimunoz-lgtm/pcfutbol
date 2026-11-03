@@ -46,7 +46,7 @@
             emoji: '🔺',
             desc: 'Dominio del centro. Dos puntas, centrocampo poderoso.',
             attack: 80, defense: 65, midfield: 90,
-            attackBonus: 1.02, defenseBonus: 0.95
+            attackBonus: 1.0, defenseBonus: 0.95
         },
         '541': {
             label: '5-4-1',
@@ -179,7 +179,13 @@
     }
 
     // ── Render tarjetas de selección ─────────────────────────────
-    function renderCards(dataObj, currentVal, onClickFn, cols) {
+    const pctTxt = v => v === undefined ? '' : Math.abs(v - 1) < 0.005 ? '=' : `${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`;
+    function effectLine(d) {
+        const a = d.attackBonus ?? d.attackMult, df = d.defenseBonus ?? d.defenseMult;
+        if (a === undefined && df === undefined) return '';
+        return `<div style="font-size:.66em;margin-top:5px;color:#e6eefb;">⚔️ ${pctTxt(a)} · 🛡️ ${pctTxt(df)}</div>`;
+    }
+    function renderCards(dataObj, currentVal, onClickFn, cols, extraFn) {
         const entries = Object.entries(dataObj);
         const gridClass = cols === 3 ? 'tc-grid-3' : 'tc-grid-5';
         return `<div class="${gridClass}">
@@ -193,7 +199,9 @@
                            transition:all .2s;user-select:none;">
                     <div style="font-size:1.3em;margin-bottom:4px;">${d.emoji}</div>
                     <div style="font-size:.78em;font-weight:bold;color:${active ? color : '#ccc'};">${d.label}</div>
-                    <div style="font-size:.65em;color:#666;margin-top:3px;line-height:1.3;">${d.desc}</div>
+                    <div style="font-size:.68em;color:rgba(230,238,251,.78);margin-top:3px;line-height:1.3;">${d.desc}</div>
+                    ${effectLine(d)}
+                    ${extraFn ? extraFn(key, d) : ''}
                 </div>`;
             }).join('')}
         </div>`;
@@ -228,8 +236,12 @@
     function renderXISummary() {
         const s = gs();
         if (!s?.lineup?.length) return '<div style="color:#555;font-size:.8em;font-style:italic;">Sin alineación guardada.</div>';
-        const lineup = s.lineup.slice(0, 11);
-        const avg = Math.round(lineup.reduce((sum, p) => sum + (p.overall || 70), 0) / lineup.length);
+        const byName = new Map((s.squad || []).map(p => [p.name, p]));
+        const lineup = s.lineup.slice(0, 11).map(p => byName.get(p.name) || p);
+        const effective = window.calculateTeamEffectiveOverallImproved
+            ? window.calculateTeamEffectiveOverallImproved(lineup.map(p => (p.isInjured || p.isSuspended) ? null : p), s.formation || '433') : null;
+        const avg = effective != null ? effective.toFixed(1) : Math.round(lineup.reduce((sum, p) => sum + (p.overall || 70), 0) / lineup.length);
+        const bajas = lineup.filter(p => p.isInjured || p.isSuspended);
         const posGroups = { POR: [], DEF: [], MED: [], DEL: [] };
         const posMap = { POR:'POR', DFC:'DEF', LI:'DEF', LD:'DEF', MC:'MED', MCO:'MED', MCD:'MED', MD:'MED', MI:'MED', EXT:'DEL', DC:'DEL' };
         lineup.forEach(p => {
@@ -240,8 +252,9 @@
         return `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
             <span style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;">XI Titular actual</span>
-            <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:.8em;color:#FFD700;font-weight:bold;">Media OVR: ${avg}</span>
+            <span title="Media del once teniendo en cuenta la posición de cada jugador; los no disponibles cuentan como hueco" style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:.8em;color:#FFD700;font-weight:bold;cursor:help;">Media efectiva: ${avg}</span>
         </div>
+        ${bajas.length ? `<div style="color:#ffb3b3;font-size:.78em;margin-bottom:6px;">⚠️ No pueden jugar: ${bajas.map(p => p.name).join(', ')}. Cámbialos en Alineación o pulsa el botón de arriba.</div>` : ''}
         <div class="tc-xi-chips">
             ${['POR','DEF','MED','DEL'].map(g =>
                 posGroups[g].map(p => `
@@ -249,7 +262,8 @@
                     <span style="color:${posColor[g]};font-size:.7em;font-weight:bold;">${p.position}</span>
                     <span style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
                     <span style="color:#888;font-size:.68em;">${p.overall || 70}</span>
-                    ${p.isInjured ? '<span style="font-size:.7em;">🤕</span>' : ''}
+                    ${p.isInjured ? `<span title="Lesionado: ${p.weeksOut || 1} semana(s)" style="background:#d32f2f;color:#fff;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">✚</span>` : ''}
+                    ${p.isSuspended ? `<span title="Sancionado" style="background:#d32f2f;width:9px;height:12px;display:inline-block;border-radius:1px;"></span>` : ''}
                 </div>`).join('')
             ).join('')}
         </div>`;
@@ -342,6 +356,14 @@
             ${renderMatchContext()}
         </div>
 
+        <!-- PLAN DEL PARTIDO -->
+        <div id="tc-plan" style="background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+            <div style="font-size:.85em;line-height:1.45;color:#e6eefb;" id="tc-plan-text">${s.staff?.segundoEntrenador
+                ? `🧠 <strong>Segundo entrenador (nivel ${s.staff.segundoEntrenador.level})</strong>: puede preparar el once${s.staff.segundoEntrenador.level >= 3 ? ', la formación' : ''} y la mentalidad para el próximo partido según el rival.`
+                : '🧠 Sin segundo entrenador: el botón elige el mejor once en tu formación actual. Contrata uno para que también adapte la mentalidad (y desde nivel 3, la formación) al rival.'}</div>
+            <button class="btn" onclick="window.pcfAutoLineup && window.pcfAutoLineup().then(()=>window._tacticsRefresh && window._tacticsRefresh())">⚡ ${s.staff?.segundoEntrenador ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
+        </div>
+
         <!-- XI TITULAR -->
         <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
                     border-radius:10px;padding:12px 14px;margin-bottom:16px;">
@@ -350,15 +372,25 @@
 
         <!-- FORMACIÓN -->
         <div style="margin-bottom:14px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
                 🔲 Formación
             </div>
-            ${renderCards(FORMATION_DATA, formation, 'window._tacticsSetFormation', 5)}
+            ${(() => {
+                const squad = s.squad || [];
+                const media = {};
+                Object.keys(FORMATION_DATA).forEach(f => {
+                    media[f] = window.pickBestXI && window.calculateTeamEffectiveOverallImproved
+                        ? window.calculateTeamEffectiveOverallImproved(window.pickBestXI(squad, f), f) : null;
+                });
+                const best = Object.entries(media).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0]?.[0];
+                return renderCards(FORMATION_DATA, formation, 'window._tacticsSetFormation', 5,
+                    key => media[key] == null ? '' : `<div style="font-size:.68em;margin-top:4px;color:${key === best ? '#FFD700' : '#bcd'};font-weight:${key === best ? 'bold' : 'normal'}" title="Media del mejor once posible con tu plantilla en esta formación">${key === best ? '⭐ ' : ''}Tu plantilla: ${media[key].toFixed(1)}</div>`);
+            })()}
         </div>
 
         <!-- MENTALIDAD -->
         <div style="margin-bottom:14px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
                 🧠 Mentalidad
             </div>
             ${renderCards(MENTALITY_DATA, mentality, 'window._tacticsSetMentality', 3)}
@@ -366,7 +398,7 @@
 
         <!-- PRESIÓN -->
         <div style="margin-bottom:14px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
                 💪 Estilo de presión
             </div>
             ${renderCards(PRESS_DATA, pressStyle, 'window._tacticsSetPress', 3)}
@@ -374,7 +406,7 @@
 
         <!-- INSTRUCCIÓN ESPECIAL -->
         <div style="margin-bottom:14px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
                 📋 Instrucción especial
             </div>
             ${renderCards(INSTRUCTION_DATA, specialInstr, 'window._tacticsSetInstruction', 5)}
@@ -383,7 +415,7 @@
         <!-- BALANCE RESULTANTE -->
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
                     border-radius:10px;padding:12px 14px;margin-bottom:8px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
                 📊 Balance táctico resultante
             </div>
             ${renderBalanceBar(formation, mentality, pressStyle, specialInstr)}
@@ -433,6 +465,7 @@
     }
 
     // ── Setters globales ──────────────────────────────────────────
+    window._tacticsRefresh = () => refreshExtras();
     window._tacticsSetFormation = function(val) {
         if (!gs()) return;
         gl().updateGameState({ formation: val });
