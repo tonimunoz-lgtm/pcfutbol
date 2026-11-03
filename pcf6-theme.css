@@ -143,22 +143,22 @@ body {
     width: 26px; height: 26px;
     filter: drop-shadow(1px 1px 1px rgba(0,0,0,.6));
 }
-.results-icon::before        { background-image: url('assets/iconos/marcador.png'); }
-.classification-icon::before { background-image: url('assets/iconos/podio.png'); }
-.calendar-icon::before       { background-image: url('assets/iconos/calendario.png'); }
-.lineup-icon::before         { background-image: url('assets/iconos/alineacion.png'); }
-.tactics-icon::before        { background-image: url('assets/iconos/tactica.png'); }
-.transfer-icon::before       { background-image: url('assets/iconos/fichar.png'); }
-.squad-icon::before          { background-image: url('assets/iconos/plantilla.png'); }
-.staff-icon::before          { background-image: url('assets/iconos/empleados.png'); }
-.cash-icon::before           { background-image: url('assets/iconos/caja.png'); }
-.decisions-icon::before      { background-image: url('assets/iconos/entradas.png'); }
-.stadium-icon::before        { background-image: url('assets/iconos/estadio.png'); }
-.noticias-icon::before       { background-image: url('assets/iconos/noticias.png'); }
-.rival-icon::before          { background-image: url('assets/iconos/rival.png'); }
-.entreno-icon::before        { background-image: url('assets/iconos/entrenamiento.png'); }
-.cantera-icon::before        { background-image: url('assets/iconos/cantera.png'); content: ''; font-size: 0; }
-.renovation-icon::before     { background-image: url('assets/iconos/entradas.png'); content: ''; font-size: 0; }
+.results-icon::before        { background-image: url('assets/iconos/marcador.webp'); }
+.classification-icon::before { background-image: url('assets/iconos/podio.webp'); }
+.calendar-icon::before       { background-image: url('assets/iconos/calendario.webp'); }
+.lineup-icon::before         { background-image: url('assets/iconos/alineacion.webp'); }
+.tactics-icon::before        { background-image: url('assets/iconos/tactica.webp'); }
+.transfer-icon::before       { background-image: url('assets/iconos/fichar.webp'); }
+.squad-icon::before          { background-image: url('assets/iconos/plantilla.webp'); }
+.staff-icon::before          { background-image: url('assets/iconos/empleados.webp'); }
+.cash-icon::before           { background-image: url('assets/iconos/caja.webp'); }
+.decisions-icon::before      { background-image: url('assets/iconos/entradas.webp'); }
+.stadium-icon::before        { background-image: url('assets/iconos/estadio.webp'); }
+.noticias-icon::before       { background-image: url('assets/iconos/noticias.webp'); }
+.rival-icon::before          { background-image: url('assets/iconos/rival.webp'); }
+.entreno-icon::before        { background-image: url('assets/iconos/entrenamiento.webp'); }
+.cantera-icon::before        { background-image: url('assets/iconos/cantera.webp'); content: ''; font-size: 0; }
+.renovation-icon::before     { background-image: url('assets/iconos/negociaciones.webp'); content: ''; font-size: 0; }
 
 /* ---------- Fila central ---------- */
 .center-option {
@@ -1029,3 +1029,7 @@ tr.pcf-my-row td, tr.my-team-row td { background:#ffe69a !important; color:#0a1a
 .header-info #balanceDisplay { color:#0a1a35; }
 .header-info #balanceDisplay[style*="76, 175, 80"], .header-info #balanceDisplay[style*="4CAF50"], .header-info #balanceDisplay[style*="4caf50"] { color:#0a4d1c !important; }
 .header-info #balanceDisplay[style*="244, 67, 54"], .header-info #balanceDisplay[style*="f44336"] { color:#b71c1c !important; }
+/* Iconos del menú (grupo 1): más grandes para que se aprecie el dibujo */
+.menu-button::before { width: 32px !important; height: 32px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
+@media (max-height: 760px) { .menu-button::before { width: 28px !important; height: 28px !important; } }
+@media (max-width: 640px) { .menu-button::before { width: 34px !important; height: 34px !important; } }
