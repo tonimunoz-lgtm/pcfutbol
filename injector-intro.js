@@ -301,14 +301,17 @@
     window.addEventListener('keydown', onKey);
 
     // Ventanas que se muestran sobre el estadio (login, bienvenida, elegir equipo…)
-    const MODAL_IDS = ['loginModal', 'gameSelectionModal', 'gameModeModal', 'selectTeamModal', 'savedGamesModal'];
+    const MODAL_IDS = ['loginModal', 'gameSelectionModal', 'gameModeModal', 'selectTeamModal', 'savedGamesModal',
+        'pmInitialModal', 'pmOfferModal', 'pmWaitingModal', 'pmFiredModal'];
     function anyStartModalOpen() {
         return MODAL_IDS.some(id => {
             const m = document.getElementById(id);
             if (!m) return false;
             if (m.classList.contains('active')) return true;
             const d = m.style.display;
-            return d && d !== 'none';
+            if (d && d !== 'none') return true;
+            // Ventanas de la carrera: se crean al abrirse y se borran al cerrarse
+            return id.startsWith('pm') && getComputedStyle(m).display !== 'none';
         });
     }
     function gameStarted() {

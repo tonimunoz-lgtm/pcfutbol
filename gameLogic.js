@@ -790,6 +790,28 @@ function pickBuyerClub(value, playerOverall) {
 }
 
   
+// Un jugador recién llegado no se puede vender hasta pasadas 10 jornadas
+const MIN_WEEKS_BEFORE_SALE = 10;
+function markJoined(p) {
+    p.joinedSeason = gameState.currentSeason;
+    p.joinedPhase = gameState.seasonType;
+    p.joinedWeek = gameState.week;
+    return p;
+}
+function weeksSinceJoined(p) {
+    if (!p || !p.joinedSeason) return Infinity;
+    if (p.joinedSeason !== gameState.currentSeason) return Infinity;
+    const pre = PRESEASON_WEEKS || 4;
+    const abs = (phase, w) => (phase === 'preseason' ? w : pre + w);
+    return abs(gameState.seasonType, gameState.week) - abs(p.joinedPhase, p.joinedWeek);
+}
+function canSellPlayer(p) {
+    const w = weeksSinceJoined(p);
+    if (w >= MIN_WEEKS_BEFORE_SALE) return { ok: true };
+    const left = MIN_WEEKS_BEFORE_SALE - w;
+    return { ok: false, message: `${p.name} acaba de llegar al club: no puedes ponerlo a la venta hasta dentro de ${left} jornada(s).` };
+}
+
 function signPlayer(player) {  
     if (gameState.squad.length >= 25) {  
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
@@ -836,6 +858,7 @@ function signPlayer(player) {
         newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
     }
   
+    markJoined(newPlayer);
     gameState.squad.push(newPlayer);  
     updateWeeklyFinancials();  
     addNews(`¡${player.name} ha sido fichado!`, 'success');  
@@ -1430,11 +1453,43 @@ function calculateMatchOutcomeImproved({
 // ========================================
 const aiSquadCache = new Map();
 
+// Las plantillas reales del Admin son de la temporada inicial: con los años de
+// partida, sus jugadores envejecen, progresan o declinan y se retiran
+function seasonIndex(season) {
+    const y = parseInt(String(season || FIRST_SEASON).split('/')[0], 10);
+    const y0 = parseInt(FIRST_SEASON.split('/')[0], 10);
+    return Math.max(0, (isNaN(y) ? y0 : y) - y0);
+}
+function ageAISquad(squad, years) {
+    if (!years || !Array.isArray(squad)) return squad;
+    const yearly = age => age <= 20 ? 3 : age <= 23 ? 2 : age <= 26 ? 1 : age <= 29 ? 0 : age <= 31 ? -1 : age <= 33 ? -2 : -3;
+    return squad.map(p => {
+        const q = { ...p };
+        let delta = 0;
+        for (let k = 0; k < years; k++) delta += yearly((p.age || 25) + k);
+        q.age = (p.age || 25) + years;
+        if (delta > 0 && q.potential) delta = Math.min(delta, Math.max(0, q.potential - (q.overall || 60)));
+        if (delta) {
+            ATTRIBUTES.forEach(a => { if (q[a] !== undefined) q[a] = Math.max(15, Math.min(99, q[a] + delta)); });
+            q.overall = Math.max(30, Math.min(99, (q.overall || 60) + delta));
+        }
+        return q;
+    }).filter(q => q.age < 37);
+}
+
 async function getAISquadCached(teamName, division, season) {
     const key = `${season}|${division}|${teamName}`;
     if (!aiSquadCache.has(key)) {
         const gen = (typeof window !== 'undefined' && window.generateAISquad) || generateAISquad;
-        aiSquadCache.set(key, gen(teamName, division));
+        const years = seasonIndex(season);
+        aiSquadCache.set(key, Promise.resolve(gen(teamName, division)).then(sq => {
+            let aged = ageAISquad(sq, years);
+            // Si las retiradas dejan la plantilla corta, sube gente joven del club
+            if (Array.isArray(aged) && aged.length < 18) {
+                aged = aged.concat(generateDivisionSquad(division, teamName).filter(p => p.age <= 21).slice(0, 18 - aged.length));
+            }
+            return aged;
+        }));
     }
     try {
         return await aiSquadCache.get(key);
@@ -1810,14 +1865,15 @@ async function playFourTeamPlayoff(seeds, division) {
     return { seeds, sf1, sf2, final, winner: final.winner };
 }
 
-async function resolveSeasonEnd() {
+async function resolveSeasonEnd(pre = null) {
     const season = gameState.currentSeason;
     const userDiv = gameState.division;
     const leagues = ensureLeagueStructure();
 
     // 1) Clasificaciones finales de todas las divisiones
-    const tables = {};
+    const tables = pre && pre.tables ? pre.tables : {};
     for (const [div, teams] of Object.entries(leagues)) {
+        if (pre && pre.tables) break;
         if (!Array.isArray(teams) || teams.length < 2) continue;
         const standings = div === userDiv ? gameState.standings : await simulateLeagueTable(teams, div, season);
         tables[div] = sortStandings(standings).map(([team, s]) => ({
@@ -1837,7 +1893,7 @@ async function resolveSeasonEnd() {
     if (primera.length && segunda.length) {
         primera.slice(-3).forEach(t => move(t, 'primera', 'segunda', 'descenso'));
         segunda.slice(0, 2).forEach(t => move(t, 'segunda', 'primera', 'ascenso directo'));
-        const po = await playFourTeamPlayoff(segunda.slice(2, 6), 'segunda');
+        const po = pre?.playoffs?.segunda || await playFourTeamPlayoff(segunda.slice(2, 6), 'segunda');
         if (po) {
             playoffs.segunda = { ...po, direct: segunda.slice(0, 2) };
             move(po.winner, 'segunda', 'primera', 'ascenso por playoff');
@@ -1851,7 +1907,10 @@ async function resolveSeasonEnd() {
         // Sube el campeón de cada grupo
         rfefGroups.forEach(([key, t]) => move(t[0], key, 'segunda', 'ascenso directo'));
         // Playoff cruzado 2º-5º: 2ºA-5ºB, 3ºA-4ºB, 2ºB-5ºA, 3ºB-4ºA; dos finales
-        if (g1.length >= 5 && g2.length >= 5) {
+        if (pre?.playoffs?.rfef) {
+            playoffs.rfef = pre.playoffs.rfef;
+            pre.playoffs.rfef.finals.forEach(f => move(f.winner, g1.includes(f.winner) ? 'rfef_grupo1' : 'rfef_grupo2', 'segunda', 'ascenso por playoff'));
+        } else if (g1.length >= 5 && g2.length >= 5) {
             const r1 = [
                 await playTwoLegTie(g1[1], g2[4], 'rfef_grupo1'),
                 await playTwoLegTie(g1[2], g2[3], 'rfef_grupo1'),
@@ -1875,7 +1934,7 @@ async function resolveSeasonEnd() {
     if (promesas.length && rfefGroups.length) {
         rfefGroups.forEach(([key, t]) => move(t[t.length - 1], key, 'promesas', 'descenso'));
         move(promesas[0], 'promesas', leagues.rfef_grupo2 ? 'rfef_grupo2' : 'rfef_grupo1', 'ascenso directo');
-        const po = await playFourTeamPlayoff(promesas.slice(1, 5), 'promesas');
+        const po = pre?.playoffs?.promesas || await playFourTeamPlayoff(promesas.slice(1, 5), 'promesas');
         if (po) {
             playoffs.promesas = { ...po, direct: [promesas[0]] };
             move(po.winner, 'promesas', leagues.rfef_grupo1 ? 'rfef_grupo1' : 'rfef_grupo2', 'ascenso por playoff');
@@ -1937,11 +1996,253 @@ function buildSeasonSummaryText(summary) {
     return lines.join('\n');
 }
 
+// ============================================================
+// PLAYOFF JUGABLE
+// Si tu equipo se clasifica, el playoff no se resuelve solo: la temporada
+// entra en fase 'playoff' y cada "Seguir" juega uno de tus partidos (ida y
+// vuelta, con prórroga y penaltis) con las ventanas de copa (anuncio con
+// primas y resultado). Las eliminatorias de los demás se simulan.
+// Al terminar, se cierra la temporada con tu resultado real.
+// ============================================================
+async function computeSeasonTables() {
+    const season = gameState.currentSeason;
+    const userDiv = gameState.division;
+    const leagues = ensureLeagueStructure();
+    const tables = {};
+    for (const [div, teams] of Object.entries(leagues)) {
+        if (!Array.isArray(teams) || teams.length < 2) continue;
+        const standings = div === userDiv ? gameState.standings : await simulateLeagueTable(teams, div, season);
+        tables[div] = sortStandings(standings).map(([team, s]) => ({
+            team, pts: s.pts || 0, gf: s.gf || 0, gc: s.gc || 0, g: s.g || 0, e: s.e || 0, p: s.p || 0
+        }));
+    }
+    return tables;
+}
+
+// La eliminatoria del usuario se guarda como (lista, posición): el estado se copia
+// entre semanas y una referencia directa dejaría de apuntar a la misma eliminatoria
+function userTie(run) {
+    if (!run || !run.curList) return null;
+    const list = run[run.curList];
+    return Array.isArray(list) ? list[run.curIdx] : list;
+}
+function setUserTie(run, listName) {
+    const me = gameState.team;
+    const list = run[listName];
+    if (Array.isArray(list)) {
+        const idx = list.findIndex(t => t.teamA === me || t.teamB === me);
+        run.curList = idx >= 0 ? listName : null; run.curIdx = idx;
+    } else {
+        run.curList = list && (list.teamA === me || list.teamB === me) ? listName : null; run.curIdx = 0;
+    }
+    return userTie(run);
+}
+
+function seedTie(a, b, order) {
+    return order.indexOf(a) <= order.indexOf(b) ? { teamA: a, teamB: b, legs: [] } : { teamA: b, teamB: a, legs: [] };
+}
+
+async function maybeStartUserPlayoff() {
+    const me = gameState.team, div = gameState.division;
+    const tables = await computeSeasonTables();
+    const names = d => (tables[d] || []).map(r => r.team);
+    let run = null;
+    if (div === 'segunda' || div === 'promesas') {
+        const order = names(div);
+        const seeds = div === 'segunda' ? order.slice(2, 6) : order.slice(1, 5);
+        if (seeds.length === 4 && seeds.includes(me)) {
+            const sf = [{ teamA: seeds[0], teamB: seeds[3], legs: [] }, { teamA: seeds[1], teamB: seeds[2], legs: [] }];
+            run = { kind: 'four', division: div, seeds, sf, stage: 'sf' };
+        }
+    } else if (div === 'rfef_grupo1' || div === 'rfef_grupo2') {
+        const g1 = names('rfef_grupo1'), g2 = names('rfef_grupo2');
+        const inPO = (div === 'rfef_grupo1' ? g1 : g2).slice(1, 5).includes(me);
+        if (inPO && g1.length >= 5 && g2.length >= 5) {
+            const r1 = [{ teamA: g1[1], teamB: g2[4], legs: [] }, { teamA: g1[2], teamB: g2[3], legs: [] },
+                        { teamA: g2[1], teamB: g1[4], legs: [] }, { teamA: g2[2], teamB: g1[3], legs: [] }];
+            run = { kind: 'rfef', division: div, g1, g2, r1, stage: 'r1' };
+        }
+    }
+    if (!run) return false;
+    run.tables = tables;
+    const first = setUserTie(run, run.sf ? 'sf' : 'r1');
+    run.done = false;
+    gameState.playoffRun = run;
+    gameState.seasonType = 'playoff';
+    const rival = first.teamA === me ? first.teamB : first.teamA;
+    addNews(`⬆️ ¡Te has clasificado para el playoff de ascenso! Primer rival: ${rival} (ida y vuelta).`, 'success');
+    alert(`⬆️ ¡Playoff de ascenso!\n\nHas terminado la liga en puesto de playoff. Ahora juegas las eliminatorias a ida y vuelta: el primer rival es ${rival}.\n\nPulsa «Seguir» para jugar cada partido. Puedes ofrecer primas antes de cada uno.`);
+    showPlayoffNext();
+    return true;
+}
+
+function playoffStageName(run, legNo) {
+    const leg = legNo === 0 ? 'ida' : 'vuelta';
+    if (run.kind === 'rfef') return run.stage === 'r1' ? `Playoff — Eliminatoria (${leg})` : `Playoff — Final (${leg})`;
+    return run.stage === 'sf' ? `Playoff — Semifinal (${leg})` : `Playoff — Final (${leg})`;
+}
+
+function showPlayoffNext() {
+    const run = gameState.playoffRun;
+    const t = userTie(run);
+    if (!run || run.done || !t) return;
+    const legNo = t.legs.length;
+    const home = legNo === 0 ? t.teamB : t.teamA, away = legNo === 0 ? t.teamA : t.teamB;
+    const dateEl = typeof document !== 'undefined' && document.getElementById('nextMatchDate');
+    const teamsEl = typeof document !== 'undefined' && document.getElementById('nextMatchTeams');
+    if (dateEl) dateEl.textContent = playoffStageName(run, legNo);
+    if (teamsEl) teamsEl.textContent = `${home}\nvs\n${away}`;
+}
+
+function penaltiesShootout() {
+    let a = 0, b = 0, i = 0;
+    for (; i < 5; i++) { if (Math.random() < 0.76) a++; if (Math.random() < 0.76) b++; }
+    while (a === b && i < 30) { if (Math.random() < 0.76) a++; if (Math.random() < 0.76) b++; i++; }
+    return { a, b };
+}
+
+// Convierte una eliminatoria jugada al formato de playTwoLegTie
+function tieResult(t) {
+    const [l1, l2] = t.legs;           // l1: en casa de teamB · l2: en casa de teamA
+    return {
+        teamA: t.teamA, teamB: t.teamB,
+        leg1: { hg: l1.hg, ag: l1.ag }, leg2: { hg: l2.hg, ag: l2.ag },
+        totalA: l1.ag + l2.hg, totalB: l1.hg + l2.ag,
+        winner: t.winner, penalties: t.penalties || null
+    };
+}
+
+async function playoffStep() {
+    const run = gameState.playoffRun;
+    if (!run || run.done) return;
+    syncLineupFromSquad();
+    autoFixLineup();
+    const me = gameState.team;
+    const t = userTie(run);
+    if (!t) return;
+    const legNo = t.legs.length;
+    const home = legNo === 0 ? t.teamB : t.teamA, away = legNo === 0 ? t.teamA : t.teamB;
+    const isHome = home === me;
+    const opponent = isHome ? away : home;
+    const match = { type: 'playoff', phase: playoffStageName(run, legNo), opponent, isHome, isPlayoff: true, neutral: false,
+                    id: `po_${run.stage}_${legNo + 1}` };
+    if (typeof window !== 'undefined') {
+        try { if (window.prepareMatch) await window.prepareMatch(match); } catch (e) { /* sin datos del rival */ }
+        match.neutral = false; match.isPlayoff = true;
+        if (window.showAnnouncementModal) await window.showAnnouncementModal(match);
+    }
+
+    const r = await playMatchImproved(home, away, gameState);
+    let hg = r.homeGoals, ag = r.awayGoals;
+    let extraTime = null, penalties = null, processed = { advances: null, isLeg: true };
+
+    if (legNo === 1) {
+        const l1 = t.legs[0];
+        let totA = l1.ag + hg, totB = l1.hg + ag;      // A juega en casa la vuelta
+        if (totA === totB) {
+            const etH = poissonSample((r.homeXG || 1.2) / 3), etA = poissonSample((r.awayXG || 1.2) / 3);
+            extraTime = { home: etH, away: etA };
+            hg += etH; ag += etA; totA += etH; totB += etA;
+            if (totA === totB) {
+                const p = penaltiesShootout();
+                penalties = { home: p.a, away: p.b };
+                t.penalties = penalties;
+                t.winner = p.a > p.b ? t.teamA : t.teamB;
+            }
+        }
+        if (!t.winner) t.winner = totA > totB ? t.teamA : t.teamB;
+        const myTot = t.teamA === me ? totA : totB, opTot = t.teamA === me ? totB : totA;
+        processed = { advances: t.winner === me, global: `${myTot}-${opTot}` };
+    }
+    t.legs.push({ hg, ag, home });
+
+    const myG = isHome ? hg : ag, opG = isHome ? ag : hg;
+    gameState.matchHistory.push({ week: gameState.week, home, away, score: `${hg}-${ag}`, playoff: true });
+    addNews(`⬆️ ${match.phase}: ${home} ${hg}-${ag} ${away}${penalties ? ` (penaltis ${penalties.home}-${penalties.away})` : extraTime ? ' (tras la prórroga)' : ''}`, myG > opG ? 'success' : myG < opG ? 'error' : 'info');
+
+    if (typeof window !== 'undefined' && window.showResultModal) {
+        const result = { myGoals: myG, oppGoals: opG, win: myG > opG, draw: myG === opG, loss: myG < opG,
+            myTeam: me, opponent, isHome, neutral: false,
+            extraTime: extraTime ? { my: isHome ? extraTime.home : extraTime.away, opp: isHome ? extraTime.away : extraTime.home } : null,
+            penalties: penalties ? { my: isHome ? penalties.home : penalties.away, opp: isHome ? penalties.away : penalties.home } : null,
+            qualified: processed.advances };
+        await window.showResultModal(match, result, processed);
+    }
+
+    if (legNo === 1) await advancePlayoff();
+    showPlayoffNext();
+}
+
+async function advancePlayoff() {
+    const run = gameState.playoffRun, me = gameState.team;
+    const div = run.division;
+    const finish = async () => {
+        run.done = true;
+        run.curList = null;
+        gameState.seasonType = 'regular';
+        await endSeason();
+    };
+    if (run.kind === 'four') {
+        if (run.stage === 'sf') {
+            // Tu semifinal ya jugada; la otra se simula ahora
+            run.sfResults = [];
+            for (const tie of run.sf) run.sfResults.push(tie.legs.length === 2 ? tieResult(tie) : await playTwoLegTie(tie.teamA, tie.teamB, div));
+            run.sfResults.forEach((res, i) => { run.sf[i].winner = res.winner; });
+            const [fa, fb] = [run.sfResults[0].winner, run.sfResults[1].winner].sort((x, y) => run.seeds.indexOf(x) - run.seeds.indexOf(y));
+            run.final = { teamA: fa, teamB: fb, legs: [] };
+            if (fa === me || fb === me) {
+                run.stage = 'final';
+                setUserTie(run, 'final');
+                addNews(`⬆️ ¡A la final del playoff! Rival: ${fa === me ? fb : fa}.`, 'success');
+                return;
+            }
+            run.finalResult = await playTwoLegTie(fa, fb, div);
+        } else {
+            run.finalResult = tieResult(run.final);
+        }
+        run.results = { [div === 'segunda' ? 'segunda' : 'promesas']: {
+            seeds: run.seeds, sf1: run.sfResults[0], sf2: run.sfResults[1], final: run.finalResult, winner: run.finalResult.winner } };
+        return finish();
+    }
+    // Primera RFEF: cruces entre grupos y dos finales
+    if (run.stage === 'r1') {
+        run.r1Results = [];
+        for (const tie of run.r1) {
+            run.r1Results.push(tie.legs.length === 2 ? tieResult(tie) : await playTwoLegTie(tie.teamA, tie.teamB, div));
+        }
+        const pos = t => (run.g1.includes(t) ? run.g1.indexOf(t) : run.g2.indexOf(t));
+        const seed = (x, y) => (pos(x) <= pos(y) ? [x, y] : [y, x]);
+        const w = run.r1Results.map(r => r.winner);
+        run.finals = [seed(w[0], w[3]), seed(w[2], w[1])].map(([a, b]) => ({ teamA: a, teamB: b, legs: [] }));
+        const mine = run.finals.find(f => f.teamA === me || f.teamB === me);
+        if (mine) {
+            run.stage = 'final';
+            setUserTie(run, 'finals');
+            addNews(`⬆️ ¡A la final del playoff! Rival: ${mine.teamA === me ? mine.teamB : mine.teamA}.`, 'success');
+            return;
+        }
+        run.finalResults = [];
+        for (const f of run.finals) run.finalResults.push(await playTwoLegTie(f.teamA, f.teamB, div));
+    } else {
+        run.finalResults = [];
+        for (const f of run.finals) run.finalResults.push(f.legs.length === 2 ? tieResult(f) : await playTwoLegTie(f.teamA, f.teamB, div));
+    }
+    run.results = { rfef: { direct: [run.g1[0], run.g2[0]], round1: run.r1Results, finals: run.finalResults, winners: run.finalResults.map(f => f.winner) } };
+    return finish();
+}
+
 async function endSeason() {
     const currentDivision = gameState.division;
+    // ¿Juega tu equipo un playoff? Entonces la temporada sigue en fase 'playoff'
+    const pr = gameState.playoffRun;
+    if (!pr) {
+        try { if (await maybeStartUserPlayoff()) return; } catch (e) { console.error('Playoff:', e); }
+    }
     let summary;
     try {
-        summary = await resolveSeasonEnd();
+        const pre = pr && pr.done ? { tables: pr.tables, playoffs: pr.results } : null;
+        gameState.playoffRun = null;
+        summary = await resolveSeasonEnd(pre);
     } catch (e) {
         console.error('Error resolviendo el fin de temporada:', e);
         summary = { season: gameState.currentSeason, userDivision: currentDivision, userPosition: 0, userMove: null, tables: {}, playoffs: {}, moves: [] };
@@ -1984,6 +2285,11 @@ async function simulateFullWeek() {
 }
 
 async function simulateFullWeekInner() {  
+    // Fase de playoff: cada semana se juega un partido de tu eliminatoria
+    if (gameState.seasonType === 'playoff') {
+        await playoffStep();
+        return { myMatch: null, forcedLoss: false, playoff: true };
+    }
     let myMatchResult = null;
     let forcedLoss = false;  
 
@@ -2832,7 +3138,7 @@ function rejectOffer(offerIndex) {
 }
 
 // Contraoferta (solo para ventas)
-function counterOffer(offerIndex) {
+async function counterOffer(offerIndex) {
     // ✅ VALIDAR
     if (!gameState.pendingOffers || !gameState.pendingOffers[offerIndex]) {
         console.error('❌ Oferta no encontrada:', offerIndex);
@@ -2842,7 +3148,7 @@ function counterOffer(offerIndex) {
     
     const offer = gameState.pendingOffers[offerIndex];
     
-    const counterAmount = prompt(
+    const counterAmount = await window.pcfPrompt(
         `Contraoferta para ${offer.player.name}\n\n` +
         `Oferta actual: ${offer.amount.toLocaleString('es-ES')}€\n` +
         `Tu precio: ${offer.originalAskingPrice.toLocaleString('es-ES')}€\n\n` +
@@ -2978,7 +3284,9 @@ if (typeof window !== 'undefined') {
             const p = gameState.squad.find(x => x.name === playerName);
             return p ? makeOfferForPlayer(p) : null;
         },
-        replaceInLineup
+        replaceInLineup,
+        markJoined: (p) => markJoined(p),
+        canSell: (p) => canSellPlayer(p)
     };
     window.autoFixLineup = autoFixLineup;
     // Para copas y competiciones: fuerza y plantilla reales de un equipo español
@@ -3049,6 +3357,7 @@ window.renderNextMatchInfo = function(state) {
 // ACTUALIZAR CÍRCULO CENTRAL CON PRÓXIMO PARTIDO
 // ---------------------------------------------------
 window.updateNextMatchInfo = function() {
+    if (gameState.seasonType === 'playoff') { showPlayoffNext(); return; }
     // Obtener el próximo partido según el estado
     let nextMatch = null;
 

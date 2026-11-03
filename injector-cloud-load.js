@@ -90,7 +90,7 @@
             return;
         }
 
-        if (!confirm('¿Cargar esta partida? Se perderá el progreso no guardado de la partida actual.')) {
+        if (!await window.pcfConfirmText('¿Cargar esta partida? Se perderá el progreso no guardado de la partida actual.')) {
             return;
         }
 
@@ -141,7 +141,7 @@
             return;
         }
 
-        if (!confirm(`¿Estás seguro de que quieres eliminar "${gameName}"?\n\nEsta acción no se puede deshacer.`)) {
+        if (!await window.pcfConfirmText(`¿Estás seguro de que quieres eliminar "${gameName}"?\n\nEsta acción no se puede deshacer.`)) {
             return;
         }
 

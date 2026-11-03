@@ -80,8 +80,20 @@ console.log('🏫 Youth Training Injector cargando...');
         const weeklyRate = isSeasonChange ? YOUTH_SEASON_BONUS[level] : YOUTH_WEEKLY_PROG[level];
         const promotionCandidates = [];
 
+        // Plazas de entrenamiento: 2 por nivel del entrenador. Entran los de más margen.
+        const capacity = level * 2;
+        const ranked = state.academy.filter(p => p && !p.isInjured)
+            .sort((a, b) => ((b.potential || 70) - calculateOverall(b)) - ((a.potential || 70) - calculateOverall(a)));
+        const trainees = new Set(ranked.slice(0, capacity).map(p => p.name));
+        state.academy.forEach(p => {
+            if (!p) return;
+            p.inTraining = trainees.has(p.name);
+            if (p.ovrStart === undefined) p.ovrStart = calculateOverall(p);
+        });
+        state.academyTrainingCapacity = capacity;
+
         state.academy.forEach(player => {
-            if (!player || player.isInjured) return;
+            if (!player || player.isInjured || !trainees.has(player.name)) return;
 
             const potential = player.potential || 70;
             const currentOverall = calculateOverall(player);
@@ -250,6 +262,10 @@ console.log('🏫 Youth Training Injector cargando...');
             // Entrenar cantera cada semana (si no es pretemporada, o en cambio de temporada)
             if (after?.seasonType !== 'preseason' || isSeasonChange) {
                 trainAcademy(isSeasonChange);
+                // Entre temporadas pasa el verano: 8 semanas reales (la de transición ya cuenta 1)
+                if (isSeasonChange) {
+                    for (let i = 1; i < (window.PCF_OFFSEASON_WEEKS || 8); i++) trainAcademy(false);
+                }
             }
 
             _prevSeason = after?.currentSeason;
@@ -382,7 +398,7 @@ console.log('🏫 Youth Training Injector cargando...');
         modal.style.display = 'flex';
     };
 
-    window.hireYouthCoach = function (idx) {
+    window.hireYouthCoach = async function (idx) {
         const candidate = window._youthCandidates?.[idx];
         if (!candidate) return;
 
@@ -398,7 +414,7 @@ console.log('🏫 Youth Training Injector cargando...');
             msg += `\n\nSe despedirá a ${existing.name} con ${fmt(indem)}€ de indemnización.`;
         }
 
-        if (!confirm(msg)) return;
+        if (!await window.pcfConfirmText(msg)) return;
 
         if ((state.balance || 0) < cost) {
             alert(`Saldo insuficiente. Necesitas ${fmt(cost)}€.`);
@@ -691,8 +707,8 @@ console.log('🏫 Youth Training Injector cargando...');
 
     window.openTrainingPanel = openTrainingPanel;
 
-    window.promoteFromTrainingPanel = function (name) {
-        if (!confirm(`¿Ascender a ${name} al primer equipo?`)) return;
+    window.promoteFromTrainingPanel = async function (name) {
+        if (!await window.pcfConfirmText(`¿Ascender a ${name} al primer equipo?`)) return;
         const result = gl()?.promoteYoungster?.(name);
         if (result?.success) {
             alert(`✅ ${name} ha sido ascendido al primer equipo.`);

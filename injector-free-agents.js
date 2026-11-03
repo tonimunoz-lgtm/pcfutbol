@@ -112,20 +112,43 @@
         };
     }
 
+    // Nivel de los libres según la división del usuario (media típica de la categoría)
+    const DIV_BASE = { primera: 74, segunda: 65, rfef_grupo1: 57, rfef_grupo2: 57, promesas: 50 };
+    function poolBands(division) {
+        const b = DIV_BASE[division] || 60;
+        return [[b - 1, b + 5, 3], [b - 9, b, 4], [b - 17, b - 8, 3]];   // [mín, máx, cuántos]
+    }
+    function generatePool(division, count) {
+        const pool = [];
+        poolBands(division).forEach(([mn, mx, n]) => {
+            for (let i = 0; i < n; i++) pool.push(generateFreeAgent(Math.max(35, mn), Math.min(90, mx)));
+        });
+        return pool.slice(0, count ?? pool.length);
+    }
+
     function initFreeAgentsPool() {
         const state = gs();
         if (!state) return;
         if (state.freeAgentsPool && state.freeAgentsPool.length > 0) return;
-
-        // Generar pool inicial
-        const pool = [];
-        for (let i = 0; i < 3;  i++) pool.push(generateFreeAgent(70, 82));
-        for (let i = 0; i < 4; i++) pool.push(generateFreeAgent(58, 72));
-        for (let i = 0; i < 3; i++) pool.push(generateFreeAgent(45, 60));
-
+        const pool = generatePool(state.division);
         saveFreeAgents(pool);
+        window.gameLogic?.updateGameState?.({ freeAgentsSeason: state.currentSeason });
         console.log(`🔓 Pool inicial de ${pool.length} agentes libres generado`);
     }
+
+    // Cada temporada: envejecen, se retiran los mayores, la mitad encuentra club y llegan nuevos
+    function refreshFreeAgentsForSeason() {
+        const state = gs();
+        if (!state || !state.currentSeason || state.freeAgentsSeason === state.currentSeason) return;
+        let pool = (state.freeAgentsPool || []).map(a => ({ ...a, age: (a.age || 25) + 1 }))
+            .filter(a => a.age < 35 && Math.random() < 0.5);
+        const fresh = generatePool(state.division);
+        pool = [...pool, ...fresh].slice(0, 12);
+        saveFreeAgents(pool);
+        window.gameLogic?.updateGameState?.({ freeAgentsSeason: state.currentSeason });
+        window.gameLogic?.addNews?.(`🔓 Mercado de agentes libres renovado para la temporada ${state.currentSeason}: ${fresh.length} jugadores nuevos sin equipo.`, 'info');
+    }
+    window.pcfRefreshFreeAgents = refreshFreeAgentsForSeason;
 
     // ─────────────────────────────────────────────────────────────
     // PROCESAR JUGADORES CON CONTRATO EXPIRADO
@@ -205,7 +228,7 @@
     // FICHAR AGENTE LIBRE (coste 0 de traspaso, solo salario)
     // ─────────────────────────────────────────────────────────────
 
-    window.signFreeAgent = function (agentId) {
+    window.signFreeAgent = async function (agentId) {
         const state = gs();
         if (!state) return;
 
@@ -222,14 +245,23 @@
             return;
         }
 
-        // Confirmar
-        const confirmed = confirm(
-            `¿Fichar a ${agent.name} como agente libre?\n\n` +
-            `Posición: ${agent.position} | OVR: ${agent.overall} | Edad: ${agent.age}\n` +
-            `Salario: ${agent.salary.toLocaleString('es-ES')}€/sem\n` +
-            `Coste de traspaso: GRATIS\n\n` +
-            `El jugador firmará un contrato de 2 años.`
-        );
+        // Sin traspaso, pero un libre cobra prima de fichaje (25 % de su valor) y
+        // pide el sueldo de mercado de tu división
+        const E = window.pcfEconomy;
+        const value = E ? E.marketValue(agent) : (agent.value || 0);
+        const bonus = E ? E.roundMoney(value * 0.25) : Math.round(value * 0.25);
+        const salary = Math.max(agent.salary || 0, E ? E.expectedSalary(agent, state.division) : 0);
+        if ((state.balance || 0) < bonus) {
+            await window.pcfNotify('Agente libre', `No tienes dinero para la prima de fichaje de ${agent.name}: ${bonus.toLocaleString('es-ES')}€ (saldo: ${(state.balance || 0).toLocaleString('es-ES')}€).`);
+            return;
+        }
+        const confirmed = await window.pcfConfirm('Fichar agente libre',
+            `${agent.name} · ${agent.position} · Media ${agent.overall} · ${agent.age} años\n\n` +
+            `Traspaso: gratis (no tiene club)\n` +
+            `Prima de fichaje: ${bonus.toLocaleString('es-ES')}€\n` +
+            `Salario: ${salary.toLocaleString('es-ES')}€/sem · contrato de 2 años\n\n` +
+            `No podrás ponerlo a la venta hasta dentro de 10 jornadas.`,
+            { okLabel: 'Fichar' });
 
         if (!confirmed) return;
 
@@ -238,24 +270,31 @@
             ...agent,
             contractType: 'owned',
             contractYears: 2,
+            salary,
             club: state.team,
             isFreeAgent: false,
             expiryGracePeriod: undefined,
+            joinedSeason: state.currentSeason, joinedPhase: state.seasonType, joinedWeek: state.week
         };
 
         updateState(s => {
             s.squad.push(newPlayer);
             s.freeAgentsPool = pool.filter((_, i) => i !== agentIdx);
+            s.balance = (s.balance || 0) - bonus;
+            s.playerPurchases = (s.playerPurchases || 0) + bonus;
         });
+        if (bonus > 0 && window._financeRegisterMovement) {
+            window._financeRegisterMovement('purchase', `Prima de fichaje: ${agent.name} (libre)`, -bonus);
+        }
 
         news(
-            `✅ ¡${agent.name} fichado como agente libre! Firma por 2 años a ${agent.salary.toLocaleString('es-ES')}€/sem.`,
+            `✅ ¡${agent.name} fichado como agente libre! Firma por 2 años a ${salary.toLocaleString('es-ES')}€/sem (prima: ${bonus.toLocaleString('es-ES')}€).`,
             'success'
         );
 
         showToast(`✅ ${agent.name} fichado como agente libre`, 'success');
         refreshUI();
-        renderFreeAgentsPage(); // Refrescar la lista
+        window.searchPlayersMarket?.(); // Refrescar la lista del mercado
     };
 
     // ─────────────────────────────────────────────────────────────
@@ -427,6 +466,7 @@
         window.simulateWeek = async function (...args) {
             const result = await orig.apply(this, args);
             processExpiredContracts();
+            refreshFreeAgentsForSeason();
             return result;
         };
 

@@ -1041,3 +1041,9 @@ tr.pcf-my-row td, tr.my-team-row td { background:#ffe69a !important; color:#0a1a
 .center-option .pcf-ui-icon { width:22px; height:22px; margin-right:7px; }
 .header-info .pcf-ui-icon { width:20px; height:20px; margin-right:6px; }
 @media (max-width:640px) { .section-title .pcf-ui-icon { width:24px; height:24px; } }
+
+/* Columna MEDIA destacada en todas las tablas de jugadores */
+th.pcf-col-media { background: linear-gradient(180deg,#ffd59a 0%,#f0a33a 46%,#cf7a0e 54%,#7d4500 100%) !important; color:#fff !important; }
+td.pcf-col-media { background:#fff1c2 !important; color:#0a1a35 !important; font-weight:900 !important; font-size:1.08em; text-align:center; }
+tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
+#matchSummaryModal td.pcf-col-media { background: rgba(255,210,74,.15) !important; color:#fff !important; }

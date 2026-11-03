@@ -322,21 +322,29 @@ function renderSquadList(squad, currentTeam) {
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
     if (!list) return;  
+    const state = (typeof window !== 'undefined' && window.gameLogic?.getGameState?.()) || {};
   
     if (!academy || academy.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
         return;  
     }  
   
+    const coach = state.staff && state.staff.entrenadorJuveniles;
+    const training = (academy || []).filter(p => p && p.inTraining).length;
     let headerHtml = `  
+        <div class="alert ${coach ? 'alert-success' : 'alert-warning'}" style="margin-bottom:8px">${coach
+            ? `🏋️ Tu entrenador de juveniles (nivel ${coach.level}) entrena a <strong>${training} de ${academy.length}</strong> canteranos: tiene ${coach.level * 2} plazas (2 por nivel) y elige a los que tienen más margen hasta su potencial.`
+            : '⚠️ Sin entrenador de juveniles los canteranos no progresan. Contrátalo en Entrenamiento o en Empleados.'}</div>
         <div style="overflow-x: auto;">  
             <table style="font-size: 0.8em; min-width: 1200px;">  
                 <thead>  
                     <tr>  
                         <th>Nº</th>  
                         <th>JUGADOR</th>  
-                        <th>OVR</th>  
+                        <th>MEDIA</th>  
                         <th>POT</th>  
+                        <th title="Media con la que llegó a la cantera → media actual">PROGRESO</th>  
+                        <th title="Si el entrenador de juveniles le está entrenando esta temporada">ENTRENO</th>  
                         <th>EDAD</th>  
                         <th>POS</th>  
                         <th>PIE</th>  
@@ -361,6 +369,11 @@ function renderAcademyList(academy) {
                 <td>${p.name}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential}</td>  
+                <td style="white-space:nowrap">${(() => { const st = p.ovrStart ?? p.overall; const d = p.overall - st;
+                    return `${st} → ${p.overall} <span style="color:${d > 0 ? '#1b5e20' : '#666'};font-weight:800">${d > 0 ? '▲ +' + d : '='}</span>`; })()}</td>  
+                <td style="white-space:nowrap">${state.staff && state.staff.entrenadorJuveniles
+                    ? (p.inTraining ? '<span style="color:#1b5e20;font-weight:800">🏋️ Entrenando</span>' : '<span style="color:#8a6d00">Sin plaza</span>')
+                    : '<span style="color:#888">Sin entrenador</span>'}</td>  
                 <td>${p.age}</td>  
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
@@ -753,10 +766,10 @@ function renderNegotiationsList(state) {
             <table style="font-size: 0.9em; min-width: 1000px;">
                 <thead>
                     <tr>
+                        <th>MEDIA</th>
                         <th>JUGADOR</th>
                         <th>EDAD</th>
                         <th>POS</th>
-                        <th>OVR</th>
                         <th>AÑOS RESTANTES</th>
                         <th>SALARIO</th>
                         <th>CLÁUSULA</th>
@@ -772,10 +785,10 @@ function renderNegotiationsList(state) {
         
         html += `
             <tr style="background: ${p.contractYears <= 1 ? 'rgba(255, 51, 51, 0.1)' : ''};">
+                <td>${p.overall}</td>
                 <td>${p.name}</td>
                 <td>${p.age}</td>
                 <td>${p.position}</td>
-                <td>${p.overall}</td>
                 <td style="color: ${urgencyColor}; font-weight: bold;">
                     ${p.contractYears} ${p.contractYears === 1 ? 'año' : 'años'}
                     ${p.contractYears <= 1 ? '⚠️' : ''}

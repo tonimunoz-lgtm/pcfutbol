@@ -14,6 +14,7 @@
 </head>
 <body>
 <script src="./injector-intro.js"></script>
+<script src="./injector-dialogs.js"></script>
     <!-- Firebase Config y Injectors -->
     <script type="module" src="./firebase-config.js"></script>
     <script type="module" src="./injector-firebase-sync.js"></script>
@@ -898,8 +899,8 @@
             }
         };
 
-        window.handleExit = function() {
-            if (confirm('¿Estás seguro de que quieres salir? Asegúrate de guardar tu partida antes.')) {
+        window.handleExit = async function() {
+            if (await window.pcfConfirmText('¿Estás seguro de que quieres salir? Asegúrate de guardar tu partida antes.')) {
                 // Aquí puedes añadir lógica de salida o redireccionamiento
                 window.location.reload();
             }
@@ -1148,16 +1149,16 @@ window.selectTeamAndStart = async function(teamName, division) {
             }
         };
 
-        window.sellPlayerConfirm = function(name) {
-            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {
+        window.sellPlayerConfirm = async function(name) {
+            if (await window.pcfConfirmText(`¿Estás seguro de que quieres vender a ${name}?`)) {
                 const result = gameLogic.sellPlayer(name);
                 alert(result.message);
                 ui.refreshUI(gameLogic.getGameState());
             }
         };
 
-        window.promoteConfirm = function(name) {
-            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {
+        window.promoteConfirm = async function(name) {
+            if (await window.pcfConfirmText(`¿Ascender a ${name} a la primera plantilla?`)) {
                 const result = gameLogic.promoteYoungster(name);
                 alert(result.message);
                 ui.refreshUI(gameLogic.getGameState());
@@ -1442,7 +1443,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             window.openModal('hireStaff');
         };
 
-        window.hireStaffConfirm = function(encodedCandidateJson) {
+        window.hireStaffConfirm = async function(encodedCandidateJson) {
             const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));
             const state = gameLogic.getGameState();
             const existingStaff = state.staff[candidate.role];
@@ -1453,7 +1454,7 @@ window.selectTeamAndStart = async function(teamName, division) {
                 confirmationMessage += `\n\nEsto implicará despedir a ${existingStaff.name} con una indemnización de ${indemnization.toLocaleString('es-ES')}€ (salario de un año).`;
             }
 
-            if (confirm(confirmationMessage)) {
+            if (await window.pcfConfirmText(confirmationMessage)) {
                 const result = gameLogic.hireStaffFromCandidates(candidate);
                 alert(result.message);
                 if (result.success) {
@@ -1857,7 +1858,7 @@ window.selectTeamAndStart = async function(teamName, division) {
                 return;
             }
 
-            const gameName = prompt('Introduce un nombre para tu partida guardada:', `Partida ${new Date().toLocaleDateString()}`);
+            const gameName = await window.pcfPrompt('Introduce un nombre para tu partida guardada:', `Partida ${new Date().toLocaleDateString()}`);
             if (!gameName) return;
 
             const gameId = 'game_' + Date.now();

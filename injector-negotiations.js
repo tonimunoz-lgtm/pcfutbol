@@ -56,8 +56,9 @@
         });
     }
 
-    window.pcfNotify = (title, message) => dialog({ title, message, buttons: [{ label: 'Aceptar', value: true }] });
-    window.pcfConfirm = (title, message, { okLabel = 'Confirmar', danger = false } = {}) =>
+    // Ventanas del juego: las define injector-dialogs.js (en cola, una tras otra)
+    if (!window.pcfNotify) window.pcfNotify = (title, message) => dialog({ title, message, buttons: [{ label: 'Aceptar', value: true }] });
+    if (!window.pcfConfirm) window.pcfConfirm = (title, message, { okLabel = 'Confirmar', danger = false } = {}) =>
         dialog({ title, message, buttons: [{ label: 'Cancelar', value: false }, { label: okLabel, value: true, danger }] });
 
     function thinking(title, message, ms) {
@@ -126,7 +127,9 @@
         }
         let amount, exchange = [];
         if (isLoan) {
-            amount = parseInt(document.getElementById('loanWageContribution')?.value);
+            // El control es un porcentaje del salario del jugador → importe semanal
+            const pct = parseInt(document.getElementById('loanWageContribution')?.value);
+            amount = Math.round((player.salary || 0) * (isNaN(pct) ? 50 : pct) / 100);
         } else {
             amount = parseInt(document.getElementById('offerAmount')?.value);
             const sel = document.getElementById('playerExchangeSelect');
@@ -142,7 +145,7 @@
             season: st.currentSeason, seasonType: st.seasonType, week: st.week
         };
         setBids([...getBids(), bid]);
-        gl().addNews(`📨 Oferta enviada al ${player.club} por ${player.name}: ${isLoan ? `cesión asumiendo ${fmt(amount)}€/sem` : `${fmt(amount)}€`}${exchange.length ? ` + ${exchange.join(', ')}` : ''}. Responderán tras la próxima jornada.`, 'info');
+        gl().addNews(`📨 Oferta enviada al ${player.club} por ${player.name}: ${isLoan ? `cesión pagando ${fmt(amount)}€/sem de su salario` : `${fmt(amount)}€`}${exchange.length ? ` + ${exchange.join(', ')}` : ''}. Responderán tras la próxima jornada.`, 'info');
         gl().endNegotiation(true);
         window.closeModal?.('negotiation');
         window.ui?.refreshUI?.(gs());
@@ -188,11 +191,14 @@
     }
 
     // ── Instalación (después de los demás módulos que redefinen estas funciones) ──
+    const transferFn = () => queueClubBid(false); transferFn._pcfNeg = true;
+    const loanFn = () => queueClubBid(true); loanFn._pcfNeg = true;
+    submitPlayerOffer._pcfNeg = true;
     function install() {
-        if (window.submitPlayerOffer && window.submitPlayerOffer._pcfNeg) return;
-        window.submitPlayerOffer = submitPlayerOffer; submitPlayerOffer._pcfNeg = true;
-        window.submitTransferOffer = () => queueClubBid(false);
-        window.submitLoanOffer = () => queueClubBid(true);
+        if (!window.submitPlayerOffer?._pcfNeg) window.submitPlayerOffer = submitPlayerOffer;
+        if (!window.submitTransferOffer?._pcfNeg) window.submitTransferOffer = transferFn;
+        if (!window.submitLoanOffer?._pcfNeg) window.submitLoanOffer = loanFn;
+        renderAttrsHook();
 
         // Si ya hay condiciones pactadas con este jugador, saltar a la fase del club
         const origStart = window.startNegotiationUI;
@@ -223,7 +229,35 @@
             window.simulateWeek._pcfNeg = true;
         }
     }
+    // Atributos del jugador en la ventana de negociación (como en Entrenamiento)
+    const ATTR_FULL = { EN: 'Energía', VE: 'Velocidad', RE: 'Resistencia', AG: 'Agilidad', CA: 'Cabezazo', EF: 'Eficacia', MO: 'Moral', AT: 'Ataque', DF: 'Defensa' };
+    function renderAttrs() {
+        const p = gs()?.negotiatingPlayer;
+        const info = document.getElementById('negotiationPlayerName')?.closest('div');
+        if (!p || !info) return;
+        let box = document.getElementById('pcfNegAttrs');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'pcfNegAttrs';
+            box.style.cssText = 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;margin:10px 0 4px;';
+            info.appendChild(box);
+        }
+        const color = v => v >= 85 ? '#4caf50' : v >= 75 ? '#8bc34a' : v >= 65 ? '#fbc02d' : v >= 55 ? '#ff9800' : '#e53935';
+        box.innerHTML = Object.entries(ATTR_FULL).map(([k, label]) => {
+            const v = p[k] || 0;
+            return `<div title="${label} (${k})" style="background:rgba(255,255,255,.06);border:1px solid rgba(122,160,212,.35);border-radius:3px;padding:5px 8px;">
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;"><span>${label} <small style="opacity:.6">${k}</small></span><span>${v}</span></div>
+                <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:3px;"><div style="height:100%;width:${Math.min(99, v)}%;background:${color(v)}"></div></div></div>`;
+        }).join('');
+    }
+    function renderAttrsHook() {
+        const orig = window.updateNegotiationModal;
+        if (typeof orig !== 'function' || orig._pcfAttrs) return;
+        window.updateNegotiationModal = function (...a) { const r = orig.apply(this, a); try { renderAttrs(); } catch (e) { /* */ } return r; };
+        window.updateNegotiationModal._pcfAttrs = true;
+    }
+
     // Varios módulos redefinen estas funciones con retraso: reinstalar unas veces
-    [1500, 3000, 6000].forEach(ms => setTimeout(install, ms));
+    [1500, 3000, 6000, 10000].forEach(ms => setTimeout(install, ms));
     window.pcfNegotiations = { pending: getBids, resolveBids };
 })();

@@ -498,8 +498,13 @@
         window._facHooked = true;
         const orig = window.simulateWeek;
         window.simulateWeek = async function (...args) {
+            const seasonBefore = gs()?.currentSeason;
             const result = await orig.apply(this, args);
-            tickConstruction();
+            // Entre temporadas pasa el verano: 8 semanas reales (la de transición ya cuenta 1)
+            const summer = seasonBefore && gs()?.currentSeason !== seasonBefore;
+            const ticks = summer ? (window.PCF_OFFSEASON_WEEKS || 8) : 1;
+            for (let i = 0; i < ticks; i++) tickConstruction();
+            if (summer) news(`🏗️ Verano: las obras han avanzado ${ticks} semanas.`, 'info');
             return result;
         };
         console.log('[Facilities] hook simulateWeek ✓');

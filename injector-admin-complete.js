@@ -590,7 +590,7 @@
             const cfg = window.pcfLeagues.get();
             const from = Object.keys(cfg.divisions).find(k => cfg.divisions[k].teams.includes(name));
             if (from === key) return alert('Ese equipo ya está en esta división');
-            if (from && !confirm(`"${name}" está ahora en ${cfg.divisions[from].name}. ¿Moverlo a ${cfg.divisions[key].name}?`)) return;
+            if (from && !await window.pcfConfirmText(`"${name}" está ahora en ${cfg.divisions[from].name}. ¿Moverlo a ${cfg.divisions[key].name}?`)) return;
             if (from) cfg.divisions[from].teams = cfg.divisions[from].teams.filter(t => t !== name);
             cfg.divisions[key].teams.push(name);
             input.value = '';
@@ -599,7 +599,7 @@
 
         removeTeamFromDivision: async function(team) {
             const key = this.currentDivision; if (!key) return;
-            if (!confirm(`¿Quitar "${team}" de ${leagueName(key)}?\n\nSus datos (escudo, estadio, plantilla) NO se borran: podrás volver a añadirlo cuando quieras.`)) return;
+            if (!await window.pcfConfirmText(`¿Quitar "${team}" de ${leagueName(key)}?\n\nSus datos (escudo, estadio, plantilla) NO se borran: podrás volver a añadirlo cuando quieras.`)) return;
             const cfg = window.pcfLeagues.get();
             cfg.divisions[key].teams = cfg.divisions[key].teams.filter(t => t !== team);
             await this.saveLeagues(cfg, `✅ ${team} quitado de ${cfg.divisions[key].name}`);
@@ -614,10 +614,10 @@
         },
 
         renameTeam: async function(oldName) {
-            const newName = (prompt(`Nuevo nombre para "${oldName}":`, oldName) || '').trim();
+            const newName = (await window.pcfPrompt(`Nuevo nombre para "${oldName}":`, oldName) || '').trim();
             if (!newName || newName === oldName) return;
             if (window.pcfLeagues.allTeams().includes(newName)) return alert(`Ya existe un equipo llamado "${newName}"`);
-            if (!confirm(`Renombrar "${oldName}" → "${newName}".\n\nSus datos (escudo, estadio, plantilla) pasarán al nuevo nombre. Las partidas guardadas que ya usen "${oldName}" lo seguirán mostrando con el nombre antiguo.`)) return;
+            if (!await window.pcfConfirmText(`Renombrar "${oldName}" → "${newName}".\n\nSus datos (escudo, estadio, plantilla) pasarán al nuevo nombre. Las partidas guardadas que ya usen "${oldName}" lo seguirán mostrando con el nombre antiguo.`)) return;
             try {
                 await moveTeamData(oldName, newName);
                 const cfg = window.pcfLeagues.get();
@@ -630,7 +630,7 @@
         },
 
         resetLeagues: async function() {
-            if (!confirm('¿Restaurar las ligas originales del juego (las de config.js)?\n\nSe deshacen todos los cambios de equipos por división y nombres de división. Los datos y plantillas de los equipos NO se borran.')) return;
+            if (!await window.pcfConfirmText('¿Restaurar las ligas originales del juego (las de config.js)?\n\nSe deshacen todos los cambios de equipos por división y nombres de división. Los datos y plantillas de los equipos NO se borran.')) return;
             await this.saveLeagues(window.pcfLeagues.getDefaults(), '✅ Ligas restauradas');
         },
 
@@ -655,7 +655,7 @@
         exportDivisionJSON: async function() {
             const key = this.currentDivision;
             if (!key) return alert('Selecciona primero una división');
-            const withImages = confirm('¿Incluir escudos y fotos de estadio?\n\nAceptar = sí (archivo mucho más grande)\nCancelar = no (más fácil de editar)');
+            const withImages = await window.pcfConfirmText('¿Incluir escudos y fotos de estadio?\n\nAceptar = sí (archivo mucho más grande)\nCancelar = no (más fácil de editar)');
             const status = document.getElementById('adminDivisionImportStatus');
             status.textContent = '⏳ Preparando exportación…';
             const teams = [];
@@ -722,7 +722,7 @@
                 (added.length ? `\n➕ Nuevos en la división (${added.length}): ${added.join(', ')}` : '') +
                 (moved.length ? `\n↕ Se mueven aquí (${moved.length}): ${moved.join(', ')}` : '') +
                 (removed.length ? `\n➖ Salen de la división (${removed.length}): ${removed.join(', ')}\n   (sus datos no se borran; quedan sin división hasta que los añadas a otra)` : '');
-            if (!confirm(summary + '\n\n¿Aplicar la importación?')) return;
+            if (!await window.pcfConfirmText(summary + '\n\n¿Aplicar la importación?')) return;
 
             status.textContent = '⏳ Importando…';
             let ok = 0; const errors = [];
@@ -849,8 +849,8 @@
             this.renderSquadList();
         },
 
-        removePlayer: function(index) {
-            if (confirm('¿Eliminar este jugador?')) {
+        removePlayer: async function(index) {
+            if (await window.pcfConfirmText('¿Eliminar este jugador?')) {
                 this.squadPlayers.splice(index, 1);
                 this.renderSquadList();
             }
@@ -867,8 +867,8 @@
             this.renderSquadList();
         },
 
-        clearSquad: function() {
-            if (confirm('¿Eliminar toda la plantilla? El equipo generará jugadores aleatorios.')) {
+        clearSquad: async function() {
+            if (await window.pcfConfirmText('¿Eliminar toda la plantilla? El equipo generará jugadores aleatorios.')) {
                 this.squadPlayers = [];
                 this.renderSquadList();
             }
@@ -1114,7 +1114,7 @@
 
         resetUserPassword: async function(uid, email) {
             if (!email) return alert('No hay email asociado a este usuario');
-            if (!confirm(`¿Enviar email de recuperación de contraseña a ${email}?`)) return;
+            if (!await window.pcfConfirmText(`¿Enviar email de recuperación de contraseña a ${email}?`)) return;
             try {
                 const { sendPasswordResetEmail } =
                     await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
@@ -1126,7 +1126,7 @@
         },
 
         deleteUser: async function(uid, email) {
-            if (!confirm(`¿Eliminar usuario ${email}?\n\nSe borrarán:\n• Su perfil de game_users\n• Todas sus partidas guardadas\n• Sus datos de usuario\n\nEsta acción NO se puede deshacer.`)) return;
+            if (!await window.pcfConfirmText(`¿Eliminar usuario ${email}?\n\nSe borrarán:\n• Su perfil de game_users\n• Todas sus partidas guardadas\n• Sus datos de usuario\n\nEsta acción NO se puede deshacer.`)) return;
             try {
                 const { getFirestore, doc, deleteDoc, collection, getDocs } =
                     await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -1166,7 +1166,7 @@
 
         // Migrar usuarios existentes desde la colección 'users' (partidas guardadas)
         migrateUsers: async function() {
-            if (!confirm('Esto buscará todos los usuarios con partidas guardadas y creará su perfil en game_users si no existe. ¿Continuar?')) return;
+            if (!await window.pcfConfirmText('Esto buscará todos los usuarios con partidas guardadas y creará su perfil en game_users si no existe. ¿Continuar?')) return;
 
             const tbody = document.getElementById('adminUsersTbody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">⏳ Migrando usuarios...</td></tr>';

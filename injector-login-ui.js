@@ -119,7 +119,7 @@
 
     // Función de logout CON FIREBASE
     window.logoutUser = async function() {
-        if (!confirm('¿Seguro que quieres cerrar sesión?')) {
+        if (!await window.pcfConfirmText('¿Seguro que quieres cerrar sesión?')) {
             return;
         }
         

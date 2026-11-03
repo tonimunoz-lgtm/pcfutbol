@@ -682,11 +682,7 @@ function updateStandingsColors() {
             row.classList.add('pcf-my-row');
             row.style.borderRight  = '';
             row.style.fontWeight   = 'bold';
-            // Añadir ⭐ al nombre si no lo tiene ya
-            const nameCell = row.querySelector('.team-name, td:nth-child(2)');
-            if (nameCell && !nameCell.textContent.includes('⭐')) {
-                nameCell.innerHTML = '⭐ ' + nameCell.innerHTML;
-            }
+            // (Sin estrella: la fila ya va resaltada entera)
         } else {
             row.style.borderRight = '';
             row.style.fontWeight  = '';
@@ -907,7 +903,7 @@ function renderEuropa() {
             const posIcon = top8 ? '🔵' : po ? '🟠' : '🔴';
             html += `<tr class="${me ? 'cg-me' : ''}">
                 <td style="font-size:.82em">${posIcon}${pos}</td>
-                <td style="text-align:left;${me?'font-weight:bold':''}">${me?'⭐ ':''}${t.name}</td>
+                <td style="text-align:left;${me?'font-weight:bold':''}">${t.name}</td>
                 <td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
                 <td>${t.gf}</td><td>${t.gc}</td>
                 <td style="${(t.gf-t.gc)>=0?'color:#1b5e20':'color:#b71c1c'};font-weight:700">${t.gf-t.gc>0?'+':''}${t.gf-t.gc}</td>
@@ -921,7 +917,7 @@ function renderEuropa() {
             html += `<tr style="border-top:2px dashed rgba(255,255,255,.2)"><td colspan="10" style="color:rgba(255,255,255,.4);font-size:.78em;padding:4px">... ${myPos-10} equipos ...</td></tr>`;
             html += `<tr style="background:rgba(233,69,96,.25)">
                 <td style="font-size:.82em">${myPos<=8?'🔵':myPos<=24?'🟠':'🔴'}${myPos}</td>
-                <td style="text-align:left;font-weight:bold;color:#FFD700">⭐ ${mt.name}</td>
+                <td style="text-align:left;font-weight:bold;">${mt.name}</td>
                 <td>${mt.pj}</td><td>${mt.g}</td><td>${mt.e}</td><td>${mt.p}</td>
                 <td>${mt.gf}</td><td>${mt.gc}</td>
                 <td style="${(mt.gf-mt.gc)>=0?'color:#4CAF50':'color:#f44336'}">${mt.gf-mt.gc>0?'+':''}${mt.gf-mt.gc}</td>
@@ -1241,7 +1237,7 @@ function miniLeagueTable(letter, mini, myTeam, winner) {
         const me=n===myTeam, w=n===winner;
         const bg=w?'background:rgba(50,200,50,.2);':me?'background:rgba(233,69,96,.15);':'';
         html+=`<tr style="${bg}border-bottom:1px solid rgba(255,255,255,.08)"><td>${i+1}</td>
-            <td style="text-align:left;${(me||w)?'font-weight:bold':''}">${n}${w?' 🔺':''}${me?' ⭐':''}</td>
+            <td style="text-align:left;${(me||w)?'font-weight:bold':''}">${n}${w?' 🔺':''}</td>
             <td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td>
             <td>${s.gf-s.gc>0?'+':''}${s.gf-s.gc}</td><td><strong>${s.pts}</strong></td></tr>`;
     });

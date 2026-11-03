@@ -312,7 +312,7 @@
         }
     };
 
-    window.fichProspect = function(encoded) {
+    window.fichProspect = async function(encoded) {
         const prospect = JSON.parse(decodeURIComponent(encoded));
         const s = gs();
         if (!s) return;
@@ -322,7 +322,7 @@
             return;
         }
 
-        if (confirm(`¿Contratar a ${prospect.name} (OVR ${prospect.overall} / POT ${prospect.potential}) por ${prospect.cost.toLocaleString('es-ES')}€?`)) {
+        if (await window.pcfConfirmText(`¿Contratar a ${prospect.name} (OVR ${prospect.overall} / POT ${prospect.potential}) por ${prospect.cost.toLocaleString('es-ES')}€?`)) {
             gl().updateGameState({ balance: s.balance - prospect.cost });
             const state = gs();
             const newAcademy = [...(state.academy || []), { ...prospect, club: state.team }];

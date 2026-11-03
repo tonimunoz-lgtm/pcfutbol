@@ -28,6 +28,11 @@ console.log('🏆 injector-cup-matches.js v4 cargando...');
 // CONFIG VISUAL
 // ============================================================
 const CUP_CONFIG = {
+    playoff: {
+        name:'Playoff de ascenso', shortName:'Playoff de ascenso',
+        emoji:'⬆️', color:'#2E7D32', accentColor:'#66BB6A',
+        gradient:'linear-gradient(135deg,#06240f 0%,#0d3d1c 50%,#1b5e20 100%)'
+    },
     champions: {
         name:'UEFA Champions League', shortName:'Champions League',
         emoji:'⭐', color:'#1E5AC8', accentColor:'#4a9eff',

@@ -7,14 +7,14 @@ console.log('🎯 Injector Promanager cargando...');
 (function () {
     'use strict';
 
-    const DIVISION_RANK = { rfef_grupo2: 0, rfef_grupo1: 1, segunda: 2, primera: 3 };
+    const DIVISION_RANK = { rfef_grupo2: 0, rfef_grupo1: 0, segunda: 1, primera: 2 };
     const DIVISION_LABELS = {
         rfef_grupo2: 'Primera RFEF Grupo 2',
         rfef_grupo1: 'Primera RFEF Grupo 1',
         segunda: 'Segunda División',
         primera: 'Primera División'
     };
-    const DIVISION_REP_THRESHOLD = { rfef_grupo2: 0, rfef_grupo1: 15, segunda: 35, primera: 60 };
+    const DIVISION_REP_THRESHOLD = { rfef_grupo2: 0, rfef_grupo1: 0, segunda: 30, primera: 60 };
 
     let pmState = {
         active: false, sessionId: null, reputation: 0,
@@ -59,8 +59,10 @@ console.log('🎯 Injector Promanager cargando...');
 
     // ── Reputación ──
     function calcRepGain(result, division) {
-        const m = { primera: 3, segunda: 2, rfef_grupo1: 1.5, rfef_grupo2: 1 }[division] || 1;
-        return result === 'win' ? Math.round(3 * m) : result === 'draw' ? Math.round(1 * m) : Math.round(-1 * m);
+        // Por partido cuenta poco: la reputación se gana sobre todo con la temporada
+        const m = { primera: 1.8, segunda: 1.4, rfef_grupo1: 1, rfef_grupo2: 1 }[division] || 1;
+        const g = result === 'win' ? 1.2 * m : result === 'draw' ? 0.4 * m : -0.8 * m;
+        return Math.round(g * 10) / 10;
     }
     function getRepLabel(rep) {
         if (rep < 10) return '⭐ Desconocido';
@@ -362,6 +364,27 @@ console.log('🎯 Injector Promanager cargando...');
             return;
         }
 
+        // Fin de temporada: lo que más pesa en la reputación
+        var summary = state.lastSeasonSummary;
+        if (summary && summary.season && pmState.lastSeasonRated !== summary.season && summary.userDivision) {
+            pmState.lastSeasonRated = summary.season;
+            var size = (summary.tables && summary.tables[summary.userDivision] || []).length || 20;
+            var pos = summary.userPosition || size;
+            var bonus = 0;
+            var mv = summary.userMove;
+            if (mv && mv.reason === 'ascenso directo') bonus += 12;
+            else if (mv && mv.reason === 'ascenso por playoff') bonus += 9;
+            else if (mv && mv.reason === 'descenso') bonus -= 10;
+            if (pos === 1) bonus += 4;
+            if (pos <= 4) bonus += 3;
+            if (pos > size - 4 && !(mv && mv.reason === 'descenso')) bonus -= 6;
+            pmState.reputation = Math.max(0, Math.min(100, Math.round((pmState.reputation + bonus) * 10) / 10));
+            if (window.gameLogic && window.gameLogic.addNews) {
+                window.gameLogic.addNews('⭐ [Carrera] Balance de la temporada ' + summary.season + ': ' + (bonus >= 0 ? '+' : '') + bonus + ' de reputación (ahora ' + Math.round(pmState.reputation) + ').', bonus >= 0 ? 'success' : 'warning');
+            }
+            pmState.summerOfferPending = true;
+        }
+
         var gain = calcRepGain(result, state.division);
         pmState.reputation = Math.max(0, Math.min(100, pmState.reputation + gain));
         pmState.gamesManaged++;
@@ -388,7 +411,14 @@ console.log('🎯 Injector Promanager cargando...');
 
         // Oferta espontánea
         var week = state.week || 1;
-        if (week - pmState.lastOfferWeek >= 8 && checkOffer(state)) {
+        // Verano: con la reputación de la temporada, posibilidad de oferta de un club mayor
+        var summerOffer = false;
+        if (pmState.summerOfferPending) {
+            pmState.summerOfferPending = false;
+            var nrank = DIVISION_RANK[state.division] || 0;
+            summerOffer = getAllowedDivisions(pmState.reputation).some(function(d){ return (DIVISION_RANK[d]||0) > nrank; }) && Math.random() < 0.6;
+        }
+        if (summerOffer || (week - pmState.lastOfferWeek >= 8 && checkOffer(state))) {
             pmState.lastOfferWeek = week;
             var allowed = getAllowedDivisions(pmState.reputation);
             var rank = DIVISION_RANK[state.division] || 0;
@@ -418,13 +448,18 @@ console.log('🎯 Injector Promanager cargando...');
         return false;
     }
 
+    function myPosition(state) {
+        var sorted = window.sortStandings ? window.sortStandings(state.standings || {}) : Object.entries(state.standings || {});
+        return sorted.findIndex(function(e){ return e[0] === state.team; }) + 1;
+    }
     function checkOffer(state) {
         var rank = DIVISION_RANK[state.division] || 0;
-        var allowed = getAllowedDivisions(pmState.reputation);
-        var hasBetter = allowed.some(function(d){ return (DIVISION_RANK[d]||0) > rank; });
-        var last5 = pmState.weeklyPoints.slice(-5).reduce(function(a,b){return a+b;},0);
-        var prob = hasBetter ? 0.08 + (pmState.reputation/100)*0.15 + (last5/15)*0.1 : 0.03;
-        return Math.random() < prob;
+        var nextDiv = Object.keys(DIVISION_RANK).find(function(d){ return DIVISION_RANK[d] === rank + 1; });
+        var margin = nextDiv ? pmState.reputation - DIVISION_REP_THRESHOLD[nextDiv] : -1;
+        var winterWindow = state.seasonType === 'regular' && state.week >= 17 && state.week <= 21;
+        if (winterWindow && margin >= 5 && myPosition(state) <= 4) return Math.random() < 0.25;
+        // Ofertas del mismo nivel: raras
+        return Math.random() < 0.02;
     }
 
     function tryGenerateNewOffers() {
@@ -448,7 +483,7 @@ console.log('🎯 Injector Promanager cargando...');
         badge.className = 'info-box';
         badge.style.cssText = 'display:none;cursor:pointer;';
         badge.title = 'Tu reputación — haz clic para ver detalle';
-        badge.innerHTML = '<span>Rep:</span><span id="pmRepVal" style="color:#f4c430;">0</span>';
+        badge.innerHTML = '<span>Reputación:</span><span id="pmRepVal" style="color:#5b3d00;font-weight:800;">0</span>';
         badge.onclick = function() { showRepSummary(); };
         header.appendChild(badge);
     }
@@ -459,7 +494,7 @@ console.log('🎯 Injector Promanager cargando...');
         if (!badge || !val) return;
         if (pmState.active) {
             badge.style.display = '';
-            val.textContent = pmState.reputation + 'pts ' + getRepLabel(pmState.reputation).split(' ')[0];
+            val.textContent = Math.round(pmState.reputation) + ' ' + getRepLabel(pmState.reputation).split(' ')[0];
         } else {
             badge.style.display = 'none';
         }

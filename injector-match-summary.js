@@ -201,107 +201,38 @@ window.injectMatchSummary = function(matchResult) {
                 </div>
             </div>
             
-            ${allGoals.length > 0 ? `
-            <div class="goals-section">
-                <h3>⚽ Goles</h3>
-                <div class="goals-list">
-                    ${allGoals.map(g => `
-                        <div class="goal-item ${g.team === homeTeam ? 'home' : 'away'}">
-                            <span class="goal-minute">${g.minute}'</span>
-                            <span class="goal-scorer">${g.name}</span>
-                            <span class="goal-team">(${g.team})</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-            
-            <div class="possession-section">
-                <h3>📊 Posesión</h3>
-                <div class="possession-bars">
-                    <div class="poss-row">
-                        <span class="poss-label">${homeTeam}</span>
-                        <div class="poss-bar">
-                            <div class="poss-fill home" style="width: ${stats.possession[0]}%"></div>
-                        </div>
-                        <span class="poss-value">${stats.possession[0]}%</span>
+            <div class="ms-compact">
+                <div class="ms-block">
+                    <h3>⚽ Goles</h3>
+                    <div class="ms-two">
+                        <div class="ms-col home">${allGoals.filter(g => g.team === homeTeam).map(g => `<div class="ms-ev"><span class="ms-min">${g.minute}'</span> ${g.name}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
+                        <div class="ms-col away">${allGoals.filter(g => g.team !== homeTeam).map(g => `<div class="ms-ev">${g.name} <span class="ms-min">${g.minute}'</span></div>`).join('') || '<div class="ms-none">—</div>'}</div>
                     </div>
-                    <div class="poss-row">
-                        <span class="poss-label">${awayTeam}</span>
-                        <div class="poss-bar">
-                            <div class="poss-fill away" style="width: ${stats.possession[1]}%"></div>
-                        </div>
-                        <span class="poss-value">${stats.possession[1]}%</span>
+                </div>
+                ${allCards.length > 0 ? `
+                <div class="ms-block">
+                    <h3>🟨🟥 Tarjetas</h3>
+                    <div class="ms-two">
+                        <div class="ms-col home">${allCards.filter(c => c.team === homeTeam).map(c => `<div class="ms-ev">${c.type === 'yellow' ? '🟨' : '🟥'} <span class="ms-min">${c.minute}'</span> ${c.player}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
+                        <div class="ms-col away">${allCards.filter(c => c.team !== homeTeam).map(c => `<div class="ms-ev">${c.player} <span class="ms-min">${c.minute}'</span> ${c.type === 'yellow' ? '🟨' : '🟥'}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
+                    </div>
+                </div>` : ''}
+                <div class="ms-block">
+                    <h3>📊 Posesión</h3>
+                    <div class="ms-poss"><span>${stats.possession[0]}%</span>
+                        <div class="ms-poss-bar"><div style="width:${stats.possession[0]}%"></div></div>
+                        <span>${stats.possession[1]}%</span></div>
+                </div>
+                <div class="ms-block">
+                    <h3>📈 Estadísticas</h3>
+                    <div class="ms-stats">
+                        ${[['Remates', stats.shots], ['A puerta', stats.shotsOnTarget], ['Pases', stats.passes],
+                           ['Precisión pases', stats.passAccuracy.map(v => v + '%')], ['Córners', stats.corners],
+                           ['Fueras de juego', stats.offsides], ['Faltas', stats.fouls], ['Paradas', stats.saves]]
+                          .map(([n, v]) => `<div class="ms-stat"><b>${v[0]}</b><span>${n}</span><b>${v[1]}</b></div>`).join('')}
                     </div>
                 </div>
             </div>
-            
-            <div class="stats-section">
-                <h3>📈 Estadísticas</h3>
-                <table class="stats-table">
-                    <tr>
-                        <td class="stat-home">${stats.shots[0]}</td>
-                        <td class="stat-name">Remates</td>
-                        <td class="stat-away">${stats.shots[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.shotsOnTarget[0]}</td>
-                        <td class="stat-name">A puerta</td>
-                        <td class="stat-away">${stats.shotsOnTarget[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.possession[0]}%</td>
-                        <td class="stat-name">Posesión</td>
-                        <td class="stat-away">${stats.possession[1]}%</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.passes[0]}</td>
-                        <td class="stat-name">Pases</td>
-                        <td class="stat-away">${stats.passes[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.passAccuracy[0]}%</td>
-                        <td class="stat-name">Precisión pases</td>
-                        <td class="stat-away">${stats.passAccuracy[1]}%</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.corners[0]}</td>
-                        <td class="stat-name">Corners</td>
-                        <td class="stat-away">${stats.corners[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.offsides[0]}</td>
-                        <td class="stat-name">Fueras de juego</td>
-                        <td class="stat-away">${stats.offsides[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.fouls[0]}</td>
-                        <td class="stat-name">Faltas</td>
-                        <td class="stat-away">${stats.fouls[1]}</td>
-                    </tr>
-                    <tr>
-                        <td class="stat-home">${stats.saves[0]}</td>
-                        <td class="stat-name">Paradas portero</td>
-                        <td class="stat-away">${stats.saves[1]}</td>
-                    </tr>
-                </table>
-            </div>
-            
-            ${allCards.length > 0 ? `
-            <div class="cards-section">
-                <h3>🟨🟥 Tarjetas</h3>
-                <div class="cards-list">
-                    ${allCards.map(c => `
-                        <div class="card-item ${c.team === homeTeam ? 'home' : 'away'}">
-                            <span class="card-icon">${c.type === 'yellow' ? '🟨' : '🟥'}</span>
-                            <span class="card-minute">${c.minute}'</span>
-                            <span class="card-player">${c.player}</span>
-                            <span class="card-team">(${c.team})</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
             
             ${injuries.length > 0 ? `
             <div class="injuries-section">
@@ -351,7 +282,7 @@ window.injectMatchSummary = function(matchResult) {
         #matchSummaryModal .match-container {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px 24px;
             max-width: 700px;
             width: 90%;
             max-height: 85vh;
@@ -532,6 +463,24 @@ window.injectMatchSummary = function(matchResult) {
             text-align: right;
         }
         
+        #matchSummaryModal .ms-compact { display:flex; flex-direction:column; gap:10px; }
+        #matchSummaryModal .ms-block h3 { margin:0 0 6px; font-size:.82rem; text-align:center; }
+        #matchSummaryModal .ms-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        #matchSummaryModal .ms-col { display:flex; flex-direction:column; gap:3px; }
+        #matchSummaryModal .ms-col.home { border-left:3px solid #4CAF50; padding-left:8px; text-align:left; align-items:flex-start; }
+        #matchSummaryModal .ms-col.away { border-right:3px solid #e53935; padding-right:8px; text-align:right; align-items:flex-end; }
+        #matchSummaryModal .ms-ev { font-size:.85rem; line-height:1.3; }
+        #matchSummaryModal .ms-min { color:#FFD700; font-weight:800; }
+        #matchSummaryModal .ms-none { opacity:.45; font-size:.85rem; }
+        #matchSummaryModal .ms-poss { display:grid; grid-template-columns:42px 1fr 42px; align-items:center; gap:8px; font-weight:800; font-size:.85rem; }
+        #matchSummaryModal .ms-poss span:last-child { text-align:right; }
+        #matchSummaryModal .ms-poss-bar { height:10px; border-radius:5px; background:#e53935; overflow:hidden; }
+        #matchSummaryModal .ms-poss-bar div { height:100%; background:#4CAF50; }
+        #matchSummaryModal .ms-stats { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; }
+        #matchSummaryModal .ms-stat { display:grid; grid-template-columns:38px 1fr 38px; align-items:center; font-size:.8rem; padding:3px 6px;
+            background:rgba(255,255,255,.05); border-radius:3px; }
+        #matchSummaryModal .ms-stat span { text-align:center; opacity:.85; }
+        #matchSummaryModal .ms-stat b:last-child { text-align:right; }
         #matchSummaryModal .stats-table {
             width: 100%;
             border-collapse: collapse;

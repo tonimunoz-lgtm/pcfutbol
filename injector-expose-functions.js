@@ -288,8 +288,8 @@
         // CUARTO: FUNCIONES DE PLANTILLA Y CANTERA
         // ============================================
 
-        window.sellPlayer = function(playerName) {
-            if (confirm(`¿Estás seguro de que quieres vender a ${playerName}?`)) {
+        window.sellPlayer = async function(playerName) {
+            if (await window.pcfConfirmText(`¿Estás seguro de que quieres vender a ${playerName}?`)) {
                 const result = window.gameLogic.sellPlayer(playerName);
                 alert(result.message);
                 if (result.success && window.ui && window.ui.refreshUI) {
@@ -298,8 +298,8 @@
             }
         };
 
-        window.sellPlayerConfirm = function(name) {
-            if (confirm(`¿Estás seguro de que quieres vender a ${name}?`)) {
+        window.sellPlayerConfirm = async function(name) {
+            if (await window.pcfConfirmText(`¿Estás seguro de que quieres vender a ${name}?`)) {
                 const result = window.gameLogic.sellPlayer(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
@@ -312,8 +312,8 @@
             window.promoteConfirm(playerName);
         };
 
-        window.promoteConfirm = function(name) {
-            if (confirm(`¿Ascender a ${name} a la primera plantilla?`)) {
+        window.promoteConfirm = async function(name) {
+            if (await window.pcfConfirmText(`¿Ascender a ${name} a la primera plantilla?`)) {
                 const result = window.gameLogic.promoteYoungster(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
@@ -372,7 +372,7 @@
 // Funciones adicionales para completar la funcionalidad de iconos
 
 // Función para despedir/rescindir contrato de un jugador
-window.firePlayerConfirm = function(playerName) {
+window.firePlayerConfirm = async function(playerName) {
     const state = window.gameLogic.getGameState();
     const player = state.squad.find(p => p.name === playerName);
     
@@ -389,7 +389,7 @@ window.firePlayerConfirm = function(playerName) {
     // Calcular indemnización (20% del valor del jugador)
     const compensation = Math.round(player.value * 0.2);
     
-    const confirmed = confirm(
+    const confirmed = await window.pcfConfirmText(
         `¿Estás seguro de que quieres despedir a ${playerName}?\n\n` +
         `Tendrás que pagar una indemnización de ${compensation.toLocaleString('es-ES')}€\n` +
         `(20% del valor de mercado del jugador)\n\n` +
@@ -438,7 +438,7 @@ if (window.ui && window.ui.refreshUI) {
 };
 
 // Función para abrir interfaz de venta (conecta con el sistema existente)
-window.openSellPlayerUI = function(playerIndex) {
+window.openSellPlayerUI = async function(playerIndex) {
     const state = window.gameLogic.getGameState();
     const player = state.squad[playerIndex];
     
@@ -452,11 +452,13 @@ window.openSellPlayerUI = function(playerIndex) {
         return;
     }
     
+    const _sellRule = window.pcfEconomy?.canSell?.(player);
+    if (_sellRule && !_sellRule.ok) { await window.pcfNotify('Mercado', _sellRule.message); return; }
     // Calcular precio sugerido (valor de mercado)
-    const suggestedPrice = player.value;
-    const minPrice = Math.round(player.value * 0.7); // 70% del valor
+    const suggestedPrice = window.pcfEconomy ? window.pcfEconomy.marketValue(player) : (player.value || 0);
+    const minPrice = Math.round(suggestedPrice * 0.7); // 70% del valor
     
-    const priceInput = prompt(
+    const priceInput = await window.pcfPrompt(
         `Poner a ${player.name} en el mercado de transferencias\n\n` +
         `Valor de mercado: ${suggestedPrice.toLocaleString('es-ES')}€\n` +
         `Precio mínimo recomendado: ${minPrice.toLocaleString('es-ES')}€\n\n` +
@@ -474,7 +476,7 @@ window.openSellPlayerUI = function(playerIndex) {
     }
     
     if (price < minPrice) {
-        const confirmLowPrice = confirm(
+        const confirmLowPrice = await window.pcfConfirmText(
             `El precio introducido (${price.toLocaleString('es-ES')}€) está por debajo del mínimo recomendado.\n\n` +
             `¿Estás seguro de vender por este precio?`
         );
@@ -591,6 +593,8 @@ window.confirmListPlayer = function() {
         alert('Error: Jugador no encontrado');
         return;
     }
+            const _sell = window.pcfEconomy?.canSell?.(player);
+            if (_sell && !_sell.ok) { (window.pcfNotify ? window.pcfNotify('Mercado', _sell.message) : alert(_sell.message)); return; }
     
     const operationType = document.getElementById('sellOperationType').value;
     
@@ -798,11 +802,11 @@ window.rejectOffer = function() {
 };
 
 // Contraoferta
-window.counterOffer = function() {
+window.counterOffer = async function() {
     if (!currentOffer) return;
     
     if (currentOffer.type === 'transfer') {
-        const newPrice = prompt(
+        const newPrice = await window.pcfPrompt(
             `Oferta actual: ${currentOffer.amount.toLocaleString('es-ES')}€\n` +
             `Tu precio: ${currentOffer.askingPrice.toLocaleString('es-ES')}€\n\n` +
             `Introduce tu contraoferta:`,
@@ -845,7 +849,7 @@ window.firePlayerConfirm = async function(playerName) {
         `⚠️ Esta acción no se puede deshacer.`;
     const confirmed = window.pcfConfirm
         ? await window.pcfConfirm('Despedir jugador', fireMsg, { okLabel: 'Despedir', danger: true })
-        : confirm(fireMsg);
+        : await window.pcfConfirmText(fireMsg);
     
     if (!confirmed) return;
     
@@ -1019,13 +1023,13 @@ window.submitRenewalOffer = function() {
 // PAGAR CLÁUSULA DE RESCISIÓN
 // ========================================
 
-window.payReleaseClause = function(encodedPlayerJson) {
+window.payReleaseClause = async function(encodedPlayerJson) {
     const player = JSON.parse(decodeURIComponent(encodedPlayerJson));
     const state = window.gameLogic.getGameState();
     
     const clause = player.releaseClause || player.value * 3;
     
-    const confirmed = confirm(
+    const confirmed = await window.pcfConfirmText(
         `¿Pagar la cláusula de rescisión de ${player.name}?\n\n` +
         `Cláusula: ${clause.toLocaleString('es-ES')}€\n\n` +
         `⚠️ Si pagas la cláusula, el ${player.club} no puede negarse.\n` +

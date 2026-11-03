@@ -20,7 +20,21 @@
         MCO: 'Mediapunta', MD: 'Interior derecho', MI: 'Interior izquierdo', EXT: 'Extremo', DC: 'Delantero centro',
         'PRECIO P.': 'Precio que pide su club por el traspaso', 'CLÁUSULA': 'Cláusula de rescisión: pagándola, el club no puede negarse'
     };
+    // Columna MEDIA resaltada en todas las tablas de jugadores
+    function highlightMediaColumns(root) {
+        (root || document).querySelectorAll('table').forEach(table => {
+            const ths = [...table.querySelectorAll('thead th, tr:first-child th')];
+            const idx = ths.findIndex(th => /^(MEDIA|OVR)$/i.test(th.textContent.trim()));
+            if (idx < 0) return;
+            ths[idx].classList.add('pcf-col-media');
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const td = tr.children[idx];
+                if (td && !td.classList.contains('pcf-col-media')) td.classList.add('pcf-col-media');
+            });
+        });
+    }
     function labelHeaders(root) {
+        highlightMediaColumns(root);
         (root || document).querySelectorAll('th, .tc-xi-chip > span:first-child').forEach(el => {
             const raw = el.textContent.trim();
             const key = raw.toUpperCase();

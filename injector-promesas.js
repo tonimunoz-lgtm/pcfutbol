@@ -165,9 +165,7 @@
                     row.style.borderRight = '';
                     row.style.fontWeight  = 'bold';
                     const nameCell = row.querySelector('.team-name, td:nth-child(2)');
-                    if (nameCell && !nameCell.textContent.includes('⭐')) {
-                        nameCell.innerHTML = '⭐ ' + nameCell.innerHTML;
-                    }
+                    // (Sin estrella: la fila ya va resaltada entera)
                 } else {
                     row.style.borderRight = '';
                     row.style.fontWeight  = '';

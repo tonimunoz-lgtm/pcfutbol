@@ -848,14 +848,14 @@
         refreshUI();
     }
 
-    window._fdAskLoan = () => {
+    window._fdAskLoan = async () => {
         const amt = parseInt(document.getElementById('fd-amt')?.value || 0);
         const wks = parseInt(document.getElementById('fd-wks')?.value || 12);
         if (!amt || !wks) return;
-        if (confirm(`¿Solicitar préstamo de ${fmt(amt)}€ a ${wks} semanas?`)) requestLoan(amt, wks);
+        if (await window.pcfConfirmText(`¿Solicitar préstamo de ${fmt(amt)}€ a ${wks} semanas?`)) requestLoan(amt, wks);
     };
 
-    window._fdSetBonus = (amountOrEvent) => {
+    window._fdSetBonus = async (amountOrEvent) => {
         // Si se llama con un número directamente (desde cup-matches), usarlo como importe
         if (typeof amountOrEvent === 'number') {
             const d = getD();
@@ -868,7 +868,7 @@
         if (!amt) return;
         const d = getD();
         if (d.bonus > 0) { alert(`Ya hay una prima de ${fmt(d.bonus)}€ prometida para este partido.`); return; }
-        if (confirm(`¿Prometer prima de ${fmt(amt)}€ a los jugadores para el próximo partido?`)) setBonus(amt);
+        if (await window.pcfConfirmText(`¿Prometer prima de ${fmt(amt)}€ a los jugadores para el próximo partido?`)) setBonus(amt);
     };
 
     // ─────────────────────────────────────────────────────────────

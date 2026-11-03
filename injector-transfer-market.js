@@ -73,6 +73,8 @@
             const state = window.gameLogic.getGameState();
             const player = state.squad.find(p => p.name === _sellPlayerName);
             if (!player) { alert('Jugador no encontrado'); return; }
+            const _sell = window.pcfEconomy?.canSell?.(player);
+            if (_sell && !_sell.ok) { (window.pcfNotify ? window.pcfNotify('Mercado', _sell.message) : alert(_sell.message)); return; }
 
             const operationType = document.getElementById('sellOperationType').value;
 

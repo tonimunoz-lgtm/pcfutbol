@@ -153,6 +153,18 @@
             const result = await orig.apply(this, args);
             // Aplicar balance con los datos de la semana jugada
             applyWeeklyBalance(wb, sb);
+            // Entre temporadas pasa el verano: 8 semanas reales (la de transición ya cuenta 1)
+            const sa = gs();
+            if (sb && sa && sb.currentSeason !== sa.currentSeason) {
+                const extra = (window.PCF_OFFSEASON_WEEKS || 8) - 1;
+                const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0);
+                const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
+                const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
+                const net = (base - salaries - staffSal) * extra;
+                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net });
+                registerMovement(net >= 0 ? 'income' : 'expense', `Verano (${extra + 1} semanas sin partidos): ingresos fijos − sueldos`, net);
+                window.gameLogic?.addNews?.(`☀️ Verano: ${extra + 1} semanas sin partidos. Ingresos fijos ${fmt(base * extra)}€ · sueldos ${fmt((salaries + staffSal) * extra)}€.`, net >= 0 ? 'info' : 'warning');
+            }
             if (window._financeRefresh) window._financeRefresh();
             return result;
         };
