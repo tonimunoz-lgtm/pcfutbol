@@ -4716,5 +4716,8 @@
           "dataStatus": "Nombre publicado en fuente de plantilla/club o guía de temporada",
           "attributesEstimated": true
         }
+      ],
+      "rosterStatus": "Parcial: solo se incluyen nombres que he podido verificar en fuentes públicas consultadas."
+    }
   ]
 }
