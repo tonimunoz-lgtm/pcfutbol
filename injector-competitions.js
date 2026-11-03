@@ -1467,12 +1467,8 @@ function boot() {
         const s=document.createElement('style'); s.id='comp-row-css';
         s.textContent=`
             #standingsTable tr, table.standings-table tbody tr { transition: background .3s, border-left .3s; }
-            #standingsTable tr.my-team-row, table.standings-table tbody tr.my-team-row {
-                background: rgba(233,69,96,0.22) !important;
-                border-left: 4px solid #e94560 !important;
-                border-right: 3px solid rgba(233,69,96,0.5) !important;
-                font-weight: bold !important;
-            }
+            /* Tu equipo: fila completa resaltada (pcf6-theme.css). La marca de la
+               izquierda queda solo para las zonas de ascenso, Europa o descenso. */
         `;
         document.head.appendChild(s);
     }

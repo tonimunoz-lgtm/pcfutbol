@@ -1025,3 +1025,7 @@ tr.pcf-my-row td, tr.my-team-row td { background:#ffe69a !important; color:#0a1a
     border-radius:3px; padding:2px 8px; }
 .pcf-mode-desc { font-size:.92rem; line-height:1.4; font-family:inherit; letter-spacing:.01em; text-transform:none; }
 .pcf-mode-ideal { font-size:.8rem; opacity:.8; font-style:italic; }
+/* Dinero de la cabecera: siempre legible sobre la caja clara */
+.header-info #balanceDisplay { color:#0a1a35; }
+.header-info #balanceDisplay[style*="76, 175, 80"], .header-info #balanceDisplay[style*="4CAF50"], .header-info #balanceDisplay[style*="4caf50"] { color:#0a4d1c !important; }
+.header-info #balanceDisplay[style*="244, 67, 54"], .header-info #balanceDisplay[style*="f44336"] { color:#b71c1c !important; }

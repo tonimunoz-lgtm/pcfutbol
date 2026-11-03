@@ -505,7 +505,8 @@
         const balFmt = fmt(bal) + '€';
         const balColor = bal < 0 ? '#f44336' : '#4CAF50';
         const balDispEl = document.getElementById('balanceDisplay');
-        if (balDispEl) { balDispEl.textContent = balFmt; balDispEl.style.color = balColor; }
+        // La caja de la cabecera es clara: verde y rojo oscuros para que se lean
+        if (balDispEl) { balDispEl.textContent = balFmt; balDispEl.style.color = bal < 0 ? '#b71c1c' : '#0a4d1c'; }
         const dashBalEl = document.getElementById('dashBalance');
         if (dashBalEl) { dashBalEl.textContent = balFmt; dashBalEl.style.color = balColor; }
 

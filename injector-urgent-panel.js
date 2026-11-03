@@ -253,6 +253,10 @@
 
     function renderUrgentPanel() {
         const alerts = collectAlerts();
+        if (document.getElementById('dashboard')?.classList.contains('active')) {
+            markUrgentSeen();
+            setTimeout(() => updateDashboardBadge(0, 0), 0);
+        }
 
         let container = document.getElementById('urgent-panel');
         if (!container) return;
@@ -347,9 +351,25 @@
         });
     }
 
+    // Urgencias ya vistas (se guardan en la partida). El número del botón Noticias
+    // cuenta solo las que todavía no has visto; las vistas siguen en el panel hasta
+    // que las resuelvas, pero ya no "molestan" en el botón.
+    const alertKey = a => (a.type + ':' + a.title).replace(/"/g, '');
+    function seenSet() { return new Set(window.gameLogic?.getGameState?.()?.urgentSeen || []); }
+    function markUrgentSeen() {
+        const keys = collectAlerts().map(alertKey);
+        window.gameLogic?.updateGameState?.({ urgentSeen: keys });
+    }
+    function unseenCounts() {
+        const seen = seenSet();
+        const unseen = collectAlerts().filter(a => !_dismissedAlerts.has(alertKey(a)) && !seen.has(alertKey(a)));
+        return { criticals: unseen.filter(a => a.priority === 1).length, warnings: unseen.filter(a => a.priority === 2).length };
+    }
+
     function updateDashboardBadge(criticals, warnings) {
         const dashBtn = document.querySelector('[onclick*="dashboard"]');
         if (!dashBtn) return;
+        ({ criticals, warnings } = unseenCounts());
 
         // Limpiar badge anterior del sistema de urgencias
         const oldBadge = dashBtn.querySelector('.urgent-badge');
@@ -379,6 +399,7 @@
             box-sizing: border-box;
         `;
         badge.textContent = total;
+        badge.title = `${total} acción(es) urgente(s) nueva(s). Ábrelas en Noticias.`;
         dashBtn.appendChild(badge);
     }
 

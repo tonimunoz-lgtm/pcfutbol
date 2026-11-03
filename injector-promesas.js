@@ -160,14 +160,9 @@
                 }
 
                 if (row.classList.contains('my-team-row')) {
-                    const currentBg = row.style.background;
-                    if (currentBg && currentBg !== '') {
-                        row.style.background = currentBg.replace(/[\d.]+\)$/, '0.45)');
-                    } else {
-                        row.style.background = 'rgba(233,69,96,0.22)';
-                    }
-                    row.style.borderLeft  = '4px solid #e94560';
-                    row.style.borderRight = '3px solid rgba(233,69,96,0.6)';
+                    // Tu equipo: fila completa resaltada, sin marca roja (es la del descenso)
+                    row.classList.add('pcf-my-row');
+                    row.style.borderRight = '';
                     row.style.fontWeight  = 'bold';
                     const nameCell = row.querySelector('.team-name, td:nth-child(2)');
                     if (nameCell && !nameCell.textContent.includes('⭐')) {
