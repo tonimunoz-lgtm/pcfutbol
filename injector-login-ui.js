@@ -417,7 +417,7 @@
             const adminBtn = document.createElement('button');
             adminBtn.id = 'adminButton';
             adminBtn.className = 'btn btn-sm';
-            adminBtn.innerHTML = '⚙️ Admin';
+            adminBtn.innerHTML = '<img class="pcf-ui-icon" src="assets/iconos/ui/boton-admin.webp" alt="" aria-hidden="true">Admin';
             adminBtn.onclick = () => {
                 if (window.openAdminPanel) {
                     window.openAdminPanel();
@@ -435,7 +435,7 @@
             const logoutBtn = document.createElement('button');
             logoutBtn.id = 'logoutButton';
             logoutBtn.className = 'btn btn-sm';
-            logoutBtn.innerHTML = '🚪 Salir';
+            logoutBtn.innerHTML = '<img class="pcf-ui-icon" src="assets/iconos/ui/boton-salir.webp" alt="" aria-hidden="true">Salir';
             logoutBtn.onclick = window.logoutUser;
             // Estilo en pcf6-theme.css (#logoutButton)
             headerInfo.appendChild(logoutBtn);

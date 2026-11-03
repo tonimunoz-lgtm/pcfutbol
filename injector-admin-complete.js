@@ -1239,7 +1239,7 @@
                             const adminBtn = document.createElement('button');
                             adminBtn.id = 'adminButton';
                             adminBtn.className = 'btn btn-sm';
-                            adminBtn.innerHTML = '⚙️ Admin';
+                            adminBtn.innerHTML = '<img class="pcf-ui-icon" src="assets/iconos/ui/boton-admin.webp" alt="" aria-hidden="true">Admin';
                             adminBtn.onclick = () => window.openAdminPanel();
                             // Estilo en pcf6-theme.css (#adminButton)
                             const logoutBtn = document.getElementById('logoutButton');

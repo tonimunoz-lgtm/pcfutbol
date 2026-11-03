@@ -1033,3 +1033,11 @@ tr.pcf-my-row td, tr.my-team-row td { background:#ffe69a !important; color:#0a1a
 .menu-button::before { width: 32px !important; height: 32px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
 @media (max-height: 760px) { .menu-button::before { width: 28px !important; height: 28px !important; } }
 @media (max-width: 640px) { .menu-button::before { width: 34px !important; height: 34px !important; } }
+
+/* Iconos del grupo 2: títulos de sección, botones centrales y de cabecera */
+.pcf-ui-icon { display:inline-block; width:1.45em; height:1.45em; object-fit:contain; vertical-align:middle; margin:-.2em .45em 0 0;
+    filter:drop-shadow(1px 1px 1px rgba(0,0,0,.55)); pointer-events:none; }
+.section-title .pcf-ui-icon { width:30px; height:30px; margin-right:10px; }
+.center-option .pcf-ui-icon { width:22px; height:22px; margin-right:7px; }
+.header-info .pcf-ui-icon { width:20px; height:20px; margin-right:6px; }
+@media (max-width:640px) { .section-title .pcf-ui-icon { width:24px; height:24px; } }
