@@ -14,7 +14,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Mancera Cantos, Isaac",
+          "name": "NIL BASTIDA",
           "age": 14,
           "position": "MC",
           "foot": "Zurdo",
@@ -38,11 +38,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Bastida Francia, Nil",
+          "name": "ALEIX DE LA FUENTE",
           "age": 15,
           "position": "EXT",
           "foot": "Zurdo",
@@ -66,11 +67,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Moreno Malikov, Angel",
+          "name": "HUGO GALERA",
           "age": 14,
           "position": "MC",
           "foot": "Diestro",
@@ -94,11 +96,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Moreno Robles, Iker",
+          "name": "VICTOR GALERA",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -122,11 +125,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Piedrahita Angulo, Jhonefer",
+          "name": "FERRAN LOPEZ",
           "age": 14,
           "position": "DC",
           "foot": "Zurdo",
@@ -150,11 +154,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Polo Fernández, Ibai",
+          "name": "PEDRO LOPEZ",
           "age": 15,
           "position": "DC",
           "foot": "Zurdo",
@@ -178,11 +183,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "De La Fuente Diaz, Aleix",
+          "name": "MARC LOPEZ",
           "age": 14,
           "position": "LI",
           "foot": "Zurdo",
@@ -206,11 +212,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Nombre real de acta/plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Joel Fernández",
+          "name": "ISAAC MANCERA",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -234,11 +241,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Dani Moreno",
+          "name": "SERGI MARTINEZ",
           "age": 15,
           "position": "LD",
           "foot": "Diestro",
@@ -262,11 +270,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Pau Molina",
+          "name": "ROC MIR",
           "age": 15,
           "position": "DFC",
           "foot": "Zurdo",
@@ -290,11 +299,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Joel Martínez",
+          "name": "ALESSANDRO MONTAÑO",
           "age": 15,
           "position": "DFC",
           "foot": "Zurdo",
@@ -318,11 +328,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Mateo Ortega",
+          "name": "ANGEL MORENO",
           "age": 14,
           "position": "LI",
           "foot": "Zurdo",
@@ -346,11 +357,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Aitor Moreno",
+          "name": "IKER MORENO",
           "age": 14,
           "position": "MC",
           "foot": "Diestro",
@@ -374,11 +386,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Iker Rodríguez",
+          "name": "TEO MUÑOZ",
           "age": 14,
           "position": "MC",
           "foot": "Diestro",
@@ -402,11 +415,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Àlex Ruiz",
+          "name": "JHONEFER PIEDRAHITA",
           "age": 14,
           "position": "MCO",
           "foot": "Zurdo",
@@ -430,11 +444,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Hugo Moreno",
+          "name": "IBAI POLO",
           "age": 14,
           "position": "EXT",
           "foot": "Zurdo",
@@ -458,11 +473,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Rayan Ribas",
+          "name": "FABIAN QUINTEROS",
           "age": 14,
           "position": "EXT",
           "foot": "Diestro",
@@ -486,11 +502,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Marc Soler",
+          "name": "ALEX ROGIDO",
           "age": 14,
           "position": "DC",
           "foot": "Diestro",
@@ -514,11 +531,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Eric Díaz",
+          "name": "MARIO SANCHEZ",
           "age": 15,
           "position": "DC",
           "foot": "Zurdo",
@@ -542,11 +560,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         },
         {
-          "name": "Biel Costa",
+          "name": "MAICOL TAMES",
           "age": 14,
           "position": "MC",
           "foot": "Zurdo",
@@ -570,8 +589,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real facilitado por el usuario y coincidente con listado público de actas",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/team/can-rull-romulo-tronchoni-cfu-cadet-s15-c"
         }
       ]
     },
@@ -583,7 +603,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Mario Méndez",
+          "name": "Valdivia Trujillo, Fran",
           "age": 15,
           "position": "POR",
           "foot": "Diestro",
@@ -607,11 +627,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Enzo Vidal",
+          "name": "Harrou El Abiad, Akram",
           "age": 14,
           "position": "LD",
           "foot": "Zurdo",
@@ -635,11 +656,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Pau Serrano",
+          "name": "Batlle Romà, Gerard",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -663,11 +685,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Nil Martínez",
+          "name": "Jebari Acharoui, Aboubakr",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -691,11 +714,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Eric Moreno",
+          "name": "Llobet Medina, Genís",
           "age": 14,
           "position": "LI",
           "foot": "Zurdo",
@@ -719,11 +743,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Dani Ruiz",
+          "name": "Martinez Molina, Ruben",
           "age": 14,
           "position": "MC",
           "foot": "Diestro",
@@ -747,11 +772,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Nil Navarro",
+          "name": "El Knidi Karroum, Mohamed Reda",
           "age": 15,
           "position": "MC",
           "foot": "Zurdo",
@@ -775,8 +801,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Joel Romero",
@@ -1096,7 +1123,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Guillem Garcia",
+          "name": "Gallardo Arroyo, Daniel",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -1120,11 +1147,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Nil Rodríguez",
+          "name": "Donay Mateo, Ruben",
           "age": 14,
           "position": "LD",
           "foot": "Diestro",
@@ -1148,8 +1176,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Aleix Romero",
@@ -1609,7 +1638,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Oriol Pérez",
+          "name": "Roig Vilaseca, Arnau",
           "age": 14,
           "position": "POR",
           "foot": "Diestro",
@@ -1633,11 +1662,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Mario Pons",
+          "name": "Garrido Villanueva, Pedro",
           "age": 15,
           "position": "LD",
           "foot": "Diestro",
@@ -1661,8 +1691,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Bruno Ruiz",
@@ -2122,7 +2153,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Unai Torres",
+          "name": "Aselmane Touinou Aselman, Mouad",
           "age": 15,
           "position": "POR",
           "foot": "Diestro",
@@ -2146,11 +2177,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Joel Gómez",
+          "name": "Camuñas Arias, Alejandro",
           "age": 14,
           "position": "LD",
           "foot": "Diestro",
@@ -2174,8 +2206,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Enzo Romero",
@@ -2635,7 +2668,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Sergi Gómez",
+          "name": "Serhane Bougafer, Adam",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -2659,11 +2692,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Mateo Roca",
+          "name": "Criach Manzanares, Izan",
           "age": 14,
           "position": "LD",
           "foot": "Zurdo",
@@ -2687,8 +2721,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Aitor Roca",
@@ -3148,7 +3183,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "David Castro",
+          "name": "Oulad Said Touzani Madach, Marouane",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -3172,11 +3207,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Biel Pérez",
+          "name": "Bravo Garcia, Marc",
           "age": 14,
           "position": "LD",
           "foot": "Diestro",
@@ -3200,11 +3236,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Marc Rodríguez",
+          "name": "Hernandez Rodriguez, Jeyson",
           "age": 14,
           "position": "DFC",
           "foot": "Diestro",
@@ -3228,8 +3265,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Lucas Cano",
@@ -3661,7 +3699,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Lucas Serrano",
+          "name": "Aguilar Gil, Jan",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -3685,11 +3723,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Unai Castro",
+          "name": "El Aluei El Youssfy, Adam",
           "age": 15,
           "position": "LD",
           "foot": "Zurdo",
@@ -3713,8 +3752,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Luca Pons",
@@ -4687,7 +4727,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Mateo Herrera",
+          "name": "Beltran Arteaga, Luis Angel",
           "age": 14,
           "position": "POR",
           "foot": "Diestro",
@@ -4711,11 +4751,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Arnau Torres",
+          "name": "De Maria Lopez, Pau",
           "age": 14,
           "position": "LD",
           "foot": "Diestro",
@@ -4739,11 +4780,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Lucas Moreno",
+          "name": "Herencia Arnal, Alberto",
           "age": 14,
           "position": "DFC",
           "foot": "Diestro",
@@ -4767,11 +4809,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Gerard Roca",
+          "name": "Herencia Arnal, Sergio",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -4795,11 +4838,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "David Sánchez",
+          "name": "Niño Guia, Eric",
           "age": 14,
           "position": "LI",
           "foot": "Zurdo",
@@ -4823,11 +4867,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Luca Moreno",
+          "name": "Palomo Molins, Samuel",
           "age": 14,
           "position": "MC",
           "foot": "Zurdo",
@@ -4851,11 +4896,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Iker Fernández",
+          "name": "Paredes More, Gabriel Sebastian",
           "age": 14,
           "position": "MC",
           "foot": "Zurdo",
@@ -4879,11 +4925,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Izan Ferrer",
+          "name": "Perales Hervás, Uriel",
           "age": 15,
           "position": "MCO",
           "foot": "Diestro",
@@ -4907,11 +4954,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Enzo Torres",
+          "name": "Rojas Santander, Hugo",
           "age": 15,
           "position": "EXT",
           "foot": "Diestro",
@@ -4935,11 +4983,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Aleix López",
+          "name": "Torres Béjar, Ivan",
           "age": 14,
           "position": "EXT",
           "foot": "Zurdo",
@@ -4963,8 +5012,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Sergi Díaz",
@@ -6226,7 +6276,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Mateo Garcia",
+          "name": "Arqueros Garcia, Aaron",
           "age": 14,
           "position": "POR",
           "foot": "Zurdo",
@@ -6250,11 +6300,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Nil Méndez",
+          "name": "Padillo Aguilar, Adam",
           "age": 15,
           "position": "LD",
           "foot": "Zurdo",
@@ -6278,8 +6329,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Àlex Ortega",
@@ -7765,7 +7817,7 @@
       "initialBudget": 0,
       "squad": [
         {
-          "name": "Mario Vidal",
+          "name": "Olarte Sagrera, Adam",
           "age": 14,
           "position": "POR",
           "foot": "Diestro",
@@ -7789,11 +7841,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Martí Pons",
+          "name": "Pasanau Jimenez, Guillem",
           "age": 15,
           "position": "LD",
           "foot": "Zurdo",
@@ -7817,11 +7870,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Lucas Costa",
+          "name": "Romero Arguedas, Sergio",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -7845,11 +7899,12 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
-          "name": "Martí Rodríguez",
+          "name": "Ben Abbi, Lhoussaine",
           "age": 14,
           "position": "DFC",
           "foot": "Zurdo",
@@ -7873,8 +7928,9 @@
           "suspensionWeeks": 0,
           "yellowCards": 0,
           "redCards": 0,
-          "dataStatus": "Jugador ficticio para completar plantilla",
-          "attributesEstimated": true
+          "dataStatus": "Nombre real localizado en registros públicos de competición/plantilla; atributos ficticios",
+          "attributesEstimated": true,
+          "realIdentitySource": "https://elfutbol.co/es/competitions/cadet-segona-divisio-s15/grup-12"
         },
         {
           "name": "Unai Ribas",
