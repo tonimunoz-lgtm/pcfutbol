@@ -78,10 +78,53 @@
         if (sheet) { sheet.style.background = ''; }
         skin(sheet, sheet);
     }
+    // Gestión comercial en tarjetas por sección (como Caja), sin desplazamiento largo
+    const COM_COLORS = ['#4fc3f7', '#ffd24a', '#aed581', '#ff8a65', '#ba68c8'];
+    function layoutCommercial(page) {
+        let grid = page.querySelector('.pcf-com-grid');
+        // Contenido suelto a repartir: lo que va después del resumen y lo de fd-section
+        const fd = page.querySelector('#fd-section');
+        const loose = [];
+        let afterGrid = false;
+        [...page.children].forEach(el => {
+            if (el.classList.contains('page-header') || el.classList.contains('data-grid') || el === grid || el === fd) { if (el.classList.contains('data-grid')) afterGrid = true; return; }
+            if (afterGrid) loose.push(el);
+        });
+        if (fd) loose.push(...fd.children);
+        if (!loose.length) return;
+        if (!grid) {
+            grid = document.createElement('div');
+            grid.className = 'pcf-com-grid';
+            const dg = page.querySelector('.data-grid');
+            (dg || page.querySelector('.page-header')).insertAdjacentElement('afterend', grid);
+        }
+        let card = grid.lastElementChild;
+        loose.slice().forEach(el => {
+            if (el.tagName === 'H2') {
+                card = document.createElement('div');
+                card.className = 'pcf-com-card';
+                card.style.setProperty('--sec', COM_COLORS[grid.children.length % COM_COLORS.length]);
+                const label = document.createElement('div');
+                label.className = 'pcf-com-label';
+                label.textContent = el.textContent.trim();
+                card.appendChild(label);
+                grid.appendChild(card);
+                el.remove();
+                return;
+            }
+            if (!card) {
+                card = document.createElement('div'); card.className = 'pcf-com-card'; card.style.setProperty('--sec', COM_COLORS[0]);
+                grid.appendChild(card);
+            }
+            card.appendChild(el);
+        });
+        if (fd) fd.style.display = 'none';   // se queda vacío (evita que se vuelva a crear)
+    }
     function skinCommercial() {
         const page = document.getElementById('commercial');
         if (!page || !page.classList.contains('active')) return;
-        page.querySelectorAll('#fd-section, [id^="fd-"]').forEach(sec => skin(sec, null));
+        layoutCommercial(page);
+        page.querySelectorAll('.pcf-com-card').forEach(sec => skin(sec, null));
     }
 
     let pending = false;

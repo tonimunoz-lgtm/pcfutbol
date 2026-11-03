@@ -522,6 +522,7 @@ console.log('🏫 Youth Training Injector cargando...');
                     n.style.display = isAutoTraining() ? '' : 'none';
                     n.textContent = '🤖 El entrenamiento está en AUTOMÁTICO: el cuerpo técnico elige cada semana. Si eliges aquí un atributo, el entrenamiento pasará a manual.';
                 }
+                enhanceTrainingModal(args[0]);
                 return r;
             };
             window[name]._autoNotice = true;
@@ -540,6 +541,47 @@ console.log('🏫 Youth Training Injector cargando...');
             window.submitTrainingFocus._autoNotice = true;
         }
     }
+    // Atributos en cuadrícula, con nombre completo, valor y barra
+    const ATTR_FULL = { EN: 'Energía', VE: 'Velocidad', RE: 'Resistencia', AG: 'Agilidad', CA: 'Cabezazo',
+        EF: 'Eficacia', MO: 'Moral', AT: 'Ataque', DF: 'Defensa' };
+    function enhanceTrainingModal(playerIndex) {
+        const st = gs();
+        const player = st?.squad?.[playerIndex];
+        const radios = document.getElementById('attributeRadioButtons');
+        const list = document.getElementById('trainingPlayerAttributes');
+        if (!player || !radios) return;
+        if (!document.getElementById('pcfTrainGridStyles')) {
+            const css = document.createElement('style');
+            css.id = 'pcfTrainGridStyles';
+            css.textContent = `
+            #attributeRadioButtons { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:8px 0 12px; }
+            @media (max-width:640px){ #attributeRadioButtons { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+            .pcf-train-opt { display:flex; flex-direction:column; gap:4px; padding:8px 10px; border-radius:3px; cursor:pointer;
+                background:rgba(255,255,255,.06); border:1px solid rgba(122,160,212,.35); }
+            .pcf-train-opt:hover { border-color:var(--pcf-gold,#ffd24a); }
+            .pcf-train-opt input { position:absolute; opacity:0; pointer-events:none; }
+            .pcf-train-opt.sel { background:rgba(255,210,74,.16); border-color:var(--pcf-gold,#ffd24a); box-shadow:0 0 0 1px var(--pcf-gold,#ffd24a); }
+            .pcf-train-opt .top { display:flex; justify-content:space-between; font-weight:700; font-size:.88rem; }
+            .pcf-train-opt .top small { opacity:.65; font-weight:600; margin-left:4px; }
+            .pcf-train-opt i { display:block; height:5px; border-radius:3px; background:rgba(255,255,255,.12); overflow:hidden; }
+            .pcf-train-opt i b { display:block; height:100%; background:linear-gradient(90deg,#4caf50,#c6ff00); }
+            #trainingPlayerAttributes { display:none !important; }`;
+            document.head.appendChild(css);
+        }
+        const focus = st.trainingFocus;
+        radios.innerHTML = Object.entries(ATTR_FULL).map(([k, label]) => {
+            const v = player[k] || 0;
+            const checked = focus && focus.playerIndex === playerIndex && focus.attribute === k;
+            return `<label class="pcf-train-opt ${checked ? 'sel' : ''}" title="${label} (${k})">
+                <input type="radio" name="trainingAttribute" value="${k}" ${checked ? 'checked' : ''}>
+                <span class="top"><span>${label}<small>${k}</small></span><span>${v}</span></span>
+                <i><b style="width:${Math.min(99, v)}%"></b></i></label>`;
+        }).join('');
+        radios.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => {
+            radios.querySelectorAll('.pcf-train-opt').forEach(l => l.classList.toggle('sel', l.contains(inp) && inp.checked));
+        }));
+    }
+
     [2000, 4000].forEach(ms => setTimeout(patchManualTraining, ms));
 
     function openTrainingPanel() {

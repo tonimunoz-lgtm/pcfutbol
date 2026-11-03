@@ -466,6 +466,15 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
 // ✅ MODIFICAR selectTeamWithInitialSquad para usar await (línea 454-498)
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
+    // Partida nueva: borrar restos de la anterior que guardan otros módulos
+    // (obras del estadio, ofertas y negociaciones pendientes, candidatos de personal...)
+    Object.keys(gameState).forEach(k => {
+        if (/^(fac_|fd_)/.test(k) || ['pendingBids', 'agreedTerms', 'staffCandidates', 'analystLastReport', 'lastMatchResultHTML',
+            'lastMatchResultAt', 'pendingRenewals', 'negotiationAttempts', 'pendingOffers', 'autoTraining',
+            'calendarOnlyMine', 'scoutResults', 'scoutSearch'].includes(k)) {
+            delete gameState[k];
+        }
+    });
     // 📄 RESET COMPLETO DEL ESTADO
     Object.assign(gameState, {
         team: teamName,

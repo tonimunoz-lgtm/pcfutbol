@@ -37,6 +37,12 @@
         .pcf-st.warn { background:#fbc02d; color:#3a2a00; border-radius:2px; }
         .pcf-st.sus, .pcf-st.warn { min-width:11px; width:11px; height:15px; padding:0; box-shadow:0 1px 2px rgba(0,0,0,.5); }
         .pcf-st.loan { background:#455a64; color:#fff; }
+        #reservesList.pcf-res-grid { display:grid; grid-template-columns:1fr; gap:3px; align-content:start; max-height:none !important; overflow:visible !important; }
+        #reservesList.pcf-res-grid .draggable-player { margin:0 !important; padding:3px 8px !important; font-size:.78rem !important; line-height:1.25;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left !important; width:auto !important; max-width:none !important; }
+        #reservesList .pcf-res-group { grid-column:1/-1; color:var(--pcf-gold,#ffd24a); font-family:'Saira Condensed',sans-serif; font-weight:700;
+            letter-spacing:.08em; text-transform:uppercase; font-size:.72rem; margin:6px 0 1px; border-bottom:1px dashed rgba(122,160,212,.45); }
+        #reservesList .pcf-res-group:first-child { margin-top:0; }
         .pcf-st.inj { background:#d32f2f; color:#fff; border:1px solid #fff; border-radius:50%; width:16px; min-width:16px; height:16px; padding:0; font-size:12px; }
         #pcfLineupBar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 10px; }
         #pcfLineupBar .pcf-note { font-size:.82rem; opacity:.8; }
@@ -95,6 +101,8 @@
             }
             div.onclick = () => openPlayerCard(p);
         });
+        groupReserves(byName);
+
         // Motivo de los no disponibles en el aviso superior
         const msg = document.getElementById('lineupMessage');
         const bad = (st.lineup || []).map(p => p && byName.get(p.name)).filter(p => p && (p.isInjured || p.isSuspended));
@@ -103,6 +111,33 @@
             msg.innerHTML = `⚠️ No pueden jugar: ${bad.map(p => `<strong>${esc(p.name)}</strong> (${esc(statusOf(p).text.toLowerCase())})`).join(', ')}. Cámbialos o pulsa «Alineación automática».`;
         }
         ensureBar();
+    }
+
+    // ── Suplentes por líneas, en cuadrícula compacta ─────────────
+    const LINE_OF = { POR: 0, DFC: 1, LI: 1, LD: 1, MC: 2, MCO: 2, MD: 2, MI: 2, EXT: 3, DC: 3 };
+    const LINE_NAMES = ['🧤 Porteros', '🛡️ Defensas', '⚙️ Medios', '⚡ Delanteros'];
+    function groupReserves(byName) {
+        const list = document.getElementById('reservesList');
+        if (!list) return;
+        list.classList.add('pcf-res-grid');
+        list.querySelectorAll('.pcf-res-group').forEach(h => h.remove());
+        const items = [...list.querySelectorAll('.draggable-player')];
+        items.sort((a, b) => {
+            const pa = byName.get(a.dataset.playername) || {}, pb = byName.get(b.dataset.playername) || {};
+            return (LINE_OF[pa.position] ?? 9) - (LINE_OF[pb.position] ?? 9) || (pb.overall || 0) - (pa.overall || 0);
+        });
+        let current = -1;
+        items.forEach(el => {
+            const line = LINE_OF[byName.get(el.dataset.playername)?.position] ?? 3;
+            if (line !== current) {
+                current = line;
+                const h = document.createElement('div');
+                h.className = 'pcf-res-group';
+                h.textContent = LINE_NAMES[line];
+                list.appendChild(h);
+            }
+            list.appendChild(el);
+        });
     }
 
     // ── Barra con el botón de alineación automática ──────────────

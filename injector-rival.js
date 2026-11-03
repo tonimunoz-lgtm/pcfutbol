@@ -238,7 +238,7 @@
                 <span style="background:${posC}22;color:${posC};border-radius:4px;padding:2px 5px;font-size:.7em;font-weight:bold;min-width:32px;text-align:center;">${p.position}</span>
                 <div style="flex:1;min-width:0;">
                     <div style="color:#ddd;font-size:.83em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${injBadge}${starBadge}</div>
-                    ${p.age ? `<div style="color:#555;font-size:.7em;">${p.age} años${p.nationality ? ' · '+p.nationality : ''}</div>` : ''}
+                    ${p.age ? `<div style="color:#99a;font-size:.7em;">${p.age} años${p.nationality ? ' · '+p.nationality : ''}</div>` : ''}
                     ${formBar}
                 </div>
                 <div style="text-align:right;">
@@ -248,19 +248,22 @@
             </div>`;
         };
 
+        // En columnas para aprovechar el ancho (2-3 según la pantalla), sin desplazamiento
+        const LINE = { POR: 0, DEF: 1, MED: 2, DEL: 3 };
+        const byLine = arr => [...arr].sort((a, b) => (LINE[POS_GROUP[a.position]] ?? 2) - (LINE[POS_GROUP[b.position]] ?? 2) || quickOverall(b) - quickOverall(a));
+        const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0 18px;';
         return `
-        <div style="margin-bottom:10px;">
-            <div style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
+        <div style="margin-bottom:12px;">
+            <div style="color:#FFD700;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
                 ★ Titular probable (11)
             </div>
-            ${starters.map(p => row(p, true)).join('')}
+            <div style="${grid}">${byLine(starters).map(p => row(p, true)).join('')}</div>
         </div>
         <div>
-            <div style="color:#555;font-size:.75em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
-                Banquillo / Plantilla (${subs.length})
+            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
+                Banquillo y resto de la plantilla (${subs.length})
             </div>
-            ${subs.slice(0, 10).map(p => row(p, false)).join('')}
-            ${subs.length > 10 ? `<div style="color:#444;font-size:.75em;text-align:center;padding:4px;">+${subs.length-10} más...</div>` : ''}
+            <div style="${grid}">${byLine(subs).map(p => row(p, false)).join('')}</div>
         </div>`;
     }
 

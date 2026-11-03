@@ -308,6 +308,9 @@
 
             window.closeModal?.('renewal');
             refreshUI();
+            // La tabla de renovaciones no se repinta con refreshUI: hacerlo ya
+            // para que el botón pase a "Oferta enviada" sin salir de la página
+            window.ui?.renderNegotiationsList?.(gs());
 
             showToast(
                 `📬 Oferta enviada a ${player.name}. Respuesta en ${delay} jornada${delay > 1 ? 's' : ''}.`,

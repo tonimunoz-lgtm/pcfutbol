@@ -415,7 +415,7 @@ function renderPlayerMarketList(players) {
   
     let playersHtml = players.map((p, idx) => {  
         const free = !!p.isFreeAgent;
-        const estado = free ? 'Libre' : p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No Disponible');  
+        const estado = free ? 'Libre' : (p.transferListed && p.loanListed) ? 'Transferible · Cedible' : p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No disponible');  
         const askingPrice = free ? 'GRATIS' : p.transferListed ? (p.askingPrice || 0).toLocaleString('es-ES') + '€' : '-';  
         const clauseAmount = free ? null : (p.releaseClause || ((p.value || 0) * 3));
         
@@ -638,6 +638,7 @@ function renderCalendarPage(state) {
   
         const myMatch = jornadaMatches.find(m => m.home === state.team || m.away === state.team);
         calendarHtml += `  
+          <div class="pcf-cal-card ${myMatch ? 'has-mine' : ''} ${state.week === i ? 'current' : ''}">
             <h2 class="pcf-cal-week ${state.week === i ? 'current' : ''}" id="pcf-cal-j${i}">Jornada ${i}${state.week === i ? ' · próxima' : ''}${myMatch ? ` <span class="pcf-cal-mine">⭐ ${myMatch.home === state.team ? 'vs ' + myMatch.away + ' (casa)' : 'en ' + myMatch.home}</span>` : ''}</h2>  
             <table class="pcf-cal-table">  
                 <thead>  
@@ -673,6 +674,7 @@ function renderCalendarPage(state) {
         calendarHtml += `  
                 </tbody>  
             </table>  
+          </div>
         `;  
     }  
   
@@ -680,7 +682,7 @@ function renderCalendarPage(state) {
     calendarContent.innerHTML = `<div class="pcf-cal-toolbar">
         <label><input type="checkbox" ${onlyMine ? 'checked' : ''} onchange="window.gameLogic.updateGameState({calendarOnlyMine:this.checked}); window.ui.renderCalendarPage(window.gameLogic.getGameState())"> Solo mis partidos</label>
         <button class="btn btn-sm" onclick="document.getElementById('pcf-cal-j${state.week}')?.scrollIntoView({behavior:'smooth',block:'start'})">⏩ Ir a la próxima jornada</button>
-    </div><div class="${onlyMine ? 'pcf-cal-only-mine' : ''}">` + calendarHtml + `</div>`;
+    </div><div class="pcf-cal-grid ${onlyMine ? 'pcf-cal-only-mine' : ''}">` + calendarHtml + `</div>`;
 }  
   
   

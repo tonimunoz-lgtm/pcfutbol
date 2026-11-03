@@ -167,10 +167,29 @@
                 const s = filters.searchName.toLowerCase();
                 all = all.filter(p => (p.name || '').toLowerCase().includes(s));
             }
-            if (filters.transferListed) all = all.filter(p => p.transferListed === true);
-            if (filters.loanListed)     all = all.filter(p => p.loanListed === true);
+            // Categorías (se suman): transferibles, cedibles y libres. Sin marcar ninguna: todos.
+            const freeChecked = document.getElementById('marketFreeAgents')?.checked || false;
+            const listedChecked = filters.transferListed || filters.loanListed;
+            const noneChecked = !listedChecked && !freeChecked;
 
-            all = all.slice(0, 30 + scoutLevel * 10);
+            let listed = [];
+            if (noneChecked) listed = all;
+            else if (listedChecked) listed = all.filter(p => (filters.transferListed && p.transferListed) || (filters.loanListed && p.loanListed));
+
+            const passes = p =>
+                (filters.position === 'ALL' || p.position === filters.position) &&
+                (!filters.minOverall || (p.overall || 0) >= filters.minOverall) &&
+                (filters.maxAge >= 100 || (p.age || 99) <= filters.maxAge) &&
+                (!filters.searchName || (p.name || '').toLowerCase().includes(filters.searchName.toLowerCase()));
+            const free = (noneChecked || freeChecked)
+                ? (state.freeAgentsPool || []).filter(passes).map(a => ({
+                    ...a, isFreeAgent: true, club: 'Sin club', potential: a.potential || a.overall,
+                    value: window.pcfEconomy ? window.pcfEconomy.marketValue(a) : (a.value || 0)
+                  }))
+                : [];
+
+            const limit = 30 + scoutLevel * 10;
+            all = [...listed.slice(0, limit), ...free].sort((a, b) => (b.overall || 0) - (a.overall || 0));
             window.ui.renderPlayerMarketList(all);
         };
         console.log('searchPlayersMarket interceptado');

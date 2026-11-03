@@ -677,15 +677,10 @@ function updateStandingsColors() {
         // ── RESALTAR EQUIPO DEL JUGADOR ──────────────────────
         if (row.classList.contains('my-team-row')) {
             // Preservar el color de zona pero añadir borde izquierdo doble y fondo más intenso
-            const currentBg = row.style.background;
-            if (currentBg && currentBg !== '') {
-                // Hay zona de color — intensificar fondo y añadir borde derecho
-                row.style.background = currentBg.replace(/[\d.]+\)$/, '0.45)');
-            } else {
-                row.style.background = 'rgba(233,69,96,0.22)';
-            }
-            row.style.borderLeft   = '4px solid #e94560';
-            row.style.borderRight  = '3px solid rgba(233,69,96,0.6)';
+            // Tu equipo: toda la fila resaltada, como en el calendario. La marca de la
+            // izquierda queda solo para las zonas (Europa, ascenso, descenso).
+            row.classList.add('pcf-my-row');
+            row.style.borderRight  = '';
             row.style.fontWeight   = 'bold';
             // Añadir ⭐ al nombre si no lo tiene ya
             const nameCell = row.querySelector('.team-name, td:nth-child(2)');

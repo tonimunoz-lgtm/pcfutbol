@@ -291,6 +291,10 @@
 
     // Parchear searchPlayersMarket para incluir agentes libres en resultados
     function patchSearchPlayersMarket() {
+        // La búsqueda unificada (injector-transfer-market.js) ya incluye a los libres
+        // con la misma tabla y filtros; no se sustituye aquí.
+        window._faSearchPatched = true;
+        return;
         const orig = window.searchPlayersMarket;
         if (!orig || window._faSearchPatched) return;
         window._faSearchPatched = true;

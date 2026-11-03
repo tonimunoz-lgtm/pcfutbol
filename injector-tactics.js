@@ -185,6 +185,19 @@
         if (a === undefined && df === undefined) return '';
         return `<div style="font-size:.66em;margin-top:5px;color:#e6eefb;">⚔️ ${pctTxt(a)} · 🛡️ ${pctTxt(df)}</div>`;
     }
+    function ensureSectionStyles() {
+        if (document.getElementById('tcSecStyles')) return;
+        const st = document.createElement('style');
+        st.id = 'tcSecStyles';
+        st.textContent = `
+        .tc-sec { margin-bottom:14px; border-radius:6px; padding:10px 12px 12px; border:1px solid rgba(255,255,255,.1);
+            border-left:5px solid var(--sec); background:linear-gradient(90deg, color-mix(in srgb, var(--sec) 16%, transparent), rgba(255,255,255,.02) 60%); }
+        .tc-sec-label { display:inline-block; color:#06142e; background:var(--sec); font-size:.74em; text-transform:uppercase; letter-spacing:.1em;
+            font-weight:800; padding:3px 10px; border-radius:3px; margin-bottom:9px; }
+        .tc-sec-formation { --sec:#4fc3f7; } .tc-sec-mentality { --sec:#ba68c8; }
+        .tc-sec-press { --sec:#ff8a65; } .tc-sec-instr { --sec:#aed581; }`;
+        document.head.appendChild(st);
+    }
     function renderCards(dataObj, currentVal, onClickFn, cols, extraFn) {
         const entries = Object.entries(dataObj);
         const gridClass = cols === 3 ? 'tc-grid-3' : 'tc-grid-5';
@@ -339,6 +352,7 @@
     }
 
     function refreshExtras() {
+        ensureSectionStyles();
         const extras = document.getElementById('tactics-extras');
         if (!extras) return;
         const s = gs();
@@ -371,8 +385,8 @@
         </div>
 
         <!-- FORMACIÓN -->
-        <div style="margin-bottom:14px;">
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
+        <div class="tc-sec tc-sec-formation">
+            <div class="tc-sec-label">
                 🔲 Formación
             </div>
             ${(() => {
@@ -389,24 +403,24 @@
         </div>
 
         <!-- MENTALIDAD -->
-        <div style="margin-bottom:14px;">
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
+        <div class="tc-sec tc-sec-mentality">
+            <div class="tc-sec-label">
                 🧠 Mentalidad
             </div>
             ${renderCards(MENTALITY_DATA, mentality, 'window._tacticsSetMentality', 3)}
         </div>
 
         <!-- PRESIÓN -->
-        <div style="margin-bottom:14px;">
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
+        <div class="tc-sec tc-sec-press">
+            <div class="tc-sec-label">
                 💪 Estilo de presión
             </div>
             ${renderCards(PRESS_DATA, pressStyle, 'window._tacticsSetPress', 3)}
         </div>
 
         <!-- INSTRUCCIÓN ESPECIAL -->
-        <div style="margin-bottom:14px;">
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
+        <div class="tc-sec tc-sec-instr">
+            <div class="tc-sec-label">
                 📋 Instrucción especial
             </div>
             ${renderCards(INSTRUCTION_DATA, specialInstr, 'window._tacticsSetInstruction', 5)}

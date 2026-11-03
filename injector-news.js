@@ -32,6 +32,17 @@
         .pcf-news-item.is-old { opacity:.72; }
         .pcf-news-new { display:inline-block; background:var(--pcf-gold,#ffd24a); color:#06142e; font-weight:800; font-size:.7em;
             letter-spacing:.06em; border-radius:3px; padding:1px 6px; margin-right:6px; vertical-align:middle; }
+        #pcfNewsGrid { display:grid; grid-template-columns:minmax(280px,1fr) minmax(320px,1.35fr); gap:16px; align-items:start; }
+        @media (max-width: 900px) { #pcfNewsGrid { grid-template-columns:1fr; } }
+        .pcf-news-col { background:linear-gradient(180deg,rgba(36,80,142,.45) 0%,rgba(7,22,48,.75) 100%); border:1px solid #06142e;
+            border-radius:3px; padding:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,.2), inset 0 -3px 10px rgba(0,0,0,.45); }
+        .pcf-news-col > h2, .pcf-news-head { font-family:'Saira Condensed',sans-serif; font-size:1rem !important; letter-spacing:.1em; text-transform:uppercase;
+            margin:0 0 8px !important; display:flex; align-items:center; gap:8px; }
+        .pcf-news-col.urgent { border-top:3px solid #e94560; }
+        .pcf-news-col.fresh { border-top:3px solid var(--pcf-gold,#ffd24a); margin-bottom:16px; }
+        .pcf-news-col.older { border-top:3px solid #7aa0d4; }
+        .pcf-news-hint { font-size:.76rem; color:#cfe0ff; opacity:.85; margin:-2px 0 8px; }
+        #newsFeed { background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; }
         .news-badge { background:#1e88e5; color:#fff; border-radius:10px; padding:1px 7px; font-size:.72em; font-weight:800; margin-left:6px; vertical-align:middle; }`;
         document.head.appendChild(st);
     }
@@ -43,6 +54,8 @@
     function updateBadge() {
         const btn = document.querySelector('[onclick*="dashboard"]');
         if (!btn) return;
+        const ub = btn.querySelector('.urgent-badge');
+        if (ub) ub.title = `${ub.textContent} acción(es) urgente(s) pendiente(s): renovaciones, alineación, plantilla... Desaparece al resolverlas.`;
         btn.querySelector('.news-badge')?.remove();
         const n = unreadCount(gs());
         if (n > 0) {
@@ -61,7 +74,37 @@
         </div>`;
     }
 
+    function layoutDashboard() {
+        const page = document.getElementById('dashboard');
+        const feed = document.getElementById('newsFeed');
+        if (!page || !feed) return;
+        const h1 = page.querySelector('.page-header h1');
+        if (h1 && !h1.dataset.pcf) { h1.dataset.pcf = '1'; h1.textContent = '📰 Centro de noticias'; }
+        [...page.querySelectorAll(':scope > h2')].forEach(h => { if (/Últimas Noticias/i.test(h.textContent)) h.style.display = 'none'; });
+        let grid = document.getElementById('pcfNewsGrid');
+        if (!grid) {
+            grid = document.createElement('div');
+            grid.id = 'pcfNewsGrid';
+            grid.innerHTML = `<div class="pcf-news-col urgent" id="pcfNewsUrgentCol"></div><div id="pcfNewsRightCol"></div>`;
+            feed.parentNode.insertBefore(grid, feed);
+        }
+        const urgentWrap = document.getElementById('urgent-panel')?.parentElement;
+        const left = document.getElementById('pcfNewsUrgentCol');
+        if (urgentWrap && urgentWrap.parentElement !== left) {
+            urgentWrap.style.marginBottom = '0';
+            left.appendChild(urgentWrap);
+            const h = urgentWrap.querySelector('h2');
+            if (h && !h.dataset.pcf) {
+                h.dataset.pcf = '1';
+                h.insertAdjacentHTML('afterend', '<div class="pcf-news-hint">Cosas que requieren una decisión tuya. El número naranja del botón Noticias las cuenta y desaparece cuando las resuelves (leer las noticias no lo quita).</div>');
+            }
+        }
+        const right = document.getElementById('pcfNewsRightCol');
+        if (feed.parentElement !== right) right.appendChild(feed);
+    }
+
     function render() {
+        layoutDashboard();
         const feed = document.getElementById('newsFeed');
         const st = gs();
         if (!feed || !st) return;
@@ -78,9 +121,15 @@
                 </label>
                 <button class="btn btn-sm" id="pcfNewsMarkAll" ${fresh.length ? '' : 'disabled'}>✓ Marcar todo como leído</button>
             </div>
-            <div class="pcf-news-group">🆕 Nuevas (${fresh.length})</div>
-            ${fresh.length ? fresh.map(n => itemHtml(n, true)).join('') : '<div class="alert alert-info" style="opacity:.8">No hay noticias nuevas desde tu última visita.</div>'}
-            ${onlyNew ? '' : `<div class="pcf-news-group">Anteriores (${old.length})</div>${old.map(n => itemHtml(n, false)).join('')}`}`;
+            <div class="pcf-news-col fresh">
+                <div class="pcf-news-head" style="color:var(--pcf-gold,#ffd24a)">🆕 Nuevas <span class="news-badge" style="background:#c98a00">${fresh.length}</span></div>
+                <div class="pcf-news-hint">Lo que ha pasado desde tu última visita.</div>
+                ${fresh.length ? fresh.map(n => itemHtml(n, true)).join('') : '<div class="alert alert-info" style="opacity:.8">No hay noticias nuevas desde tu última visita.</div>'}
+            </div>
+            ${onlyNew ? '' : `<div class="pcf-news-col older">
+                <div class="pcf-news-head" style="color:#9fc4f2">🗂️ Anteriores <span class="news-badge" style="background:#455a64">${old.length}</span></div>
+                <div style="max-height:46vh;overflow-y:auto;padding-right:4px">${old.map(n => itemHtml(n, false)).join('')}</div>
+            </div>`}`;
         feed.querySelector('#pcfNewsOnlyNew').onchange = e => { onlyNew = e.target.checked; render(); };
         feed.querySelector('#pcfNewsMarkAll').onclick = () => { highlight = new Set(); markAllRead(); render(); };
         rendering = false;

@@ -297,11 +297,43 @@
         const needed = phase.requires === 'ALL' ? allIds : allIds.filter(u => phase.requires.includes(u.id));
         return needed.filter(u => !(u.cat === 'stadium' ? d.stadiumDone : d.trainingDone).includes(u.id)).map(u => u.name);
     }
+    // Un club que ya tiene un estadio grande ya tiene hechas las mejoras de su fase
+    // (y con 105.000 asientos, todas, también las del centro de entrenamiento).
+    function ensurePrebuilt() {
+        const s = gs();
+        if (!s || !s.team || s.fac_prebuiltFor === s.team) return;
+        const cap = s.stadiumCapacity || 0;
+        const d = getFacData();
+        const uniqS = STADIUM_UPGRADES.filter(u => u.unique).map(u => u.id);
+        const uniqT = TRAINING_UPGRADES.filter(u => u.unique).map(u => u.id);
+        let reqS = [], reqT = [];
+        if (cap >= MAX_STADIUM_CAPACITY) { reqS = uniqS; reqT = uniqT; }
+        else {
+            // Fase en la que está ahora el estadio: sus requisitos ya están hechos
+            const idx = SEAT_PHASES.findIndex(ph => cap <= ph.upTo);
+            const prevUpTo = idx > 0 ? SEAT_PHASES[idx - 1].upTo : 0;
+            const phase = cap > prevUpTo && idx > 0 ? SEAT_PHASES[idx] : null;
+            if (phase && Array.isArray(phase.requires)) reqS = phase.requires.filter(id => uniqS.includes(id));
+        }
+        d.stadiumDone = [...new Set([...d.stadiumDone, ...reqS])];
+        d.trainingDone = [...new Set([...d.trainingDone, ...reqT])];
+        saveFac(d);
+        save({ fac_prebuiltFor: s.team });
+    }
+    function stadiumComplete() {
+        return (gs()?.stadiumCapacity || 0) >= MAX_STADIUM_CAPACITY;
+    }
+
     function seatsInConstruction() {
         return getFacData().construction.some(c => c.effects?.capacityAdd > 0);
     }
 
     async function startConstruction(upgradeId, category) {
+        ensurePrebuilt();
+        if (stadiumComplete()) {
+            (window.pcfNotify || alert)('Instalaciones', `El estadio está completado (${fmt(MAX_STADIUM_CAPACITY)} asientos) y todas las instalaciones están construidas. No quedan más obras.`);
+            return;
+        }
         const s = gs();
         if (!s) return;
 
@@ -527,10 +559,41 @@
     };
 
     // ── Construir la página de instalaciones ──────────────────────
+    function renderPlan(s, d) {
+        const cap = s.stadiumCapacity || 0;
+        const names = Object.fromEntries([...STADIUM_UPGRADES, ...TRAINING_UPGRADES].map(u => [u.id, u.name]));
+        const done = new Set([...d.stadiumDone, ...d.trainingDone]);
+        const allUnique = [...STADIUM_UPGRADES, ...TRAINING_UPGRADES].filter(u => u.unique).map(u => u.id);
+        let prev = 0;
+        const rows = SEAT_PHASES.map((ph, i) => {
+            const reqIds = ph.requires === 'ALL' ? allUnique : ph.requires;
+            const missing = reqIds.filter(id => !done.has(id));
+            const reached = cap > prev || (i === 0);
+            const current = cap > prev && cap <= ph.upTo;
+            const status = cap >= ph.upTo ? '✅' : current ? '🏗️' : missing.length ? '🔒' : '🟢';
+            const label = `${fmt(prev)} → ${fmt(ph.upTo)}`;
+            const reqTxt = ph.requires === 'ALL'
+                ? (missing.length ? `Todas las mejoras (faltan ${missing.length})` : 'Todas las mejoras ✓')
+                : reqIds.length ? reqIds.map(id => `<span style="opacity:${done.has(id) ? .55 : 1}">${done.has(id) ? '✓' : '✗'} ${names[id] || id}</span>`).join(' · ') : 'Sin requisitos';
+            prev = ph.upTo;
+            return `<div style="display:grid;grid-template-columns:28px 150px 1fr;gap:8px;align-items:center;padding:6px 8px;border-radius:3px;
+                        ${current ? 'background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.45);' : 'border:1px solid transparent;'}font-size:.8em;">
+                    <span style="font-size:1.1em">${status}</span>
+                    <strong style="color:${current ? '#FFD700' : '#e6eefb'}">${label}</strong>
+                    <span style="color:#cfe0ff;line-height:1.5">${reqTxt}</span></div>`;
+        }).join('');
+        return `<div class="data-box" style="padding:12px;margin-bottom:14px;">
+            <div style="color:#FFD700;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;font-size:.85em;margin-bottom:6px;">
+                🗺️ Plan de obras del estadio ${stadiumComplete() ? '— <span style="color:#7CFC9A">completado</span>' : `— aforo actual ${fmt(cap)}`}</div>
+            <div style="color:#cfe0ff;font-size:.76em;margin-bottom:8px;">Para pasar a la siguiente fase de asientos hay que construir antes sus mejoras. La última fase (hasta 105.000) exige tener todo construido, también el centro de entrenamiento.</div>
+            ${rows}</div>`;
+    }
+
     function buildPage() {
         const container = document.getElementById('facilities');
         if (!container) return;
 
+        ensurePrebuilt();
         const s = gs();
         if (!s) return;
         const d = getFacData();
@@ -597,6 +660,9 @@
                 <div style="color:#444;font-size:.7em;text-align:center;">Admin → foto</div>
             </div>
         </div>
+
+        <!-- PLAN DE OBRAS -->
+        ${renderPlan(s, d)}
 
         <!-- OBRAS EN CURSO -->
         ${constructionHTML}

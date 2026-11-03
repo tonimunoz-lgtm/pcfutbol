@@ -982,3 +982,31 @@ img.crest-img {
 }
 #matchSummaryModal table, #matchSummaryModal .stats-section,
 .cr-box table, .cu-box table { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+
+/* ============================================================
+   MEJORAS — Calendario compacto en tarjetas
+   ============================================================ */
+.pcf-cal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
+.pcf-cal-card { background:linear-gradient(180deg,rgba(36,80,142,.45) 0%,rgba(7,22,48,.75) 100%); border:1px solid #06142e;
+    border-radius:3px; padding:8px; box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
+.pcf-cal-card.current { border-color: #7CFC9A; box-shadow: 0 0 0 1px #7CFC9A, inset 0 1px 0 rgba(255,255,255,.18); }
+.pcf-cal-card .pcf-cal-week { font-size:.9rem !important; margin:0 0 6px !important; display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+.pcf-cal-card .pcf-cal-mine { font-size:.68rem; margin-left:0; }
+.pcf-cal-card table { font-size:.74rem; margin:0; width:100%; }
+.pcf-cal-card th { padding:3px 6px; font-size:.68rem; }
+.pcf-cal-card td { padding:2px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+.pcf-cal-card td:last-child { text-align:center; width:46px; font-weight:800; }
+.pcf-cal-only-mine .pcf-cal-card:not(.has-mine) { display:none; }
+.pcf-cal-only-mine { grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); }
+.pcf-cal-only-mine .pcf-cal-card table thead { display:none; }
+/* Clasificación: tu equipo con toda la fila resaltada */
+tr.pcf-my-row td, tr.my-team-row td { background:#ffe69a !important; color:#0a1a35 !important; font-weight:800; }
+/* Gestión comercial en tarjetas */
+.pcf-com-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(380px, 1fr)); gap:14px; margin-top:14px; align-items:start; }
+.pcf-com-card { background:linear-gradient(180deg,rgba(36,80,142,.45) 0%,rgba(7,22,48,.75) 100%); border:1px solid #06142e;
+    border-top:3px solid var(--sec); border-radius:3px; padding:12px 14px; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.pcf-com-label { display:inline-block; background:var(--sec); color:#06142e; font-family:'Saira Condensed',sans-serif; font-weight:800;
+    letter-spacing:.1em; text-transform:uppercase; font-size:.78rem; padding:3px 10px; border-radius:3px; margin-bottom:10px; }
+.pcf-com-card p { font-size:.85rem; }
+.pcf-com-card input[type=range] { width:100%; }
+.pcf-com-card [id="fd-btn-offers"] { margin-bottom:0 !important; }
