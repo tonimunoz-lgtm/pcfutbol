@@ -79,9 +79,7 @@
         const feed = document.getElementById('newsFeed');
         if (!page || !feed) return;
         const h1 = page.querySelector('.page-header h1');
-        if (h1 && !h1.dataset.pcf) {
-    h1.dataset.pcf = '1';
-    h1.innerHTML = '<img src="assets/iconos/noticias.webp" style="width:32px; height:32px; object-fit:contain; vertical-align:middle; margin-right:10px;"> Centro de noticias';}
+        if (h1 && !h1.dataset.pcf) { h1.dataset.pcf = '1'; h1.textContent = '📰 Centro de noticias'; }
         [...page.querySelectorAll(':scope > h2')].forEach(h => { if (/Últimas Noticias/i.test(h.textContent)) h.style.display = 'none'; });
         let grid = document.getElementById('pcfNewsGrid');
         if (!grid) {
