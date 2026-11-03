@@ -933,14 +933,14 @@ img.crest-img {
 
 /* Tablas dentro de ventanas oscuras (resumen del partido, copas):
    el tema pinta las celdas en claro; aquí van oscuras con texto claro */
-#matchSummaryModal td, #matchSummaryModal .stats-table td,
+#matchSummaryModal td, #matchSummaryModal .stats-table td, #last-result-content td,
 .cr-box td, .cu-box td {
     background: rgba(255,255,255,.05) !important;
     color: #e6eefb !important;
     border: 0 !important;
     border-bottom: 1px solid rgba(122,160,212,.25) !important;
 }
-#matchSummaryModal tr:nth-child(even) td { background: rgba(255,255,255,.09) !important; }
+#matchSummaryModal tr:nth-child(even) td, #last-result-content tr:nth-child(even) td { background: rgba(255,255,255,.09) !important; }
 #matchSummaryModal tr:hover td { background: rgba(255,210,74,.12) !important; }
 #matchSummaryModal td strong, #matchSummaryModal td b { color: #fff !important; }
 
@@ -980,7 +980,7 @@ img.crest-img {
 .pcf-skin-sheet select, .pcf-skin-sheet input[type=number], .pcf-skin-sheet input[type=text] {
     background: #e8eef8 !important; color: #0a1a35 !important; border: 1px solid #06142e !important; border-radius: 3px !important;
 }
-#matchSummaryModal table, #matchSummaryModal .stats-section,
+#matchSummaryModal table, #matchSummaryModal .stats-section, #last-result-content table, #last-result-content .stats-section,
 .cr-box table, .cu-box table { background: transparent !important; box-shadow: none !important; border: 0 !important; }
 
 /* ============================================================
@@ -1047,3 +1047,7 @@ th.pcf-col-media { background: linear-gradient(180deg,#ffd59a 0%,#f0a33a 46%,#cf
 td.pcf-col-media { background:#fff1c2 !important; color:#0a1a35 !important; font-weight:900 !important; font-size:1.08em; text-align:center; }
 tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
 #matchSummaryModal td.pcf-col-media { background: rgba(255,210,74,.15) !important; color:#fff !important; }
+
+/* Icono de cada sección en su título (mismo que el botón del menú) */
+.pcf-page-icon { display:inline-block; width:1.55em; height:1.55em; object-fit:contain; vertical-align:middle; margin:-.25em .45em 0 0;
+    filter:drop-shadow(1px 2px 1px rgba(0,0,0,.55)); }

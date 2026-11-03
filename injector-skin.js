@@ -141,6 +141,35 @@
         page.querySelectorAll('.pcf-com-card').forEach(sec => skin(sec, null));
     }
 
+    // ── Iconos nuevos también en el título de cada sección ──────
+    const PAGE_ICONS = {
+        dashboard: 'noticias', standings: 'podio', calendar: 'calendario', 'last-result': 'marcador',
+        lineup: 'alineacion', tactics: 'tactica', 'rival-analysis': 'rival', trainingPanel: 'entrenamiento',
+        academy: 'cantera', squad: 'plantilla', negotiations: 'negociaciones', transfers: 'fichar',
+        facilities: 'estadio', commercial: 'entradas', finance: 'caja', staff: 'empleados'
+    };
+    // Emoji al principio del título (con o sin selector de variación) y el espacio siguiente
+    const LEADING_EMOJI = /^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation})(?:\uFE0F|\u200D(?:\p{Extended_Pictographic}))*\s*/u;
+    function pageIcons() {
+        Object.entries(PAGE_ICONS).forEach(([id, icon]) => {
+            const root = document.getElementById(id);
+            if (!root) return;
+            const h1 = root.querySelector('.page-header h1, h1');
+            if (!h1) return;
+            const first = h1.firstElementChild;
+            if (first && first.classList.contains('pcf-page-icon')) return;
+            // quitar el emoji inicial del primer nodo de texto
+            const tn = [...h1.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+            if (tn) tn.textContent = tn.textContent.replace(/^\s+/, '').replace(LEADING_EMOJI, '');
+            const img = document.createElement('img');
+            img.className = 'pcf-page-icon';
+            img.src = `assets/iconos/${icon}.webp`;
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
+            h1.insertBefore(img, h1.firstChild);
+        });
+    }
+
     let pending = false;
     const obs = new MutationObserver(() => {
         if (pending) return;
@@ -148,7 +177,7 @@
         requestAnimationFrame(() => {
             pending = false;
             obs.disconnect();              // nuestros cambios no vuelven a disparar el observador
-            try { skinTraining(); skinScout(); skinCommercial(); labelHeaders(); } finally { observe(); }
+            try { skinTraining(); skinScout(); skinCommercial(); labelHeaders(); pageIcons(); } finally { observe(); }
         });
     });
     const observe = () => obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });

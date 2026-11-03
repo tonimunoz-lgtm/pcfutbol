@@ -139,8 +139,18 @@ console.log('🎯 Injector Promanager cargando...');
             + '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">' + cardsHTML + '</div>'
             + '<div style="background:rgba(102,126,234,0.1);border-radius:8px;padding:12px;font-size:0.79em;color:#ccc;text-align:center;">'
             + '💡 Haz clic en un club para aceptar su oferta. Gana partidos para subir tu reputación y recibir ofertas de equipos mejores.'
-            + '</div></div>';
+            + '</div>'
+            + '<div style="text-align:center;margin-top:16px;"><button class="btn page-close-btn" onclick="window._pmBack()">← Volver a elegir modo de juego</button></div>'
+            + '</div>';
         document.body.appendChild(modal);
+
+        // Arrepentirse: volver a "¿Cómo quieres jugar?" sin empezar la carrera
+        window._pmBack = function() {
+            delete window._pmPick; delete window._pmBack;
+            removeModal('pmInitialModal');
+            pmState.active = false;
+            if (typeof window.openModal === 'function') window.openModal('gameMode');
+        };
 
         window._pmPick = function(idx) {
             delete window._pmPick;

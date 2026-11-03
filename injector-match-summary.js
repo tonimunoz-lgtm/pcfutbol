@@ -257,8 +257,28 @@ window.injectMatchSummary = function(matchResult) {
         </div>
     `;
     
-    // Añadir estilos inline (para no modificar style.css)
+    ensureSummaryStyles();
+    document.body.appendChild(modal);
+    console.log('✅ Modal profesional añadido al DOM');
+    
+    // Auto-cerrar después de 15 segundos
+    setTimeout(() => {
+        const existingModal = document.getElementById('matchSummaryModal');
+        if (existingModal) {
+            existingModal.remove();
+            console.log('⏱️ Modal cerrado automáticamente');
+        }
+    }, 30000);
+};
+
+console.log('✅ injector-match-summary.js PROFESIONAL cargado');
+
+
+// Estilos del resumen (también los usa la página Resultados): una sola vez, al cargar
+function ensureSummaryStyles() {
+    if (document.getElementById('pcfMatchSummaryStyles')) return;
     const style = document.createElement('style');
+    style.id = 'pcfMatchSummaryStyles';
     style.innerHTML = `
         #matchSummaryModal {
             position: fixed;
@@ -279,7 +299,7 @@ window.injectMatchSummary = function(matchResult) {
             to { opacity: 1; }
         }
         
-        #matchSummaryModal .match-container {
+        :is(#matchSummaryModal, #last-result-content) .match-container {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             border-radius: 20px;
             padding: 20px 24px;
@@ -303,7 +323,7 @@ window.injectMatchSummary = function(matchResult) {
             }
         }
         
-        #matchSummaryModal .match-close {
+        :is(#matchSummaryModal, #last-result-content) .match-close {
             position: absolute;
             top: 15px;
             right: 15px;
@@ -318,12 +338,12 @@ window.injectMatchSummary = function(matchResult) {
             transition: all 0.2s;
         }
         
-        #matchSummaryModal .match-close:hover {
+        :is(#matchSummaryModal, #last-result-content) .match-close:hover {
             background: rgba(255, 59, 48, 0.8);
             transform: rotate(90deg);
         }
         
-        #matchSummaryModal .match-header {
+        :is(#matchSummaryModal, #last-result-content) .match-header {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -333,30 +353,30 @@ window.injectMatchSummary = function(matchResult) {
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
         
-        #matchSummaryModal .match-team {
+        :is(#matchSummaryModal, #last-result-content) .match-team {
             text-align: center;
         }
         
-        #matchSummaryModal .team-name {
+        :is(#matchSummaryModal, #last-result-content) .team-name {
             font-size: 1.3em;
             font-weight: bold;
             color: #fff;
             margin-bottom: 10px;
         }
         
-        #matchSummaryModal .team-score {
+        :is(#matchSummaryModal, #last-result-content) .team-score {
             font-size: 3.5em;
             font-weight: bold;
             color: #4CAF50;
             text-shadow: 0 2px 10px rgba(76, 175, 80, 0.5);
         }
         
-        #matchSummaryModal .match-separator {
+        :is(#matchSummaryModal, #last-result-content) .match-separator {
             font-size: 2.5em;
             color: rgba(255, 255, 255, 0.3);
         }
         
-        #matchSummaryModal h3 {
+        :is(#matchSummaryModal, #last-result-content) h3 {
             color: #FFD700;
             margin: 25px 0 15px 0;
             font-size: 1.1em;
@@ -364,18 +384,18 @@ window.injectMatchSummary = function(matchResult) {
             letter-spacing: 1px;
         }
         
-        #matchSummaryModal .goals-list,
-        #matchSummaryModal .cards-list,
-        #matchSummaryModal .injuries-list {
+        :is(#matchSummaryModal, #last-result-content) .goals-list,
+        :is(#matchSummaryModal, #last-result-content) .cards-list,
+        :is(#matchSummaryModal, #last-result-content) .injuries-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin-bottom: 20px;
         }
         
-        #matchSummaryModal .goal-item,
-        #matchSummaryModal .card-item,
-        #matchSummaryModal .injury-item {
+        :is(#matchSummaryModal, #last-result-content) .goal-item,
+        :is(#matchSummaryModal, #last-result-content) .card-item,
+        :is(#matchSummaryModal, #last-result-content) .injury-item {
             background: rgba(255, 255, 255, 0.05);
             padding: 10px;
             border-radius: 8px;
@@ -385,57 +405,57 @@ window.injectMatchSummary = function(matchResult) {
             border-left: 3px solid;
         }
         
-        #matchSummaryModal .goal-item.home,
-        #matchSummaryModal .card-item.home {
+        :is(#matchSummaryModal, #last-result-content) .goal-item.home,
+        :is(#matchSummaryModal, #last-result-content) .card-item.home {
             border-color: #4CAF50;
         }
         
-        #matchSummaryModal .goal-item.away,
-        #matchSummaryModal .card-item.away {
+        :is(#matchSummaryModal, #last-result-content) .goal-item.away,
+        :is(#matchSummaryModal, #last-result-content) .card-item.away {
             border-color: #FF5722;
         }
         
-        #matchSummaryModal .goal-minute,
-        #matchSummaryModal .card-minute,
-        #matchSummaryModal .injury-minute {
+        :is(#matchSummaryModal, #last-result-content) .goal-minute,
+        :is(#matchSummaryModal, #last-result-content) .card-minute,
+        :is(#matchSummaryModal, #last-result-content) .injury-minute {
             color: #FFD700;
             font-weight: bold;
             min-width: 35px;
         }
         
-        #matchSummaryModal .goal-scorer,
-        #matchSummaryModal .card-player,
-        #matchSummaryModal .injury-player {
+        :is(#matchSummaryModal, #last-result-content) .goal-scorer,
+        :is(#matchSummaryModal, #last-result-content) .card-player,
+        :is(#matchSummaryModal, #last-result-content) .injury-player {
             color: white;
             font-weight: 600;
             flex: 1;
         }
         
-        #matchSummaryModal .goal-team,
-        #matchSummaryModal .card-team,
-        #matchSummaryModal .injury-team {
+        :is(#matchSummaryModal, #last-result-content) .goal-team,
+        :is(#matchSummaryModal, #last-result-content) .card-team,
+        :is(#matchSummaryModal, #last-result-content) .injury-team {
             color: rgba(255, 255, 255, 0.5);
             font-size: 0.9em;
         }
         
-        #matchSummaryModal .card-icon {
+        :is(#matchSummaryModal, #last-result-content) .card-icon {
             font-size: 1.2em;
         }
         
-        #matchSummaryModal .poss-row {
+        :is(#matchSummaryModal, #last-result-content) .poss-row {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 10px;
         }
         
-        #matchSummaryModal .poss-label {
+        :is(#matchSummaryModal, #last-result-content) .poss-label {
             color: white;
             min-width: 120px;
             font-size: 0.95em;
         }
         
-        #matchSummaryModal .poss-bar {
+        :is(#matchSummaryModal, #last-result-content) .poss-bar {
             flex: 1;
             height: 24px;
             background: rgba(255, 255, 255, 0.1);
@@ -443,81 +463,81 @@ window.injectMatchSummary = function(matchResult) {
             overflow: hidden;
         }
         
-        #matchSummaryModal .poss-fill {
+        :is(#matchSummaryModal, #last-result-content) .poss-fill {
             height: 100%;
             transition: width 1s ease-out;
         }
         
-        #matchSummaryModal .poss-fill.home {
+        :is(#matchSummaryModal, #last-result-content) .poss-fill.home {
             background: linear-gradient(90deg, #4CAF50, #66BB6A);
         }
         
-        #matchSummaryModal .poss-fill.away {
+        :is(#matchSummaryModal, #last-result-content) .poss-fill.away {
             background: linear-gradient(90deg, #FF5722, #FF7043);
         }
         
-        #matchSummaryModal .poss-value {
+        :is(#matchSummaryModal, #last-result-content) .poss-value {
             color: #FFD700;
             font-weight: bold;
             min-width: 45px;
             text-align: right;
         }
         
-        #matchSummaryModal .ms-compact { display:flex; flex-direction:column; gap:10px; }
-        #matchSummaryModal .ms-block h3 { margin:0 0 6px; font-size:.82rem; text-align:center; }
-        #matchSummaryModal .ms-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-        #matchSummaryModal .ms-col { display:flex; flex-direction:column; gap:3px; }
-        #matchSummaryModal .ms-col.home { border-left:3px solid #4CAF50; padding-left:8px; text-align:left; align-items:flex-start; }
-        #matchSummaryModal .ms-col.away { border-right:3px solid #e53935; padding-right:8px; text-align:right; align-items:flex-end; }
-        #matchSummaryModal .ms-ev { font-size:.85rem; line-height:1.3; }
-        #matchSummaryModal .ms-min { color:#FFD700; font-weight:800; }
-        #matchSummaryModal .ms-none { opacity:.45; font-size:.85rem; }
-        #matchSummaryModal .ms-poss { display:grid; grid-template-columns:42px 1fr 42px; align-items:center; gap:8px; font-weight:800; font-size:.85rem; }
-        #matchSummaryModal .ms-poss span:last-child { text-align:right; }
-        #matchSummaryModal .ms-poss-bar { height:10px; border-radius:5px; background:#e53935; overflow:hidden; }
-        #matchSummaryModal .ms-poss-bar div { height:100%; background:#4CAF50; }
-        #matchSummaryModal .ms-stats { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; }
-        #matchSummaryModal .ms-stat { display:grid; grid-template-columns:38px 1fr 38px; align-items:center; font-size:.8rem; padding:3px 6px;
+        :is(#matchSummaryModal, #last-result-content) .ms-compact { display:flex; flex-direction:column; gap:10px; }
+        :is(#matchSummaryModal, #last-result-content) .ms-block h3 { margin:0 0 6px; font-size:.82rem; text-align:center; }
+        :is(#matchSummaryModal, #last-result-content) .ms-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        :is(#matchSummaryModal, #last-result-content) .ms-col { display:flex; flex-direction:column; gap:3px; }
+        :is(#matchSummaryModal, #last-result-content) .ms-col.home { border-left:3px solid #4CAF50; padding-left:8px; text-align:left; align-items:flex-start; }
+        :is(#matchSummaryModal, #last-result-content) .ms-col.away { border-right:3px solid #e53935; padding-right:8px; text-align:right; align-items:flex-end; }
+        :is(#matchSummaryModal, #last-result-content) .ms-ev { font-size:.85rem; line-height:1.3; }
+        :is(#matchSummaryModal, #last-result-content) .ms-min { color:#FFD700; font-weight:800; }
+        :is(#matchSummaryModal, #last-result-content) .ms-none { opacity:.45; font-size:.85rem; }
+        :is(#matchSummaryModal, #last-result-content) .ms-poss { display:grid; grid-template-columns:42px 1fr 42px; align-items:center; gap:8px; font-weight:800; font-size:.85rem; }
+        :is(#matchSummaryModal, #last-result-content) .ms-poss span:last-child { text-align:right; }
+        :is(#matchSummaryModal, #last-result-content) .ms-poss-bar { height:10px; border-radius:5px; background:#e53935; overflow:hidden; }
+        :is(#matchSummaryModal, #last-result-content) .ms-poss-bar div { height:100%; background:#4CAF50; }
+        :is(#matchSummaryModal, #last-result-content) .ms-stats { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; }
+        :is(#matchSummaryModal, #last-result-content) .ms-stat { display:grid; grid-template-columns:38px 1fr 38px; align-items:center; font-size:.8rem; padding:3px 6px;
             background:rgba(255,255,255,.05); border-radius:3px; }
-        #matchSummaryModal .ms-stat span { text-align:center; opacity:.85; }
-        #matchSummaryModal .ms-stat b:last-child { text-align:right; }
-        #matchSummaryModal .stats-table {
+        :is(#matchSummaryModal, #last-result-content) .ms-stat span { text-align:center; opacity:.85; }
+        :is(#matchSummaryModal, #last-result-content) .ms-stat b:last-child { text-align:right; }
+        :is(#matchSummaryModal, #last-result-content) .stats-table {
             width: 100%;
             border-collapse: collapse;
         }
         
-        #matchSummaryModal .stats-table tr {
+        :is(#matchSummaryModal, #last-result-content) .stats-table tr {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        #matchSummaryModal .stats-table td {
+        :is(#matchSummaryModal, #last-result-content) .stats-table td {
             padding: 12px 8px;
             color: white;
         }
         
-        #matchSummaryModal .stat-name {
+        :is(#matchSummaryModal, #last-result-content) .stat-name {
             text-align: center;
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.9em;
         }
         
-        #matchSummaryModal .stat-home,
-        #matchSummaryModal .stat-away {
+        :is(#matchSummaryModal, #last-result-content) .stat-home,
+        :is(#matchSummaryModal, #last-result-content) .stat-away {
             font-weight: bold;
             font-size: 1.1em;
         }
         
-        #matchSummaryModal .stat-home {
+        :is(#matchSummaryModal, #last-result-content) .stat-home {
             text-align: right;
             color: #4CAF50;
         }
         
-        #matchSummaryModal .stat-away {
+        :is(#matchSummaryModal, #last-result-content) .stat-away {
             text-align: left;
             color: #FF5722;
         }
         
-        #matchSummaryModal .btn-continue {
+        :is(#matchSummaryModal, #last-result-content) .btn-continue {
             background: linear-gradient(135deg, #4CAF50, #66BB6A);
             color: white;
             border: none;
@@ -532,24 +552,11 @@ window.injectMatchSummary = function(matchResult) {
             margin-top: 20px;
         }
         
-        #matchSummaryModal .btn-continue:hover {
+        :is(#matchSummaryModal, #last-result-content) .btn-continue:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
         }
     `;
-    
     document.head.appendChild(style);
-    document.body.appendChild(modal);
-    console.log('✅ Modal profesional añadido al DOM');
-    
-    // Auto-cerrar después de 15 segundos
-    setTimeout(() => {
-        const existingModal = document.getElementById('matchSummaryModal');
-        if (existingModal) {
-            existingModal.remove();
-            console.log('⏱️ Modal cerrado automáticamente');
-        }
-    }, 30000);
-};
-
-console.log('✅ injector-match-summary.js PROFESIONAL cargado');
+}
+if (document.head) ensureSummaryStyles(); else document.addEventListener('DOMContentLoaded', ensureSummaryStyles);

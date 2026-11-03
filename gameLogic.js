@@ -75,6 +75,9 @@ const gameState = {
     // NEW: Máximo de semanas en la temporada (dinámico)  
     maxSeasonWeeks: 38  
 };  
+
+// Copia del estado inicial: cada partida nueva parte de aquí (sin restos de la anterior)
+const INITIAL_GAME_STATE = JSON.parse(JSON.stringify(gameState));
   
 function getGameState() {  
     return JSON.parse(JSON.stringify(gameState));  
@@ -466,15 +469,12 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
 // ✅ MODIFICAR selectTeamWithInitialSquad para usar await (línea 454-498)
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
-    // Partida nueva: borrar restos de la anterior que guardan otros módulos
-    // (obras del estadio, ofertas y negociaciones pendientes, candidatos de personal...)
-    Object.keys(gameState).forEach(k => {
-        if (/^(fac_|fd_)/.test(k) || ['pendingBids', 'agreedTerms', 'staffCandidates', 'analystLastReport', 'lastMatchResultHTML',
-            'lastMatchResultAt', 'pendingRenewals', 'negotiationAttempts', 'pendingOffers', 'autoTraining',
-            'calendarOnlyMine', 'scoutResults', 'scoutSearch'].includes(k)) {
-            delete gameState[k];
-        }
-    });
+    // Partida nueva: el estado vuelve al inicial (personal, instalaciones, préstamos,
+    // ofertas, datos de otros módulos...). Solo se conservan los agentes libres del mercado.
+    const keepFreeAgents = gameState.freeAgentsPool;
+    Object.keys(gameState).forEach(k => { delete gameState[k]; });
+    Object.assign(gameState, JSON.parse(JSON.stringify(INITIAL_GAME_STATE)));
+    if (Array.isArray(keepFreeAgents)) gameState.freeAgentsPool = keepFreeAgents;
     // 📄 RESET COMPLETO DEL ESTADO
     Object.assign(gameState, {
         team: teamName,
