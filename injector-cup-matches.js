@@ -1173,6 +1173,7 @@ function hookCupSimulateWeek(){
 
         // 4. Procesar
         const processed=processResult(pending,result);
+        try { if (window.PCFPrizes) window.PCFPrizes.onCupResult(pending, result, processed); } catch (e) { console.error('Premios:', e); }
 
         // 5. Noticia
         const cfg=CUP_CONFIG[pending.type]||CUP_CONFIG.copa;

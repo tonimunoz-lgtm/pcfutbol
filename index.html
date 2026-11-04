@@ -567,7 +567,7 @@
         <table>
             <tr><td>Capacidad Estadio:</td><td id="financeStadiumCapacity">0</td></tr>
             <tr><td>Asistencia Esperada:</td><td id="financeExpectedAttendance">0</td></tr>
-            <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="5" max="100" onchange="window.setTicketPriceFromInput()">€</td></tr>
+            <tr><td>Precio Entrada:</td><td><input type="number" id="ticketPriceInput" min="1" max="100" onchange="window.setTicketPriceFromInput()">€</td></tr>
             <tr><td>Popularidad del Club:</td><td id="financePopularity">0%</td></tr>
             <tr><td>Fanbase:</td><td id="financeFanbase">0</td></tr>
             <tr><td>Merchandising vendido:</td><td id="financeMerchandisingItemsSold">0</td></tr>
@@ -607,7 +607,7 @@
         
         <div style="margin-top: 20px;">
             <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>€):</label>
-            <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" oninput="window.updateTicketPriceDisplay(this.value)" onchange="window.setTicketPriceFromSlider(this.value)">
+            <input type="range" id="ticketPriceSlider" min="1" max="100" value="20" oninput="window.updateTicketPriceDisplay(this.value)" onchange="window.setTicketPriceFromSlider(this.value)">
             <span id="ticketPriceSliderValue">20</span>€
         </div>
         
@@ -2250,6 +2250,8 @@ window.onclick = function(event) {
     <script src="injector-promesas.js"></script> 
     <script src="injector-cup-matches.js"></script>
     <script src="injector-financial-deals.js"></script>
+    <script src="injector-commercial-v2.js"></script>
+    <script src="injector-prizes.js"></script>
     <script src="injector-facilities.js"></script>
     <script src="injector-rival.js"></script>
     <script src="./injector-tactics.js"></script>

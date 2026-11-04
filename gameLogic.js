@@ -524,6 +524,8 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
     }
     gameState.fanbase = Math.round(gameState.stadiumCapacity * (ECONOMY.fanbaseFactor[divisionType] ?? 0.8));
     gameState.popularity = 50;
+    gameState.ticketPrice = Math.max(1, Math.round(ticketRefPrice(gameState)));
+    gameState.merchandisingPrice = 10;
 
     // Cargar equipos y calendario
     // Estructura de ligas propia de esta partida (copia de la configuración del Admin)
@@ -1812,7 +1814,11 @@ async function boardUpdate() {
     const games5 = Math.max(1, mine.length);
     let delta = Math.max(-3, Math.min(3, (target - pos) / n * 14));       // posición vs objetivo
     delta += (pts5 / (games5 * 3) - 0.45) * 9;                              // forma reciente
-    if (gameState.balance < 0) delta -= 1.5;                                // números rojos
+    if (gameState.balance < 0) {                                            // números rojos
+        delta -= 1.5;
+        const weekly = Math.max(1, gameState.weeklyExpenses || 1);
+        if (-gameState.balance > weekly * 8) delta -= 2.5;                   // deuda de más de 8 jornadas de gastos
+    }
     const before = gameState.boardConfidence ?? 65;
     const conf = Math.max(0, Math.min(100, before + Math.max(-6, Math.min(4, delta))));
     gameState.boardConfidence = Math.round(conf * 10) / 10;
@@ -2269,6 +2275,7 @@ async function playoffStep() {
     gameState.matchHistory.push({ week: gameState.week, home, away, score: `${hg}-${ag}`, playoff: true });
     addNews(`⬆️ ${match.phase}: ${home} ${hg}-${ag} ${away}${penalties ? ` (penaltis ${penalties.home}-${penalties.away})` : extraTime ? ' (tras la prórroga)' : ''}`, myG > opG ? 'success' : myG < opG ? 'error' : 'info');
 
+    try { if (typeof window !== 'undefined') window.PCFPrizes?.onGate?.(match); } catch (e) { /* */ }
     if (typeof window !== 'undefined' && window.showResultModal) {
         const result = { myGoals: myG, oppGoals: opG, win: myG > opG, draw: myG === opG, loss: myG < opG,
             myTeam: me, opponent, isHome, neutral: false,
@@ -2588,13 +2595,13 @@ async function simulateFullWeekInner() {
         addNews(`[Segundo Entrenador - ¡CRISIS!] Nuestros números están muy mal.`, 'error');  
     }  
 
-    // ===== GAME OVER =====
-    if (gameState.balance < -100000 && gameState.week > 10) {  
-        addNews(`¡Has sido despedido!`, 'error');  
-        alert("¡GAME OVER!");  
-        resetGame();  
-        return { myMatch: myMatchResult, forcedLoss, gameOver: true };  
-    }  
+    // ===== DEUDA: ya no hay "game over" que borre la partida =====
+    // La deuda erosiona la confianza de la directiva (ver boardUpdate); en el modo
+    // carrera eso puede acabar en despido, siempre tras avisos y con motivo.
+    if (gameState.balance < 0 && gameState.week % 4 === 0) {
+        const debt = Math.abs(gameState.balance);
+        addNews(`[Directiva] El club está en números rojos (${debt.toLocaleString('es-ES')}€). Hay que recuperar el equilibrio económico cuanto antes: vender jugadores o reducir gastos.`, 'error');
+    }
 
     // ===== FIN DE TEMPORADA =====
     // Si quedan partidos de copa o de Europa, la temporada sigue hasta jugarlos
@@ -2634,16 +2641,51 @@ function handlePreseasonWeek() {
     }  
 }  
   
+// ── Demanda de entradas y merchandising ─────────────────────────
+// Precio "justo" de la entrada por división (y sube con la popularidad del club).
+const TICKET_REF = { primera: 35, segunda: 20, rfef_grupo1: 12, rfef_grupo2: 12, promesas: 2 };
+// Afluencia máxima realista por categoría (a popularidad 50) y sensibilidad al precio: en ligas pequeñas
+// la gente deja de ir enseguida si el precio es alto, y en Promesas (niños de 14-15 años) solo van familias.
+const DEMAND_CAP = { promesas: 450, rfef_grupo1: 8000, rfef_grupo2: 8000, segunda: 45000 };
+const PRICE_EXP = { promesas: 2.4, rfef_grupo1: 1.6, rfef_grupo2: 1.6, segunda: 1.4 };
+// Merchandising neto semanal de un club de 100.000 fans con popularidad 50, a su precio óptimo.
+const MERCH_BASE = { primera: 600000, segunda: 60000, rfef_grupo1: 15000, rfef_grupo2: 15000, promesas: 3000 };
+const MERCH_UNIT_COST = 5;      // coste por artículo: el margen es (precio − 5)
+
+function ticketRefPrice(state) {
+    const base = TICKET_REF[state.division] ?? 20;
+    return base * (0.7 + (state.popularity ?? 50) / 100 * 0.6);
+}
+// Asistencia: interés de la afición (según fans y popularidad) × efecto del precio frente al de referencia
+function computeAttendance(state, price) {
+    const tp = Math.max(1, price !== undefined ? price : (state.ticketPrice || 20));
+    const pop = state.popularity ?? 50;
+    const interest = (state.fanbase || 0) * (0.30 + 0.60 * pop / 100);
+    const priceEffect = Math.min(1.4, Math.pow(ticketRefPrice(state) / tp, PRICE_EXP[state.division] ?? 1.3));
+    let att = Math.floor(interest * priceEffect);
+    const cap = DEMAND_CAP[state.division];
+    if (cap) att = Math.min(att, Math.round(cap * (0.5 + pop / 100)));
+    return Math.max(0, Math.min(state.stadiumCapacity || 0, att));
+}
+// Merchandising: ingresos netos de la semana (solo se cobran en jornadas en casa)
+function computeMerch(state, price) {
+    const p = Math.max(1, price !== undefined ? price : (state.merchandisingPrice || 10));
+    // Crece más que proporcionalmente con la afición: los grandes venden mucho más que los pequeños
+    const base = (MERCH_BASE[state.division] ?? 15000) * Math.pow((state.fanbase || 0) / 100000, 1.7) * Math.pow((state.popularity ?? 50) / 50, 1.2);
+    const priceFactor = Math.pow(10 / p, 2) * Math.max(0, p - MERCH_UNIT_COST) / 5;
+    const revenue = Math.floor(base * priceFactor);
+    return { revenue, items: Math.round(revenue / Math.max(1, p - MERCH_UNIT_COST)) };
+}
+
 function updateWeeklyFinancials() {  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + p.salary, 0);  
     const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);  
     gameState.weeklyExpenses = playerSalaries + staffSalaries;  
   
-    let attendance = Math.floor(gameState.stadiumCapacity * (0.5 + (gameState.popularity / 200) - (gameState.ticketPrice / 100)));  
-    attendance = Math.max(0, Math.min(gameState.stadiumCapacity, attendance));  
-  
-    gameState.merchandisingItemsSold = Math.floor(gameState.fanbase * (gameState.popularity / 500) * (0.01 + Math.random() * 0.02));  
-    gameState.merchandisingRevenue = gameState.merchandisingItemsSold * gameState.merchandisingPrice;  
+    const attendance = computeAttendance(gameState);
+    const merch = computeMerch(gameState);
+    gameState.merchandisingItemsSold = merch.items;
+    gameState.merchandisingRevenue = merch.revenue;
   
     gameState.weeklyIncome = gameState.weeklyIncomeBase +  
                              Math.floor(gameState.ticketPrice * attendance) +  
@@ -3412,6 +3454,9 @@ if (typeof window !== 'undefined') {
             return p ? makeOfferForPlayer(p) : null;
         },
         replaceInLineup,
+        attendance: (st, price) => computeAttendance(st || gameState, price),
+        merch: (st, price) => computeMerch(st || gameState, price),
+        ticketRef: (st) => ticketRefPrice(st || gameState),
         markJoined: (p) => markJoined(p),
         canSell: (p) => canSellPlayer(p)
     };

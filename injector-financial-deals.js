@@ -111,7 +111,7 @@
 
         save({
             weeklyExpenses:   salaries + staffSal + loanPay,
-            weeklyIncomeBase: baseOrig + sponsorW + tvW,
+            weeklyIncomeBase: baseOrig + sponsorW + tvW + ((s.fd_boards || []).reduce((t, b) => t + (b.weeksLeft > 0 ? b.weekly : 0), 0)),
             fd_loanPayment:   loanPay,
             fd_sponsorW:      sponsorW,
             fd_tvW:           tvW,
@@ -248,6 +248,7 @@
     // PREMIOS ECONÓMICOS
     // ─────────────────────────────────────────────────────────────
     function awardPrize(key) {
+        if (window.PCFPrizes) return;      // los premios los paga injector-prizes.js con eventos reales
         const prize = PRIZES[key];
         if (!prize) return;
         const s = gs();
@@ -266,6 +267,7 @@
         refreshUI();
     }
     window._fdAwardPrize = awardPrize;
+    window._fdRecalc = recalcWeekly; window._fdMaybeGenerate = maybeGenerateOffers; window._fdRefresh = refreshUI;
 
     function addPrizeRowToFinances(prize) {
         // Añadir al historial de movimientos de finanzas si está abierto
@@ -395,6 +397,34 @@
             { name: 'Visa',              sector: 'Finanzas' },
             { name: 'Mastercard',        sector: 'Finanzas' },
             { name: 'Mapfre',            sector: 'Seguros' },
+            { name: 'SEAT', sector: 'Automocion' },
+            { name: 'Toyota', sector: 'Automocion' },
+            { name: 'Kia', sector: 'Automocion' },
+            { name: 'Volkswagen', sector: 'Automocion' },
+            { name: 'Mercedes-Benz', sector: 'Automocion' },
+            { name: 'Hyundai', sector: 'Automocion' },
+            { name: 'Samsung', sector: 'Tecnologia' },
+            { name: 'Huawei', sector: 'Tecnologia' },
+            { name: 'Sony', sector: 'Tecnologia' },
+            { name: 'Lenovo', sector: 'Tecnologia' },
+            { name: 'Cabify', sector: 'Movilidad' },
+            { name: 'Glovo', sector: 'Reparto' },
+            { name: 'Qatar Airways', sector: 'Aviacion' },
+            { name: 'Turkish Airlines', sector: 'Aviacion' },
+            { name: 'Orange', sector: 'Telecos' },
+            { name: 'Vodafone', sector: 'Telecos' },
+            { name: 'Movistar', sector: 'Telecos' },
+            { name: 'Cruzcampo', sector: 'Cervezas' },
+            { name: 'Pepsi', sector: 'Bebidas' },
+            { name: 'Burger King', sector: 'Restauracion' },
+            { name: 'McDonalds', sector: 'Restauracion' },
+            { name: 'Allianz', sector: 'Seguros' },
+            { name: 'AXA', sector: 'Seguros' },
+            { name: 'Securitas Direct', sector: 'Seguridad' },
+            { name: 'Casio', sector: 'Electronica' },
+            { name: 'Booking.com', sector: 'Turismo' },
+            { name: 'Spotify', sector: 'Entretenimiento' },
+            { name: 'EA Sports', sector: 'Videojuegos' },
         ],
         segunda: [
             { name: 'Mahou',             sector: 'Cervezas' },
@@ -412,6 +442,26 @@
             { name: 'La Roche-Posay',    sector: 'Cosmética' },
             { name: 'ASISA',             sector: 'Salud' },
             { name: 'Sanitas',           sector: 'Salud' },
+            { name: 'Cruzcampo', sector: 'Cervezas' },
+            { name: 'Skoda', sector: 'Automocion' },
+            { name: 'Opel', sector: 'Automocion' },
+            { name: 'Fiat', sector: 'Automocion' },
+            { name: 'Decathlon', sector: 'Deportes' },
+            { name: 'Leroy Merlin', sector: 'Bricolaje' },
+            { name: 'MediaMarkt', sector: 'Electronica' },
+            { name: 'PcComponentes', sector: 'Tecnologia' },
+            { name: 'Carrefour', sector: 'Retail' },
+            { name: 'Lidl', sector: 'Retail' },
+            { name: 'Alcampo', sector: 'Retail' },
+            { name: 'Bankinter', sector: 'Banca' },
+            { name: 'Abanca', sector: 'Banca' },
+            { name: 'Unicaja', sector: 'Banca' },
+            { name: 'Ibercaja', sector: 'Banca' },
+            { name: 'Kutxabank', sector: 'Banca' },
+            { name: 'Cajamar', sector: 'Banca' },
+            { name: 'Telepizza', sector: 'Restauracion' },
+            { name: 'Vueling', sector: 'Aviacion' },
+            { name: 'Ilunion', sector: 'Servicios' },
         ],
         rfef: [
             { name: 'Mahou',             sector: 'Cervezas' },
@@ -429,6 +479,24 @@
             { name: 'Vitruvian Sport',   sector: 'Nutrición' },
             { name: 'Diputación Local',  sector: 'Institucional' },
             { name: 'Caja Rural',        sector: 'Banca' },
+            { name: 'Consum', sector: 'Retail' },
+            { name: 'Gadis', sector: 'Retail' },
+            { name: 'Froiz', sector: 'Retail' },
+            { name: 'Eroski', sector: 'Retail' },
+            { name: 'ElPozo', sector: 'Alimentacion' },
+            { name: 'Campofrio', sector: 'Alimentacion' },
+            { name: 'Casa Tarradellas', sector: 'Alimentacion' },
+            { name: 'Hijos de Rivera', sector: 'Cervezas' },
+            { name: 'Pascual', sector: 'Lacteos' },
+            { name: 'Central Lechera Asturiana', sector: 'Lacteos' },
+            { name: 'Conservas Ortiz', sector: 'Alimentacion' },
+            { name: 'Bodegas Faustino', sector: 'Vinos' },
+            { name: 'Bodegas Torres', sector: 'Vinos' },
+            { name: 'Cuetara', sector: 'Alimentacion' },
+            { name: 'Gallina Blanca', sector: 'Alimentacion' },
+            { name: 'Aceites Carbonell', sector: 'Alimentacion' },
+            { name: 'Ametller Origen', sector: 'Alimentacion' },
+            { name: 'Grupo Fuertes', sector: 'Alimentacion' },
         ],
         promesas: [
             { name: 'Fruites Rosario Sabadell',      sector: 'Alimentació' },
@@ -446,6 +514,21 @@
             { name: 'Bar Esportiu Can Puig',          sector: 'Hostaleria' },
             { name: 'Impremta Gràfica Vallès',        sector: 'Impremta' },
             { name: 'Assegurances Mútua Terrassa',    sector: 'Assegurances' },
+            { name: 'Forn de Pa Can Mas', sector: 'Alimentacio' },
+            { name: 'Autoescola Valles', sector: 'Formacio' },
+            { name: 'Gestoria Mir', sector: 'Serveis' },
+            { name: 'Fusteria Roca', sector: 'Industrial' },
+            { name: 'Veterinaria Terrassa', sector: 'Salut' },
+            { name: 'Optica Sabadell', sector: 'Salut' },
+            { name: 'Perruqueria Mon', sector: 'Serveis' },
+            { name: 'Farmacia Central', sector: 'Salut' },
+            { name: 'Escola de Idiomes Valles', sector: 'Formacio' },
+            { name: 'Lampisteria Sala', sector: 'Industrial' },
+            { name: 'Pastisseria Rovira', sector: 'Alimentacio' },
+            { name: 'Immobiliaria Arrels', sector: 'Immobiliari' },
+            { name: 'Pintures Vila', sector: 'Industrial' },
+            { name: 'Carnisseria Serra', sector: 'Alimentacio' },
+            { name: 'Floristeria Sant Cugat', sector: 'Comerc' },
         ],
     };
 

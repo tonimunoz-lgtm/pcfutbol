@@ -64,9 +64,7 @@
     }
 
     function computeAttendance(state, tp) {
-        tp = tp !== undefined ? tp : (state.ticketPrice || 20);
-        const raw = Math.floor(state.stadiumCapacity * (0.5 + state.popularity / 200 - tp / 100));
-        return Math.max(0, Math.min(state.stadiumCapacity, raw));
+        return window.pcfEconomy ? window.pcfEconomy.attendance(state, tp) : 0;
     }
 
     // ── Registrar movimientos extraordinarios ───────────────────
@@ -101,8 +99,9 @@
         const home     = isWeekHome(weekBefore, stateBefore);
         const att      = computeAttendance(stateBefore);
         const ticketInc= home ? Math.floor(stateBefore.ticketPrice * att) : 0;
-        const items    = Math.floor(stateBefore.fanbase * (stateBefore.popularity / 500) * (0.01 + Math.random() * 0.02));
-        const merchInc = home ? items * stateBefore.merchandisingPrice : 0;
+        const merchM   = window.pcfEconomy ? window.pcfEconomy.merch(stateBefore) : { revenue: 0, items: 0 };
+        const items    = merchM.items;
+        const merchInc = home ? merchM.revenue : 0;
         const baseInc  = stateBefore.weeklyIncomeBase || 5000;
         const totalInc = ticketInc + merchInc + baseInc;
 
