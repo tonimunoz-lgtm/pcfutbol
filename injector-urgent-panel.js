@@ -97,7 +97,7 @@
             alerts.push({
                 priority: 1,
                 type: 'contract_expired',
-                icon: '🔴',
+                icon: '<img class="pcf-st-icon " src="assets/iconos/estados/urgente.webp" alt="" aria-hidden="true">',
                 title: `Contrato expirado: ${p.name}`,
                 desc: grace
                     ? `Quedan ${weeksLeft > 0 ? weeksLeft : '¡0!'} jornadas para renovar o se irá libre`
@@ -116,7 +116,7 @@
             alerts.push({
                 priority: 2,
                 type: 'contract_near',
-                icon: '🟠',
+                icon: '<img class="pcf-st-icon pcf-st-warn" src="assets/iconos/estados/urgente.webp" alt="" aria-hidden="true">',
                 title: `Contrato acaba pronto: ${p.name}`,
                 desc: `Solo queda 1 año de contrato. Considera renovar.`,
                 color: '#FF9800',
@@ -312,7 +312,7 @@
                     border-radius: 0 6px 6px 0;
                     margin-bottom: 6px;
                 ">
-                    <span style="font-size: 1.1em; flex-shrink: 0;">${a.icon}</span>
+                    <span style="font-size: 1.1em; flex-shrink: 0; display:inline-flex;">${a.icon}</span>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: bold; color: ${a.color}; font-size: 0.9em;">${a.title}</div>
                         <div style="color: #bbb; font-size: 0.8em; margin-top: 2px;">${a.desc}</div>
@@ -418,7 +418,7 @@
         wrapper.style.cssText = 'margin-bottom: 20px;';
         wrapper.innerHTML = `
             <h2 style="color: #e94560; margin-bottom: 10px; font-size: 1em; display: flex; align-items: center; gap: 8px;">
-                🚨 Acciones Urgentes
+                <img class="pcf-st-icon pcf-st-md" src="assets/iconos/estados/urgente.webp" alt="" aria-hidden="true"> Acciones Urgentes
                 <span id="urgent-count" style="
                     background: #e94560;
                     color: white;

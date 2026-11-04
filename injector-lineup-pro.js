@@ -70,10 +70,10 @@
     // ── Estado de disponibilidad ─────────────────────────────────
     function statusOf(p) {
         if (!p) return null;
-        if (p.isInjured) return { cls: 'inj', icon: '✚', text: `Lesionado: ${p.weeksOut || 1} semana(s) de baja` };
-        if (p.isSuspended) return { cls: 'sus', icon: '', text: `Sancionado: ${p.suspensionWeeks || 1} partido(s)` };
-        if ((p.yellowCards || 0) === YELLOW_LIMIT() - 1) return { cls: 'warn', icon: '', text: `Apercibido: una amarilla más y será sancionado` };
-        if (p.contractType === 'loaned_out') return { cls: 'loan', icon: '↗', text: `Cedido al ${p.loanedTo || 'otro club'}` };
+        if (p.isInjured) return { cls: 'inj', icon: 'lesionado', text: `Lesionado: ${p.weeksOut || 1} semana(s) de baja` };
+        if (p.isSuspended) return { cls: 'sus', icon: 'sancionado', text: `Sancionado: ${p.suspensionWeeks || 1} partido(s)` };
+        if ((p.yellowCards || 0) === YELLOW_LIMIT() - 1) return { cls: 'warn', icon: 'apercibido', text: `Apercibido: una amarilla más y será sancionado` };
+        if (p.contractType === 'loaned_out') return { cls: 'loan', icon: 'cedido', text: `Cedido al ${p.loanedTo || 'otro club'}` };
         return null;
     }
 
@@ -85,12 +85,13 @@
             const name = div.dataset.playername;
             const p = byName.get(name);
             if (!p) return;
-            div.querySelectorAll('.pcf-st').forEach(x => x.remove());
+            div.querySelectorAll('.pcf-st, .pcf-st-lineup').forEach(x => x.remove());
             const s = statusOf(p);
             if (s) {
-                const b = document.createElement('span');
-                b.className = `pcf-st ${s.cls}`;
-                b.textContent = s.icon;
+                const b = document.createElement('img');
+                b.className = `pcf-st-icon pcf-st-lineup ${s.cls}`;
+                b.src = `assets/iconos/estados/${s.icon}.webp`;
+                b.alt = ''; b.setAttribute('aria-hidden', 'true');
                 b.title = s.text;
                 // Junto al nombre (en el campo el nombre va en el primer <span>)
                 const nameSpan = div.classList.contains('pitch-player') ? div.querySelector('span') : null;

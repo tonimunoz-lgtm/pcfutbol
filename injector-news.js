@@ -30,8 +30,8 @@
         .pcf-news-item { position:relative; font-size:.9em; margin-bottom:5px; }
         .pcf-news-item.is-new { border-left:4px solid var(--pcf-gold,#ffd24a) !important; box-shadow:0 0 0 1px rgba(255,210,74,.35); }
         .pcf-news-item.is-old { opacity:.72; }
-        .pcf-news-new { display:inline-block; background:var(--pcf-gold,#ffd24a); color:#06142e; font-weight:800; font-size:.7em;
-            letter-spacing:.06em; border-radius:3px; padding:1px 6px; margin-right:6px; vertical-align:middle; }
+        .pcf-news-new { display:inline-flex; align-items:center; gap:4px; color:var(--pcf-gold,#ffd24a); font-weight:800; font-size:.72em;
+            letter-spacing:.08em; margin-right:8px; vertical-align:middle; }
         #pcfNewsGrid { display:grid; grid-template-columns:minmax(280px,1fr) minmax(320px,1.35fr); gap:16px; align-items:start; }
         @media (max-width: 900px) { #pcfNewsGrid { grid-template-columns:1fr; } }
         .pcf-news-col { background:linear-gradient(180deg,rgba(36,80,142,.45) 0%,rgba(7,22,48,.75) 100%); border:1px solid #06142e;
@@ -70,7 +70,7 @@
     function itemHtml(n, isNew) {
         const cls = n.type === 'error' ? 'alert-error' : n.type === 'warning' ? 'alert-warning' : n.type === 'success' ? 'alert-success' : 'alert-info';
         return `<div class="alert ${cls} pcf-news-item ${isNew ? 'is-new' : 'is-old'}">
-            ${isNew ? '<span class="pcf-news-new">NUEVA</span>' : ''}<strong>Sem. ${esc(n.week)}:</strong> ${esc(n.message)}
+            ${isNew ? '<span class="pcf-news-new"><img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/nueva.webp" alt="" aria-hidden="true">NUEVA</span>' : ''}<strong>Sem. ${esc(n.week)}:</strong> ${esc(n.message)}
         </div>`;
     }
 

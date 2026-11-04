@@ -1280,3 +1280,12 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
 .pcf-fac-icon-sm { width:34px; height:34px; }
 .pcf-fac-icon-xs { width:20px; height:20px; margin:-3px 4px -3px 0; }
 @media (max-width:640px) { .pcf-fac-icon-card { width:46px; height:46px; } }
+
+/* Iconos de estado (grupo 6): pequeños, siempre a la altura del texto */
+.pcf-st-icon { display:inline-block; width:1.25em; height:1.25em; object-fit:contain; vertical-align:-0.28em; margin-right:.3em; filter:drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+.pcf-st-sm { width:1.1em; height:1.1em; vertical-align:-0.2em; margin-right:.25em; }
+.pcf-st-md { width:1.5em; height:1.5em; vertical-align:-0.35em; margin-right:.2em; }
+.pcf-st-warn { filter:hue-rotate(28deg) saturate(1.35) brightness(1.15) drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+.pitch-player .pcf-st-lineup, .draggable-player .pcf-st-lineup { width:16px; height:16px; margin:0 0 0 5px; vertical-align:-3px; }
+.pcf-estado { white-space:nowrap; }
+.pcf-estado .pcf-st-icon { width:1.35em; height:1.35em; }

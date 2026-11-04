@@ -275,8 +275,8 @@
                     <span style="color:${posColor[g]};font-size:.7em;font-weight:bold;">${p.position}</span>
                     <span style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
                     <span style="color:#888;font-size:.68em;">${p.overall || 70}</span>
-                    ${p.isInjured ? `<span title="Lesionado: ${p.weeksOut || 1} semana(s)" style="background:#d32f2f;color:#fff;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">✚</span>` : ''}
-                    ${p.isSuspended ? `<span title="Sancionado" style="background:#d32f2f;width:9px;height:12px;display:inline-block;border-radius:1px;"></span>` : ''}
+                    ${p.isInjured ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/lesionado.webp" alt="" title="Lesionado" aria-hidden="true">` : ''}
+                    ${p.isSuspended ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/sancionado.webp" alt="" title="Sancionado" aria-hidden="true">` : ''}
                 </div>`).join('')
             ).join('')}
         </div>`;

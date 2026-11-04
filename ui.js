@@ -266,9 +266,9 @@ function renderSquadList(squad, currentTeam) {
         
         // Indicador de mercado
         if (p.transferListed) {
-            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">💰 En venta (${p.askingPrice.toLocaleString('es-ES')}€)</span>`;
+            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">${stIcon('transferible','pcf-st-sm')}En venta (${p.askingPrice.toLocaleString('es-ES')}€)</span>`;
         } else if (p.loanListed) {
-            statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">🔄 Cedible</span>`;
+            statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">${stIcon('cedible','pcf-st-sm')}Cedible</span>`;
         }
         
         return statusHTML;
@@ -428,6 +428,10 @@ function renderPlayerMarketList(players) {
   
     let playersHtml = players.map((p, idx) => {  
         const free = !!p.isFreeAgent;
+        const estadoHtml = free ? stIcon('libre','pcf-st-sm') + 'Libre'
+            : (p.transferListed && p.loanListed) ? stIcon('transferible','pcf-st-sm') + stIcon('cedible','pcf-st-sm') + 'Transferible · Cedible'
+            : p.loanListed ? stIcon('cedible','pcf-st-sm') + 'Cedible'
+            : p.transferListed ? stIcon('transferible','pcf-st-sm') + 'Transferible' : 'No disponible';
         const estado = free ? 'Libre' : (p.transferListed && p.loanListed) ? 'Transferible · Cedible' : p.loanListed ? 'Cedible' : (p.transferListed ? 'Transferible' : 'No disponible');  
         const askingPrice = free ? 'GRATIS' : p.transferListed ? (p.askingPrice || 0).toLocaleString('es-ES') + '€' : '-';  
         const clauseAmount = free ? null : (p.releaseClause || ((p.value || 0) * 3));
@@ -448,7 +452,7 @@ function renderPlayerMarketList(players) {
                     ${clauseAmount == null ? '—' : clauseAmount.toLocaleString('es-ES') + '€'}
                 </td>
                 <td>${askingPrice}</td>  
-                <td>${estado}</td>  
+                <td class="pcf-estado" title="${estado}">${estadoHtml}</td>  
                 <td>  
                     ${free ? `
                         <button class="btn btn-sm" onclick="window.signFreeAgent('${p.id}')">✅ Fichar</button>
@@ -631,6 +635,8 @@ if (dashTransferBalanceEl) {
 }  
   
 // NEW: Función para renderizar la página de calendario (modificada)  
+const stIcon = (n, c = '') => `<img class="pcf-st-icon ${c}" src="assets/iconos/estados/${n}.webp" alt="" aria-hidden="true">`;
+
 function renderCalendarPage(state) {  
     const calendarContent = document.getElementById('calendarContent');  
     if (!calendarContent) return;  
@@ -652,7 +658,7 @@ function renderCalendarPage(state) {
         const myMatch = jornadaMatches.find(m => m.home === state.team || m.away === state.team);
         calendarHtml += `  
           <div class="pcf-cal-card ${myMatch ? 'has-mine' : ''} ${state.week === i ? 'current' : ''}">
-            <h2 class="pcf-cal-week ${state.week === i ? 'current' : ''}" id="pcf-cal-j${i}">Jornada ${i}${state.week === i ? ' · próxima' : ''}${myMatch ? ` <span class="pcf-cal-mine">⭐ ${myMatch.home === state.team ? 'vs ' + myMatch.away + ' (casa)' : 'en ' + myMatch.home}</span>` : ''}</h2>  
+            <h2 class="pcf-cal-week ${state.week === i ? 'current' : ''}" id="pcf-cal-j${i}">Jornada ${i}${state.week === i ? ' · próxima' : ''}${myMatch ? ` <span class="pcf-cal-mine">${stIcon('mi-equipo','pcf-st-sm')}${myMatch.home === state.team ? 'vs ' + myMatch.away + ' (casa)' : 'en ' + myMatch.home}</span>` : ''}</h2>  
             <table class="pcf-cal-table">  
                 <thead>  
                     <tr>  
@@ -678,8 +684,8 @@ function renderCalendarPage(state) {
   
             calendarHtml += `  
                 <tr class="${isOurMatch ? 'pcf-my-match' : 'pcf-other-match'}">  
-                    <td>${isOurMatch && match.home === state.team ? '⭐ ' : ''}${match.home}</td>  
-                    <td>${isOurMatch && match.away === state.team ? '⭐ ' : ''}${match.away}</td>  
+                    <td>${isOurMatch && match.home === state.team ? stIcon('mi-equipo','pcf-st-sm') : ''}${match.home}</td>  
+                    <td>${isOurMatch && match.away === state.team ? stIcon('mi-equipo','pcf-st-sm') : ''}${match.away}</td>  
                     <td>${score}</td>  
                 </tr>  
             `;  

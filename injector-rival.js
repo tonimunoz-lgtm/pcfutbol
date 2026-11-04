@@ -230,7 +230,7 @@
             const grp = POS_GROUP[p.position] || 'MED';
             const posC = POS_COLOR[grp] || '#888';
             const injBadge = p.isInjured ? '<span style="color:#f44336;font-size:.75em;margin-left:4px;">🤕</span>' : '';
-            const starBadge = starter ? '<span style="color:#FFD700;font-size:.75em;margin-left:3px;">★</span>' : '';
+            const starBadge = starter ? '<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/titular.webp" alt="" aria-hidden="true">' : '';
             const formBar = p.form
                 ? `<div style="width:${Math.round(p.form)}px;max-width:60px;height:3px;background:linear-gradient(90deg,${p.form>75?'#4CAF50':'#f5a623'},#333);border-radius:2px;margin-top:2px;"></div>`
                 : '';
@@ -243,7 +243,7 @@
                 </div>
                 <div style="text-align:right;">
                     <div style="color:${ovrColor(ovr)};font-weight:bold;font-size:.85em;">${ovr}</div>
-                    ${p.form ? `<div style="color:#99a;font-size:.7em;" title="Forma actual">forma ${Math.round(p.form)}</div>` : ''}
+                    ${p.form ? `<div style="color:#99a;font-size:.7em;" title="Forma actual"><img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/forma.webp" alt="" aria-hidden="true">${Math.round(p.form)}</div>` : ''}
                 </div>
             </div>`;
         };
@@ -255,7 +255,7 @@
         return `
         <div style="margin-bottom:12px;">
             <div style="color:#FFD700;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
-                ★ Titular probable (11)
+                <img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/titular.webp" alt="" aria-hidden="true"> Titular probable (11)
             </div>
             <div style="${grid}">${byLine(starters).map(p => row(p, true)).join('')}</div>
         </div>
