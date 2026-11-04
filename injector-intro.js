@@ -121,7 +121,30 @@
     body.pcfi-has-backdrop #loginModal, body.pcfi-has-backdrop #gameSelectionModal, body.pcfi-has-backdrop #gameModeModal,
     body.pcfi-has-backdrop #selectTeamModal, body.pcfi-has-backdrop #savedGamesModal { background: rgba(1,4,12,.18) !important; }
     body.pcfi-has-backdrop #loginModal > *, body.pcfi-has-backdrop #gameSelectionModal > * { margin-top: 13vh; }
-    @media (max-width:640px){.pcfi-tower{top:4%}.pcfi-title{top:24%}}
+    .pcfi-pitch-portrait{display:none}
+    /* Móvil en vertical: campo vertical que llena la pantalla, dos torres y título grande */
+    @media (orientation:portrait) and (max-width:820px){
+        .pcfi-pitch{display:none}
+        .pcfi-pitch-portrait{display:block}
+        .pcfi-pitchwrap{width:118vw;bottom:-6vh;perspective:520px}
+        .pcfi-pitch-portrait{height:78vh;transform:rotateX(50deg);transform-origin:50% 100%}
+        .t2,.t3{display:none}
+        .pcfi-tower{top:5vh;width:22vw;max-width:110px}
+        .t1{left:5%;--rot:18deg}.t4{right:5%;--rot:-18deg}
+        .pcfi-tower::after{width:200%;height:420%}
+        .pcfi-stands{top:22vh;height:18vh}
+        .pcfi-title{top:24vh}
+        .pcfi-t1{font-size:17vw}
+        .pcfi-t2{font-size:7.2vw;letter-spacing:.32em;padding-left:.32em}
+        .pcfi-t3{font-size:3vw;letter-spacing:.2em;padding:0 12px}
+        .pcfi-ball{bottom:21vh;width:12vw}
+        @keyframes pcfiRoll{0%{left:-15%;opacity:1}100%{left:calc(50% - 6vw);opacity:1}}
+        .pcfi-press{bottom:72px;font-size:4vw;letter-spacing:.18em}
+        .pcfi-status{top:44vh}
+        .pcfi-btn{top:10px;padding:6px 10px;font-size:11px}
+        #pcfIntro.pcfi--backdrop .pcfi-title{top:1.5vh;transform:scale(.55)}
+    }
+    @media (max-width:640px) and (orientation:landscape){.pcfi-tower{top:4%}.pcfi-title{top:18%}}
     `;
 
     const pitchSVG = `
@@ -135,6 +158,18 @@
         <rect x="975" y="248" width="55" height="184" style="--len:480"/>
         <path d="M185 282 A92 92 0 0 1 185 398" style="--len:150"/>
         <path d="M865 282 A92 92 0 0 0 865 398" style="--len:150"/>
+    </svg>`;
+    const pitchPortraitSVG = `
+    <svg class="pcfi-pitch pcfi-pitch-portrait" viewBox="0 0 680 1050" preserveAspectRatio="none">
+        <rect x="20" y="20" width="640" height="1010" style="--len:3300"/>
+        <line x1="20" y1="525" x2="660" y2="525" style="--len:640"/>
+        <circle cx="340" cy="525" r="92" style="--len:580"/>
+        <rect x="158" y="20" width="364" height="165" style="--len:1060"/>
+        <rect x="158" y="865" width="364" height="165" style="--len:1060"/>
+        <rect x="248" y="20" width="184" height="55" style="--len:480"/>
+        <rect x="248" y="975" width="184" height="55" style="--len:480"/>
+        <path d="M282 185 A92 92 0 0 0 398 185" style="--len:150"/>
+        <path d="M282 865 A92 92 0 0 1 398 865" style="--len:150"/>
     </svg>`;
     const ballSVG = `
     <svg viewBox="0 0 100 100"><defs><radialGradient id="pcfiBallG" cx="35%" cy="30%" r="75%">
@@ -153,7 +188,7 @@
         <div class="pcfi-sky"></div>
         <div class="pcfi-tower t1"></div><div class="pcfi-tower t2"></div><div class="pcfi-tower t3"></div><div class="pcfi-tower t4"></div>
         <div class="pcfi-stands"></div>
-        <div class="pcfi-pitchwrap">${pitchSVG}</div>
+        <div class="pcfi-pitchwrap">${pitchSVG}${pitchPortraitSVG}</div>
         <div class="pcfi-ball">${ballSVG}</div>
         <div class="pcfi-title">
             <div class="pcfi-t1">PC FÚTBOL</div>
@@ -161,7 +196,7 @@
             <div class="pcfi-t3">Temporada <b>2026/27</b> · Primera · Segunda · Primera RFEF</div>
         </div>
         <div class="pcfi-status">Conectando con el vestuario…</div>
-        <div class="pcfi-press">PULSA UNA TECLA PARA EMPEZAR</div>
+        <div class="pcfi-press">${('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'TOCA LA PANTALLA PARA EMPEZAR' : 'PULSA UNA TECLA PARA EMPEZAR'}</div>
         <div class="pcfi-ticker"><div class="pcfi-track"></div></div>
         <button class="pcfi-btn pcfi-sound" type="button" title="Sonido de la intro"></button>
         <button class="pcfi-btn pcfi-skip" type="button">Saltar intro ▸</button>
@@ -258,7 +293,7 @@
         const towers = [...root.querySelectorAll('.pcfi-tower')];
         towers.forEach((tw, i) => at(250 + i * 280, () => { tw.classList.add('on', 'flick'); }));
         at(900, () => { $('.pcfi-stands').classList.add('on'); startFlashes(); });
-        at(1300, () => { $('.pcfi-pitch').classList.add('on', 'draw'); });
+        at(1300, () => { root.querySelectorAll('.pcfi-pitch').forEach(p => p.classList.add('on', 'draw')); });
         at(2400, () => { $('.pcfi-ball').classList.add('roll'); });
         at(3300, () => { $('.pcfi-t1').classList.add('in'); });
         at(3750, () => { $('.pcfi-t2').classList.add('in'); });
@@ -275,7 +310,7 @@
         timers.forEach(clearTimeout);
         root.querySelectorAll('.pcfi-tower').forEach(t => t.classList.add('on'));
         $('.pcfi-stands').classList.add('on'); if (!flashTimer) startFlashes();
-        $('.pcfi-pitch').classList.add('on'); root.style.setProperty('--t', 0.01); $('.pcfi-pitch').classList.add('draw');
+        root.querySelectorAll('.pcfi-pitch').forEach(p => p.classList.add('on')); root.style.setProperty('--t', 0.01); root.querySelectorAll('.pcfi-pitch').forEach(p => p.classList.add('draw'));
         $('.pcfi-ball').classList.add('roll');
         ['.pcfi-t1', '.pcfi-t2', '.pcfi-t3'].forEach(s => $(s).classList.add('in'));
         if (!$('.pcfi-track').children.length) buildTicker();

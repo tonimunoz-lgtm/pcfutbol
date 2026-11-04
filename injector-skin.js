@@ -181,7 +181,17 @@
         });
     });
     const observe = () => obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    // Altura real de la cabecera (en móvil ocupa dos filas): las páginas se colocan debajo
+    function syncHeaderHeight() {
+        const h = document.querySelector('.header');
+        if (h) document.documentElement.style.setProperty('--pcf-header-h', h.offsetHeight + 'px');
+    }
+    window.addEventListener('resize', syncHeaderHeight);
+    window.addEventListener('orientationchange', () => setTimeout(syncHeaderHeight, 300));
+    setInterval(syncHeaderHeight, 2000);
+
     function start() {
+        syncHeaderHeight();
         observe();
         labelHeaders();
     }
