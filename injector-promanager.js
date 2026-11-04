@@ -26,6 +26,7 @@ console.log('🎯 Injector Promanager cargando...');
     };
 
     // ── Nombre del usuario logueado ──
+    function fmtRep(r) { return String(Math.round((Number(r) || 0) * 10) / 10).replace('.', ','); }
     function getManagerName() {
         if (window.currentUser) {
             return window.currentUser.name || window.currentUser.email || 'Manager';
@@ -99,6 +100,10 @@ console.log('🎯 Injector Promanager cargando...');
     function pickOffers(allowedDivisions, excludeTeam, count) {
         count = count || 3;
         var all = window.TEAMS_DATA || {};
+        if (pmState.rehire && window.gameLogic) {
+            var cur = window.gameLogic.getGameState();
+            if (cur && cur.leagues) all = cur.leagues;
+        }
         var candidates = [];
         allowedDivisions.forEach(function(div) {
             (all[div] || []).forEach(function(t) {
@@ -176,7 +181,7 @@ console.log('🎯 Injector Promanager cargando...');
             + '<div style="font-size:1.08em;font-weight:bold;">' + offer.team + '</div>'
             + '<div style="color:#f4c430;font-size:0.83em;margin-top:4px;">' + (DIVISION_LABELS[offer.division] || offer.division) + '</div></div>'
             + '</div>'
-            + '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:9px;margin-bottom:18px;font-size:0.83em;">Tu reputación actual: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></div>'
+            + '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:9px;margin-bottom:18px;font-size:0.83em;">Tu reputación actual: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + fmtRep(pmState.reputation) + ' pts)</strong></div>'
             + '<p style="color:#ccc;font-size:0.86em;margin-bottom:20px;">¿Aceptas la oferta de <strong>' + offer.team + '</strong>?<br><small style="color:#666;">Puedes rechazar y seguir con tu equipo actual.</small></p>'
             + '<div style="display:flex;gap:12px;justify-content:center;">'
             + '<button id="pmOA" style="background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.95em;font-weight:bold;cursor:pointer;">✅ Aceptar oferta</button>'
@@ -188,7 +193,7 @@ console.log('🎯 Injector Promanager cargando...');
     }
 
     // ── Modal despido ──
-    function showFiredModal(onContinue) {
+    function showFiredModal(onContinue, reason) {
         removeModal('pmFiredModal');
         var modal = document.createElement('div');
         modal.id = 'pmFiredModal';
@@ -196,10 +201,11 @@ console.log('🎯 Injector Promanager cargando...');
         modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a0a0a,#2d0f0f);border:2px solid #e94560;border-radius:16px;padding:36px 28px;max-width:400px;width:92%;box-shadow:0 0 80px rgba(233,69,96,0.6);text-align:center;color:#fff;">'
             + '<div style="font-size:58px;margin-bottom:10px;">🚪</div>'
             + '<h2 style="color:#e94560;margin:0 0 8px;font-size:1.5em;">HAS SIDO DESPEDIDO</h2>'
-            + '<p style="color:#aaa;margin:0 0 16px;font-size:0.9em;">La directiva ha decidido prescindir de tus servicios.</p>'
+            + '<p style="color:#aaa;margin:0 0 10px;font-size:0.9em;">La directiva ha decidido prescindir de tus servicios.</p>'
+            + (reason ? '<p style="color:#ffb3b3;margin:0 0 16px;font-size:0.84em;line-height:1.4;"><strong>Motivo:</strong> ' + reason + '</p>' : '')
             + '<div style="background:rgba(233,69,96,0.1);border-radius:10px;padding:14px;margin-bottom:20px;">'
             + '<div style="color:#ccc;font-size:0.86em;">Reputación conservada:</div>'
-            + '<div style="color:#f4c430;font-size:1.2em;font-weight:bold;margin-top:4px;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</div>'
+            + '<div style="color:#f4c430;font-size:1.2em;font-weight:bold;margin-top:4px;">' + getRepLabel(pmState.reputation) + ' (' + fmtRep(pmState.reputation) + ' pts)</div>'
             + '<div style="color:#888;font-size:0.76em;margin-top:6px;">Tu historial se mantiene para futuras ofertas</div>'
             + '</div>'
             + '<button id="pmFC" style="background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:14px 30px;font-size:1em;font-weight:bold;cursor:pointer;">🔍 Buscar nueva oferta</button>'
@@ -227,7 +233,7 @@ console.log('🎯 Injector Promanager cargando...');
             modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:28px 22px;max-width:560px;width:95%;box-shadow:0 0 60px rgba(233,69,96,0.4);color:#fff;text-align:center;">'
                 + '<div style="font-size:44px;margin-bottom:8px;">📬</div>'
                 + '<h3 style="color:#e94560;margin:0 0 4px;">Ofertas de empleo recibidas</h3>'
-                + '<p style="color:#aaa;font-size:0.83em;margin:0 0 20px;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
+                + '<p style="color:#aaa;font-size:0.83em;margin:0 0 20px;">Rep: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + fmtRep(pmState.reputation) + ' pts)</strong></p>'
                 + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' + cardsHTML + '</div>'
                 + '</div>';
             document.body.appendChild(modal);
@@ -239,8 +245,8 @@ console.log('🎯 Injector Promanager cargando...');
             modal2.innerHTML = '<div style="text-align:center;color:#fff;max-width:360px;padding:40px;">'
                 + '<div style="font-size:54px;margin-bottom:12px;">📭</div>'
                 + '<h3 style="color:#f4c430;margin:0 0 10px;">Sin ofertas por ahora</h3>'
-                + '<p style="color:#aaa;font-size:0.9em;">Ningún club ha contactado aún.</p>'
-                + '<p style="color:#ccc;font-size:0.85em;">Tu reputación: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + pmState.reputation + ' pts)</strong></p>'
+                + '<p style="color:#aaa;font-size:0.9em;">Ningún club ha contactado aún. Estás en paro: el juego espera a que aceptes una oferta y retomarás la temporada en el mismo punto. Los clubes tardan en reaccionar, pero cada espera aumenta tus opciones.</p>'
+                + '<p style="color:#ccc;font-size:0.85em;">Tu reputación: <strong style="color:#4caf50;">' + getRepLabel(pmState.reputation) + ' (' + fmtRep(pmState.reputation) + ' pts)</strong></p>'
                 + '<button id="pmWT" style="margin-top:18px;background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:0.93em;font-weight:bold;cursor:pointer;">⏩ Esperar más tiempo</button>'
                 + '</div>';
             document.body.appendChild(modal2);
@@ -265,7 +271,7 @@ console.log('🎯 Injector Promanager cargando...');
         await showInitialOfferModal(offers, function(accepted) { assignTeam(accepted); });
     }
 
-    function assignTeam(offer) {
+    async function assignTeam(offer) {
         pmState.currentTeam = offer.team;
         pmState.currentDivision = offer.division;
         pmState.unemployed = false;
@@ -275,7 +281,9 @@ console.log('🎯 Injector Promanager cargando...');
         window.gameMode = 'promanager';
 
         if (window.gameLogic && window.gameLogic.selectTeamWithInitialSquad) {
-            window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager');
+            var keep = !!pmState.rehire;
+            pmState.rehire = false; pmState.waitCount = 0;
+            await window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager', { keepTime: keep });
             try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
             ['selectTeam','gameMode'].forEach(function(m){ try { window.closeModal(m); } catch(e) {} });
             setTimeout(function() {
@@ -396,7 +404,7 @@ console.log('🎯 Injector Promanager cargando...');
         }
 
         var gain = calcRepGain(result, state.division);
-        pmState.reputation = Math.max(0, Math.min(100, pmState.reputation + gain));
+        pmState.reputation = Math.round(Math.max(0, Math.min(100, pmState.reputation + gain)) * 10) / 10;
         pmState.gamesManaged++;
         pmState.weeklyPoints.push(result === 'win' ? 3 : result === 'draw' ? 1 : 0);
         if (result === 'win') { pmState.wins++; pmState.consecutiveLosses = 0; }
@@ -413,9 +421,11 @@ console.log('🎯 Injector Promanager cargando...');
         if (!pmState.firedThisSeason && checkFiring()) {
             pmState.firedThisSeason = true;
             pmState.unemployed = true;
-            pmState.reputation = Math.max(0, pmState.reputation - 5);
+            pmState.reputation = Math.round(Math.max(0, pmState.reputation - 5) * 10) / 10;
             await saveCareerToFirebase();
-            setTimeout(function() { showFiredModal(function(){ tryGenerateNewOffers(); }); }, 600);
+            pmState.rehire = true; pmState.waitCount = 0;
+            var why = firingReason();
+            setTimeout(function() { showFiredModal(function(){ tryGenerateNewOffers(); }, why); }, 600);
             return;
         }
 
@@ -452,10 +462,16 @@ console.log('🎯 Injector Promanager cargando...');
     }
 
     function checkFiring() {
-        if (pmState.consecutiveLosses >= 5) return true;
-        var last10 = pmState.weeklyPoints.slice(-10);
-        if (last10.length >= 10 && last10.reduce(function(a,b){return a+b;},0) < 8) return true;
-        return false;
+        var st = window.gameLogic && window.gameLogic.getGameState();
+        if (!st) return false;
+        var conf = st.boardConfidence != null ? st.boardConfidence : 65;
+        return conf <= 15 && (st.boardWarn || 0) >= 2;
+    }
+    function firingReason() {
+        var st = window.gameLogic.getGameState();
+        var sorted = window.sortStandings ? window.sortStandings(st.standings || {}) : [];
+        var pos = sorted.findIndex(function(e){ return e[0] === st.team; }) + 1;
+        return 'Ocupabas el ' + pos + 'º puesto (el objetivo era el ' + (st.boardTarget || '—') + 'º) y la confianza de la directiva había caído a ' + Math.round(st.boardConfidence || 0) + '/100 tras dos avisos.';
     }
 
     function myPosition(state) {
@@ -474,7 +490,8 @@ console.log('🎯 Injector Promanager cargando...');
 
     function tryGenerateNewOffers() {
         var allowed = getAllowedDivisions(pmState.reputation);
-        var prob = 0.4 + (pmState.reputation / 100) * 0.4;
+        pmState.waitCount = (pmState.waitCount || 0) + 1;
+        var prob = Math.min(1, 0.4 + (pmState.reputation / 100) * 0.4 + 0.3 * (pmState.waitCount - 1));
         if (Math.random() < prob) {
             var count = pmState.reputation >= 20 ? 3 : Math.random() < 0.5 ? 2 : 1;
             var offers = pickOffers(allowed, pmState.currentTeam, count);
@@ -525,7 +542,7 @@ console.log('🎯 Injector Promanager cargando...');
             + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px;text-align:left;font-size:0.86em;line-height:1.9;">'
             + '<div>🏟️ Equipo: <strong>' + (pmState.currentTeam||'-') + '</strong></div>'
             + '<div>📊 División: <strong>' + (DIVISION_LABELS[pmState.currentDivision]||'-') + '</strong></div>'
-            + '<div>🔢 Reputación: <strong style="color:#f4c430;">' + pmState.reputation + ' pts</strong></div>'
+            + '<div>🔢 Reputación: <strong style="color:#f4c430;">' + fmtRep(pmState.reputation) + ' pts</strong></div>'
             + '<div>🎮 Partidos: <strong>' + pmState.gamesManaged + '</strong></div>'
             + '<div>✅ V: <strong>' + pmState.wins + '</strong> &nbsp;🤝 E: <strong>' + pmState.draws + '</strong> &nbsp;❌ D: <strong>' + pmState.losses + '</strong></div>'
             + '<div>📈 % victorias: <strong>' + wr + '%</strong></div>'

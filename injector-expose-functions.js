@@ -1033,7 +1033,7 @@ window.payReleaseClause = async function(encodedPlayerJson) {
         `¿Pagar la cláusula de rescisión de ${player.name}?\n\n` +
         `Cláusula: ${clause.toLocaleString('es-ES')}€\n\n` +
         `⚠️ Si pagas la cláusula, el ${player.club} no puede negarse.\n` +
-        `Solo necesitarás convencer al jugador.`
+        `Solo necesitarás convencer al jugador. La cláusula se cobra únicamente si el jugador acepta fichar.`
     );
     
     if (!confirmed) return;
@@ -1043,24 +1043,21 @@ window.payReleaseClause = async function(encodedPlayerJson) {
         return;
     }
     
-    // Pagar cláusula
-    state.balance -= clause;
-    
-    // Registrar gasto
-    if (!state.playerPurchases) state.playerPurchases = 0;
-    state.playerPurchases += clause;
-    
+    // La cláusula NO se cobra todavía: solo se paga cuando el jugador acepta fichar
+    // (antes se cobraba al momento y, si el jugador rompía la negociación, el dinero
+    // se perdía sin recibir al jugador).
     window.gameLogic.addNews(
-        `💰 Has pagado la cláusula de ${player.name} por ${clause.toLocaleString('es-ES')}€. Ahora negocia con él.`,
+        `💰 Has decidido pagar la cláusula de ${player.name} (${clause.toLocaleString('es-ES')}€). Se cobrará solo si el jugador acepta fichar.`,
         'info'
     );
     
     // Iniciar negociación solo con jugador (saltar fase de club)
-    player.clausePaid = true;
-    player.askingPrice = 0; // Ya pagamos
+    player.clausePaid = true;          // fichaje directo, sin pasar por el club
+    player.clauseAmount = clause;      // se cobra al firmar
+    player.askingPrice = 0;
     window.startNegotiationUI(encodeURIComponent(JSON.stringify(player)));
     
-    alert(`¡Cláusula pagada!\n\nAhora debes negociar las condiciones personales con ${player.name}`);
+    alert(`Ahora negocia las condiciones personales con ${player.name}.\n\nLa cláusula (${clause.toLocaleString('es-ES')}€) se cobrará solo si acepta fichar.`);
 };
 
 window.removeFromMarket = function(playerIndex) {

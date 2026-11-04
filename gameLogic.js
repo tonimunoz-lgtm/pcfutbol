@@ -257,6 +257,11 @@ async function generateInitialSquad() {
                 });
                 
                 console.log(`✅ Plantilla real cargada: ${realSquad.length} jugadores`);
+                if (realSquad.length < 20) {
+                    const completed = topUpSquad(realSquad, gameState.division, gameState.team, 20);
+                    addNews(`[Secretario Técnico] Tu plantilla solo tenía ${realSquad.length} jugador(es) inscritos: hemos incorporado ${completed.length - realSquad.length} jugadores para completarla.`, 'info');
+                    return completed;
+                }
                 return realSquad;
             }
         } catch (error) {
@@ -468,7 +473,14 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
  
   
 // ✅ MODIFICAR selectTeamWithInitialSquad para usar await (línea 454-498)
-async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
+async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, options = {}) {
+    // Cambio de club en plena carrera: se conserva la temporada, la jornada y las ligas
+    const snap = options.keepTime ? {
+        currentSeason: gameState.currentSeason, seasonType: gameState.seasonType, week: gameState.week,
+        leagues: gameState.leagues ? JSON.parse(JSON.stringify(gameState.leagues)) : null,
+        lastSeasonSummary: gameState.lastSeasonSummary, news: (gameState.newsFeed || []).slice(0, 12),
+        previousTeam: gameState.team
+    } : null;
     // Partida nueva: el estado vuelve al inicial (personal, instalaciones, préstamos,
     // ofertas, datos de otros módulos...). Solo se conservan los agentes libres del mercado.
     const keepFreeAgents = gameState.freeAgentsPool;
@@ -515,7 +527,14 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
 
     // Cargar equipos y calendario
     // Estructura de ligas propia de esta partida (copia de la configuración del Admin)
-    gameState.leagues = buildLeaguesFromConfig();
+    gameState.leagues = (snap && snap.leagues) ? snap.leagues : buildLeaguesFromConfig();
+    if (snap) {
+        gameState.currentSeason = snap.currentSeason;
+        gameState.seasonType = snap.seasonType;
+        gameState.week = snap.week;
+        gameState.lastSeasonSummary = snap.lastSeasonSummary;
+        gameState.newsFeed = snap.news;
+    }
     if (!gameState.leagues[divisionType]) gameState.leagues[divisionType] = [];
     Object.keys(gameState.leagues).forEach(k => {
         if (k !== divisionType) gameState.leagues[k] = gameState.leagues[k].filter(t => t !== teamName);
@@ -527,12 +546,20 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode) {
     gameState.standings = initStandings(teamsInDivision);
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
     gameState.maxSeasonWeeks = seasonLength(gameState.seasonCalendar);
+    // Mitad de temporada: la nueva liga lleva jugadas las jornadas anteriores
+    if (snap && snap.seasonType === 'regular' && snap.week > 1) {
+        const played = [];
+        gameState.standings = await simulateLeagueTable(teamsInDivision, divisionType, gameState.currentSeason, snap.week, played);
+        gameState.matchHistory = played;
+    }
 
     // Alineación inicial automática: mejor once en la formación actual
     gameState.lineup = pickBestXI(gameState.squad, gameState.formation || '433').filter(Boolean);
     if (gameState.lineup.length < 11) setLineup(gameState.lineup);
 
-    addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    if (snap) addNews(`🎯 Nuevo club: ${teamName}. Retomas la temporada ${gameState.currentSeason} en la jornada ${gameState.week}.`, 'info');
+    else addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
+    gameState.boardConfidence = 65; gameState.boardWarn = 0; gameState.boardTargetSeason = null;
     updateWeeklyFinancials();
 }
 
@@ -643,6 +670,31 @@ function buildGeneratedPlayer(position, target, age, division) {
     player.value = marketValue(player);
     player.releaseClause = roundMoney(player.value * 2.5);
     return player;
+}
+
+// Completa una plantilla incompleta (equipos de un JSON con pocos jugadores): cubre
+// primero las posiciones imprescindibles y genera jugadores del nivel del propio equipo.
+function topUpSquad(squad, division, club, min = 20) {
+    const out = Array.isArray(squad) ? [...squad] : [];
+    if (out.length >= min) return out;
+    const q = (SQUAD_QUALITY[division] || SQUAD_QUALITY.segunda).target;
+    const avg = out.length ? Math.round(out.reduce((t, p) => t + (p.overall || q), 0) / out.length) : q;
+    const target = Math.max(q - 8, Math.min(avg, q + 6));
+    const need = {}, have = {};
+    SQUAD_TEMPLATE.forEach(pos => { need[pos] = (need[pos] || 0) + 1; });
+    out.forEach(p => { have[p.position] = (have[p.position] || 0) + 1; });
+    const missing = [];
+    Object.keys(need).forEach(pos => { for (let i = have[pos] || 0; i < need[pos]; i++) missing.push(pos); });
+    missing.sort((a, b) => (a === 'POR' ? -1 : 0) - (b === 'POR' ? -1 : 0));
+    const extras = ['MC', 'DFC', 'EXT', 'DC', 'LD', 'LI', 'MCO'];
+    let k = 0;
+    while (out.length < min) {
+        const pos = missing.length ? missing.shift() : extras[k++ % extras.length];
+        const pl = buildGeneratedPlayer(pos, target + Math.round(Math.random() * 6 - 4), 18 + Math.floor(Math.random() * 14), division);
+        pl.club = club;
+        out.push(pl);
+    }
+    return out;
 }
 
 function generateDivisionSquad(division, club = gameState.team) {
@@ -998,7 +1050,18 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
         
         // ✅ VERIFICAR SI SE PAGÓ LA CLÁUSULA
         if (player.clausePaid === true) {
-            // FICHAJE DIRECTO - Sin negociación con club
+            // FICHAJE DIRECTO - Sin negociación con club. La cláusula se cobra ahora.
+            const clause = Number(player.clauseAmount) || 0;
+            if (clause > 0) {
+                if (gameState.balance < clause) {
+                    return { success: false, message: `El jugador acepta, pero ya no tienes ${clause.toLocaleString('es-ES')}€ para pagar su cláusula.`, type: 'error' };
+                }
+                gameState.balance -= clause;
+                gameState.playerPurchases = (gameState.playerPurchases || 0) + clause;
+                if (typeof window !== 'undefined' && window._financeRegisterMovement) {
+                    window._financeRegisterMovement('purchase', `Cláusula de rescisión: ${player.name}`, -clause);
+                }
+            }
             const newPlayer = {  
                 ...player,  
                 salary: offeredSalary,  
@@ -1296,12 +1359,13 @@ async function generateAISquad(teamName, division) {
         try {
             const teamData = await window.getTeamData(teamName);
             if (teamData && teamData.squad && teamData.squad.length > 0) {
-                return teamData.squad.map(p => ({
+                const real = teamData.squad.map(p => ({
                     ...p,
                     overall: p.overall || calculatePlayerOverall(p),
                     form: p.form || 75,
                     isInjured: p.isInjured || false
                 }));
+                return real.length < 18 ? topUpSquad(real, division, teamName, 20) : real;
             }
         } catch (error) {
             console.warn(`No se pudo cargar plantilla de ${teamName}:`, error);
@@ -1703,32 +1767,75 @@ function secondCoachAdvice() {
     // NOTA: La decisión de bloquear la simulación se maneja en simulateWeek() en index.html  
 }  
   
-function boardMessages() {  
-    let satisfaction = 0;  
-    const teamStats = gameState.standings[gameState.team];  
-    if (teamStats && teamStats.pj > 0) {  
-        satisfaction += (teamStats.pts / teamStats.pj) - 2;  
-        const weeklyCost = Math.max(1, gameState.weeklyExpenses || 1);
-        satisfaction += Math.max(-2, Math.min(1, gameState.balance / (weeklyCost * 20) - 1)) * 0.5;  
-        satisfaction += gameState.popularity / 10 - 5;  
-  
-        let message = '';  
-        if (satisfaction < -2) {  
-            message = `[Directiva] Esperábamos mejores resultados a estas alturas de la temporada y estamos preocupados. Hay que mejorar.`;  
-            addNews(message, 'error');  
-        } else if (satisfaction < 0) {  
-            message = `[Directiva] No estamos del todo satisfechos con el progreso actual. Es necesario un empujón.`;  
-            addNews(message, 'warning');  
-        } else if (satisfaction > 2) {  
-            message = `[Directiva] Felicitaciones por el buen desempeño del equipo y la excelente gestión. Sigan así.`;  
-            addNews(message, 'success');  
-        } else if (Math.random() < 0.1) {  
-             message = `[Directiva] La estabilidad económica es clave para nuestro proyecto a largo plazo.`;  
-             addNews(message, 'info');  
-        }  
-    }  
-}  
-  
+// ── Confianza de la directiva (0-100) ───────────────────────────
+// Se mueve cada jornada según: posición frente al objetivo de la temporada
+// (que sale de la fuerza real de la plantilla), forma de los últimos 5 partidos
+// y dinero en caja. Avisa antes de llegar al despido y solo felicita si de verdad
+// se cumple el objetivo. En el modo carrera, el despido depende de este valor.
+async function computeBoardTarget() {
+    const teams = (gameState.leagueTeams && gameState.leagueTeams.length) ? gameState.leagueTeams : Object.keys(gameState.standings || {});
+    const ratings = [];
+    for (const t of teams) {
+        let squad, f;
+        if (t === gameState.team) { f = gameState.formation || '433'; squad = gameState.squad; }
+        else { squad = await getAISquadCached(t, gameState.division, gameState.currentSeason); f = chooseAIFormation(squad); }
+        ratings.push([t, calculateTeamEffectiveOverall(pickBestXI(squad, f), f)]);
+    }
+    ratings.sort((a, b) => b[1] - a[1]);
+    const rank = Math.max(1, ratings.findIndex(r => r[0] === gameState.team) + 1);
+    // Previous season: la confianza se enfría hacia 60
+    gameState.boardConfidence = Math.round(((gameState.boardConfidence ?? 65) * 0.5 + 30) * 10) / 10;
+    gameState.boardWarn = 0;
+    gameState.boardTarget = Math.min(teams.length, Math.max(1, Math.round(rank * 0.9)));
+    gameState.boardTargetSeason = gameState.currentSeason;
+    gameState.boardLastPraise = -99;
+    addNews(`[Directiva] Objetivo de la temporada: terminar ${gameState.boardTarget === 1 ? 'campeón' : `en el puesto ${gameState.boardTarget}º o mejor`} (tu plantilla es la ${rank}ª de ${teams.length} por nivel).`, 'info');
+}
+
+async function boardUpdate() {
+    if (gameState.seasonType !== 'regular') return;
+    const me = gameState.team, st = gameState.standings && gameState.standings[me];
+    if (!st || st.pj < 3) return;
+    if (gameState.boardTargetSeason !== gameState.currentSeason) await computeBoardTarget();
+
+    const sorted = sortStandings(gameState.standings), n = sorted.length;
+    const pos = sorted.findIndex(([t]) => t === me) + 1;
+    const target = gameState.boardTarget || Math.ceil(n / 2);
+
+    const mine = (gameState.matchHistory || []).filter(m => !m.playoff && (m.home === me || m.away === me)).slice(-5);
+    let pts5 = 0;
+    mine.forEach(m => {
+        const [hg, ag] = String(m.score || '0-0').split('-').map(Number);
+        const my = m.home === me ? hg : ag, op = m.home === me ? ag : hg;
+        pts5 += my > op ? 3 : my === op ? 1 : 0;
+    });
+    const games5 = Math.max(1, mine.length);
+    let delta = Math.max(-3, Math.min(3, (target - pos) / n * 14));       // posición vs objetivo
+    delta += (pts5 / (games5 * 3) - 0.45) * 9;                              // forma reciente
+    if (gameState.balance < 0) delta -= 1.5;                                // números rojos
+    const before = gameState.boardConfidence ?? 65;
+    const conf = Math.max(0, Math.min(100, before + Math.max(-6, Math.min(4, delta))));
+    gameState.boardConfidence = Math.round(conf * 10) / 10;
+
+    const where = `vas ${pos}º y el objetivo es el ${target}º`;
+    if (conf < 30 && (gameState.boardWarn || 0) < 2) {
+        gameState.boardWarn = 2;
+        addNews(`🔴 [Directiva] ÚLTIMO AVISO: ${where}, con ${pts5} puntos de los últimos ${games5 * 3}. Si no cambia la dinámica de inmediato, tomaremos decisiones.`, 'error');
+    } else if (conf < 45 && (gameState.boardWarn || 0) < 1) {
+        gameState.boardWarn = 1;
+        addNews(`⚠️ [Directiva] PRIMER AVISO: ${where}. La directiva pierde la confianza en el rumbo del equipo.`, 'warning');
+    } else if (conf >= 55 && (gameState.boardWarn || 0) > 0) {
+        gameState.boardWarn = 0;
+        addNews(`[Directiva] Vemos una mejora en el equipo y recuperas parte de nuestra confianza (${where}).`, 'success');
+    } else if (conf >= 75 && pos <= target && gameState.week - (gameState.boardLastPraise ?? -99) >= 6) {
+        gameState.boardLastPraise = gameState.week;
+        addNews(`[Directiva] Felicitaciones: ${pos}º en la tabla, por encima del objetivo (${target}º). Sigan así.`, 'success');
+    } else if (gameState.week % 6 === 0 && conf >= 45 && conf < 75) {
+        addNews(`[Directiva] Seguimiento: ${where}. ${pos <= target ? 'Cumplís lo esperado.' : 'Esperamos más.'}`, pos <= target ? 'info' : 'warning');
+    }
+}
+function boardMessages() { return boardUpdate(); }
+
 // ============================================================
 // TEMPORADAS: ESTRUCTURA DE LIGAS, ASCENSOS, DESCENSOS Y PLAYOFFS
 // ------------------------------------------------------------
@@ -1804,7 +1911,7 @@ function ensureLeagueStructure() {
 
 // Simula una liga completa entre equipos de la IA (para las divisiones
 // en las que no juega el usuario). Usa el mismo motor que los partidos.
-async function simulateLeagueTable(teams, division, season) {
+async function simulateLeagueTable(teams, division, season, upToWeek = Infinity, played = null) {
     const strength = {};
     for (const team of teams) {
         const squad = await getAISquadCached(team, division, season);
@@ -1816,12 +1923,14 @@ async function simulateLeagueTable(teams, division, season) {
     }
     const standings = initStandings(teams);
     for (const m of generateLeagueCalendar(teams)) {
+        if (m.week >= upToWeek) continue;           // solo las jornadas ya jugadas
         const h = strength[m.home], a = strength[m.away];
         const r = calculateMatchOutcomeImproved({
             teamOverall: h.overall, opponentOverall: a.overall,
             teamFormation: h.formation, opponentFormation: a.formation, isHome: true
         });
         addResultToStandings(standings, m.home, m.away, r.teamGoals, r.opponentGoals);
+        if (played) played.push({ week: m.week, home: m.home, away: m.away, score: `${r.teamGoals}-${r.opponentGoals}`, homeGoals: r.teamGoals, awayGoals: r.opponentGoals });
     }
     return standings;
 }
@@ -2285,6 +2394,14 @@ async function simulateFullWeek() {
 }
 
 async function simulateFullWeekInner() {  
+    // Partidas antiguas con plantilla incompleta: se completa una sola vez
+    if ((gameState.squad || []).length < 16 && !gameState.squadToppedUp && gameState.seasonType !== 'playoff') {
+        const before = gameState.squad.length;
+        gameState.squad = topUpSquad(gameState.squad, gameState.division, gameState.team, 20);
+        gameState.squadToppedUp = true;
+        addNews(`[Secretario Técnico] La plantilla era demasiado corta (${before} jugadores): hemos incorporado ${gameState.squad.length - before} para poder competir.`, 'warning');
+        gameState.lineup = pickBestXI(gameState.squad, gameState.formation || '433').filter(Boolean);
+    }
     // Fase de playoff: cada semana se juega un partido de tu eliminatoria
     if (gameState.seasonType === 'playoff') {
         await playoffStep();
@@ -2343,7 +2460,7 @@ async function simulateFullWeekInner() {
     });  
 
     secondCoachAdvice();
-    if (gameState.week % 4 === 0) boardMessages();
+    await boardUpdate();
 
     // ===== PARTIDOS DE LA JORNADA =====
     const currentWeekMatches = gameState.seasonCalendar.filter(

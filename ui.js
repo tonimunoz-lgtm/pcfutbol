@@ -772,8 +772,8 @@ function renderNegotiationsList(state) {
             <table style="font-size: 0.9em; min-width: 1000px;">
                 <thead>
                     <tr>
-                        <th>MEDIA</th>
                         <th>JUGADOR</th>
+                        <th>MEDIA</th>
                         <th>EDAD</th>
                         <th>POS</th>
                         <th>AÑOS RESTANTES</th>
@@ -791,8 +791,8 @@ function renderNegotiationsList(state) {
         
         html += `
             <tr style="background: ${p.contractYears <= 1 ? 'rgba(255, 51, 51, 0.1)' : ''};">
-                <td>${p.overall}</td>
                 <td>${p.name}</td>
+                <td>${p.overall}</td>
                 <td>${p.age}</td>
                 <td>${p.position}</td>
                 <td style="color: ${urgencyColor}; font-weight: bold;">
@@ -802,7 +802,9 @@ function renderNegotiationsList(state) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>
                 <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
                 <td>
-                    ${(state.pendingRenewals || []).some(r => r.playerName === p.name)
+                    ${(p.refusesToRenew && p.refusalSeason === state.currentSeason)
+                        ? `<button class="btn btn-sm" disabled style="opacity:.7;cursor:help;background:#7a2430" title="${String(p.refusalReason || 'No quiere renovar').replace(/"/g, '&quot;')}">🚫 No quiere renovar</button>`
+                        : (state.pendingRenewals || []).some(r => r.playerName === p.name)
                         ? `<button class="btn btn-sm" disabled style="opacity:.6;cursor:default" title="Responderá en las próximas jornadas">📨 Oferta enviada</button>`
                         : `<button class="btn btn-sm" onclick="window.openRenewalModal(${state.squad.indexOf(p)})">📝 Renovar</button>`}
                 </td>

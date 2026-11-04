@@ -202,7 +202,7 @@ window.injectMatchSummary = function(matchResult) {
             </div>
             
             <div class="ms-compact">
-                <div class="ms-block">
+                <div class="ms-block ms-goals">
                     <h3>⚽ Goles</h3>
                     <div class="ms-two">
                         <div class="ms-col home">${allGoals.filter(g => g.team === homeTeam).map(g => `<div class="ms-ev"><span class="ms-min">${g.minute}'</span> ${g.name}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
@@ -210,20 +210,20 @@ window.injectMatchSummary = function(matchResult) {
                     </div>
                 </div>
                 ${allCards.length > 0 ? `
-                <div class="ms-block">
+                <div class="ms-block ms-cards">
                     <h3>🟨🟥 Tarjetas</h3>
                     <div class="ms-two">
                         <div class="ms-col home">${allCards.filter(c => c.team === homeTeam).map(c => `<div class="ms-ev">${c.type === 'yellow' ? '🟨' : '🟥'} <span class="ms-min">${c.minute}'</span> ${c.player}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
                         <div class="ms-col away">${allCards.filter(c => c.team !== homeTeam).map(c => `<div class="ms-ev">${c.player} <span class="ms-min">${c.minute}'</span> ${c.type === 'yellow' ? '🟨' : '🟥'}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
                     </div>
                 </div>` : ''}
-                <div class="ms-block">
+                <div class="ms-block ms-poss-block">
                     <h3>📊 Posesión</h3>
                     <div class="ms-poss"><span>${stats.possession[0]}%</span>
                         <div class="ms-poss-bar"><div style="width:${stats.possession[0]}%"></div></div>
                         <span>${stats.possession[1]}%</span></div>
                 </div>
-                <div class="ms-block">
+                <div class="ms-block ms-stats-block">
                     <h3>📈 Estadísticas</h3>
                     <div class="ms-stats">
                         ${[['Remates', stats.shots], ['A puerta', stats.shotsOnTarget], ['Pases', stats.passes],

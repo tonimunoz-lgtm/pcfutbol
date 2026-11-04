@@ -1297,3 +1297,12 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
 .pcf-mode-card:hover .pcf-mode-banner { transform:scale(1.04); }
 .pcf-mode-card { --banner-clip: hidden; }
 @media (max-width:640px) { .pcf-mode-banner { aspect-ratio:16/7; object-position:50% 18%; } }
+
+/* Resultado del partido: cada bloque en su propio recuadro (goles ≠ tarjetas) */
+.pcf-summary-view .ms-block { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:10px 14px 12px; }
+.pcf-summary-view .ms-block h3 { margin:0 0 8px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.12); letter-spacing:.1em; }
+.pcf-summary-view .ms-goals { border-color:rgba(76,175,80,.6); background:linear-gradient(180deg,rgba(76,175,80,.12),rgba(76,175,80,.03)); }
+.pcf-summary-view .ms-goals h3 { color:#8de08f !important; border-bottom-color:rgba(76,175,80,.4); }
+.pcf-summary-view .ms-cards { border-color:rgba(255,193,7,.6); background:linear-gradient(180deg,rgba(255,193,7,.12),rgba(244,67,54,.05)); }
+.pcf-summary-view .ms-cards h3 { color:#ffd54f !important; border-bottom-color:rgba(255,193,7,.4); }
+.pcf-summary-view .ms-col.home, .pcf-summary-view .ms-col.away { min-height:20px; }

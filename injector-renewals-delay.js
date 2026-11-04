@@ -50,6 +50,8 @@
         let prob = 0.5;
 
         const salaryRatio = offer.newSalary / player.salary;
+        // Nadie acepta una rebaja grande de sueldo
+        if (salaryRatio < 0.8) return 0.02;
         if (salaryRatio >= 1.2) prob += 0.3;
         else if (salaryRatio >= 1.1) prob += 0.2;
         else if (salaryRatio >= 1.0) prob += 0.1;
@@ -70,6 +72,30 @@
         prob += secretaryEffect;
 
         return Math.max(0, Math.min(1, prob));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // MOTIVO DEL RECHAZO: se deduce de las condiciones reales de la oferta
+    // ─────────────────────────────────────────────────────────────
+    function explainRefusal(player, offer, state) {
+        const fmt = n => Math.round(n).toLocaleString('es-ES');
+        const reasons = [];   // { text, hard }  hard = no depende de la oferta (no se arregla subiendo el sueldo)
+        const E = window.pcfEconomy;
+        const expected = E ? E.expectedSalary(player, state.division) : player.salary;
+        if (offer.newSalary < player.salary) reasons.push({ text: `No acepta cobrar menos de lo que cobra ahora (${fmt(player.salary)}€/sem).`, hard: false });
+        else if (offer.newSalary < expected * 0.9) reasons.push({ text: `Considera que su sueldo está por debajo de lo que vale en el mercado: pide en torno a ${fmt(expected)}€/sem.`, hard: false });
+        if (player.age < 30 && offer.newYears <= 2) reasons.push({ text: 'Quiere más estabilidad: busca un contrato más largo (3 años o más).', hard: false });
+        const inXI = (state.lineup || []).some(l => l && l.name === player.name);
+        const best = [...(state.squad || [])].sort((a, b) => (b.overall || 0) - (a.overall || 0));
+        const rankInSquad = best.findIndex(x => x.name === player.name);
+        if (!inXI && rankInSquad >= 0 && rankInSquad < 14 && (player.matches || 0) < 4)
+            reasons.push({ text: 'Quiere jugar más: no cuenta con ser titular y busca minutos.', hard: true });
+        if ((player.satisfaction ?? 70) < 35) reasons.push({ text: 'Está descontento con su situación en el club.', hard: true });
+        const board = state.boardConfidence;
+        if (board != null && board < 40 && (player.overall || 0) >= 72)
+            reasons.push({ text: 'No ve un proyecto deportivo ganador: el equipo no va bien.', hard: true });
+        if (!reasons.length) reasons.push({ text: 'No ha quedado convencido con las condiciones; podría aceptar con un sueldo algo mayor o un contrato más largo.', hard: false });
+        return reasons;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -127,11 +153,20 @@
                 showToast(`✅ ${renewal.playerName} ha renovado su contrato por ${renewal.newYears} años`, 'success');
 
             } else {
-                news(
-                    `❌ ${renewal.playerName} ha rechazado la oferta de renovación. Necesita mejores condiciones.`,
-                    'warning'
-                );
-                showToast(`❌ ${renewal.playerName} rechazó la renovación`, 'error');
+                const reasons = explainRefusal(player, renewal, state);
+                player.renewalRefusals = (player.renewalRefusals || 0) + 1;
+                const hard = reasons.some(r => r.hard);
+                // Si el motivo no depende de la oferta, o ya ha rechazado dos veces, deja claro que no renovará
+                if (hard || player.renewalRefusals >= 3) {
+                    player.refusesToRenew = true;
+                    player.refusalSeason = state.currentSeason;
+                    player.refusalReason = reasons.map(r => r.text).join(' ');
+                    news(`🚫 ${renewal.playerName} NO quiere renovar. ${reasons.map(r => r.text).join(' ')} No insistas con más ofertas esta temporada.`, 'error');
+                    showToast(`🚫 ${renewal.playerName} no quiere renovar`, 'error');
+                } else {
+                    news(`❌ ${renewal.playerName} rechaza la oferta de renovación. ${reasons.map(r => r.text).join(' ')}`, 'warning');
+                    showToast(`❌ ${renewal.playerName} rechazó: ${reasons[0].text}`, 'error');
+                }
             }
         });
 
@@ -255,6 +290,10 @@
             const player = state.squad.find(p => p.name === playerName);
             if (!player) {
                 window._originalSubmitRenewalOffer?.();
+                return;
+            }
+            if (player.refusesToRenew && player.refusalSeason === state.currentSeason) {
+                (window.pcfNotify || alert)('No quiere renovar', `${player.name} ha dejado claro que no renovará esta temporada.\n\n${player.refusalReason || ''}`);
                 return;
             }
             // Una sola oferta pendiente por jugador
