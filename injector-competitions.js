@@ -100,13 +100,17 @@ const COMPETITION_CONFIG = {
 // ============================================================
 // COLORES DE ZONA
 // ============================================================
+function zoneLabel(key) {
+    const z = ZONE_COLORS[key];
+    return `<img class="pcf-comp-icon" src="assets/iconos/competiciones/${z.icon}.webp" alt="" aria-hidden="true">${z.label}`;
+}
 const ZONE_COLORS = {
-    champions:       { bg: 'rgba(30,90,200,0.25)',  border: '#1E5AC8', label: '🔵 Champions League' },
-    europaLeague:    { bg: 'rgba(255,140,0,0.22)',  border: '#FF8C00', label: '🟠 Europa League' },
-    conferenceLague: { bg: 'rgba(0,180,100,0.22)',  border: '#00B464', label: '🟢 Conference League' },
-    promoteAuto:     { bg: 'rgba(50,200,50,0.25)',  border: '#32C832', label: '⬆️ Ascenso directo' },
-    promotePlayoff:  { bg: 'rgba(180,150,0,0.22)',  border: '#B49600', label: '⭐ Playoff ascenso' },
-    relegate:        { bg: 'rgba(200,40,40,0.25)',  border: '#C82828', label: '⬇️ Descenso' }
+    champions:       { bg: 'rgba(30,90,200,0.25)',  border: '#1E5AC8', label: 'Champions League',    icon: 'europa-maxima' },
+    europaLeague:    { bg: 'rgba(255,140,0,0.22)',  border: '#FF8C00', label: 'Europa League',       icon: 'europa-segunda' },
+    conferenceLague: { bg: 'rgba(0,180,100,0.22)',  border: '#00B464', label: 'Conference League',   icon: 'europa-tercera' },
+    promoteAuto:     { bg: 'rgba(50,200,50,0.25)',  border: '#32C832', label: 'Ascenso directo',     icon: 'ascenso' },
+    promotePlayoff:  { bg: 'rgba(180,150,0,0.22)',  border: '#B49600', label: 'Playoff ascenso',     icon: 'playoff' },
+    relegate:        { bg: 'rgba(200,40,40,0.25)',  border: '#C82828', label: 'Descenso',            icon: 'descenso' }
 };
 
 // ============================================================
@@ -703,22 +707,22 @@ function addLegend(division, cfg, total) {
         const n = cfg.champions?.length||0;
         const eu = cfg.europaLeague?.length||0;
         const co = cfg.conferenceLague?.length||0;
-        if(n)  items.push({...ZONE_COLORS.champions,       text:`Pos 1-${n}: ${ZONE_COLORS.champions.label}`});
-        if(eu) items.push({...ZONE_COLORS.europaLeague,    text:`Pos ${n+1}-${n+eu}: ${ZONE_COLORS.europaLeague.label}`});
-        if(co) items.push({...ZONE_COLORS.conferenceLague, text:`Pos ${n+eu+1}: ${ZONE_COLORS.conferenceLague.label}`});
-        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${ZONE_COLORS.relegate.label}`});
+        if(n)  items.push({...ZONE_COLORS.champions,       text:`Pos 1-${n}: ${zoneLabel('champions')}`});
+        if(eu) items.push({...ZONE_COLORS.europaLeague,    text:`Pos ${n+1}-${n+eu}: ${zoneLabel('europaLeague')}`});
+        if(co) items.push({...ZONE_COLORS.conferenceLague, text:`Pos ${n+eu+1}: ${zoneLabel('conferenceLague')}`});
+        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${zoneLabel('relegate')}`});
     } else if (division==='segunda') {
-        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1-2: ${ZONE_COLORS.promoteAuto.label}`});
-        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 3-6: ${ZONE_COLORS.promotePlayoff.label}`});
-        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${ZONE_COLORS.relegate.label}`});
+        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1-2: ${zoneLabel('promoteAuto')}`});
+        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 3-6: ${zoneLabel('promotePlayoff')}`});
+        if(cfg.relegate) items.push({...ZONE_COLORS.relegate, text:`Pos ${total-cfg.relegate+1}-${total}: ${zoneLabel('relegate')}`});
     } else {
-        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1: ${ZONE_COLORS.promoteAuto.label}`});
-        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 2-5: ${ZONE_COLORS.promotePlayoff.label}`});
+        items.push({...ZONE_COLORS.promoteAuto,    text:`Pos 1: ${zoneLabel('promoteAuto')}`});
+        items.push({...ZONE_COLORS.promotePlayoff, text:`Pos 2-5: ${zoneLabel('promotePlayoff')}`});
     }
     items.forEach(item => {
         const s = document.createElement('span');
         s.style.cssText = `background:${item.bg};border-left:3px solid ${item.border};padding:4px 10px;border-radius:4px;color:#fff;`;
-        s.textContent = item.text; div.appendChild(s);
+        s.innerHTML = item.text; div.appendChild(s);
     });
     const tbl = page.querySelector('table');
     if (tbl) tbl.insertAdjacentElement('afterend', div);
@@ -745,10 +749,10 @@ function injectCompUI() {
     tabs.id = 'comp-tabs';
     tabs.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px;';
 
-    let html = `<button class="ctab active" id="ctab-liga" onclick="window.showCompTab('liga')">⚽ Liga</button>`;
-    if (hasPO) html += `<button class="ctab" id="ctab-playoff" onclick="window.showCompTab('playoff')">⬆️ Playoff Ascenso</button>`;
-    if (hasEU) html += `<button class="ctab" id="ctab-europa" onclick="window.showCompTab('europa')">🏆 Europa</button>`;
-    if (hasCopa) html += `<button class="ctab" id="ctab-copa" onclick="window.showCompTab('copa')">🥇 Copa del Rey</button>`;
+    let html = `<button class="ctab active" id="ctab-liga" onclick="window.showCompTab('liga')"><img class="pcf-comp-icon" src="assets/iconos/competiciones/liga.webp" alt="" aria-hidden="true">Liga</button>`;
+    if (hasPO) html += `<button class="ctab" id="ctab-playoff" onclick="window.showCompTab('playoff')"><img class="pcf-comp-icon" src="assets/iconos/competiciones/playoff.webp" alt="" aria-hidden="true">Playoff Ascenso</button>`;
+    if (hasEU) html += `<button class="ctab" id="ctab-europa" onclick="window.showCompTab('europa')"><img class="pcf-comp-icon" src="assets/iconos/competiciones/europa-maxima.webp" alt="" aria-hidden="true">Europa</button>`;
+    if (hasCopa) html += `<button class="ctab" id="ctab-copa" onclick="window.showCompTab('copa')"><img class="pcf-comp-icon" src="assets/iconos/competiciones/copa.webp" alt="" aria-hidden="true">Copa del Rey</button>`;
     tabs.innerHTML = html;
 
     const header = page.querySelector('.page-header');
@@ -1048,7 +1052,7 @@ function renderCopa() {
     };
     const resOf = (ph, leg) => (comp.copaResults || []).filter(r => r.phase === ph && (leg ? r.leg === leg : true)).slice(-1)[0];
 
-    let html=`<h3 style="color:#FFD700;margin:10px 0 8px">🥇 Copa del Rey — ${state?.currentSeason||''}</h3>`;
+    let html=`<h3 style="color:#FFD700;margin:10px 0 8px"><img class="pcf-comp-icon" src="assets/iconos/competiciones/copa.webp" alt="" aria-hidden="true"> Copa del Rey — ${state?.currentSeason||''}</h3>`;
     if (phase==='champion') {
         html+=`<div class="result-banner" style="background:rgba(255,215,0,.2);border-color:#FFD700;margin-bottom:12px"><div style="font-size:1.8em">🏆</div><div style="color:#FFD700;font-weight:bold;font-size:1.1em">¡CAMPEÓN DE LA COPA DEL REY!</div></div>`;
     } else if (phase==='eliminated') {
@@ -1165,7 +1169,7 @@ function renderPlayoff() {
 
 function renderSegundaPlayoff(panel, po) {
     const myTeam=po.myTeam;
-    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Primera — ${po.season}</h3>`;
+    let html=`<h3 style="color:#FFD700;margin:10px 0 10px"><img class="pcf-comp-icon" src="assets/iconos/competiciones/playoff.webp" alt="" aria-hidden="true"> Playoff Ascenso a Primera — ${po.season}</h3>`;
 
     // Ascensos directos
     html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
@@ -1192,7 +1196,7 @@ function renderSegundaPlayoff(panel, po) {
 
 function renderRFEFPlayoff(panel, po) {
     const myTeam=po.myTeam;
-    let html=`<h3 style="color:#FFD700;margin:10px 0 10px">⬆️ Playoff Ascenso a Segunda — ${po.season}</h3>`;
+    let html=`<h3 style="color:#FFD700;margin:10px 0 10px"><img class="pcf-comp-icon" src="assets/iconos/competiciones/playoff.webp" alt="" aria-hidden="true"> Playoff Ascenso a Segunda — ${po.season}</h3>`;
     html+=`<div style="background:rgba(50,200,50,.12);border-left:4px solid #32C832;border-radius:6px;padding:10px 14px;margin-bottom:14px">
         <div style="color:#32C832;font-weight:bold;font-size:.85em;margin-bottom:6px">✅ ASCENSOS DIRECTOS (1º de cada grupo)</div>
         <div style="color:#fff">🥇 Grupo 1: <strong>${po.directAscent1||'—'}</strong>${po.directAscent1===myTeam?' <span style="color:#FFD700">(TÚ)</span>':''}</div>

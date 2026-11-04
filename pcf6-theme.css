@@ -1242,3 +1242,13 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
             text-align: left;
             color: #FF5722;
         }
+
+/* Iconos de competición (grupo 3): pestañas, leyendas y ventanas de partido */
+.pcf-comp-icon { display:inline-block; width:1.35em; height:1.35em; object-fit:contain; vertical-align:middle; margin:-.2em .4em 0 0;
+    filter:drop-shadow(1px 1px 1px rgba(0,0,0,.5)); }
+.ctab .pcf-comp-icon { width:22px; height:22px; margin:-3px 6px -3px 0; }
+#comp-legend .pcf-comp-icon { width:20px; height:20px; margin-right:6px; }
+.pcf-comp-icon-lg { width:1.2em; height:1.2em; margin-right:.3em; }
+.cu-logo .pcf-comp-icon-lg, .cr-logo .pcf-comp-icon-lg { width:72px; height:72px; margin:0; filter:drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.cu-comp .pcf-comp-icon-lg, .cr-badge .pcf-comp-icon-lg { width:20px; height:20px; margin-right:6px; }
+#comp-copa-panel h3 .pcf-comp-icon, #comp-playoff-panel h3 .pcf-comp-icon { width:26px; height:26px; }

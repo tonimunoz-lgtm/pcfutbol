@@ -30,27 +30,27 @@ console.log('🏆 injector-cup-matches.js v4 cargando...');
 const CUP_CONFIG = {
     playoff: {
         name:'Playoff de ascenso', shortName:'Playoff de ascenso',
-        emoji:'⬆️', color:'#2E7D32', accentColor:'#66BB6A',
+        newsEmoji:'⬆️', emoji:'<img class="pcf-comp-icon pcf-comp-icon-lg" src="assets/iconos/competiciones/playoff.webp" alt="">', color:'#2E7D32', accentColor:'#66BB6A',
         gradient:'linear-gradient(135deg,#06240f 0%,#0d3d1c 50%,#1b5e20 100%)'
     },
     champions: {
         name:'UEFA Champions League', shortName:'Champions League',
-        emoji:'⭐', color:'#1E5AC8', accentColor:'#4a9eff',
+        newsEmoji:'⭐', emoji:'<img class="pcf-comp-icon pcf-comp-icon-lg" src="assets/iconos/competiciones/europa-maxima.webp" alt="">', color:'#1E5AC8', accentColor:'#4a9eff',
         gradient:'linear-gradient(135deg,#0a0a2e 0%,#1a1a5e 50%,#0d3b8c 100%)'
     },
     europaLeague: {
         name:'UEFA Europa League', shortName:'Europa League',
-        emoji:'🟠', color:'#FF8C00', accentColor:'#ffaa33',
+        newsEmoji:'🟠', emoji:'<img class="pcf-comp-icon pcf-comp-icon-lg" src="assets/iconos/competiciones/europa-segunda.webp" alt="">', color:'#FF8C00', accentColor:'#ffaa33',
         gradient:'linear-gradient(135deg,#1a0d00 0%,#3d1f00 50%,#7a3d00 100%)'
     },
     conferenceLague: {
         name:'UEFA Conference League', shortName:'Conference League',
-        emoji:'🟢', color:'#00B464', accentColor:'#00d478',
+        newsEmoji:'🟢', emoji:'<img class="pcf-comp-icon pcf-comp-icon-lg" src="assets/iconos/competiciones/europa-tercera.webp" alt="">', color:'#00B464', accentColor:'#00d478',
         gradient:'linear-gradient(135deg,#001a0d 0%,#003d1f 50%,#007a3d 100%)'
     },
     copa: {
         name:'Copa del Rey', shortName:'Copa del Rey',
-        emoji:'🥇', color:'#FFD700', accentColor:'#FFD700',
+        newsEmoji:'🥇', emoji:'<img class="pcf-comp-icon pcf-comp-icon-lg" src="assets/iconos/competiciones/copa.webp" alt="">', color:'#FFD700', accentColor:'#FFD700',
         gradient:'linear-gradient(135deg,#1a1500 0%,#3d3000 50%,#7a6000 100%)'
     }
 };
@@ -1181,7 +1181,7 @@ function hookCupSimulateWeek(){
         const extraTxt = result.penalties ? ` (prórroga; penaltis ${result.penalties.my}-${result.penalties.opp}: ${result.qualified?'pasamos':'eliminados'})`
             : result.extraTime ? ' (tras la prórroga)' : '';
         window.gameLogic?.addNews(
-            `${cfg.emoji} ${phTxt}: ${result.win?'¡Victoria':result.draw?'Empate':'Derrota'} ${result.myGoals}-${result.oppGoals} vs ${pending.opponent}${extraTxt}`,
+            `${cfg.newsEmoji||''} ${phTxt}: ${result.win?'¡Victoria':result.draw?'Empate':'Derrota'} ${result.myGoals}-${result.oppGoals} vs ${pending.opponent}${extraTxt}`,
             (result.qualified ?? result.win)?'success':result.draw?'info':'error'
         );
 
