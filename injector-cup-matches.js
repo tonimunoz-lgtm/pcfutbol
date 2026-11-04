@@ -281,11 +281,10 @@ function initCupCalendar() {
             });
         });
         // Pre-asignar rival Copa (cambia cada ronda)
-        const used=[];
-        cal.filter(m=>m.type==='copa').forEach(m=>{
-            if (m.id==='copa_sf_2') { m.opponent = cal.find(x=>x.id==='copa_sf_1')?.opponent; return; }
-            m.opponent = getCopaRival(division, m.phase, used);
-            used.push(m.opponent);
+        // Solo se sortea la primera ronda; las siguientes, al llegar a ellas (como en la realidad)
+        const copaMatches = cal.filter(m=>m.type==='copa');
+        copaMatches.forEach((m,i)=>{
+            m.opponent = i===0 ? getCopaRival(division, m.phase, []) : null;
         });
         console.log(`🥇 Copa del Rey calendario OK (${division})`);
     } else {
@@ -464,7 +463,9 @@ function getPendingMatch(week) {
 
     for (const m of cal) {
         if (m.played || m.eliminated) continue;
-        if (m.afterLigaWeek !== week) continue;
+        // Toca jugarlo esta semana o ya va con retraso (dos partidos en la misma jornada,
+        // o ronda desbloqueada con la jornada ya pasada). Antes solo si coincidía exacta.
+        if (m.afterLigaWeek > week) continue;
         if (m.locked) continue; // esperando resultado de ronda anterior
 
         // Copa: verificar no eliminado
@@ -588,6 +589,15 @@ function processResult(match, result) {
             const order=['copa_r1','copa_r32','copa_r16','copa_qf','copa_sf','copa_final'];
             const idx=order.indexOf(match.phase);
             comp.copaPhase=order[idx+1]||'champion';
+            // Sorteo de la siguiente ronda (ahora, no antes)
+            const nextPhase=order[idx+1];
+            const nextMatches=cal.filter(m=>m.type==='copa'&&m.phase===nextPhase&&!m.played);
+            if(nextMatches.length){
+                const rival=getCopaRival(getGS()?.division, nextPhase, [...(comp.copaResults||[]).map(r=>r.rival), match.opponent]);
+                nextMatches.forEach(m=>{ m.opponent=rival; });
+                const label=(PHASE_NAMES[nextPhase]||nextPhase);
+                window.gameLogic?.addNews?.(`🎲 Sorteo de Copa del Rey — ${label}: te enfrentarás al ${rival}.`, 'info');
+            }
         }else{
             comp.copaPhase='eliminated';
             cal.filter(m=>m.type==='copa'&&!m.played).forEach(m=>m.eliminated=true);
@@ -1191,6 +1201,13 @@ function hookCupSimulateWeek(){
 // API PÚBLICA
 // ============================================================
 window.CupMatches = {
+    // Partidos aún por jugar (desbloqueados y sin eliminar): el juego no cierra la temporada hasta jugarlos
+    pendingCount: () => {
+        const comp = getCompState() || {};
+        return (getCal() || []).filter(m => !m.played && !m.eliminated && !m.locked)
+            .filter(m => m.type === 'copa' ? !['eliminated', 'champion'].includes(comp.copaPhase)
+                                           : !['eliminated', 'champion'].includes(comp.europeanPhase)).length;
+    },
     // Acceso directo al cupData interno (para que renderEuropa lo lea aunque gameState no lo tenga aún)
     getData: ()=> _cupData || getCupData(),
     getCalendar: ()=> getCal(),

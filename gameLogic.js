@@ -2480,8 +2480,18 @@ async function simulateFullWeekInner() {
     }  
 
     // ===== FIN DE TEMPORADA =====
+    // Si quedan partidos de copa o de Europa, la temporada sigue hasta jugarlos
     if (gameState.week > gameState.maxSeasonWeeks) {
-        await endSeason();
+        const pendingCups = (typeof window !== 'undefined' && window.CupMatches?.pendingCount?.()) || 0;
+        if (pendingCups > 0) {
+            if (!gameState.cupsPendingNotified) {
+                addNews(`🏁 Liga terminada. Quedan ${pendingCups} partido(s) de copa o competición europea: la temporada se cierra al jugarlos.`, 'info');
+                gameState.cupsPendingNotified = true;
+            }
+        } else {
+            gameState.cupsPendingNotified = false;
+            await endSeason();
+        }
     }
         
     return { myMatch: myMatchResult, forcedLoss };

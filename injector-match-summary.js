@@ -186,7 +186,7 @@ window.injectMatchSummary = function(matchResult) {
     modal.id = 'matchSummaryModal';
     
     modal.innerHTML = `
-        <div class="match-container">
+        <div class="match-container pcf-summary-view">
             <button class="match-close" onclick="this.parentElement.parentElement.remove()">✖</button>
             
             <div class="match-header">

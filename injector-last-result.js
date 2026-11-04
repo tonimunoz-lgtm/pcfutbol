@@ -188,7 +188,7 @@
                 <h1>⚽ Último Resultado</h1>
                 <button class="page-close-btn" onclick="closePage('last-result')">✖ CERRAR</button>
             </div>
-            <div id="last-result-content" style="padding:10px 0;"></div>
+            <div id="last-result-content" class="pcf-summary-view" style="padding:10px 0;"></div>
         `;
         document.body.appendChild(page);
         console.log('[LastResult] página #last-result creada ✓');

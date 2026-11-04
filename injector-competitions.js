@@ -1076,7 +1076,8 @@ function renderCopa() {
             } else if (m.eliminated) {
                 html+=`<div style="color:rgba(255,255,255,.35);font-size:.85em">— ${legTxt}No disputado</div>`;
             } else {
-                html+=`<div style="color:rgba(255,255,255,.6);font-style:italic;font-size:.88em">⏳ ${legTxt}Pendiente${m.opponent?` — contra ${m.opponent} (${venue})`:''} · tras la jornada ${m.afterLigaWeek}</div>`;
+                const rival = m.opponent ? `contra ${m.opponent} (${venue})` : 'rival por sortear';
+                html+=`<div style="color:rgba(255,255,255,.6);font-style:italic;font-size:.88em">⏳ ${legTxt}Pendiente — ${rival} · tras la jornada ${m.afterLigaWeek}</div>`;
             }
         });
         html+=`</div>`;
