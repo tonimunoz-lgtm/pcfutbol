@@ -535,7 +535,7 @@ input:focus, select:focus {
     width: 100%;           
     max-width: 1000px;      
     aspect-ratio: 16/9;    
-    background-image: url('assets/imagenes/campodefutbol.png');
+    background-image: url('assets/imagenes/campodefutbol.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -565,7 +565,7 @@ input:focus, select:focus {
     max-width: 1000px;        /* lÃ­mite mÃ¡ximo */
     aspect-ratio: 16/9;      /* mantiene proporciÃ³n horizontal */
     position: relative;
-    background-image: url('assets/imagenes/campodefutbol.png');
+    background-image: url('assets/imagenes/campodefutbol.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -1328,7 +1328,7 @@ Salida
     width: 100%;               /* ocupa todo el ancho del contenedor */
     max-width: 800px;           /* lÃ­mite mÃ¡ximo para pantallas grandes */
     aspect-ratio: 16/9;         /* campo horizontal */
-    background-image: url('assets/imagenes/campodefutbol.png');
+    background-image: url('assets/imagenes/campodefutbol.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -1842,7 +1842,7 @@ Salida
         left: 50%;
         transform: translate(-50%, -50%) rotate(90deg);
         transform-origin: center center;
-        background-image: url('assets/imagenes/campodefutbol.png');
+        background-image: url('assets/imagenes/campodefutbol.webp');
         background-size: cover;
         background-position: center;
         border: 2px solid #8BC34A;

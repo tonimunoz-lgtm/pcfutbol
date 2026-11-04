@@ -1289,3 +1289,11 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
 .pitch-player .pcf-st-lineup, .draggable-player .pcf-st-lineup { width:16px; height:16px; margin:0 0 0 5px; vertical-align:-3px; }
 .pcf-estado { white-space:nowrap; }
 .pcf-estado .pcf-st-icon { width:1.35em; height:1.35em; }
+
+/* Ilustraciones de las tarjetas de modo de juego (grupo 7) */
+.pcf-mode-card { overflow:hidden; }
+.pcf-mode-banner { object-position:50% 22%; display:block; width:calc(100% + 36px); max-width:none; margin:-18px -18px 10px; aspect-ratio:16/8; object-fit:cover;
+    border-bottom:2px solid #06142e; box-shadow:0 2px 6px rgba(0,0,0,.45); transition:transform .35s; }
+.pcf-mode-card:hover .pcf-mode-banner { transform:scale(1.04); }
+.pcf-mode-card { --banner-clip: hidden; }
+@media (max-width:640px) { .pcf-mode-banner { aspect-ratio:16/7; object-position:50% 18%; } }

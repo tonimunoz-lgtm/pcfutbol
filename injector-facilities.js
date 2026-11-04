@@ -622,9 +622,9 @@
             ? `<div style="width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden;margin-bottom:4px;">
                  <img src="${s.stadiumImage}" style="width:100%;height:100%;object-fit:cover;display:block;">
                </div>`
-            : `<div style="width:100%;aspect-ratio:4/3;background:rgba(255,255,255,.03);border-radius:8px;
-                           display:flex;align-items:center;justify-content:center;color:#444;font-size:.8em;margin-bottom:4px;">
-                 🏟️ Sin foto
+            : `<div style="position:relative;width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden;margin-bottom:4px;">
+                 <img src="assets/imagenes/estadio-sin-foto.webp" alt="Estadio" style="width:100%;height:100%;object-fit:cover;display:block;">
+                 <span style="position:absolute;left:0;right:0;bottom:0;padding:4px 8px;background:rgba(3,10,26,.7);color:#cfe0ff;font-size:.7em;text-align:center;">Ilustración genérica · sube la foto real en Admin</span>
                </div>`;
 
         const tabStadium  = _activeTab === 'stadium';
