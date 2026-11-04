@@ -628,25 +628,23 @@ console.log('🏫 Youth Training Injector cargando...');
         if (!container) return;
 
         const coaches = [
-            { role: 'entrenadorJuveniles', icon: '🏫', label: 'Entrenador de Juveniles', color: '#66BB6A', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
-            { role: 'entrenadorPorteros', icon: '🥅', label: 'Entrenador de Porteros', color: '#42A5F5', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
-            { role: 'segundoEntrenador', icon: '📋', label: 'Segundo Entrenador', color: '#FFA726', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
+            { role: 'entrenadorJuveniles', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-juveniles.webp" alt="">', label: 'Entrenador de Juveniles', color: '#66BB6A', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
+            { role: 'entrenadorPorteros', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-porteros.webp" alt="">', label: 'Entrenador de Porteros', color: '#42A5F5', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
+            { role: 'segundoEntrenador', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/segundo-entrenador.webp" alt="">', label: 'Segundo Entrenador', color: '#FFA726', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
         ];
 
-        container.innerHTML = `<h3 style="margin:0 0 12px; color:#e0e0e0;">👔 Cuerpo Técnico</h3>` +
+        container.innerHTML = `<h3 style="margin:0 0 12px;">Cuerpo técnico</h3>` +
         coaches.map(c => {
             const staff = state.staff?.[c.role];
             return `
-            <div style="background:#0a1628; border:1px solid ${c.color}33; border-radius:10px; padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <span style="font-size:1.2em;">${c.icon}</span>
-                    <strong style="color:${c.color}; margin-left:6px;">${c.label}</strong>
-                    ${staff ? `<span style="background:${c.color}22; color:${c.color}; font-size:0.75em; padding:2px 8px; border-radius:10px; margin-left:8px;">Nivel ${staff.level}</span>` : ''}
-                    <br>
-                    <span style="color:#aaa; font-size:0.82em;">${staff ? staff.name + ' · ' + fmt(staff.salary) + '€/sem' : 'No contratado'}</span><br>
-                    <span style="color:#666; font-size:0.78em;">${c.desc}</span>
+            <div class="pcf-staff-card" style="--c:${c.color}">
+                <div class="pcf-staff-card-pic">${c.icon}</div>
+                <div class="pcf-staff-card-body">
+                    <div class="pcf-staff-card-name"><strong>${c.label}</strong>${staff ? `<span class="pcf-staff-lvl">Nivel ${staff.level}</span>` : ''}</div>
+                    <div class="pcf-staff-card-who">${staff ? staff.name + ' · ' + fmt(staff.salary) + '€/sem' : 'No contratado'}</div>
+                    <div class="pcf-staff-card-desc">${c.desc}</div>
                 </div>
-                ${!staff ? `<span style="color:#888; font-size:0.8em; font-style:italic;">Ve a sección empleados para contratar</span>` : `<span style="color:#4CAF50; font-size:1.2em;">✓</span>`}
+                <div class="pcf-staff-card-act">${!staff ? '<em>Ve a «Empleados» para contratar</em>' : '<span style="color:#4CAF50;font-size:1.3em;">✓</span>'}</div>
             </div>`;
         }).join('');
     }

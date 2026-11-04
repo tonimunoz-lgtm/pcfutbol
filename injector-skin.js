@@ -141,6 +141,38 @@
         page.querySelectorAll('.pcf-com-card').forEach(sec => skin(sec, null));
     }
 
+    // ── Retratos del personal (grupo 4) ──────────────────────────
+    const STAFF_ICON = { medico:'medico', entrenador:'entrenador-fisico', entrenadorPorteros:'entrenador-porteros', fisio:'fisioterapeuta',
+        analista:'analista', scout:'ojeador', secretario:'secretario-tecnico', segundoEntrenador:'segundo-entrenador', entrenadorJuveniles:'entrenador-juveniles' };
+    const STAFF_BY_NAME = { 'médico':'medico', 'entrenador físico':'entrenador-fisico', 'entrenador de porteros':'entrenador-porteros', 'entrenador porteros':'entrenador-porteros',
+        'fisioterapeuta':'fisioterapeuta', 'analista de vídeo':'analista', 'analista vídeo':'analista', 'ojeador':'ojeador', 'secretario técnico':'secretario-tecnico',
+        'segundo entrenador':'segundo-entrenador', 'entrenador de juveniles':'entrenador-juveniles', 'entrenador juveniles':'entrenador-juveniles' };
+    const staffImg = f => `<img class="pcf-staff-icon" src="assets/iconos/personal/${f}.webp" alt="" aria-hidden="true">`;
+    const EMOJI_START = /^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation})(?:\uFE0F|\u200D\p{Extended_Pictographic})*\s*/u;
+    function staffIcons() {
+        // a) Tabla de Empleados: filas añadidas por otros módulos (p. ej. juveniles)
+        document.querySelectorAll('#staff tbody tr').forEach(tr => {
+            const td = tr.firstElementChild; if (!td || td.querySelector('.pcf-staff-icon')) return;
+            const txt = td.textContent.replace(EMOJI_START, '').trim().toLowerCase();
+            const f = STAFF_BY_NAME[txt]; if (!f) return;
+            td.classList.add('pcf-staff-role'); td.innerHTML = staffImg(f) + td.textContent.replace(EMOJI_START, '').trim();
+        });
+        // b) Ventana de contratar personal
+        const nm = document.getElementById('staffRoleDisplayName');
+        const h1 = nm && nm.closest('h1');
+        if (h1 && !h1.querySelector('.pcf-staff-icon')) {
+            const f = STAFF_BY_NAME[nm.textContent.trim().toLowerCase()];
+            if (f) h1.insertAdjacentHTML('afterbegin', staffImg(f));
+        }
+        // c) Panel de Entrenamiento: tarjetas de cuerpo técnico (emoji grande a la izquierda del nombre)
+        document.querySelectorAll('#trainingPanel [style*="font-size:1.2em"]').forEach(sp => {
+            if (sp.dataset.pcfStaff) return;
+            const label = sp.parentElement?.textContent.replace(sp.textContent, '').trim().toLowerCase();
+            const key = Object.keys(STAFF_BY_NAME).find(k => label && label.startsWith(k));
+            if (key) { sp.dataset.pcfStaff = '1'; sp.innerHTML = staffImg(STAFF_BY_NAME[key]); sp.style.fontSize = ''; }
+        });
+    }
+
     // ── Iconos nuevos también en el título de cada sección ──────
     const PAGE_ICONS = {
         dashboard: 'noticias', standings: 'podio', calendar: 'calendario', 'last-result': 'marcador',
@@ -177,7 +209,7 @@
         requestAnimationFrame(() => {
             pending = false;
             obs.disconnect();              // nuestros cambios no vuelven a disparar el observador
-            try { skinTraining(); skinScout(); skinCommercial(); labelHeaders(); pageIcons(); } finally { observe(); }
+            try { skinTraining(); skinScout(); skinCommercial(); labelHeaders(); pageIcons(); staffIcons(); } finally { observe(); }
         });
     });
     const observe = () => obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
