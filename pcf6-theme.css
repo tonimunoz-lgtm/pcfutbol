@@ -1273,3 +1273,10 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
 .pcf-staff-card-act { color:rgba(230,238,251,.65); font-size:.78rem; text-align:right; max-width:170px; }
 @media (max-width:640px) { .pcf-staff-card { grid-template-columns:48px 1fr; } .pcf-staff-card-act { grid-column:1 / -1; text-align:left; max-width:none; }
     .pcf-staff-card-pic .pcf-staff-icon { width:44px; height:44px; } }
+
+/* Iconos de instalaciones (grupo 5) */
+.pcf-fac-icon { display:inline-block; object-fit:contain; vertical-align:middle; filter:drop-shadow(1px 2px 1px rgba(0,0,0,.5)); flex:0 0 auto; }
+.pcf-fac-icon-card { width:56px; height:56px; }
+.pcf-fac-icon-sm { width:34px; height:34px; }
+.pcf-fac-icon-xs { width:20px; height:20px; margin:-3px 4px -3px 0; }
+@media (max-width:640px) { .pcf-fac-icon-card { width:46px; height:46px; } }

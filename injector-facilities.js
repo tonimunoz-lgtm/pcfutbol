@@ -282,6 +282,18 @@
     // Para pasar de cada aforo hay que tener antes ciertas mejoras. La última
     // fase (hasta 105.000) exige TODO lo demás, estadio y centro de entrenamiento.
     const MAX_STADIUM_CAPACITY = 105000;
+    // Icono de cada mejora (assets/iconos/instalaciones/)
+    const FAC_ICON = {
+        seats_5k: 'ampliar-5000', seats_10k: 'ampliar-10000', led_lights: 'iluminacion-led', giant_screen: 'pantalla-gigante',
+        vip_boxes: 'palcos-vip', restaurants: 'restaurantes', parking: 'aparcamiento', fan_shop: 'tienda-oficial',
+        hybrid_pitch: 'cesped-hibrido', museum: 'museo', gym: 'gimnasio', training_pitch: 'campo-entrenamiento',
+        medical: 'instalaciones-medicas', video_room: 'sala-video', physio: 'fisioterapia', youth_academy: 'residencia-cantera',
+        recovery_pool: 'piscina-recuperacion', nutrition: 'nutricion'
+    };
+    const stripEmoji = t => String(t || '').replace(/^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation})(?:\uFE0F|\u200D\p{Extended_Pictographic})*\s*/u, '');
+    const facIcon = (id, cls = '') => FAC_ICON[id]
+        ? `<img class="pcf-fac-icon ${cls}" src="assets/iconos/instalaciones/${FAC_ICON[id]}.webp" alt="" aria-hidden="true">` : '';
+    const facName = u => stripEmoji(u && u.name);
     const SEAT_PHASES = [
         { upTo: 25000,  requires: [] },
         { upTo: 40000,  requires: ['led_lights', 'fan_shop'] },
@@ -289,13 +301,13 @@
         { upTo: 80000,  requires: ['led_lights', 'fan_shop', 'parking', 'restaurants', 'giant_screen', 'vip_boxes', 'hybrid_pitch'] },
         { upTo: MAX_STADIUM_CAPACITY, requires: 'ALL' }
     ];
-    function seatRequirementsMissing(targetCapacity) {
+    function seatRequirementsMissing(targetCapacity, asHtml = false) {
         const d = getFacData();
         const phase = SEAT_PHASES.find(p => targetCapacity <= p.upTo) || SEAT_PHASES[SEAT_PHASES.length - 1];
         const allIds = [...STADIUM_UPGRADES.filter(u => u.unique).map(u => ({ id: u.id, cat: 'stadium', name: u.name })),
                         ...TRAINING_UPGRADES.filter(u => u.unique).map(u => ({ id: u.id, cat: 'training', name: u.name }))];
         const needed = phase.requires === 'ALL' ? allIds : allIds.filter(u => phase.requires.includes(u.id));
-        return needed.filter(u => !(u.cat === 'stadium' ? d.stadiumDone : d.trainingDone).includes(u.id)).map(u => u.name);
+        return needed.filter(u => !(u.cat === 'stadium' ? d.stadiumDone : d.trainingDone).includes(u.id)).map(u => asHtml ? facIcon(u.id, 'pcf-fac-icon-xs') + stripEmoji(u.name) : stripEmoji(u.name));
     }
     // Un club que ya tiene un estadio grande ya tiene hechas las mejoras de su fase
     // (y con 105.000 asientos, todas, también las del centro de entrenamiento).
@@ -566,7 +578,7 @@
     // ── Construir la página de instalaciones ──────────────────────
     function renderPlan(s, d) {
         const cap = s.stadiumCapacity || 0;
-        const names = Object.fromEntries([...STADIUM_UPGRADES, ...TRAINING_UPGRADES].map(u => [u.id, u.name]));
+        const names = Object.fromEntries([...STADIUM_UPGRADES, ...TRAINING_UPGRADES].map(u => [u.id, facIcon(u.id, 'pcf-fac-icon-xs') + stripEmoji(u.name)]));
         const done = new Set([...d.stadiumDone, ...d.trainingDone]);
         const allUnique = [...STADIUM_UPGRADES, ...TRAINING_UPGRADES].filter(u => u.unique).map(u => u.id);
         let prev = 0;
@@ -692,7 +704,7 @@
             <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,200,0,.2);
                         border-radius:10px;padding:12px;margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="color:${color};font-weight:bold;">${item.name}</span>
+                    <span style="color:${color};font-weight:bold;display:inline-flex;align-items:center;gap:6px;">${facIcon(item.id, 'pcf-fac-icon-sm')}${stripEmoji(item.name)}</span>
                     <span style="color:#f5a623;font-size:.85em;">⏳ ${item.weeksLeft} sem. restantes</span>
                 </div>
                 <div style="width:100%;height:6px;background:#222;border-radius:3px;overflow:hidden;">
@@ -721,7 +733,7 @@
             const capFull    = upg.capacityAdd > 0 && capNow >= MAX_STADIUM_CAPACITY;
             const atMax      = (upg.maxBuilds && timesBuilt >= upg.maxBuilds) || capFull;
             const missingReq = upg.capacityAdd > 0 && !atMax
-                ? seatRequirementsMissing(Math.min(capNow + upg.capacityAdd, MAX_STADIUM_CAPACITY)) : [];
+                ? seatRequirementsMissing(Math.min(capNow + upg.capacityAdd, MAX_STADIUM_CAPACITY), true) : [];
             const seatBusy   = upg.capacityAdd > 0 && !construction.some(c => c.id === upg.id) && seatsInConstruction();
 
             let statusBadge = '';
@@ -737,7 +749,7 @@
                 btnDisabled = true;
                 cardStyle = 'opacity:.6;';
             } else if (missingReq.length) {
-                statusBadge = `<span title="Falta: ${missingReq.join(', ').replace(/"/g,'')}" style="background:#555;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;cursor:help;">🔒 Requisitos</span>`;
+                statusBadge = `<span title="Falta: ${missingReq.map(m => m.replace(/<[^>]*>/g, '')).join(', ').replace(/"/g,'')}" style="background:#555;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;cursor:help;">🔒 Requisitos</span>`;
                 btnDisabled = true;
             } else if (seatBusy) {
                 statusBadge = `<span style="color:#f5a623;font-size:.72em;">Otra ampliación en obras</span>`;
@@ -764,7 +776,7 @@
                         border-radius:10px;padding:13px;${cardStyle}display:flex;flex-direction:column;justify-content:space-between;">
                 <div>
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-                        <span style="color:${colorAccent};font-weight:bold;font-size:.9em;">${upg.name}</span>
+                        <span style="color:${colorAccent};font-weight:bold;font-size:.9em;display:flex;align-items:center;gap:8px;">${facIcon(upg.id, 'pcf-fac-icon-card')}${facName(upg)}</span>
                         ${statusBadge}
                     </div>
                     <div style="color:#888;font-size:.78em;margin-bottom:7px;line-height:1.4;">${upg.desc}</div>
