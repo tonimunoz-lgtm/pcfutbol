@@ -1941,3 +1941,9 @@ Salida
 
 #availablePlayersSearchResult, #availableYoungstersList { max-height: 70vh; overflow: auto; }
 #availablePlayersSearchResult thead th, #availableYoungstersList thead th { position:sticky; top:0; z-index:5; background:#10274a; }
+
+/* Both axes scroll in the same element: sticky headers work inside long rosters. */
+.pcf-player-scroll { isolation:isolate; overscroll-behavior:contain; }
+.pcf-player-scroll table { border-collapse:separate; border-spacing:0; }
+.pcf-player-scroll thead th { position:sticky !important; top:0; z-index:6; background:#10274a; box-shadow:0 2px 0 #456; }
+#squadList, #academyList, #marketList, #availablePlayersSearchResult, #availableYoungstersList { max-height:none; overflow:visible; }

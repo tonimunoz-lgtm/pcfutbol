@@ -7,9 +7,9 @@ export async function packGameState(state) {
         const packed=new Uint8Array(await new Response(stream).arrayBuffer());
         let binary='';for(let i=0;i<packed.length;i+=16384)binary+=String.fromCharCode(...packed.subarray(i,i+16384));
         const data=btoa(binary);
-        if(data.length<900000)return {packedState:{codec:'gzip-base64-v1',data}};
+        return {packedState:{codec:'gzip-base64-v1',data}};
     }
-    if(bytes.length>900000)throw new Error('La partida supera el tamaño de guardado disponible. Usa un navegador con compresión compatible.');
+    // Oversized snapshots are split by the cloud persistence layer.
     return {gameState:state};
 }
 export async function unpackGameData(data) {

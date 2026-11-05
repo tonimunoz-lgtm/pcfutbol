@@ -23,7 +23,7 @@
     // ─────────────────────────────────────────────────────────────
 
     function gs() {
-        return window.gameLogic?.getGameState?.();
+        return window.gameLogic?.getViewState?.();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@
     // cuenta solo las que todavía no has visto; las vistas siguen en el panel hasta
     // que las resuelvas, pero ya no "molestan" en el botón.
     const alertKey = a => (a.type + ':' + a.title).replace(/"/g, '');
-    function seenSet() { return new Set(window.gameLogic?.getGameState?.()?.urgentSeen || []); }
+    function seenSet() { return new Set(window.gameLogic?.getViewState?.()?.urgentSeen || []); }
     function markUrgentSeen() {
         const keys = collectAlerts().map(alertKey);
         window.gameLogic?.updateGameState?.({ urgentSeen: keys });

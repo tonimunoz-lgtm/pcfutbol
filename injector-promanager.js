@@ -101,7 +101,7 @@ console.log('🎯 Injector Promanager cargando...');
         count = count || 3;
         var all = window.TEAMS_DATA || {};
         if (pmState.rehire && window.gameLogic) {
-            var cur = window.gameLogic.getGameState();
+            var cur = window.gameLogic.getViewState();
             if (cur && cur.leagues) all = cur.leagues;
         }
         var candidates = [];
@@ -282,11 +282,11 @@ console.log('🎯 Injector Promanager cargando...');
         window.gameMode = 'promanager';
 
         if (window.gameLogic && window.gameLogic.selectTeamWithInitialSquad) {
-            var keep = !!pmState.rehire || !!window.gameLogic.getGameState().team;
+            var keep = !!pmState.rehire || !!window.gameLogic.getViewState().team;
             pmState.rehire = false; pmState.waitCount = 0;
             const hired=await window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager', { keepTime: keep });
             if(hired?.cancelled){Object.assign(pmState,previousCareer);return;}
-            try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
+            try { window.ui.refreshUI(window.gameLogic.getViewState()); } catch(e) {}
             ['selectTeam','gameMode'].forEach(function(m){ try { window.closeModal(m); } catch(e) {} });
             setTimeout(function() {
                 var btn = document.querySelector('.menu-item[onclick*="dashboard"]');
@@ -299,7 +299,7 @@ console.log('🎯 Injector Promanager cargando...');
         setTimeout(function() {
             if (window.gameLogic && window.gameLogic.addNews) {
                 window.gameLogic.addNews('🎯 [Carrera] Contratado por ' + offer.team + ' (' + DIVISION_LABELS[offer.division] + '). ¡Demuestra tu valía!', 'info');
-                try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
+                try { window.ui.refreshUI(window.gameLogic.getViewState()); } catch(e) {}
             }
         }, 700);
     }
@@ -343,7 +343,7 @@ console.log('🎯 Injector Promanager cargando...');
 
     async function afterWeekPromanager() {
         if (!window.gameLogic) return;
-        var state = window.gameLogic.getGameState();
+        var state = window.gameLogic.getViewState();
         var history = state.matchHistory;
 
         console.log('[Promanager] afterWeekPromanager - historial:', history ? history.length : 'null', 'semana:', state.week, 'tipo:', state.seasonType);
@@ -454,7 +454,7 @@ console.log('🎯 Injector Promanager cargando...');
                         function(r) {
                             if (window.gameLogic && window.gameLogic.addNews) {
                                 window.gameLogic.addNews('📋 [Carrera] Rechazaste la oferta de ' + r.team + '.', 'info');
-                                try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
+                                try { window.ui.refreshUI(window.gameLogic.getViewState()); } catch(e) {}
                             }
                         }
                     );
@@ -464,13 +464,13 @@ console.log('🎯 Injector Promanager cargando...');
     }
 
     function checkFiring() {
-        var st = window.gameLogic && window.gameLogic.getGameState();
+        var st = window.gameLogic && window.gameLogic.getViewState();
         if (!st) return false;
         var conf = st.boardConfidence != null ? st.boardConfidence : 65;
         return conf <= 15 && (st.boardWarn || 0) >= 2;
     }
     function firingReason() {
-        var st = window.gameLogic.getGameState();
+        var st = window.gameLogic.getViewState();
         var sorted = window.sortStandings ? window.sortStandings(st.standings || {}) : [];
         var pos = sorted.findIndex(function(e){ return e[0] === st.team; }) + 1;
         return 'Ocupabas el ' + pos + 'º puesto (el objetivo era el ' + (st.boardTarget || '—') + 'º) y la confianza de la directiva había caído a ' + Math.round(st.boardConfidence || 0) + '/100 tras dos avisos.';

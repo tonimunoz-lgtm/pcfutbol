@@ -120,7 +120,7 @@ const COMP_KEY    = 'comps_v2';
 const PLAYOFF_KEY = 'playoff_v2';
 
 function readCompetitionState(field, legacyKey) {
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (!state?.team) return null;
     if (Object.hasOwn(state, field)) return state[field];
     try {
@@ -206,7 +206,7 @@ function pickFrom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 function buildCopaOpponents(division) {
     const isRFEF = division === 'rfef_grupo1' || division === 'rfef_grupo2';
     const SUPERCOPA = ['FC Barcelona','Real Madrid CF','Atlético de Madrid','Athletic Club'];
-    const isSupercopa = SUPERCOPA.includes(window.gameLogic?.getGameState()?.team);
+    const isSupercopa = SUPERCOPA.includes(window.gameLogic?.getViewState()?.team);
 
     if (division === 'primera' && isSupercopa) {
         // Supercopa teams: entran en dieciseisavos directamente
@@ -271,7 +271,7 @@ function phaseName(p) { return { round1:'1ª Ronda Copa', round32:'Dieciseisavos
 
 function getMyRating() {
     try {
-        const gs = window.gameLogic?.getGameState();
+        const gs = window.gameLogic?.getViewState();
         if (!gs) return 75;
         // Usar calculateTeamEffectiveOverall si está disponible (penalización por posición)
         if (window.calculateTeamEffectiveOverallImproved && gs.lineup?.length >= 11) {
@@ -368,7 +368,7 @@ function initCompetitionsForSeason(myTeam, division, season, forceEuropean) {
     // Para Primera RFEF: clasificado si está en top 5 de su grupo en la clasificación actual
     let rfefCopaQualified = false;
     if (isRFEF) {
-        const state = window.gameLogic?.getGameState();
+        const state = window.gameLogic?.getViewState();
         const standings = state?.standings || {};
         const sorted = window.sortStandings ? window.sortStandings(standings) : Object.entries(standings).sort((a,b)=>(b[1].pts||0)-(a[1].pts||0));
         const myPos = sorted.findIndex(([n])=>n===myTeam) + 1;
@@ -666,7 +666,7 @@ function generateFakeOtherGroup(groupKey) {
 // COLOREADO DE TABLA DE CLASIFICACIÓN
 // ============================================================
 function updateStandingsColors() {
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (!state?.standings) return;
     const division = state.division;
     const cfg = COMPETITION_CONFIG[division] || {};
@@ -752,7 +752,7 @@ function injectCompUI() {
     const page = document.getElementById('standings');
     if (!page || document.getElementById('comp-tabs')) return;
 
-    const state  = window.gameLogic?.getGameState();
+    const state  = window.gameLogic?.getViewState();
     const division = state?.division || '';
     const isRFEF    = division.includes('rfef');
     const isSegunda = division === 'segunda';
@@ -850,7 +850,7 @@ function renderEuropa() {
     const panel = document.getElementById('comp-europa-panel');
     if (!panel) return;
     const comp  = store.getComp();
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
 
     if (!comp?.europeanComp) {
         panel.innerHTML = `<div style="text-align:center;padding:40px;color:rgba(255,255,255,.5)">
@@ -1050,7 +1050,7 @@ function renderCopa() {
     const panel = document.getElementById('comp-copa-panel');
     if (!panel) return;
     const comp  = store.getComp();
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
 
     if (!comp?.copaQualified) {
         panel.innerHTML=`<div style="text-align:center;padding:40px;color:rgba(255,255,255,.5)"><div style="font-size:3em">🥇</div><div style="margin-top:10px">Tu equipo no participa en la Copa del Rey esta temporada.</div></div>`;
@@ -1121,7 +1121,7 @@ function poName(t, myTeam, pos) {
 function renderPlayoff() {
     const panel = document.getElementById('comp-playoff-panel');
     if (!panel) return;
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (!state) return;
     const my = state.team, div = state.division;
     const dn = k => window.divisionName ? window.divisionName(k) : k;
@@ -1345,9 +1345,9 @@ function hookSimulateWeek() {
     window._compHooked=true;
 
     window.simulateWeek = async function() {
-        const before = window.gameLogic?.getGameState();
+        const before = window.gameLogic?.getViewState();
         const res = await orig.apply(this, arguments);
-        const after = window.gameLogic?.getGameState();
+        const after = window.gameLogic?.getViewState();
 
         if (before && after) {
             if (before.currentSeason !== after.currentSeason) {
@@ -1419,7 +1419,7 @@ function hookStandingsOpen() {
 // INICIALIZACIÓN AL CARGAR PARTIDA
 // ============================================================
 function initOnLoad() {
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (!state?.team) { setTimeout(initOnLoad, 1000); return; }
 
     _prevSeason = state.currentSeason;

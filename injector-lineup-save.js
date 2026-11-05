@@ -62,7 +62,7 @@
 
     // ── Botón: de «Guardar» a «Comprobar» ───────────────────────
     window.pcfCheckLineup = function () {
-        const G = gl(), s = G.getGameState();
+        const G = gl(), s = G.getViewState();
         const lineup = G.getLineup();
         const v = G.validateLineup(lineup);
         if (!v.success) return toast(v.message || 'La alineación no es válida', 'err');

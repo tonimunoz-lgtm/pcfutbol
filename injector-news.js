@@ -11,7 +11,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const keyOf = n => n.id || `${n.timestamp}|${n.message}`;
 

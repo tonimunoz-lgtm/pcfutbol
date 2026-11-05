@@ -47,7 +47,7 @@
             if (!select) return;
             
             select.innerHTML = '';
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             state.squad.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.name;
@@ -61,7 +61,7 @@
         // ============================================
 
         window.updateNegotiationModal = function() {
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const player = state.negotiatingPlayer;
 
             if (!player) {
@@ -140,7 +140,7 @@
                 window.closeModal('negotiation');
             }
             if (window.ui && window.ui.refreshUI) {
-                window.ui.refreshUI(window.gameLogic.getGameState());
+                window.ui.refreshUI(window.gameLogic.getViewState());
             }
         };
 
@@ -208,7 +208,7 @@
         // ============================================
 
         window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const player = state.squad[playerIndex];
 
             if (!player) {
@@ -280,7 +280,7 @@
                 window.closeModal('training');
             }
             if (window.ui && window.ui.refreshUI) {
-                window.ui.refreshUI(window.gameLogic.getGameState());
+                window.ui.refreshUI(window.gameLogic.getViewState());
             }
         };
 
@@ -293,7 +293,7 @@
                 const result = window.gameLogic.sellPlayer(playerName);
                 alert(result.message);
                 if (result.success && window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(window.gameLogic.getGameState());
+                    window.ui.refreshUI(window.gameLogic.getViewState());
                 }
             }
         };
@@ -303,7 +303,7 @@
                 const result = window.gameLogic.sellPlayer(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(window.gameLogic.getGameState());
+                    window.ui.refreshUI(window.gameLogic.getViewState());
                 }
             }
         };
@@ -317,7 +317,7 @@
                 const result = window.gameLogic.promoteYoungster(name);
                 alert(result.message);
                 if (window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(window.gameLogic.getGameState());
+                    window.ui.refreshUI(window.gameLogic.getViewState());
                 }
             }
         };
@@ -327,7 +327,7 @@
             const result = window.gameLogic.signYoungster(youngster);
             alert(result.message);
             if (window.ui && window.ui.refreshUI) {
-                window.ui.refreshUI(window.gameLogic.getGameState());
+                window.ui.refreshUI(window.gameLogic.getViewState());
             }
             if (result.success && window.closeModal) {
                 window.closeModal('signYoungster');
@@ -373,7 +373,7 @@
 
 // Función para despedir/rescindir contrato de un jugador
 window.firePlayerConfirm = async function(playerName) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad.find(p => p.name === playerName);
     
     if (!player) {
@@ -431,7 +431,7 @@ state.playerCompensations += compensation;
        // ✅ Refrescar UI con estado ACTUALIZADO
 if (window.ui && window.ui.refreshUI) {
     window.gameLogic.updateGameState(state);  // ✅ Guardar cambios primero
-    const updatedState = window.gameLogic.getGameState();  // ✅ Obtener estado actualizado
+    const updatedState = window.gameLogic.getViewState();  // ✅ Obtener estado actualizado
     window.ui.refreshUI(updatedState);  // ✅ Refrescar con estado nuevo
 }
     }
@@ -439,7 +439,7 @@ if (window.ui && window.ui.refreshUI) {
 
 // Función para abrir interfaz de venta (conecta con el sistema existente)
 window.openSellPlayerUI = async function(playerIndex) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[playerIndex];
     
     if (!player) {
@@ -511,7 +511,7 @@ let currentOffer = null;
 
 // Abrir modal de venta
 window.openSellPlayerModal = function(playerIndex) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
     const player = sorted[playerIndex];
     
@@ -561,7 +561,7 @@ window.updateSellOperationType = function() {
 
 // Actualizar preview de costes de cesión
 window.updateLoanCostPreview = function() {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
     const player = sorted[currentSellPlayerIndex];
     
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Confirmar poner en venta
 window.confirmListPlayer = function() {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
     const player = sorted[currentSellPlayerIndex];
     
@@ -643,7 +643,7 @@ window.confirmListPlayer = function() {
     window.closeModal('sellPlayer');
     
     // ✅ Refrescar con estado actualizado
-    const updatedState = window.gameLogic.getGameState();
+    const updatedState = window.gameLogic.getViewState();
     window.ui.refreshUI(updatedState);
     
     // Programar generación de oferta
@@ -662,7 +662,7 @@ window.generateOfferForPlayer = function(player) {
     // 30% de probabilidad de oferta
     if (Math.random() > 0.3) return;
     
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const allTeams = [
         ...window.TEAMS_DATA.primera,
         ...window.TEAMS_DATA.segunda,
@@ -731,7 +731,7 @@ window.generateOfferForPlayer = function(player) {
 window.acceptOffer = function() {
     if (!currentOffer) return;
     
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = currentOffer.player;
     
     if (currentOffer.type === 'transfer') {
@@ -781,7 +781,7 @@ window.acceptOffer = function() {
     
     window.closeModal('offerReceived');
     // ✅ Refrescar con estado ACTUALIZADO
-    const updatedState = window.gameLogic.getGameState();
+    const updatedState = window.gameLogic.getViewState();
     window.ui.refreshUI(updatedState);
     currentOffer = null;
 };
@@ -831,7 +831,7 @@ window.counterOffer = async function() {
 // ✅ AÑADIR
 
 window.firePlayerConfirm = async function(playerName) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad.find(p => p.name === playerName);
     
     if (!player) {
@@ -877,7 +877,7 @@ window.firePlayerConfirm = async function(playerName) {
 let currentRenewalPlayerIndex = -1;
 
 window.openRenewalModal = function(playerIndex) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[playerIndex];
     
     if (!player) {
@@ -925,7 +925,7 @@ window.openRenewalModal = function(playerIndex) {
 };
 
 window.submitRenewalOffer = function() {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[currentRenewalPlayerIndex];
     
     if (!player) {
@@ -1025,7 +1025,7 @@ window.submitRenewalOffer = function() {
 
 window.payReleaseClause = async function(encodedPlayerJson) {
     const player = JSON.parse(decodeURIComponent(encodedPlayerJson));
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     
     const clause = player.releaseClause || player.value * 3;
     
@@ -1061,7 +1061,7 @@ window.payReleaseClause = async function(encodedPlayerJson) {
 };
 
 window.removeFromMarket = function(playerIndex) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const sorted = [...state.squad].sort((a, b) => b.overall - a.overall);
     const player = sorted[playerIndex];
     

@@ -57,7 +57,7 @@
     };
 
     // ── Helpers ───────────────────────────────────────────────
-    function getState() { return window.gameLogic?.getGameState(); }
+    function getState() { return window.gameLogic?.getViewState(); }
 
     function simMatch(ratingA, ratingB) {
         const diff = (ratingA - ratingB) / 100;

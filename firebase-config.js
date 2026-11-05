@@ -1,7 +1,9 @@
+import { splitSnapshot, joinSnapshot, chunkIds } from './save-chunks.js';
+import { localSave, localLoad, localList, localDelete } from './local-saves.js';
 import { packGameState, unpackGameData } from './save-codec.js';
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
@@ -139,7 +141,8 @@ window.uploadImageToFirebase = uploadImage;
 async function saveTeamDataToFirebase(teamName, teamData) {  
     if (!firebaseConfig.enabled || !db) {  
         console.log('⚠️ Firebase no disponible, guardando solo en localStorage');  
-        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));  
+        window.cacheTeamData?.(teamName, teamData);
+        try { localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData)); } catch (_) {}  
         return { success: false, error: 'Firebase no disponible' };  
     }  
     if (!authReady) {  
@@ -150,10 +153,12 @@ async function saveTeamDataToFirebase(teamName, teamData) {
     }  
     try {  
         await setDoc(doc(db, 'teams_data', teamName), teamData);  
-        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));  
+        window.cacheTeamData?.(teamName, teamData);
+        try { localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData)); } catch (_) {}  
         return { success: true };  
     } catch (error) {  
-        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));  
+        window.cacheTeamData?.(teamName, teamData);
+        try { localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData)); } catch (_) {}  
         return { success: false, error: error.message };  
     }  
 }  
@@ -208,7 +213,7 @@ async function getAllTeamsDataFromFirebase() {
         const allData = {};  
         querySnapshot.forEach((d) => {  
             allData[d.id] = d.data();  
-            localStorage.setItem(`team_data_${d.id}`, JSON.stringify(d.data()));  
+            try { localStorage.setItem(`team_data_${d.id}`, JSON.stringify(d.data())); } catch (_) {}  
         });  
         return { success: true, data: allData };  
     } catch (error) {  
@@ -216,109 +221,103 @@ async function getAllTeamsDataFromFirebase() {
     }  
 }  
   
-async function saveGameToCloud(userId, gameId, gameName, gameState) {
-    const finalUserId=userId||currentUserId;
-    if(!finalUserId||!gameId)return {success:false,error:'Parámetros inválidos'};
-    try {
-        const expectedRevision = Number(gameState._cloudRevision || 0);
-        const snapshot=await packGameState({...gameState, _cloudRevision: expectedRevision + 1});
-        const gameData={id:gameId,name:gameName,team:gameState.team,week:gameState.week,division:gameState.division,lastSaved:Date.now(),...snapshot};
-        if(!firebaseConfig.enabled||!db){
-            const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
-            localStorage.setItem(`user_games_${finalUserId}`,JSON.stringify(games));
-            return {success:false,localSaved:true,error:'Firebase no disponible; copia local guardada'};
-        }
-        if(!authReady){try{await authReadyPromise;}catch(e){return {success:false,error:'No se pudo autenticar'};}}
-        const gameRef = doc(db,'users',finalUserId,'saved_games',gameId);
-        const expected = expectedRevision;
-        const nextRevision = await runTransaction(db, async tx => {
-            const previous = await tx.get(gameRef);
-            const actual = previous.exists() ? Number(previous.data().cloudRevision || 0) : 0;
-            if (actual !== expected) throw new Error('Conflicto de guardado: otra pestaña o sesión modificó esta partida. Recarga antes de sobrescribir.');
-            tx.set(gameRef, {...gameData,cloudRevision:actual + 1});
-            return actual + 1;
-        });
-        gameState._cloudRevision = nextRevision;
-        gameData.cloudRevision = nextRevision;
-        // Browser quota failures must not turn a successful cloud save into a reported failure.
+// Serialize saves in this tab, capturing each snapshot before the next simulation.
+let saveQueue = Promise.resolve();
+let prepareQueue = Promise.resolve();
+function saveGameToCloud(userId, gameId, gameName, gameState) {
+    const uid=userId||currentUserId;
+    if(!uid||!gameId)return Promise.resolve({success:false,error:'Parámetros inválidos'});
+    const state=structuredClone(gameState);
+    // Local backups stay ordered and continue even if a cloud commit waits offline.
+    const preparation=prepareQueue.then(async()=>{
+        const snapshot=await packGameState(state);
+        const meta={id:gameId,name:gameName,team:state.team,week:state.week,division:state.division,lastSaved:Date.now()};
+        let localSaved=false;
+        try { await localSave(uid,gameId,{...meta,...snapshot}); localSaved=true; } catch(e) { console.warn('Copia local no disponible:',e); }
+        return {snapshot,meta,localSaved};
+    });
+    prepareQueue=preparation.catch(()=>{});
+    const task=saveQueue.then(async()=>{
+        const {snapshot,meta,localSaved}=await preparation;
         try {
-            const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
-            localStorage.setItem(`user_games_${finalUserId}`,JSON.stringify(games));
-        } catch(e){console.warn('Guardado en nube completado; no cabe la copia local:',e);}
-        return {success:true,cloudRevision:nextRevision};
-    } catch(error){return {success:false,error:error.message};}
+            if(!firebaseConfig.enabled||!db)return {success:false,localSaved,error:'Nube no disponible; '+(localSaved?'copia local guardada':'tampoco se pudo guardar localmente')};
+            if(!authReady)await authReadyPromise;
+            const ref=doc(db,'users',uid,'saved_games',gameId);
+            const old=await getDoc(ref);
+            const parts=splitSnapshot(snapshot), ids=await chunkIds(parts);
+            const bytes=parts.reduce((n,p)=>n+new TextEncoder().encode(p).length,0);
+            if(parts.length>40 || bytes>8000000)throw new Error('Partida demasiado grande para un guardado atómico; conserva la copia local.');
+            const previous=old.exists()?old.data().chunkIds||[]:[];
+            const batch=writeBatch(db);
+            parts.forEach((data,i)=>batch.set(doc(ref,'chunks',ids[i]),{data}));
+            previous.filter(id=>!ids.includes(id)).forEach(id=>batch.delete(doc(ref,'chunks',id)));
+            batch.set(ref,{...meta,saveFormat:'chunks-v1',chunkIds:ids});
+            await batch.commit();
+            return {success:true,localSaved};
+        } catch(error){return {success:false,localSaved,error:error.message,code:error.code};}
+    });
+    saveQueue=task.catch(()=>{});
+    return task.catch(error=>({success:false,error:error.message}));
 }
-
-async function loadUserSavedGames(userId) {  
-    if (!firebaseConfig.enabled || !db) {  
-        return Object.values(JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}'));  
-    }  
-    if (!authReady) {  
-        try { await authReadyPromise; } catch (error) { return []; }  
-    }  
-    const finalUserId = userId || currentUserId;  
-    if (!finalUserId) return [];  
-    try {  
-        const querySnapshot = await getDocs(collection(db, 'users', finalUserId, 'saved_games'));  
-        const games = [];  
-        querySnapshot.forEach((d) => games.push(d.data()));  
-        const localGames = {};  
-        games.forEach(g => { localGames[g.id] = g; });  
-        try{localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));}catch(error){console.warn('No cabe la copia local del listado de partidas:',error);}
-        return games;  
-    } catch (error) {  
-        return Object.values(JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}'));  
-    }  
-}  
-  
-async function loadGameFromCloud(userId, gameId) {  
-    if (!firebaseConfig.enabled || !db) {  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
-        if(!localGames[gameId])return {success:false,message:'Partida no encontrada'};
-        try{const data=await unpackGameData(localGames[gameId]);data._cloudRevision=Number(localGames[gameId].cloudRevision||0);data.gameId=gameId;return {success:true,data};}catch(error){return {success:false,error:error.message};}  
-    }  
-    if (!authReady) {  
-        try { await authReadyPromise; } catch (error) {  
-            return { success: false, message: 'No se pudo autenticar' };  
-        }  
-    }  
-    const finalUserId = userId || currentUserId;  
-    if (!finalUserId || !gameId) return { success: false, message: 'Parámetros inválidos' };  
-    try {  
-        const docSnap = await getDoc(doc(db, 'users', finalUserId, 'saved_games', gameId));  
-        if (!docSnap.exists()) return {success:false,message:'Partida no encontrada'};
-        const data = await unpackGameData(docSnap.data());
-        data._cloudRevision = Number(docSnap.data().cloudRevision || 0);
-        data.gameId = gameId;
-        return {success:true,data};  
-    } catch (error) {  
-        return { success: false, error: error.message };  
-    }  
-}  
-  
-async function deleteGameFromCloud(userId, gameId) {  
-    if (!firebaseConfig.enabled || !db) {  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
-        delete localGames[gameId];  
-        localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
-        return { success: true };  
-    }  
-    if (!authReady) {  
-        try { await authReadyPromise; } catch (error) {  
-            return { success: false, error: 'No se pudo autenticar' };  
-        }  
-    }  
-    const finalUserId = userId || currentUserId;  
-    if (!finalUserId || !gameId) return { success: false, error: 'Parámetros inválidos' };  
-    try {  
-        await deleteDoc(doc(db, 'users', finalUserId, 'saved_games', gameId));  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}');  
-        delete localGames[gameId];  
-        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
-        return { success: true };  
-    } catch (error) {  
-        return { success: false, error: error.message };  
-    }  
+async function localGamesFor(uid) {
+    let legacy={};try{legacy=JSON.parse(localStorage.getItem(`user_games_${uid}`)||'{}');}catch(_){}
+    let current=[];try{current=await localList(uid);}catch(_){}
+    return Object.values({...legacy,...Object.fromEntries(current.map(g=>[g.id,g]))});
+}
+async function loadUserSavedGames(userId) {
+    const uid=userId||currentUserId;if(!uid)return [];
+    const local=await localGamesFor(uid);
+    if(!firebaseConfig.enabled||!db)return local;
+    try {
+        if(!authReady)await authReadyPromise;
+        const query=await getDocs(collection(db,'users',uid,'saved_games'));
+        const games={};local.forEach(g=>games[g.id]={...g,localOnly:true});
+        query.forEach(d=>{const cloud=d.data(),cached=games[d.id];
+            games[d.id]=cached && cached.lastSaved>cloud.lastSaved?cached:cloud;});
+        return Object.values(games);
+    } catch(_){return local.map(g=>({...g,localOnly:true}));}
+}
+async function loadGameFromCloud(userId, gameId, preferLocal=false) {
+    const uid=userId||currentUserId;if(!uid||!gameId)return {success:false,message:'Parámetros inválidos'};
+    const cached=(await localGamesFor(uid)).find(g=>g.id===gameId);
+    if(preferLocal||!firebaseConfig.enabled||!db){
+        try {return cached?{success:true,data:await unpackGameData(cached),local:true}:{success:false,message:'Copia local no encontrada'};}
+        catch(error){return {success:false,error:error.message};}
+    }
+    try {
+        if(!authReady)await authReadyPromise;
+        const ref=doc(db,'users',uid,'saved_games',gameId);
+        for(let attempt=0;attempt<2;attempt++){
+            const saved=await getDoc(ref);
+            if(!saved.exists())throw new Error('Partida no encontrada');
+            const data=saved.data();
+            if(cached && cached.lastSaved>data.lastSaved)return {success:true,data:await unpackGameData(cached),local:true};
+            if(data.saveFormat!=='chunks-v1')return {success:true,data:await unpackGameData(data)};
+            const pieces=await Promise.all(data.chunkIds.map(id=>getDoc(doc(ref,'chunks',id))));
+            if(pieces.some(p=>!p.exists())){if(attempt===0)continue;throw new Error('Guardado incompleto: faltan fragmentos.');}
+            const snapshot=joinSnapshot(pieces.map(p=>p.data().data));
+            return {success:true,data:await unpackGameData({...data,...snapshot})};
+        }
+    } catch(error){
+        if(cached)return {success:true,data:await unpackGameData(cached),local:true,warning:error.message};
+        return {success:false,error:error.message};
+    }
+}
+async function deleteGameFromCloud(userId,gameId) {
+    const uid=userId||currentUserId;if(!uid||!gameId)return {success:false,error:'Parámetros inválidos'};
+    try {
+        if(firebaseConfig.enabled&&db){
+            if(!authReady)await authReadyPromise;
+            const ref=doc(db,'users',uid,'saved_games',gameId);
+            const chunks=await getDocs(collection(ref,'chunks'));
+            // Also remove orphan fragments left by older/concurrent clients.
+            for(let i=0;i<chunks.docs.length;i+=400){const batch=writeBatch(db);chunks.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));await batch.commit();}
+            await deleteDoc(ref);
+        }
+        await localDelete(uid,gameId).catch(()=>{});
+        try{const old=JSON.parse(localStorage.getItem(`user_games_${uid}`)||'{}');delete old[gameId];localStorage.setItem(`user_games_${uid}`,JSON.stringify(old));}catch(_){}
+        return {success:true};
+    } catch(error){return {success:false,error:error.message};}
 }
 
 // ==========================================

@@ -98,7 +98,7 @@
 
     // Titulares / convocados / no convocados, como en el PC Fútbol clásico
     function groupSquad(table, ths) {
-        const G = window.gameLogic, st = G && G.getGameState && G.getGameState();
+        const G = window.gameLogic, st = G && G.getViewState && G.getViewState();
         if (!st || !Array.isArray(st.lineup)) return;
         const nameIdx = ths.findIndex(th => /^JUGADOR$/i.test(th.textContent.trim()));
         if (nameIdx < 0) return;

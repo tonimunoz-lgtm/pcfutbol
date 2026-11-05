@@ -1148,8 +1148,10 @@
                 // 1. Borrar partidas guardadas
                 try {
                     const savedGamesSnap = await getDocs(collection(firestore, 'users', uid, 'saved_games'));
-                    const deleteGames = savedGamesSnap.docs.map(d => deleteDoc(d.ref));
-                    await Promise.all(deleteGames);
+                    for (const d of savedGamesSnap.docs) {
+                        const result = await window.deleteGameFromCloud(uid, d.id);
+                        if (!result.success) throw new Error(result.error);
+                    }
                     console.log(`🗑 ${savedGamesSnap.size} partidas borradas para ${email}`);
                 } catch(e) {
                     console.warn('No se pudieron borrar partidas:', e);

@@ -11,6 +11,7 @@
 (function () {
     'use strict';
     let busy = false;
+    let autosaveTimer;
 
     function setButtonsBusy(on) {
         document.querySelectorAll('[onclick*="simulateWeek"]').forEach(b => {
@@ -33,13 +34,16 @@
         busy = true;
         setButtonsBusy(true);
         try {
-            const before = window.gameLogic?.getGameState();
+            const before = window.gameLogic?.getViewState();
             const result = await window.simulateWeek();
-            const after = window.gameLogic?.getGameState();
+            const after = window.gameLogic?.getViewState();
             const changed = before && after && (result?.cupMatch || before.week !== after.week ||
                 before.currentSeason !== after.currentSeason || before.seasonType !== after.seasonType ||
                 (before.matchHistory || []).length !== (after.matchHistory || []).length);
-            if (changed && !result?.ignored) await window.pcfSaveCurrentGame();
+            if (changed && !result?.ignored) {
+                clearTimeout(autosaveTimer);
+                autosaveTimer = setTimeout(() => { window.pcfSaveCurrentGame(); }, 700);
+            }
         } catch (err) {
             console.error('[SimGuard] Error simulando la jornada:', err);
         } finally {
@@ -56,8 +60,10 @@
         try {
             const result = await window.saveGameToCloud(window.currentUserId, gameId,
                 `[Auto] ${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
-            if (!result?.success) throw new Error(result?.error || 'Guardado no confirmado');
-            window.gameLogic.updateGameState({_cloudRevision:result.cloudRevision});
+            if (!result?.success) {
+                window.gameLogic.addNews(result?.localSaved ? 'Copia local guardada. La sincronización con la nube sigue pendiente; vuelve a guardar cuando haya conexión.' : 'No se ha podido guardar la partida. Vuelve a intentarlo antes de cerrar.', 'warning');
+                return result;
+            }
             return result;
         } catch (error) {
             window.gameLogic.addNews('No se ha podido completar el autoguardado en la nube. Vuelve a guardar la partida.', 'warning');

@@ -350,7 +350,7 @@
         });
     }
     function gameStarted() {
-        try { const s = window.gameLogic && window.gameLogic.getGameState(); return !!(s && s.team); } catch (e) { return false; }
+        try { const s = window.gameLogic && window.gameLogic.getViewState(); return !!(s && s.team); } catch (e) { return false; }
     }
     function watchForGame() {
         const status = $('.pcfi-status');

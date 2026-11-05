@@ -11,7 +11,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const fmt = n => Math.round(n).toLocaleString('es-ES');
     const DIVS = [['primera', 'Primera División'], ['segunda', 'Segunda División'], ['rfef_grupo1', 'Primera RFEF · Grupo 1'], ['rfef_grupo2', 'Primera RFEF · Grupo 2'], ['promesas', 'Liga Promesas']];
     const DIV_NAME = Object.fromEntries(DIVS);
@@ -40,8 +40,7 @@
     // rows: [{team, g, e, p, gf, gc}]
     async function awards(division, rows, season) {
         const s = gs(), seasonKey = season || s.currentSeason;
-        const recorded=window.pcfWorld?.getAwards?.(division,seasonKey);
-        if (recorded) return recorded;
+        const recorded=window.pcfWorld?.getAwards?.(division,seasonKey);if(recorded)return recorded;
         const scorers = [], keepers = [];
         for (const r of rows) {
             const squad = await squadOf(r.team, division);
@@ -280,7 +279,7 @@
             const rows = Object.entries(s.standings || {}).map(([team, r]) => ({ team, g: r.g, e: r.e, p: r.p, gf: r.gf, gc: r.gc }));
             const pj = rows.reduce((m, r) => Math.max(m, r.g + r.e + r.p), 0);
             let box = document.getElementById('pcfLiveAwards');
-            if (pj < 2) { box?.remove(); return; }
+            if (pj < 1) { box?.remove(); return; }
             css();
             const a = await awards(s.division, rows);
             if (!box) { box = document.createElement('div'); box.id = 'pcfLiveAwards'; const host = table.closest('table') || table; host.parentNode.insertBefore(box, host.nextSibling); }

@@ -58,7 +58,7 @@
                 return `
                     <div class="player-card" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="color: #00ff00;">${game.name || 'Partida sin nombre'}</strong><br>
+                            <strong style="color: #00ff00;">${game.name || 'Partida sin nombre'}${game.localOnly ? ' · Copia local pendiente de sincronizar' : ''}</strong><br>
                             <span style="color: #999; font-size: 0.9em;">
                                 Equipo: ${game.team || '?'} | 
                                 Jornada: ${game.week || '?'} | 
@@ -125,7 +125,7 @@
                     window.switchPage('dashboard', dashboardButton);
                 }
                 
-                alert(`✅ Partida "${result.data.name}" cargada correctamente!\n\nEquipo: ${result.data.team}\nJornada: ${result.data.week}`);
+                alert(`✅ Partida "${result.data.name}" cargada correctamente${result.local ? ' desde la copia local' : ''}!\n\nEquipo: ${result.data.team}\nJornada: ${result.data.week}`);
             } else {
                 alert('❌ Error al cargar la partida: ' + (result.message || result.error || 'Error desconocido'));
             }

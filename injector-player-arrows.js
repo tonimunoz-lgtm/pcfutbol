@@ -6,7 +6,7 @@
         const originalApplyTraining = window.gameLogic?.applyWeeklyTraining;
         if (originalApplyTraining) {
             window.gameLogic.applyWeeklyTraining = function() {
-                const state = window.gameLogic.getGameState();
+                const state = window.gameLogic.getViewState();
                 const playerIndex = state.trainingFocus.playerIndex;
                 
                 if (playerIndex >= 0 && playerIndex < state.squad.length) {

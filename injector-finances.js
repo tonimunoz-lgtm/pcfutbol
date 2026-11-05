@@ -31,7 +31,7 @@
 
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const gl  = () => window.gameLogic;
-    const gs  = () => gl() ? gl().getGameState() : null;
+    const gs  = () => gl() ? gl().getViewState() : null;
 
     function setText(id, text, color) {
         const el = document.getElementById(id);
@@ -109,8 +109,8 @@
         const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0) + (stateBefore.loanSalaryExpense || 0);
         const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
                                .reduce((s, x) => s + (x.salary || 0), 0);
-        const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
-        const bonusPay = 0; // La prima se paga al prometerla; no volver a descontarla.
+        const loanPay  = Array.isArray(stateBefore.fd_loans) ? stateBefore.fd_loans.filter(l => l.weeksLeft > 0).reduce((n,l) => n + (Number(l.weeklyPayment) || 0), 0) : (stateBefore.fd_loanPayment || 0);  // cuotas prestamos (FinDeals)
+        const bonusPay = 0; // La prima ya se descontó al prometerla.  // prima prometida (FinDeals)
         const benefits = window.pcfEconomy.benefits(stateBefore, ticketInc, merchInc);
         const totalExp = salaries + staffSal + loanPay + bonusPay + benefits.total;
         const net      = totalInc - totalExp;
@@ -123,7 +123,9 @@
             net
         };
 
+        const loans = (stateBefore.fd_loans || []).map(l => ({...l, weeksLeft:Math.max(0,(l.weeksLeft||0)-1)}));
         saveState({ balance: state.balance + net, lastWeekFinance: lastWeek,
+            fd_loans: loans, fd_loanPayment: loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0),
             financePostings: { ...(state.financePostings || {}), [postingKey]: true } });
         console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} -> +${fmt(totalInc)} -${fmt(totalExp)} (sal:${fmt(salaries)} staff:${fmt(staffSal)} loan:${fmt(loanPay)} bonus:${fmt(bonusPay)}) = ${fmt(net)}`);
     }
@@ -167,8 +169,9 @@
                 const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0) + (sa.loanSalaryExpense || 0);
                 const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
                 const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
-                const net = (base - salaries - staffSal - window.pcfEconomy.benefits(sa).total) * extra;
-                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net,
+                const summer = window.pcfEconomy.offseasonCashflow(sa, extra, window.pcfEconomy.benefits(sa).total);
+                const net = summer.net;
+                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net, fd_loans: summer.fd_loans, fd_loanPayment: summer.fd_loanPayment,
                     financePostings: { ...(sa.financePostings || {}), [postingKey + '|summer']: true } });
                 registerMovement(net >= 0 ? 'income' : 'expense', `Verano (${extra + 1} semanas sin partidos): ingresos fijos − sueldos`, net);
                 window.gameLogic?.addNews?.(`☀️ Verano: ${extra + 1} semanas sin partidos. Ingresos fijos ${fmt(base * extra)}€ · sueldos ${fmt((salaries + staffSal) * extra)}€.`, net >= 0 ? 'info' : 'warning');

@@ -11,7 +11,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

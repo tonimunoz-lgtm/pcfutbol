@@ -53,7 +53,7 @@ console.log('🏫 Youth Training Injector cargando...');
     // ─────────────────────────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────────────────────────
-    function gs() { return window.gameLogic?.getGameState(); }
+    function gs() { return window.gameLogic?.getViewState(); }
     function gl() { return window.gameLogic; }
 
     function calculateOverall(player) {

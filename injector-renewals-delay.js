@@ -21,7 +21,7 @@
     // ─────────────────────────────────────────────────────────────
 
     function gs() {
-        return window.gameLogic?.getGameState?.();
+        return window.gameLogic?.getViewState?.();
     }
 
     function news(msg, type) {

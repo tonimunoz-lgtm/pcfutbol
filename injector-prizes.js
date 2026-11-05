@@ -9,7 +9,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const fmt = n => Math.round(n).toLocaleString('es-ES');
     const M = 1e6, K = 1e3;
 

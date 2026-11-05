@@ -8,6 +8,7 @@
     // ESTADO LOCAL
     // =====================================================
     let firestoreMarketPlayers = [];
+    let marketLoaded=false;
     let _sellPlayerName = null; // Fix bug indice venta
 
     // =====================================================
@@ -129,8 +130,9 @@
     // INTERCEPCION: searchPlayersMarket
     // =====================================================
     function patchSearchPlayersMarket() {
-        window.searchPlayersMarket = function() {
+        window.searchPlayersMarket = async function() {
             const state = window.gameLogic.getGameState();
+            if (!state.world && !marketLoaded) { await loadMarketFromFirestore(); marketLoaded=true; }
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
 
             const filters = {
@@ -352,8 +354,8 @@
             patchAdminSaveSquad();
         }, 2000);
 
-        await doInitialSync();
-        await loadMarketFromFirestore();
+        // Catalog publication is an explicit administrator action.
+        // Persistent worlds own their market; read the legacy market only on demand.
 
         console.log('injector-transfer-market listo');
     }

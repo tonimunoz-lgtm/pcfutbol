@@ -9,7 +9,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const save = o => gl().updateGameState(o);
     const news = (m, t = 'info') => gl().addNews(m, t);
     const fmt = n => Math.round(n).toLocaleString('es-ES');

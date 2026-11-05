@@ -16,7 +16,7 @@
     'use strict';
 
     const gl   = () => window.gameLogic;
-    const gs   = () => gl()?.getGameState();
+    const gs   = () => gl()?.getViewState();
     const fmt  = n => Math.round(n || 0).toLocaleString('es-ES');
     const save = u => gl()?.updateGameState(u);
 
@@ -103,7 +103,7 @@
             const orig = s.weeklyIncomeBase ?? 5000;
             save({ fd_baseOrig: orig });
         }
-        const baseOrig = s.fd_baseOrig ?? 5000;
+        const baseOrig = s.fd_baseOrig ?? s.weeklyIncomeBase ?? 5000;
 
         const salaries = (s.squad || []).reduce((sum, p) => sum + (p.salary || 0), 0);
         const staffSal = Object.values(s.staff || {}).filter(Boolean)
@@ -191,14 +191,16 @@
     function setBonus(amount) {
         const s = gs();
         if (!s) return;
-        if ((s.balance || 0) < amount) {
+        if (!Number.isFinite(amount) || amount < 0) return;
+        const previousBonus = Number(s.fd_bonus) || 0;
+        if ((s.balance || 0) + previousBonus < amount) {
             alert('No tienes saldo suficiente para esta prima.');
             return;
         }
         const d = getD();
         d.bonus = amount;
         saveD(d);
-        save({ balance: (s.balance || 0) - amount });
+        save({ balance: (s.balance || 0) + previousBonus - amount });
         news(`💰 Prima de ${fmt(amount)}€ prometida a los jugadores para el próximo partido`, 'info');
         refreshUI();
         if (window._financeRefresh) window._financeRefresh();
@@ -1071,14 +1073,10 @@
         const orig = window.simulateWeek;
         window.simulateWeek = async function (...args) {
             const before = gs();
-            const beforeWeek = before?.week, beforeSeason = before?.currentSeason;
-            const beforePhase = before?.seasonType, beforeMatches = before?.matchHistory?.length || 0;
             const result = await orig.apply(this, args);
             const s = gs();
-            if (!s || result?.ignored) return result;
-            const advanced = s.week !== beforeWeek || s.currentSeason !== beforeSeason ||
-                s.seasonType !== beforePhase || (s.matchHistory || []).length !== beforeMatches;
-            if (!advanced && !result?.cupMatch) return result;
+            if (!before || !s || result?.ignored || result?.cupMatch || (before.week === s.week && before.currentSeason === s.currentSeason && before.seasonType === s.seasonType && (before.matchHistory||[]).length === (s.matchHistory||[]).length)) return result;
+            if (!s) return result;
 
             // Cambio de temporada
             if (_lastSeason && s.currentSeason && _lastSeason !== s.currentSeason) {
@@ -1092,9 +1090,9 @@
             _lastSeason = s.currentSeason;
 
             // Consumir prima (ya gastada del balance en setBonus)
-            if (advanced || result?.cupMatch) consumeBonus();
+            if (result?.myMatch || (before.seasonType === 'playoff' && (before.matchHistory||[]).length !== (s.matchHistory||[]).length)) consumeBonus();
 
-            if (advanced) processLoanPayments();
+            // Loan expiry is posted with the debit by the weekly finance ledger.
             recalcWeekly();
             if (window._financeRefresh) window._financeRefresh();
             refreshUI();

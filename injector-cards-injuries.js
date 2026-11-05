@@ -81,11 +81,11 @@ function hookSimulateWeek() {
     
     window.simulateWeek = async function() {
         // El segundo entrenador cubre bajas (lesión, sanción, venta...) antes de validar
-        const pre = window.gameLogic?.getGameState();
+        const pre = window.gameLogic?.getViewState();
         if (pre && pre.seasonType !== 'preseason' && typeof window.gameLogic.autoFixLineup === 'function' && (pre.seasonType==='playoff'||pre.seasonCalendar?.some(m=>m.week===pre.week&&(m.home===pre.team||m.away===pre.team)))) {
             window.gameLogic.autoFixLineup();
         }
-        const state = window.gameLogic?.getGameState();
+        const state = window.gameLogic?.getViewState();
         
         // VALIDACIÓN ANTES DE SIMULAR (en pretemporada no hay partido oficial)
         if (state && state.lineup && state.seasonType !== 'preseason' && (state.seasonType==='playoff'||state.seasonCalendar?.some(m=>m.week===state.week&&(m.home===state.team||m.away===state.team)))) {
@@ -175,7 +175,7 @@ setTimeout(() => {
     const originalSaveLineup = window.saveLineup;
     if (originalSaveLineup) {
         window.saveLineup = function() {
-            const state = window.gameLogic?.getGameState();
+            const state = window.gameLogic?.getViewState();
             if (!state || !state.lineup) return originalSaveLineup();
             
             console.log('🔍 Validando alineación...');
@@ -243,7 +243,7 @@ function enhanceSquadTable() {
     const table = document.querySelector('#squadList table');
     if (!table) return;
     
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (!state?.squad) return;
     
     console.log('🎨 Actualizando plantilla');
@@ -325,7 +325,7 @@ document.addEventListener('click', (e) => {
 // ============================================
 
 setTimeout(() => {
-    const state = window.gameLogic?.getGameState();
+    const state = window.gameLogic?.getViewState();
     if (state?.squad) {
         state.squad.forEach(initializePlayerCards);
         state.academy?.forEach(initializePlayerCards);
@@ -340,7 +340,7 @@ setTimeout(() => {
 
 window.CardsInjuriesSystem = {
     showStatus: function() {
-        const state = window.gameLogic?.getGameState();
+        const state = window.gameLogic?.getViewState();
         if (!state?.squad) return console.error('❌ No hay datos');
         
         console.log(`=== SEMANA GLOBAL ${globalWeekCounter} (Semana ${state.week}) ===`);
@@ -382,7 +382,7 @@ setTimeout(function() {
         window.drag = function(ev, playerJson) {
             try {
                 var player = JSON.parse(decodeURIComponent(playerJson));
-                var st = window.gameLogic && window.gameLogic.getGameState();
+                var st = window.gameLogic && window.gameLogic.getViewState();
                 var sp = st && st.squad && st.squad.find(function(p) { return p.name === player.name; });
                 if (sp && sp.isSuspended) {
                     ev.preventDefault();
@@ -399,7 +399,7 @@ setTimeout(function() {
     if (originalDrop) {
         window.drop = function(ev, targetSlotId) {
             try {
-                var st = window.gameLogic && window.gameLogic.getGameState();
+                var st = window.gameLogic && window.gameLogic.getViewState();
             } catch(e) {}
             return originalDrop.call(this, ev, targetSlotId);
         };
@@ -410,7 +410,7 @@ setTimeout(function() {
         window.renderLineupPageUI = function() {
             originalRender.call(this);
             setTimeout(function() {
-                var st = window.gameLogic && window.gameLogic.getGameState();
+                var st = window.gameLogic && window.gameLogic.getViewState();
                 if (!st || !st.squad) return;
 
                 var pitchPlayers = document.querySelectorAll('.pitch-player');

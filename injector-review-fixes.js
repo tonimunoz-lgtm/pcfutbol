@@ -8,7 +8,7 @@
         const name = decodeURIComponent(button.dataset.player);
         const ok = window.pcfConfirm ? await window.pcfConfirm('Despedir canterano', `¿Dar la baja a ${name}? No recibirás ingresos por la salida.`) : confirm(`¿Dar la baja a ${name}?`);
         if (!ok) return;
-        const state = window.gameLogic.getGameState();
+        const state = window.gameLogic.getViewState();
         state.academy = (state.academy || []).filter(p => p.name !== name);
         window.gameLogic.updateGameState(state);
         window.gameLogic.addNews(`Cantera: ${name} ha recibido la baja.`, 'info');

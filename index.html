@@ -874,7 +874,7 @@
                 page.classList.add('active');
                 
                 // Actualizar contenido según la página
-                const state = gameLogic.getGameState();
+                const state = gameLogic.getViewState();
                 if (pageId === 'squad') ui.renderSquadList(state.squad, state.team);
                 if (pageId === 'academy') ui.renderAcademyList(state.academy);
                 if (pageId === 'transfers') {
@@ -956,7 +956,7 @@
             ev.preventDefault();
             ev.currentTarget.classList.remove('highlight');
 
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             let currentLineup = gameLogic.getLineup();
             let currentSquad = state.squad;
 
@@ -1096,17 +1096,23 @@ window.selectTeamAndStart = async function(teamName, division) {
         return;
     }
 
+    if (window.__pcfSelectingTeam) return;
+    window.__pcfSelectingTeam = true;
+    const selectionModal = document.getElementById('selectTeam');
+    selectionModal?.setAttribute('aria-busy', 'true');
+    try {
     console.log('Seleccionando equipo:', teamName, 'Division:', division);
 
     // Se usa window.gameLogic para respetar los módulos que envuelven esta función
     const hired=await window.gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
     if(hired?.cancelled)return;
-    ui.refreshUI(gameLogic.getGameState());
+    ui.refreshUI(gameLogic.getViewState());
     window.closeModal('selectTeam');
 
     // Abrir dashboard automáticamente
     const dashboardButton = document.querySelector('.menu-item[onclick="window.switchPage(\'dashboard\', this)"]');
     if (dashboardButton) window.switchPage('dashboard', dashboardButton);
+    } finally { window.__pcfSelectingTeam = false; selectionModal?.removeAttribute('aria-busy'); }
 };
 
       
@@ -1146,7 +1152,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             const youngster = JSON.parse(decodeURIComponent(encodedYoungsterJson));
             const result = gameLogic.signYoungster(youngster);
             alert(result.message);
-            ui.refreshUI(gameLogic.getGameState());
+            ui.refreshUI(gameLogic.getViewState());
             if (result.success) {
                 window.closeModal('signYoungster');
             }
@@ -1156,7 +1162,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             if (await window.pcfConfirmText(`¿Estás seguro de que quieres vender a ${name}?`)) {
                 const result = gameLogic.sellPlayer(name);
                 alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
             }
         };
 
@@ -1164,17 +1170,17 @@ window.selectTeamAndStart = async function(teamName, division) {
             if (await window.pcfConfirmText(`¿Ascender a ${name} a la primera plantilla?`)) {
                 const result = gameLogic.promoteYoungster(name);
                 alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
             }
         };
 
         // Simulación
         window.simulateWeek = async function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             // En pretemporada no hay partido oficial: no hace falta validar
             if (state.seasonType !== 'preseason' && (state.seasonType==='playoff' || state.seasonCalendar?.some(m=>m.week===state.week&&(m.home===state.team||m.away===state.team)))) {
                 if (gameLogic.autoFixLineup) gameLogic.autoFixLineup();
-                const lineupValidation = gameLogic.validateLineup(gameLogic.getGameState().lineup);
+                const lineupValidation = gameLogic.validateLineup(gameLogic.getViewState().lineup);
                 if (!lineupValidation.success) {
                     if (state.staff.segundoEntrenador) {
                         alert(`¡Advertencia del Segundo Entrenador!\n\nTu alineación actual es INVÁLIDA:\n${lineupValidation.message}\n\nPor favor, corrige la alineación antes de simular la jornada.`);
@@ -1182,19 +1188,17 @@ window.selectTeamAndStart = async function(teamName, division) {
                         window.openPage('lineup');
                         return;
                     } else {
-                        alert(`Alineación inválida: ${lineupValidation.message}. Corrígela antes de continuar.`);
-                        window.openPage('lineup');
-                        return { ignored: true, reason: 'invalid-lineup' };
+                        alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida.`);
+                        gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
                     }
                 }
             }
 
             // Se espera a que termine la jornada (y el fin de temporada, si toca).
             // El resumen del partido lo muestra injectMatchSummary.
-            const outcome = await gameLogic.simulateFullWeek();
-            ui.refreshUI(gameLogic.getGameState());
+            await gameLogic.simulateFullWeek();
+            ui.refreshUI(gameLogic.getViewState());
             window.openPage('dashboard');
-            return outcome;
         };
 
         // Negociación
@@ -1212,7 +1216,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.startPlayerNegotiation = window.startNegotiationUI;
 
         window.updateNegotiationModal = function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const player = state.negotiatingPlayer;
 
             if (!player) {
@@ -1305,7 +1309,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         function populatePlayerExchangeSelect() {
             const select = document.getElementById('playerExchangeSelect');
             select.innerHTML = '';
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             state.squad.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.name;
@@ -1347,7 +1351,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.endNegotiationUI = function(success) {
             gameLogic.endNegotiation(success);
             window.closeModal('negotiation');
-            ui.refreshUI(gameLogic.getGameState());
+            ui.refreshUI(gameLogic.getViewState());
         };
 
         // Entrenamiento
@@ -1355,7 +1359,7 @@ window.selectTeamAndStart = async function(teamName, division) {
 
         window.setPlayerTrainingFocusUI = function(playerIndex, playerName) {
             currentTrainingPlayerIndex = playerIndex;
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const player = state.squad[playerIndex];
 
             if (!player) return;
@@ -1411,7 +1415,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             if (result.success) {
                 window.closeModal('training');
             }
-            ui.refreshUI(gameLogic.getGameState());
+            ui.refreshUI(gameLogic.getViewState());
         };
 
         // Staff
@@ -1421,7 +1425,7 @@ window.selectTeamAndStart = async function(teamName, division) {
 
             const candidates = gameLogic.generateStaffCandidates(role);
             const list = document.getElementById('staffCandidatesList');
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const existingStaff = state.staff[role];
 
             let indemnizationMessage = '';
@@ -1450,7 +1454,7 @@ window.selectTeamAndStart = async function(teamName, division) {
 
         window.hireStaffConfirm = async function(encodedCandidateJson) {
             const candidate = JSON.parse(decodeURIComponent(encodedCandidateJson));
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const existingStaff = state.staff[candidate.role];
             let confirmationMessage = `¿Estás seguro de que quieres contratar a ${candidate.name} (Nivel ${candidate.level}) por un salario de ${candidate.salary.toLocaleString('es-ES')}€/semana y una cláusula de ${candidate.clausula.toLocaleString('es-ES')}€?`;
 
@@ -1465,14 +1469,14 @@ window.selectTeamAndStart = async function(teamName, division) {
                 if (result.success) {
                     window.closeModal('hireStaff');
                 }
-                ui.refreshUI(gameLogic.getGameState());
-                window.updateStaffDisplay(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
+                window.updateStaffDisplay(gameLogic.getViewState());
             }
         };
 
         // Tácticas
         window.updateFormation = function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const newFormation = document.getElementById('formationSelect').value;
             const updatedState = { ...state, formation: newFormation };
             gameLogic.updateGameState(updatedState);
@@ -1481,7 +1485,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         };
 
         window.updateMentality = function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const newMentality = document.getElementById('mentalitySelect').value;
             const updatedState = { ...state, mentality: newMentality };
             gameLogic.updateGameState(updatedState);
@@ -1500,15 +1504,15 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.expandStadium = function() {
             const result = gameLogic.expandStadium();
             alert(result.message);
-            ui.refreshUI(gameLogic.getGameState());
-            window.updateFacilitiesDisplay(gameLogic.getGameState());
+            ui.refreshUI(gameLogic.getViewState());
+            window.updateFacilitiesDisplay(gameLogic.getViewState());
         };
 
         window.improveFacilities = function() {
             const result = gameLogic.improveFacilities();
             alert(result.message);
-            ui.refreshUI(gameLogic.getGameState());
-            window.updateFacilitiesDisplay(gameLogic.getGameState());
+            ui.refreshUI(gameLogic.getViewState());
+            window.updateFacilitiesDisplay(gameLogic.getViewState());
         };
 
         function updateFacilitiesDisplay(state) {
@@ -1568,12 +1572,12 @@ window.selectTeamAndStart = async function(teamName, division) {
             const result = gameLogic.setTicketPrice(newPrice);
             if (result.success) {
                 alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
-                window.updateFinanceDisplay(gameLogic.getGameState());
-                window.updateCommercialDisplay(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
+                window.updateFinanceDisplay(gameLogic.getViewState());
+                window.updateCommercialDisplay(gameLogic.getViewState());
             } else {
                 alert('Error: ' + result.message);
-                input.value = gameLogic.getGameState().ticketPrice;
+                input.value = gameLogic.getViewState().ticketPrice;
             }
         };
 
@@ -1583,12 +1587,12 @@ window.selectTeamAndStart = async function(teamName, division) {
             const result = gameLogic.setMerchandisingPrice(newPrice);
             if (result.success) {
                 alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
-                window.updateFinanceDisplay(gameLogic.getGameState());
-                window.updateCommercialDisplay(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
+                window.updateFinanceDisplay(gameLogic.getViewState());
+                window.updateCommercialDisplay(gameLogic.getViewState());
             } else {
                 alert('Error: ' + result.message);
-                input.value = gameLogic.getGameState().merchandisingPrice;
+                input.value = gameLogic.getViewState().merchandisingPrice;
             }
         };
 
@@ -1599,12 +1603,12 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.setTicketPriceFromSlider = function(value) {
             const result = gameLogic.setTicketPrice(value);
             if (result.success) {
-                ui.refreshUI(gameLogic.getGameState());
-                window.updateFinanceDisplay(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
+                window.updateFinanceDisplay(gameLogic.getViewState());
             } else {
                 alert('Error: ' + result.message);
-                document.getElementById('ticketPriceSlider').value = gameLogic.getGameState().ticketPrice;
-                document.getElementById('ticketPriceSliderValue').textContent = gameLogic.getGameState().ticketPrice;
+                document.getElementById('ticketPriceSlider').value = gameLogic.getViewState().ticketPrice;
+                document.getElementById('ticketPriceSliderValue').textContent = gameLogic.getViewState().ticketPrice;
             }
         };
 
@@ -1615,12 +1619,12 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.setMerchandisingPriceFromSlider = function(value) {
             const result = gameLogic.setMerchandisingPrice(value);
             if (result.success) {
-                ui.refreshUI(gameLogic.getGameState());
-                window.updateFinanceDisplay(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
+                window.updateFinanceDisplay(gameLogic.getViewState());
             } else {
                 alert('Error: ' + result.message);
-                document.getElementById('merchandisingPriceSlider').value = gameLogic.getGameState().merchandisingPrice;
-                document.getElementById('merchandisingPriceSliderValue').textContent = gameLogic.getGameState().merchandisingPrice;
+                document.getElementById('merchandisingPriceSlider').value = gameLogic.getViewState().merchandisingPrice;
+                document.getElementById('merchandisingPriceSliderValue').textContent = gameLogic.getViewState().merchandisingPrice;
             }
         };
 
@@ -1738,7 +1742,7 @@ window.selectTeamAndStart = async function(teamName, division) {
 
         // Alineación
         window.renderLineupPageUI = function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const currentFormation = FORMATIONS[state.formation];
             let lineup = gameLogic.getLineup();
             let reserves = gameLogic.getReservePlayers();
@@ -1824,7 +1828,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         
 
         window.saveLineup = function() {
-            const state = gameLogic.getGameState();
+            const state = gameLogic.getViewState();
             const currentFormation = FORMATIONS[state.formation];
             const newLayout = Array(11).fill(null);
 
@@ -1852,7 +1856,7 @@ window.selectTeamAndStart = async function(teamName, division) {
             if (result.success) {
                 gameLogic.addNews('¡Alineación guardada con éxito!', 'success');
                 alert(result.message);
-                ui.refreshUI(gameLogic.getGameState());
+                ui.refreshUI(gameLogic.getViewState());
                 window.renderLineupPageUI();
             } else {
                 gameLogic.addNews(`[Segundo Entrenador - ALINEACIÓN] Error al guardar la alineación: ${result.message}`, 'error');
@@ -1870,14 +1874,12 @@ window.selectTeamAndStart = async function(teamName, division) {
             const gameName = await window.pcfPrompt('Introduce un nombre para tu partida guardada:', `Partida ${new Date().toLocaleDateString()}`);
             if (!gameName) return;
 
-            const gameId = gameLogic.getGameState().gameId || ('game_' + Date.now());
-            gameLogic.updateGameState({gameId});
+            const gameId = 'game_' + Date.now();
             const currentGameState = gameLogic.getGameState();
 
             try {
                 const result = await window.saveGameToCloud(window.currentUserId, gameId, gameName, currentGameState);
                 if (result.success) {
-                    gameLogic.updateGameState({_cloudRevision: result.cloudRevision});
                     alert('✅ Partida guardada en la nube correctamente.');
                 } else {
                     alert('❌ Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));
@@ -1931,7 +1933,7 @@ let currentRenewalPlayerIndex = -1;
 
 // Abrir modal de renovación
 window.openRenewalModal = function(playerIndex) {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[playerIndex];
     
     if (!player) {
@@ -1979,7 +1981,7 @@ window.openRenewalModal = function(playerIndex) {
 
 // Actualizar probabilidad de aceptación
 window.updateRenewalProbability = function() {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[currentRenewalPlayerIndex];
     
     if (!player) return;
@@ -2037,7 +2039,7 @@ window.updateRenewalProbability = function() {
 
 // Enviar oferta de renovación
 window.submitRenewalOffer = function() {
-    const state = window.gameLogic.getGameState();
+    const state = window.gameLogic.getViewState();
     const player = state.squad[currentRenewalPlayerIndex];
     
     if (!player) {
@@ -2235,7 +2237,7 @@ window.onclick = function(event) {
         
         // Exponer globalmente
         window.gameLogic = gameLogic;
-        window.ui = { ...ui };
+        window.ui = ui;
         window.TEAMS_DATA = TEAMS_DATA;
         window.ATTRIBUTES = ATTRIBUTES;
         window.POSITIONS = POSITIONS;

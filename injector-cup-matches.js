@@ -106,9 +106,9 @@ const EU_POOLS = {
 // ============================================================
 // ACCESO AL ESTADO — todo en gameState.cupData
 //
-// IMPORTANTE: getGameState() devuelve una COPIA (JSON.parse).
+// IMPORTANTE: getViewState() devuelve una COPIA (JSON.parse).
 // Para escribir hay que usar updateGameState({cupData: ...}).
-// Para leer se puede usar getGameState() o el objeto interno.
+// Para leer se puede usar getViewState() o el objeto interno.
 //
 // Usamos un objeto en memoria _cupData sincronizado con
 // updateGameState en cada escritura.
@@ -120,7 +120,7 @@ let _cupData = null;
 function getCupData() {
     if (_cupData) return _cupData;
     // Intentar cargar desde gameState (por si se cargó una partida guardada)
-    const gs = window.gameLogic?.getGameState();
+    const gs = window.gameLogic?.getViewState();
     if (gs?.cupData) {
         _cupData = gs.cupData;
     } else {
@@ -159,12 +159,12 @@ function saveField(f) {
 }
 
 function getGS() {
-    return window.gameLogic?.getGameState();
+    return window.gameLogic?.getViewState();
 }
 
 function getCompState() {
     if (window.CompetitionsSystem?.getComp) return window.CompetitionsSystem.getComp();
-    return window.gameLogic?.getGameState()?.competitions || null;
+    return window.gameLogic?.getViewState()?.competitions || null;
 }
 function saveCompState(c) {
     window.gameLogic?.updateGameState({ competitions: c });
@@ -1106,6 +1106,7 @@ function hookCupSimulateWeek(){
 
         // 4. Procesar
         const processed=processResult(pending,result);
+        window.gameLogic.updateGameState({fd_bonus:0}); // Prima pagada, consumida por este partido.
         try { if (window.PCFPrizes) window.PCFPrizes.onCupResult(pending, result, processed); } catch (e) { console.error('Premios:', e); }
 
         // 5. Noticia

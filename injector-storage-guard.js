@@ -74,31 +74,8 @@
     // Limpieza preventiva al arrancar
     try { if (usage().total > 3.2 * 1024 * 1024) purge(CACHE_TEAM); } catch (e) { /* */ }
 
-    // ── Partidas en la nube sin la foto del estadio ─────────────
-    function wrapSave() {
-        const o = window.saveGameToCloud;
-        if (typeof o !== 'function') return setTimeout(wrapSave, 600);
-        if (o._pcfGuard) return;
-        const w = function (userId, gameId, gameName, state) {
-            const copy = state ? { ...state } : state;
-            if (copy) delete copy.stadiumImage;
-            return o.call(this, userId, gameId, gameName, copy);
-        };
-        w._pcfGuard = true; window.saveGameToCloud = w;
-    }
-    // La foto del estadio se recupera de los datos del equipo
-    const restored = new Set();
-    async function restoreImage() {
-        try {
-            const s = window.gameLogic?.getGameState?.();
-            if (!s || !s.team || s.stadiumImage || restored.has(s.team) || typeof window.getTeamData !== 'function') return;
-            restored.add(s.team);
-            const d = await window.getTeamData(s.team);
-            if (d && d.stadiumImage) window.gameLogic.updateGameState({ stadiumImage: d.stadiumImage });
-        } catch (e) { /* */ }
-    }
-    [800, 2500, 6000].forEach(ms => setTimeout(wrapSave, ms));
-    setInterval(restoreImage, 4000);
+    // Save snapshots are now complete, chunked and backed up in IndexedDB.
+    // Do not strip images or poll the world every four seconds.
 
     // ── Compresión de imágenes ──────────────────────────────────
     function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }

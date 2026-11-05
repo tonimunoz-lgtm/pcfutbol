@@ -11,7 +11,7 @@ import { getTeamData, saveTeamData } from './teamData.js';
 
 
 import { simulateFootballMatch, syntheticLineup } from './match-engine.js';
-import { CLUB_FIELDS, assignPlayerIds, locatePlayer, moveWorldPlayer, returnWorldLoans, assertWorldOwnership, buildBoardObjectives, evaluateBoardObjectives, retirementProbability } from './world-model.js';
+import { CLUB_FIELDS, assignPlayerIds, locatePlayer, moveWorldPlayer, returnWorldLoans, assertWorldOwnership, buildBoardObjectives, evaluateBoardObjectives, retirementProbability, offseasonCashflow } from './world-model.js';
 
 // Primera temporada de una partida nueva
 const FIRST_SEASON = '2026/2027';
@@ -83,6 +83,12 @@ const gameState = {
 const INITIAL_GAME_STATE = JSON.parse(JSON.stringify(gameState));
 let stateGeneration=0;
   
+function getViewState() {
+    // UI snapshots deliberately omit the global world; updates remain partial.
+    const { world, ...view } = gameState;
+    return JSON.parse(JSON.stringify(view));
+}
+
 function getGameState() {
     captureWorldClub();
     return JSON.parse(JSON.stringify(gameState));  
@@ -511,6 +517,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
 async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, options = {}) {
     if(options.keepTime && gameState.team) return await switchPersistentClub(teamName,divisionType,gameMode);
     const previousState=getGameState();
+    await window.preloadTeamCatalog?.();
     stateGeneration++;worldTask=null;
     // Cambio de club en plena carrera: se conserva la temporada, la jornada y las ligas
     const snap = options.keepTime ? {
@@ -562,7 +569,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
         gameState.stadiumImage = teamData.stadiumImage || null;
         gameState.stadiumName = teamData.stadiumName || (teamName + ' Stadium');
         gameState.stadiumCapacity = teamData.stadiumCapacity || 10000;
-        gameState.balance = teamData.initialBudget || gameState.balance;
+        gameState.balance = teamData.initialBudget ?? gameState.balance;
     }
     gameState.fanbase = Math.round(gameState.stadiumCapacity * (ECONOMY.fanbaseFactor[divisionType] ?? 0.8));
     gameState.popularity = 50;
@@ -1280,48 +1287,24 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         const accepted = roll < acceptanceChance;  
   
         if (accepted) {  
-            // Intercambio atómico: validar y ejecutar sobre copia del mundo antes de confirmar.
-            if (gameState.world) {
-                const draft = JSON.parse(JSON.stringify(gameState.world));
-                const buyer = draft.clubs[gameState.team], seller = draft.clubs[source.club];
-                const wanted = seller.squad.find(p => p.id === source.player.id);
-                const outgoing = names.map(name => buyer.squad.find(p => p.name === name));
-                if (!wanted || outgoing.some(p => !p) || buyer.balance < offerAmount ||
-                    buyer.squad.length - outgoing.length + 1 > 25 ||
-                    seller.squad.length - 1 + outgoing.length > 25) {
-                    return {success:false,message:'El intercambio ya no es viable. No se ha cobrado nada.'};
-                }
-                // Retirar ambos lados antes de insertar: los clubes con 25 fichas pueden intercambiar.
-                seller.squad.splice(seller.squad.indexOf(wanted), 1);
-                outgoing.forEach(p => buyer.squad.splice(buyer.squad.indexOf(p), 1));
-                wanted.club = gameState.team; wanted.salary = gameState.playerOffer?.salary || wanted.salary;
-                wanted.contractType = 'owned'; wanted.loan = false; wanted.transferListed = false;
-                buyer.squad.push(wanted);
-                outgoing.forEach(p => {p.club = source.club; p.transferListed = false; seller.squad.push(p);});
-                buyer.balance -= offerAmount; seller.balance += offerAmount;
-                const movements = [{playerId:wanted.id,name:wanted.name,from:source.club,to:gameState.team,fee:offerAmount},
-                    ...outgoing.map(p=>({playerId:p.id,name:p.name,from:gameState.team,to:source.club,fee:0}))];
-                movements.forEach(m => draft.transfers.push({id:`t_${draft.nextTransferId++}`,...m,type:'transfer',season:gameState.currentSeason,week:gameState.week,phase:gameState.seasonType}));
-                draft.revision++;
-                gameState.world = draft;
-                gameState.squad = buyer.squad;
-                outgoing.forEach(p => replaceInLineup(p.name));
-                gameState.balance = buyer.balance;
-                gameState.playerPurchases = (gameState.playerPurchases || 0) + offerAmount;
-                endNegotiation(true);
-                return {success:true,message:`¡Fichaje completado! ${wanted.name} llega al club.`};
-            }
-            // Partidas sin mundo: verificar capacidad y completar el intercambio local.
             gameState.balance -= offerAmount;
-            gameState.playerPurchases = (gameState.playerPurchases || 0) + offerAmount;
-            playerExchange.forEach(pName => {
-                const index = gameState.squad.findIndex(p => p.name === pName);
-                if (index >= 0) {replaceInLineup(pName); gameState.squad.splice(index, 1);}
+// ✅ REGISTRAR GASTO EN FICHAJES
+if (!gameState.playerPurchases) gameState.playerPurchases = 0;
+gameState.playerPurchases += offerAmount;
+playerExchange.forEach(pName => {
+                const p=gameState.squad.find(p=>p.name===pName);
+                if(p&&gameState.world){replaceInLineup(pName);worldMove({id:p.id,from:gameState.team,to:player.club,fee:0});}
+                else {const index=gameState.squad.findIndex(p=>p.name===pName);if(index>=0)gameState.squad.splice(index,1);}
             });
-            const newPlayer = {...player,...gameState.playerOffer, salary:gameState.playerOffer.salary,
-                sourceClub:player.club,transferFee:offerAmount,loan:false,club:gameState.team};
-            endNegotiation(true);
-            return signPlayer(newPlayer);
+  
+            const newPlayer = {  
+                ...player, ...gameState.playerOffer,
+                salary: gameState.playerOffer.salary, sourceClub: player.club, transferFee: offerAmount,
+                loan: false,  
+                club: gameState.team  
+            };  
+            endNegotiation(true);  
+            return signPlayer(newPlayer);  
         } else {  
             if (offerFactor < 0.6 || roll > 0.9) {  
                 endNegotiation();  
@@ -1351,7 +1334,7 @@ function setTrainingFocus(playerIndex, attribute) {
         return { success: false, message: 'Atributo no válido para entrenar.' };  
     }  
   
-    gameState.trainingFocus = { playerIndex, playerId: gameState.squad[playerIndex].id, attribute };  
+    gameState.trainingFocus = { playerIndex, attribute };  
     return { success: true, message: `Entrenamiento enfocado en ${attribute} para ${gameState.squad[playerIndex].name}.` };  
 }  
   
@@ -1360,10 +1343,8 @@ function applyWeeklyTraining() {
         return { success: false, message: 'No hay un foco de entrenamiento establecido.' };  
     }  
   
-    const focus = gameState.trainingFocus;
-    // Compatibilidad con partidas antiguas: solo ellas carecen de playerId.
-    const player = focus.playerId ? gameState.squad.find(p => p.id === focus.playerId) : gameState.squad[focus.playerIndex];
-    const attribute = focus.attribute;  
+    const player = gameState.squad[gameState.trainingFocus.playerIndex];  
+    const attribute = gameState.trainingFocus.attribute;  
   
     if (!player) {
         // El índice ya no corresponde a ningún jugador (cambio de temporada/plantilla)
@@ -1629,11 +1610,12 @@ async function ensureWorld() {
     worldTask=(async()=>{
         const leagues=ensureLeagueStructure();
         const w={version:1,season,revision:1,nextPlayerId:1,nextTransferId:1,clubs:{},divisions:{},loans:[],transfers:[],marketTicks:{},seasons:[],statistics:{}};
+        await window.preloadTeamCatalog?.();
         for(const [div,names] of Object.entries(leagues)){
             for(const name of names){
                 let squad=name===team?gameState.squad:gameState.aiSquads?.[`${season}|${div}|${name}`];
                 if(!squad)squad=ageAISquad(await generateAISquad(name,div),seasonIndex(season));
-                const td=await getTeamData(name);
+                const td=await (window.getTeamData ? window.getTeamData(name) : getTeamData(name));
                 const snapshot=name===team?{}:{academy:[],staff:{},formation:'433',mentality:'balanced',trainingLevel:1,
                     stadiumCapacity:td.stadiumCapacity||10000,stadiumName:td.stadiumName||name+' Stadium',teamLogo:td.logo||null,
                     fanbase:Math.round((td.stadiumCapacity||10000)*(ECONOMY.fanbaseFactor[div]||.8)),popularity:50,
@@ -1642,8 +1624,9 @@ async function ensureWorld() {
                     const pos=SQUAD_TEMPLATE[(k*3+2)%SQUAD_TEMPLATE.length];
                     const p=buildGeneratedPlayer(pos,(SQUAD_QUALITY[div]?.target||55)-12,16+k%3,div);p.potential=estimatePotential(p);snapshot.academy.push(p);
                 }
-                w.clubs[name]={id:`c_${Object.keys(w.clubs).length+1}`,name,division:div,squad,balance:name===team?gameState.balance:(td.initialBudget||500000),snapshot,financeTicks:{}};
+                w.clubs[name]={id:`c_${Object.keys(w.clubs).length+1}`,name,division:div,squad,balance:name===team?gameState.balance:(td.initialBudget??500000),snapshot,financeTicks:{}};
             }
+            await new Promise(resolve => setTimeout(resolve, 0));
             w.divisions[div]={season,teams:[...names],calendar:div===gameState.division?gameState.seasonCalendar:generateLeagueCalendar(names),
                 standings:div===gameState.division?gameState.standings:initStandings(names),
                 history:div===gameState.division?(gameState.matchHistory||[]).filter(m=>!m.playoff).map(m=>({week:m.week,home:m.home,away:m.away,score:m.score})):[],lastWeek:0};
@@ -1706,6 +1689,7 @@ async function advanceWorldLeagues(upToWeek) {
                 d.history.push({week,home:match.home,away:match.away,score:`${r.homeGoals}-${r.awayGoals}`});
             }
             d.lastWeek=week;
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
     }
     w.revision++;
@@ -1825,7 +1809,8 @@ function rollWorldSeason(summary) {
     for(const [div,names] of Object.entries(gameState.leagues))for(const name of names){const c=w.clubs[name];if(c)c.division=div;}
     for(const c of Object.values(w.clubs)){
         if(c.name===gameState.team){c.squad=gameState.squad;continue;}
-        const previousGames=w.divisions[c.division]?.standings[c.name]?.pj||38;
+        const oldDivision = Object.values(w.divisions).find(d => d.standings[c.name]);
+        const previousGames=oldDivision?.standings[c.name]?.pj ?? 0;
         const survivors=[];
         for(const p of c.squad){
             appendWorldCareer(p,summary.season,c.name);
@@ -2948,6 +2933,7 @@ async function simulateFullWeekInner() {
     }  
 
     // ===== VALIDAR ALINEACIÓN =====
+    const preSimLineupValidation = validateLineup(gameState.lineup);  
     applyWeeklyTraining();  
 
     // Reducir lesiones (el fisioterapeuta puede recortar una semana más: 10 % por nivel)
@@ -2975,7 +2961,6 @@ async function simulateFullWeekInner() {
         }  
     });  
 
-    const preSimLineupValidation = validateLineup(gameState.lineup);
     secondCoachAdvice();
     await boardUpdate();
 
@@ -2997,13 +2982,6 @@ async function simulateFullWeekInner() {
     // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
-            // Una sanción se cumple también cuando el encuentro se registra como derrota administrativa.
-            gameState.squad.forEach(p => {
-                if (p.isSuspended && p.suspensionWeeks > 0) {
-                    p.suspensionWeeks--;
-                    if (!p.suspensionWeeks) p.isSuspended = false;
-                }
-            });
             // Alineación inválida
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
 
@@ -3029,7 +3007,7 @@ async function simulateFullWeekInner() {
                 week: gameState.week,  
                 home: myTeamMatch.home,  
                 away: myTeamMatch.away,  
-                score: `${homeGoals}-${awayGoals}`
+                score: `${homeGoals}-${awayGoals}`, administrative:true, reason:'invalid-lineup'
             });
             
             myMatchResult = { 
@@ -3207,16 +3185,18 @@ function computeMerch(state, price) {
 function updateWeeklyFinancials() {  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + (p.salary||0), 0)+(gameState.loanSalaryExpense||0);  
     const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);  
-    gameState.weeklyExpenses = playerSalaries + staffSalaries;  
+    gameState.weeklyExpenses = playerSalaries + staffSalaries + (gameState.fd_loanPayment || 0);  
   
     const attendance = computeAttendance(gameState);
     const merch = computeMerch(gameState);
     gameState.merchandisingItemsSold = merch.items;
     gameState.merchandisingRevenue = merch.revenue;
   
-    gameState.weeklyIncome = gameState.weeklyIncomeBase +  
-                             Math.floor(gameState.ticketPrice * attendance) +  
-                             gameState.merchandisingRevenue;  
+    const home = gameState.seasonType === 'regular' && gameState.seasonCalendar.some(m => m.week === gameState.week && m.home === gameState.team);
+    const gate = home ? Math.floor(gameState.ticketPrice * attendance) : 0;
+    const sales = home ? merch.revenue : 0;
+    gameState.weeklyIncome = (gameState.weeklyIncomeBase ?? 5000) + gate + sales;
+    gameState.weeklyExpenses += window.pcfEconomy?.benefits?.(gameState, gate, sales)?.total || 0;  
   
     // Projection only. Actual cash is posted once by the weekly ledger.
 }  
@@ -3905,7 +3885,7 @@ function checkMarketRecommendations() {
 }
 
 export {  
-    getGameState,  
+    getGameState, getViewState,  
     updateGameState, replaceGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
@@ -3974,7 +3954,7 @@ if (typeof window !== 'undefined') {
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
     window.pcfEconomy = {
-        ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        offseasonCashflow, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
         benefits: (state, ticket = 0, merch = 0) => {
             const result = { house: 0, car: 0, tickets: 0, merch: 0 };
             for (const p of state.squad || []) {
@@ -4020,7 +4000,7 @@ if (typeof window !== 'undefined') {
     
     // También exponer el gameLogic completo
     window.gameLogic = {
-        getGameState,
+        getGameState, getViewState,
         updateGameState, replaceGameState,
         selectTeamWithInitialSquad,
         addNews,
@@ -4196,7 +4176,7 @@ function renderTactic() {
 
 
 // Llamar cuando abras la página de tácticas
-document.getElementById('formationSelect').addEventListener('change', () => {
+document.getElementById('formationSelect')?.addEventListener('change', () => {
     renderTactic();
 });
 
@@ -4220,7 +4200,7 @@ function renderBench() {
     benchDiv.innerHTML = '<h3>Suplentes</h3>';
 
     // Itera sobre los suplentes
-    gameState.bench.forEach(player => {
+    (gameState.squad || []).filter(p => !(gameState.lineup || []).some(q => q?.id ? q.id === p.id : q?.name === p.name)).forEach(player => {
         const playerEl = document.createElement('div');
         playerEl.className = 'bench-player';
         playerEl.textContent = player.name; // o icono / número

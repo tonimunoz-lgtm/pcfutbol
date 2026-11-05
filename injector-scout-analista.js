@@ -24,7 +24,7 @@
 
     // ── Helpers ───────────────────────────────────────────────────
     const gl  = () => window.gameLogic;
-    const gs  = () => gl()?.getGameState?.();
+    const gs  = () => gl()?.getViewState?.();
     const addN = (msg, type = 'info') => gl()?.addNews?.(msg, type);
 
     const POSITIONS_ALL = ['POR','DFC','LI','LD','MC','MCO','MCD','MI','MD','EXT','DC'];

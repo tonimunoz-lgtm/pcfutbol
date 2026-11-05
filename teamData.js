@@ -29,7 +29,7 @@ const TEAM_CUSTOM_DATA = {
 function getTeamData(teamName) {
     const storedData = localStorage.getItem(`team_data_${teamName}`);
     if (storedData) {
-        return JSON.parse(storedData);
+        try { return JSON.parse(storedData); } catch (_) { localStorage.removeItem(`team_data_${teamName}`); }
     }
     return TEAM_CUSTOM_DATA[teamName] || {
         logo: null,

@@ -14,7 +14,7 @@
 
     const MAX_PLAYER_ATTEMPTS = 3;
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
 
     // ── Ventanas del juego ───────────────────────────────────────

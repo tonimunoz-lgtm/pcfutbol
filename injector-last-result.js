@@ -252,7 +252,7 @@
         const content = document.getElementById('last-result-content');
 
         // Determinar cuál fue el último partido (liga vs copa/europa)
-        const gsNow = window.gameLogic?.getGameState?.();
+        const gsNow = window.gameLogic?.getViewState?.();
         if (!window._lastMatchResultHTML && gsNow?.lastMatchResultHTML) {
             window._lastMatchResultHTML = gsNow.lastMatchResultHTML;
             window._lastMatchTimestamp = gsNow.lastMatchResultAt || 1;

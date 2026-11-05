@@ -200,7 +200,7 @@ function renderSquadList(squad, currentTeam) {
     }  
   
     let headerHtml = `
-        <div style="overflow-x: auto;">
+        <div class="pcf-player-scroll" tabindex="0" aria-label="Tabla de jugadores desplazable" style="overflow: auto; max-height: 65vh;">
             <table style="font-size: 0.8em; min-width: 1400px;">
                 <thead>
                     <tr>
@@ -322,7 +322,7 @@ function renderSquadList(squad, currentTeam) {
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
     if (!list) return;  
-    const state = (typeof window !== 'undefined' && window.gameLogic?.getGameState?.()) || {};
+    const state = (typeof window !== 'undefined' && window.gameLogic?.getViewState?.()) || {};
   
     if (!academy || academy.length === 0) {  
         list.innerHTML = '<div class="alert alert-info">❌ No hay jóvenes en cantera. ¡Contrata talentos para desarrollarlos!</div>';  
@@ -335,7 +335,7 @@ function renderAcademyList(academy) {
         <div class="alert ${coach ? 'alert-success' : 'alert-warning'}" style="margin-bottom:8px">${coach
             ? `🏋️ Tu entrenador de juveniles (nivel ${coach.level}) entrena a <strong>${training} de ${academy.length}</strong> canteranos: tiene ${coach.level * 2} plazas (2 por nivel) y elige a los que tienen más margen hasta su potencial.`
             : '⚠️ Sin entrenador de juveniles los canteranos no progresan. Contrátalo en Entrenamiento o en Empleados.'}</div>
-        <div style="overflow-x: auto;">  
+        <div class="pcf-player-scroll" tabindex="0" aria-label="Tabla de jugadores desplazable" style="overflow: auto; max-height: 65vh;">  
             <table style="font-size: 0.8em; min-width: 1200px;">  
                 <thead>  
                     <tr>  
@@ -403,7 +403,7 @@ function renderPlayerMarketList(players) {
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
+        <div class="pcf-player-scroll" tabindex="0" aria-label="Tabla de jugadores desplazable" style="overflow: auto; max-height: 65vh;">  
             <table style="font-size: 0.8em; min-width: 1400px;">  
                 <thead>  
                     <tr>  
@@ -484,7 +484,7 @@ function renderAvailableYoungstersMarket(youngsters) {
     }  
   
     let headerHtml = `  
-        <div style="overflow-x: auto;">  
+        <div class="pcf-player-scroll" tabindex="0" aria-label="Tabla de jugadores desplazable" style="overflow: auto; max-height: 65vh;">  
             <table style="font-size: 0.8em; min-width: 1100px;">  
                 <thead>  
                     <tr>  
@@ -527,7 +527,7 @@ function renderAvailableYoungstersMarket(youngsters) {
 function renderNextMatchCard(homeTeam, opponentName, week) {  
     const matchInfo = document.getElementById('matchInfo');  
     if (!matchInfo) return;  
-    const state = gameLogic.getGameState();  
+    const state = gameLogic.getViewState();  
   
     let matchDisplay = '';  
     if (state.seasonType === 'preseason') {  
@@ -699,7 +699,7 @@ function renderCalendarPage(state) {
   
     const onlyMine = !!state.calendarOnlyMine;
     calendarContent.innerHTML = `<div class="pcf-cal-toolbar">
-        <label><input type="checkbox" ${onlyMine ? 'checked' : ''} onchange="window.gameLogic.updateGameState({calendarOnlyMine:this.checked}); window.ui.renderCalendarPage(window.gameLogic.getGameState())"> Solo mis partidos</label>
+        <label><input type="checkbox" ${onlyMine ? 'checked' : ''} onchange="window.gameLogic.updateGameState({calendarOnlyMine:this.checked}); window.ui.renderCalendarPage(window.gameLogic.getViewState())"> Solo mis partidos</label>
         <button class="btn btn-sm" onclick="document.getElementById('pcf-cal-j${state.week}')?.scrollIntoView({behavior:'smooth',block:'start'})">⏩ Ir a la próxima jornada</button>
     </div><div class="pcf-cal-grid ${onlyMine ? 'pcf-cal-only-mine' : ''}">` + calendarHtml + `</div>`;
 }  
@@ -768,7 +768,7 @@ function renderNegotiationsList(state) {
     const sorted = ownedPlayers.sort((a, b) => a.contractYears - b.contractYears);
     
     let html = `
-        <div style="overflow-x: auto;">
+        <div class="pcf-player-scroll" tabindex="0" aria-label="Tabla de jugadores desplazable" style="overflow: auto; max-height: 65vh;">
             <table style="font-size: 0.9em; min-width: 1000px;">
                 <thead>
                     <tr>

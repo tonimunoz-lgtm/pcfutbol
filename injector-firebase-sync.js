@@ -39,7 +39,7 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
             if (!result.data) {  
                 console.log(`📝 Inicializando datos por defecto para ${teamName}`);  
                 const teamSpecificDefault = getDefaultTeamDataForTeam(teamName); // Usar esta función  
-                await window.saveTeamDataToFirebase(teamName, teamSpecificDefault);  
+                // Defaults stay local; only an explicit admin save writes catalog data.  
                 return { success: true, data: teamSpecificDefault };  
             }  
             return { success: false, data: null };  
@@ -51,44 +51,41 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
   
     // Función global para obtener datos del equipo  
     // Esta es la función principal que el juego (gameLogic, admin) debe llamar  
-window.getTeamData = async function(teamName) {
-    console.log(`📥 Cargando datos para ${teamName}...`);
-    // Primero intentar cargar desde Firebase
-    const firebaseResult = await getTeamDataFromFirebaseSafe(teamName);
-    let teamData;
-    if (firebaseResult.success && firebaseResult.data) {
-        console.log(`✅ Datos cargados desde Firebase para ${teamName}`);
-        teamData = firebaseResult.data;
-    } else {
-        // Fallback a localStorage
-        const localData = localStorage.getItem(`team_data_${teamName}`);
-        if (localData) {
-            console.log(`📦 Datos cargados desde localStorage para ${teamName}`);
-            teamData = JSON.parse(localData);
-        } else {
-            console.log(`⚠️ No hay datos para ${teamName}, usando valores por defecto.`);
-            teamData = getDefaultTeamDataForTeam(teamName);
+const teamCache = new Map();
+const teamPending = new Map();
+window.cacheTeamData = (name, data) => teamCache.set(name, structuredClone(data));
+let catalogTask;
+// One catalog read per session; no default writes from ordinary players.
+window.preloadTeamCatalog = function() {
+    if (catalogTask) return catalogTask;
+    catalogTask = (async () => {
+        if (!window.firebaseConfig?.enabled || !window.firebaseDB) return;
+        await window.authReadyPromise;
+        const result = await window.getAllTeamsDataFromFirebase();
+        if (!result.success) throw new Error(result.error || 'Catálogo no disponible');
+        for (const [name, data] of Object.entries(result.data)) teamCache.set(name, data);
+        return true;
+    })().catch(error => { console.warn('Catálogo: se usan las copias locales', error); return false; });
+    return catalogTask;
+};
+window.getTeamData = function(teamName) {
+    if (teamCache.has(teamName)) return Promise.resolve(structuredClone(teamCache.get(teamName)));
+    if (teamPending.has(teamName)) return teamPending.get(teamName).then(structuredClone);
+    const task = (async () => {
+        const catalogLoaded = await window.preloadTeamCatalog();
+        if (teamCache.has(teamName)) return teamCache.get(teamName);
+        let data;
+        try { data = JSON.parse(localStorage.getItem(`team_data_${teamName}`) || 'null'); } catch (_) {}
+        if (!data && !catalogLoaded) {
+            const result = await getTeamDataFromFirebaseSafe(teamName);
+            if (result.success) data = result.data;
         }
-    }
-
-    // 🔥 Inicializar campos de lesiones, sanciones y tarjetas
-    if (teamData.squad && Array.isArray(teamData.squad)) {
-        teamData.squad.forEach(p => {
-            p.isInjured = p.isInjured ?? false;
-            p.weeksOut = p.weeksOut ?? 0;
-
-            p.isSuspended = p.isSuspended ?? false;
-            p.suspensionWeeks = p.suspensionWeeks ?? 0;
-
-            p.yellowCards = p.yellowCards ?? 0;
-            p.redCards = p.redCards ?? 0;
-        });
-    }
-
-    // Guardar en localStorage y opcionalmente Firebase
-    localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));
-
-    return teamData;
+        data = data || getDefaultTeamDataForTeam(teamName);
+        teamCache.set(teamName, data);
+        return data;
+    })();
+    teamPending.set(teamName, task);
+    return task.finally(() => teamPending.delete(teamName)).then(structuredClone);
 };
 
  
@@ -96,7 +93,8 @@ window.getTeamData = async function(teamName) {
     // Función global para guardar datos del equipo (llamada desde admin panel)  
     window.saveTeamData = async function(teamName, teamData) {  
         // Siempre guardar en localStorage primero (sincrónico)  
-        localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData));  
+        teamCache.set(teamName, structuredClone(teamData));
+        try { localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData)); } catch (_) {}  
         console.log(`💾 Datos guardados en localStorage para ${teamName}`);  
   
         const isFirebaseEnabled = window.firebaseConfig && window.firebaseConfig.enabled;  
