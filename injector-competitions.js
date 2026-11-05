@@ -119,13 +119,29 @@ const ZONE_COLORS = {
 const COMP_KEY    = 'comps_v2';
 const PLAYOFF_KEY = 'playoff_v2';
 
+function readCompetitionState(field, legacyKey) {
+    const state = window.gameLogic?.getGameState();
+    if (!state?.team) return null;
+    if (Object.hasOwn(state, field)) return state[field];
+    try {
+        const legacy = JSON.parse(localStorage.getItem(legacyKey));
+        if (legacy?.team === state.team && legacy?.season === state.currentSeason) {
+            window.gameLogic.updateGameState({ [field]: legacy });
+            return legacy;
+        }
+    } catch (e) { console.warn('No se pudo migrar la competición anterior:', e); }
+    return null;
+}
+function writeCompetitionState(field, value) {
+    window.gameLogic?.updateGameState({ [field]: value });
+}
 const store = {
-    getComp:      () => { try{ return JSON.parse(localStorage.getItem(COMP_KEY));    }catch(e){ return null; } },
-    saveComp:     (s) => { try{ localStorage.setItem(COMP_KEY, JSON.stringify(s));   }catch(e){} },
-    clearComp:    () => localStorage.removeItem(COMP_KEY),
-    getPlayoff:   () => { try{ return JSON.parse(localStorage.getItem(PLAYOFF_KEY)); }catch(e){ return null; } },
-    savePlayoff:  (s) => { try{ localStorage.setItem(PLAYOFF_KEY, JSON.stringify(s));}catch(e){} },
-    clearPlayoff: () => localStorage.removeItem(PLAYOFF_KEY)
+    getComp: () => readCompetitionState('competitions', COMP_KEY),
+    saveComp: s => writeCompetitionState('competitions', s),
+    clearComp: () => writeCompetitionState('competitions', null),
+    getPlayoff: () => readCompetitionState('competitionPlayoff', PLAYOFF_KEY),
+    savePlayoff: s => writeCompetitionState('competitionPlayoff', s),
+    clearPlayoff: () => writeCompetitionState('competitionPlayoff', null)
 };
 
 // ============================================================
@@ -1336,7 +1352,7 @@ function hookSimulateWeek() {
         if (before && after) {
             if (before.currentSeason !== after.currentSeason) {
                 onNewSeason(before, after);
-            } else if (after.seasonType==='regular') {
+            } else if (after.seasonType==='regular' && !res?.cupMatch && !res?.ignored && (before.week !== after.week || before.seasonType !== after.seasonType)) {
                 processWeeklyComps(after);
             }
         }
@@ -1351,7 +1367,7 @@ function onNewSeason(before, after) {
     const myPos = sorted.findIndex(([n])=>n===before.team)+1;
     const newDiv=after.division, newSeason=after.currentSeason;
 
-    setTimeout(()=>{
+    {
         store.clearComp(); store.clearPlayoff();
 
         // Competición europea según posición final
@@ -1370,7 +1386,8 @@ function onNewSeason(before, after) {
         // Init playoff para la nueva división
         initPlayoffForDiv(after, sorted, newSeason);
         updateStandingsColors();
-    }, 1500);
+        window.CupMatches?.ensureCalendar?.();
+    }
 }
 
 function initPlayoffForDiv(state, sorted, season) {
@@ -1439,14 +1456,14 @@ function boot() {
         window._compSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
             const result = await origSelect.apply(this, args);
-            setTimeout(() => {
-                store.clearComp(); store.clearPlayoff();
-                initOnLoad();
-            }, 200);
+            store.clearComp(); store.clearPlayoff();
+            initOnLoad();
+            window.CupMatches?.ensureCalendar?.();
             return result;
         };
     }
 
+    window.addEventListener('pcf:state-replaced', initOnLoad);
     initOnLoad();
     hookStandingsOpen();
     hookSimulateWeek();

@@ -300,18 +300,7 @@ function hookSimulateWeek() {
             console.log('✅ Alineación válida, continuando con simulación...');
         }
         
-        const before = state ? `${state.team}|${state.currentSeason}|${state.seasonType}|${state.week}` : '';
-        const result = await originalSimulate.apply(this, arguments);
-        const after = window.gameLogic?.getGameState();
-        if (after && before !== `${after.team}|${after.currentSeason}|${after.seasonType}|${after.week}` && window.saveGameToCloud && window.currentUserId) {
-            try {
-                const gameId = after.gameId || `autosave_${after.team}`;
-                after.gameId = gameId;
-                window.gameLogic.updateGameState({ gameId });
-                await window.saveGameToCloud(window.currentUserId, gameId, `[Auto] ${after.team} - Jornada ${after.week}`, JSON.parse(JSON.stringify(after)));
-            } catch (e) { console.warn('No se pudo completar el autoguardado:', e); }
-        }
-        return result;
+        return await originalSimulate.apply(this, arguments);
     };
 }
 setTimeout(hookSimulateWeek, 1000);

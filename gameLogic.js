@@ -100,6 +100,25 @@ function updateGameState(newState) {
     updateWeeklyFinancials();  
 }  
 
+function replaceGameState(saved) {
+    if (!saved || typeof saved !== 'object' || !Array.isArray(saved.squad) ||
+        !Number.isInteger(saved.week) || saved.week < 1) throw new Error('Partida guardada inválida.');
+    const restored = JSON.parse(JSON.stringify(saved));
+    Object.keys(gameState).forEach(k => delete gameState[k]);
+    Object.assign(gameState, JSON.parse(JSON.stringify(INITIAL_GAME_STATE)), restored);
+    // Null explicitly means "no saved competition"; never borrow another career's browser data.
+    if (!Object.hasOwn(restored, 'competitions')) gameState.competitions = null;
+    if (!Object.hasOwn(restored, 'competitionPlayoff')) gameState.competitionPlayoff = null;
+    if (!Object.hasOwn(restored, 'cupData')) gameState.cupData = {};
+    aiSquadCache.clear();
+    newsSeq = Math.max(newsSeq, ...(gameState.newsFeed || []).map(n => Number(n.id) || 0));
+    updateWeeklyFinancials();
+    if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('pcf:state-replaced'));
+    }
+    return getGameState();
+}
+
 let newsSeq = Date.now();
   
 function addNews(message, type = 'info', read = false) {  
@@ -497,6 +516,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
         team: teamName,
         division: divisionType,
         gameMode: gameMode,
+        competitions: null, competitionPlayoff: null, cupData: {}, financePostings: {},
         currentSeason: FIRST_SEASON,
         seasonType: 'preseason',
         week: 1,
@@ -2818,9 +2838,7 @@ function updateWeeklyFinancials() {
                              Math.floor(gameState.ticketPrice * attendance) +  
                              gameState.merchandisingRevenue;  
   
-   if (gameState.team && !window._financesSuppressBalance) {
-    gameState.balance = gameState.balance + gameState.weeklyIncome - gameState.weeklyExpenses;
-}
+    // Projection only. Actual cash is posted once by the weekly ledger.
 }  
   
 function expandStadium(cost = 50000, capacityIncrease = 10000) {  
@@ -2984,7 +3002,7 @@ function setLineup(newLineup) {
     // Rellenar con los mejores jugadores disponibles de la plantilla si la nueva alineación es menor de 11      
     // Esto es importante para que siempre haya 11 en `gameState.lineup`      
     if (newLineup.length < 11) {  
-        const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
+        const availableSquadPlayers = gameState.squad.filter(isAvailable);  
         const currentLineupNames = new Set(newLineup.map(p => p.name));  
         const playersToFill = availableSquadPlayers  
                                 .filter(p => !currentLineupNames.has(p.name))  
@@ -3011,7 +3029,7 @@ function setLineup(newLineup) {
         gameState.lineup = filteredLineup;  
         // Rellenar de nuevo si es necesario      
         if (gameState.lineup.length < 11) {  
-            const availableSquadPlayers = gameState.squad.filter(p => !p.isInjured);  
+            const availableSquadPlayers = gameState.squad.filter(isAvailable);  
             const currentFilteredLineupNames = new Set(filteredLineup.map(p => p.name));  
             const playersToFill = availableSquadPlayers  
                                     .filter(p => !currentFilteredLineupNames.has(p.name))  
@@ -3031,7 +3049,7 @@ function validateLineup(lineupToCheck) {
   
     // ✅ Filtrar jugadores disponibles (no lesionados Y no cedidos OUT)
     const availablePlayers = gameState.squad.filter(p => 
-        !p.isInjured && 
+        !p.isInjured && !p.isSuspended &&
         p.contractType !== 'loaned_out'
     );
     const availablePlayerNames = new Set(availablePlayers.map(p => p.name));  
@@ -3050,6 +3068,7 @@ function validateLineup(lineupToCheck) {
   
         if (!availablePlayerNames.has(player.name)) {  
             const fullPlayer = gameState.squad.find(p => p.name === player.name);  
+            if (fullPlayer && fullPlayer.isSuspended) return { success: false, message: `¡Error! ${player.name} está sancionado y no puede jugar.` };
             if (fullPlayer && fullPlayer.isInjured) {  
                 return { success: false, message: `¡Error! ${player.name} está lesionado y no puede jugar.` };  
             }
@@ -3528,7 +3547,7 @@ function checkMarketRecommendations() {
 
 export {  
     getGameState,  
-    updateGameState,  
+    updateGameState, replaceGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
     playMatchImproved, 
@@ -3622,7 +3641,7 @@ if (typeof window !== 'undefined') {
     // También exponer el gameLogic completo
     window.gameLogic = {
         getGameState,
-        updateGameState,
+        updateGameState, replaceGameState,
         selectTeamWithInitialSquad,
         addNews,
         saveToLocalStorage,

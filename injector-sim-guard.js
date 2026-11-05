@@ -33,7 +33,13 @@
         busy = true;
         setButtonsBusy(true);
         try {
-            await window.simulateWeek();
+            const before = window.gameLogic?.getGameState();
+            const result = await window.simulateWeek();
+            const after = window.gameLogic?.getGameState();
+            const changed = before && after && (result?.cupMatch || before.week !== after.week ||
+                before.currentSeason !== after.currentSeason || before.seasonType !== after.seasonType ||
+                (before.matchHistory || []).length !== (after.matchHistory || []).length);
+            if (changed && !result?.ignored) await window.pcfSaveCurrentGame();
         } catch (err) {
             console.error('[SimGuard] Error simulando la jornada:', err);
         } finally {
@@ -42,5 +48,21 @@
         }
     }, true);
 
+    window.pcfSaveCurrentGame = async function() {
+        const state = window.gameLogic?.getGameState();
+        if (!state?.team || !window.saveGameToCloud || !window.currentUserId) return { success: false, skipped: true };
+        const gameId = state.gameId || `autosave_${state.team}`;
+        window.gameLogic.updateGameState({ gameId });
+        try {
+            const result = await window.saveGameToCloud(window.currentUserId, gameId,
+                `[Auto] ${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
+            if (!result?.success) throw new Error(result?.error || 'Guardado no confirmado');
+            return result;
+        } catch (error) {
+            window.gameLogic.addNews('No se ha podido completar el autoguardado en la nube. Vuelve a guardar la partida.', 'warning');
+            console.warn('[SimGuard] No se pudo guardar:', error);
+            return { success: false, error: error.message };
+        }
+    };
     window.isSimulatingWeek = () => busy;
 })();

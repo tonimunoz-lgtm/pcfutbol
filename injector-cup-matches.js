@@ -130,13 +130,15 @@ function getCupData() {
 }
 
 function flushCupData() {
-    // Escribe directamente en el objeto gameState sin pasar por updateGameState
-    // (evita bucles infinitos si updateGameState está hookeado)
-    if (_cupData) {
-        const gs = window.gameLogic?.getGameState();
-        if (gs) gs.cupData = _cupData;
-    }
+    if (_cupData) window.gameLogic?.updateGameState({ cupData: JSON.parse(JSON.stringify(_cupData)) });
 }
+window.addEventListener('pcf:state-replaced', () => {
+    _cupData = null;
+    window._lastCupResult = null;
+    window._lastMatchResult = null;
+    window._lastMatchResultHTML = null;
+    window._lastMatchTimestamp = 0;
+});
 
 function getCal() {
     return getCupData().calendar || [];
@@ -161,12 +163,11 @@ function getGS() {
 }
 
 function getCompState() {
-    // comps_v2 sigue en localStorage (lo gestiona injector-competitions.js)
-    try { return JSON.parse(localStorage.getItem('comps_v2')); }
-    catch(e) { return null; }
+    if (window.CompetitionsSystem?.getComp) return window.CompetitionsSystem.getComp();
+    return window.gameLogic?.getGameState()?.competitions || null;
 }
 function saveCompState(c) {
-    try { localStorage.setItem('comps_v2', JSON.stringify(c)); } catch(e) {}
+    window.gameLogic?.updateGameState({ competitions: c });
 }
 
 // ============================================================
@@ -1160,6 +1161,7 @@ function hookCupSimulateWeek(){
         // Solo durante la temporada regular (no pretemporada)
         if(gs.seasonType !== 'regular') return orig.apply(this,arguments);
 
+        initCupCalendar();
         const pending=getPendingMatch(gs.week);
         if(!pending) return orig.apply(this,arguments);
         await prepareMatch(pending);
@@ -1205,6 +1207,7 @@ function hookCupSimulateWeek(){
 // API PÚBLICA
 // ============================================================
 window.CupMatches = {
+    ensureCalendar: initCupCalendar,
     // Partidos aún por jugar (desbloqueados y sin eliminar): el juego no cierra la temporada hasta jugarlos
     pendingCount: () => {
         const comp = getCompState() || {};
@@ -1236,7 +1239,7 @@ window.CupMatches = {
         // Limpiar cupData en gameState
         const d=getCupData();
         if(d){d.calendar=[];d.calSeason=null;d.calTeam=null;d.leagueField=null;d.playoff=null;}
-        const gs=getGS(); if(gs) gs.cupData={};
+        const gs=getGS(); window.gameLogic.updateGameState({ cupData: {} });
         _cupData={};
         // Limpiar también los resultados europeos/copa en comps_v2
         const comp=getCompState();
@@ -1288,9 +1291,7 @@ function boot(){
                 if (_done) return; _done = true;
                 window.removeEventListener('competitionsReady', onReady);
                 console.log('🏆 CupMatches: nueva partida, iniciando calendario...');
-                _cupData = {};
-                const gs = getGS();
-                if (gs) gs.cupData = {};
+                _cupData = getGS()?.cupData || {};
                 initCupCalendar();
                 setTimeout(()=>{ hookCupSimulateWeek(); }, 800);
             };
@@ -1330,7 +1331,7 @@ function boot(){
                 const gs2 = getGS(); const comp2 = getCompState();
                 if (!gs2?.team || !comp2) return;
                 console.log('🏆 CupMatches: competitionsReady recibido, iniciando para', gs2.team);
-                _cupData = {}; if (gs2) gs2.cupData = {};
+                _cupData = {}; window.gameLogic.updateGameState({ cupData: {} });
                 initCupCalendar();
                 setTimeout(()=>{ hookCupSimulateWeek(); }, 800);
             });

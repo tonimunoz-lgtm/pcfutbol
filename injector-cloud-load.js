@@ -105,7 +105,7 @@
                 }
 
                 // Cargar el estado del juego
-                window.gameLogic.updateGameState(result.data.gameState);
+                window.gameLogic.replaceGameState(result.data.gameState);
                 
                 // Guardar también en localStorage como backup
                 window.gameLogic.saveToLocalStorage();

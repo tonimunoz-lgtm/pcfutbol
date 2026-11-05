@@ -47,11 +47,11 @@
 
     // ── Local / visitante ────────────────────────────────────────
     function isWeekHome(week, state) {
-        if (!state || !state.seasonCalendar || !state.team) return true;
+        if (!state || !state.seasonCalendar || !state.team) return false;
         const match = state.seasonCalendar
             .filter(m => m.week === week)
             .find(m => m.home === state.team || m.away === state.team);
-        if (!match) return true; // pretemporada → tratar como local
+        if (!match || state.seasonType !== 'regular') return false;
         return match.home === state.team;
     }
 
@@ -59,8 +59,8 @@
     function isNextMatchHome() {
         const state = gs();
         if (!state) return null;
-        if (state.seasonType === 'preseason') return true;
-        return isWeekHome(state.week + 1, state);
+        if (state.seasonType !== 'regular') return false;
+        return isWeekHome(state.week, state);
     }
 
     function computeAttendance(state, tp) {
@@ -92,9 +92,9 @@
     // ── Aplicar balance semanal real ─────────────────────────────
     // weekBefore y stateBefore: capturados ANTES de que simulateFullWeek
     // incremente state.week y cambie el estado.
-    function applyWeeklyBalance(weekBefore, stateBefore) {
+    function applyWeeklyBalance(weekBefore, stateBefore, postingKey) {
         const state = gs();
-        if (!state || !state.team) return;
+        if (!state || !state.team || state.team !== stateBefore.team || state.financePostings?.[postingKey]) return;
 
         const home     = isWeekHome(weekBefore, stateBefore);
         const att      = computeAttendance(stateBefore);
@@ -123,7 +123,8 @@
             net
         };
 
-        saveState({ balance: state.balance + net, lastWeekFinance: lastWeek });
+        saveState({ balance: state.balance + net, lastWeekFinance: lastWeek,
+            financePostings: { ...(state.financePostings || {}), [postingKey]: true } });
         console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} -> +${fmt(totalInc)} -${fmt(totalExp)} (sal:${fmt(salaries)} staff:${fmt(staffSal)} loan:${fmt(loanPay)} bonus:${fmt(bonusPay)}) = ${fmt(net)}`);
     }
 
@@ -151,17 +152,24 @@
             const sb = gs();
             const wb = sb ? sb.week : 1;
             const result = await orig.apply(this, args);
-            // Aplicar balance con los datos de la semana jugada
-            applyWeeklyBalance(wb, sb);
+            const completed = gs();
+            const advanced = sb && completed && sb.team === completed.team && !(result?.ignored || result?.cupMatch) &&
+                (sb.currentSeason !== completed.currentSeason || sb.seasonType !== completed.seasonType ||
+                 sb.week !== completed.week || (sb.matchHistory || []).length !== (completed.matchHistory || []).length);
+            if (!advanced) return result;
+            const postingKey = `${sb.team}|${sb.currentSeason}|${sb.seasonType}|${wb}` +
+                (sb.seasonType === 'playoff' ? `|${(sb.matchHistory || []).length}` : '');
+            applyWeeklyBalance(wb, sb, postingKey);
             // Entre temporadas pasa el verano: 8 semanas reales (la de transición ya cuenta 1)
             const sa = gs();
-            if (sb && sa && sb.currentSeason !== sa.currentSeason) {
+            if (sb && sa && sb.currentSeason !== sa.currentSeason && !sa.financePostings?.[postingKey + '|summer']) {
                 const extra = (window.PCF_OFFSEASON_WEEKS || 8) - 1;
                 const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0);
                 const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
                 const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
                 const net = (base - salaries - staffSal - window.pcfEconomy.benefits(sa).total) * extra;
-                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net });
+                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net,
+                    financePostings: { ...(sa.financePostings || {}), [postingKey + '|summer']: true } });
                 registerMovement(net >= 0 ? 'income' : 'expense', `Verano (${extra + 1} semanas sin partidos): ingresos fijos − sueldos`, net);
                 window.gameLogic?.addNews?.(`☀️ Verano: ${extra + 1} semanas sin partidos. Ingresos fijos ${fmt(base * extra)}€ · sueldos ${fmt((salaries + staffSal) * extra)}€.`, net >= 0 ? 'info' : 'warning');
             }
