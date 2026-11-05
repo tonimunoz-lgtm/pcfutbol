@@ -129,6 +129,7 @@
         });
         let current = -1;
         items.forEach(el => {
+            window.pcfPosDecorate?.(el, byName.get(el.dataset.playername)?.position);
             const line = LINE_OF[byName.get(el.dataset.playername)?.position] ?? 3;
             if (line !== current) {
                 current = line;
