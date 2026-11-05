@@ -221,7 +221,7 @@ async function generateInitialSquad() {
                         completedPlayer.overall = calculatePlayerOverall(completedPlayer);
                     }
                     if (!completedPlayer.potential) {
-                        completedPlayer.potential = Math.min(99, completedPlayer.overall + Math.floor(Math.random() * 10));
+                        completedPlayer.potential = estimatePotential(completedPlayer);
                     }
                     if (!completedPlayer.salary) {
                         completedPlayer.salary = Math.floor(completedPlayer.overall * 100 + completedPlayer.age * 50);
@@ -436,6 +436,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         else if (change <= -3) addNews(`📉 ${p.name} acusa la edad (${change}, media ${p.overall}).`, 'info');
 
         p.matches = 0;
+        p.ovrSeasonStart = p.overall;
 
         // Retirada: más probable cuanto mayor (34: 10 %, 35: 25 %, 36: 45 %, 37+: 70 %)
         const retireChance = p.age >= 37 ? 0.7 : p.age === 36 ? 0.45 : p.age === 35 ? 0.25 : p.age === 34 ? 0.1 : 0;
@@ -667,7 +668,7 @@ function buildGeneratedPlayer(position, target, age, division) {
         ATTRIBUTES.forEach(a => { player[a] = Math.max(15, Math.min(95, player[a] + Math.sign(d))); });
     }
     player.overall = calculatePlayerOverall(player);
-    const room = age <= 21 ? 6 + Math.floor(Math.random() * 12) : age <= 25 ? Math.floor(Math.random() * 8) : Math.floor(Math.random() * 3);
+    const room = age <= 17 ? 12 + Math.floor(Math.random() * 24) : age <= 21 ? 6 + Math.floor(Math.random() * 12) : age <= 25 ? Math.floor(Math.random() * 8) : Math.floor(Math.random() * 3);
     player.potential = Math.min(95, player.overall + room);
     player.salary = expectedSalary(player, division);
     player.value = marketValue(player);
@@ -693,7 +694,7 @@ function topUpSquad(squad, division, club, min = 20) {
     let k = 0;
     while (out.length < min) {
         const pos = missing.length ? missing.shift() : extras[k++ % extras.length];
-        const pl = buildGeneratedPlayer(pos, target + Math.round(Math.random() * 6 - 4), 18 + Math.floor(Math.random() * 14), division);
+        const pl = buildGeneratedPlayer(pos, target + Math.round(Math.random() * 6 - 4), division === 'promesas' ? 14 + Math.floor(Math.random() * 4) : 18 + Math.floor(Math.random() * 14), division);
         pl.club = club;
         out.push(pl);
     }
@@ -705,18 +706,61 @@ function generateDivisionSquad(division, club = gameState.team) {
     return SQUAD_TEMPLATE.map((pos, i) => {
         const starter = i % 2 === 0 || pos === 'POR' && i === 0;
         const target = base + (starter ? 2 : -3) + Math.round(Math.random() * 6 - 3);
-        const age = 18 + Math.floor(Math.random() * 15);
+        const age = division === 'promesas' ? 14 + Math.floor(Math.random() * 4) : 18 + Math.floor(Math.random() * 15);
         return { ...buildGeneratedPlayer(pos, target, age, division), club };
     });
 }
 
 // ── Progresión anual (al empezar cada temporada) ───────────────
 // Media objetivo de cambio por edad; los minutos y el preparador físico la modulan.
+// Puntos de media que gana al año un jugador joven, según su edad exacta.
+// Un chaval de 14-15 años crece mucho más que uno de 20.
+function youthGrowthBase(age) {
+    return age <= 14 ? 8 : age === 15 ? 7.5 : age === 16 ? 6.5 : age === 17 ? 5.5 : age === 18 ? 4.5 : age === 19 ? 3.8 : 3;
+}
+// Potencial estimado para jugadores importados que no lo traen: un chaval de 14 años
+// tiene mucho más margen que uno de 24. Varía de un jugador a otro (según su nombre)
+// y es siempre el mismo para el mismo jugador.
+function nameHash01(str) { let h = 2166136261; for (const c of String(str)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+function estimatePotential(p) {
+    const ovr = p.overall || 50, age = p.age || 25;
+    const h = nameHash01((p.name || '') + 'pot');
+    const base = age <= 21 ? Math.max(4, (22 - age) * 4) : age <= 25 ? (26 - age) * 1.5 : 0;
+    return Math.min(95, ovr + Math.round(base * (0.4 + 0.9 * h) + (age <= 25 ? 0 : h * 2)));
+}
+function ensurePotential(p) {
+    if (p && p.potential === undefined) p.potential = estimatePotential(p);
+    return p;
+}
+// Mejora semanal de los jóvenes (< 20 años): pequeños avances visibles durante la temporada
+function weeklyYouthGrowth() {
+    const coach = gameState.staff && gameState.staff.entrenador ? (STAFF_LEVEL_EFFECTS[gameState.staff.entrenador.level]?.training ?? 1) : 0.85;
+    let risers = 0;
+    (gameState.squad || []).forEach(p => {
+        if (!p) return;
+        if (p.ovrSeasonStart === undefined) p.ovrSeasonStart = p.overall;
+        if ((p.age || 30) > 19 || p.isInjured || p.contractType === 'loaned_out') return;
+        ensurePotential(p);
+        if ((p.overall || 0) >= (p.potential || 0)) return;
+        const chance = (p.age <= 16 ? 0.55 : p.age === 17 ? 0.5 : p.age === 18 ? 0.42 : 0.34) * coach;
+        if (Math.random() > chance) return;
+        const a = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
+        const before = p.overall;
+        p[a] = Math.min(99, (p[a] || 50) + 1);
+        p.overall = calculatePlayerOverall(p);
+        if (p.overall > before) risers++;
+    });
+    return risers;
+}
+
 function seasonalDevelopment(p, seasonWeeks) {
     const age = p.age;
-    let delta = age <= 20 ? 3 : age <= 23 ? 2 : age <= 26 ? 1 : age <= 29 ? 0 : age <= 31 ? -1 : age <= 33 ? -2 : -3;
+    ensurePotential(p);
+    let delta = age <= 20 ? youthGrowthBase(age) : age <= 23 ? 2 : age <= 26 ? 1 : age <= 29 ? 0 : age <= 31 ? -1 : age <= 33 ? -2 : -3;
     if (delta > 0) {
-        const minutes = Math.min(1, (p.matches || 0) / Math.max(1, seasonWeeks * 0.6));
+        let minutes = Math.min(1, (p.matches || 0) / Math.max(1, seasonWeeks * 0.6));
+        // En la liga de cantera todos los chavales entrenan y compiten: los minutos no frenan su crecimiento
+        if (gameState.division === 'promesas' && age <= 19) minutes = Math.max(minutes, 0.85);
         const coach = gameState.staff.entrenador ? (STAFF_LEVEL_EFFECTS[gameState.staff.entrenador.level]?.training ?? 1) : 0.8;
         delta = delta * (0.5 + 0.7 * minutes) * coach + (Math.random() * 1.4 - 0.7);
         const room = Math.max(0, (p.potential || p.overall) - p.overall);
@@ -1529,9 +1573,10 @@ function seasonIndex(season) {
 }
 function ageAISquad(squad, years) {
     if (!years || !Array.isArray(squad)) return squad;
-    const yearly = age => age <= 20 ? 3 : age <= 23 ? 2 : age <= 26 ? 1 : age <= 29 ? 0 : age <= 31 ? -1 : age <= 33 ? -2 : -3;
+    const yearly = age => age <= 20 ? youthGrowthBase(age) : age <= 23 ? 2 : age <= 26 ? 1 : age <= 29 ? 0 : age <= 31 ? -1 : age <= 33 ? -2 : -3;
     return squad.map(p => {
         const q = { ...p };
+        if (q.potential === undefined) q.potential = estimatePotential(q);
         let delta = 0;
         for (let k = 0; k < years; k++) delta += yearly((p.age || 25) + k);
         q.age = (p.age || 25) + years;
@@ -2407,6 +2452,18 @@ async function simulateFullWeek() {
 }
 
 async function simulateFullWeekInner() {  
+    // Partidas empezadas con la estimación antigua: los menores de 20 con potencial ridículo se corrigen una vez
+    if (!gameState.potentialFixed && Array.isArray(gameState.squad)) {
+        let fixed = 0;
+        gameState.squad.forEach(p => {
+            if (p && (p.age || 30) <= 19) {
+                const est = estimatePotential(p);
+                if ((p.potential || 0) < est && (p.potential || 0) - (p.overall || 0) < (est - (p.overall || 0)) * 0.6) { p.potential = est; fixed++; }
+            }
+        });
+        gameState.potentialFixed = true;
+        if (fixed) addNews(`[Secretario Técnico] Hemos revisado el potencial de ${fixed} jóvenes de la plantilla: tienen más margen de mejora del que se estimó.`, 'info');
+    }
     // Partidas antiguas con plantilla incompleta: se completa una sola vez
     if ((gameState.squad || []).length < 16 && !gameState.squadToppedUp && gameState.seasonType !== 'playoff') {
         const before = gameState.squad.length;
@@ -2588,6 +2645,8 @@ async function simulateFullWeekInner() {
     // ===== ACTUALIZAR PRÓXIMO PARTIDO =====
     gameState.week++;
     window.updateNextMatchInfo();
+
+    weeklyYouthGrowth();
 
     // ===== FINANZAS / OFERTAS =====
     updateWeeklyFinancials();  

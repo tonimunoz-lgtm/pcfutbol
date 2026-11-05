@@ -241,7 +241,7 @@ function renderSquadList(squad, currentTeam) {
             <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
                 <td>${p.name}</td>  
-                <td><strong>${p.overall}</strong></td>  
+                <td><strong>${p.overall}</strong>${(p.ovrSeasonStart !== undefined && p.overall > p.ovrSeasonStart) ? `<small style="color:#1b5e20;font-weight:800;margin-left:4px" title="Ha mejorado ${p.overall - p.ovrSeasonStart} esta temporada">▲${p.overall - p.ovrSeasonStart}</small>` : ''}</td>  
                 <td>${p.potential}</td>  
                 <td>${p.age}</td>  
                 <td>${p.position || 'N/A'}</td>  
