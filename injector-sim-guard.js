@@ -63,7 +63,7 @@
     }, true);
 
     window.pcfSaveCurrentGame = async function() {
-        const state = window.gameLogic?.getGameState();
+        const state = window.gameLogic?.getViewState();
         if (!state?.team || !window.saveGameToCloud || !window.currentUserId) return { success: false, skipped: true };
         const gameId = state.gameId || `autosave_${state.team}`;
         window.gameLogic.updateGameState({ gameId });

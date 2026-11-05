@@ -220,10 +220,12 @@
     }
     window.addEventListener('resize', syncHeaderHeight);
     window.addEventListener('orientationchange', () => setTimeout(syncHeaderHeight, 300));
-    setInterval(syncHeaderHeight, 2000);
+    let headerObserver;
 
     function start() {
         syncHeaderHeight();
+        const header=document.querySelector('.header');
+        if(header && typeof ResizeObserver==='function'){headerObserver=new ResizeObserver(syncHeaderHeight);headerObserver.observe(header);}
         observe();
         labelHeaders();
     }

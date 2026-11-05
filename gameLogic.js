@@ -1,3 +1,7 @@
+import { settleWeeklyFinance } from './weekly-ledger.js';
+import { createGameEvents } from './game-events.js';
+const gameEvents=createGameEvents();
+const subscribeGameEvent=(topic,key,fn)=>gameEvents.subscribe(topic,key,fn);
 // gameLogic.js - Lógica central del juego  
 
 import {  
@@ -144,11 +148,13 @@ function addNews(message, type = 'info', read = false) {
     }  
     if (type !== 'system' && !read) { // Solo incrementar contador si no es una noticia del sistema  
         gameState.unreadNewsCount++;  
-    }  
+    }
+    if(typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('pcf:news-changed'));
 }  
   
 function markNewsAsRead() {  
-    gameState.unreadNewsCount = 0;  
+    gameState.unreadNewsCount = 0;
+    if(typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('pcf:news-changed'));
 }  
   
 function initStandings(teamsArray) {  
@@ -366,6 +372,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     const nextSeasonYear = parseInt(gameState.currentSeason.split('/')[0]) + 1;  
     const newSeasonName = `${nextSeasonYear}/${nextSeasonYear + 1}`;  
   
+    Object.assign(gameState,{seasonMovements:[],playerPurchases:0,playerSalesIncome:0,playerCompensations:0,renovationExpenses:0,lastWeekFinance:null,financePostings:{}});
     gameState.week = 1;
     (gameState.squad || []).forEach(p => { p.goals=0;p.cupGoals=0;p.assists=0;p.minutes=0;p.keeperMinutes=0;p.goalsConceded=0;p.leagueKeeperMinutes=0;p.leagueGoalsConceded=0; });      // los goles del Pichichi se cuentan por temporada  
     gameState.matchHistory = [];  
@@ -2873,8 +2880,16 @@ async function simulateFullWeek() {
         return { myMatch: null, forcedLoss: false, ignored: true };
     }
     simulationRunning = true;
+    const before=getViewState();
     try {
-        return await simulateFullWeekInner();
+        const result=await simulateFullWeekInner();
+        const after=getViewState();
+        const patch=settleWeeklyFinance(before,after,result,window.pcfEconomy,window.PCF_OFFSEASON_WEEKS||8);
+        if(patch){
+            Object.assign(gameState,patch);captureWorldClub();updateWeeklyFinancials();
+            await gameEvents.emit('week:committed',{before,result,seasonChanged:before.currentSeason!==gameState.currentSeason});
+        }
+        return result;
     } finally {
         simulationRunning = false;
     }
@@ -3886,7 +3901,7 @@ function checkMarketRecommendations() {
 }
 
 export {  
-    getGameState, getViewState,  
+    getGameState, getViewState, subscribeGameEvent,  
     updateGameState, replaceGameState,  
     selectTeamWithInitialSquad,  
     simulateFullWeek,  
@@ -4003,7 +4018,7 @@ if (typeof window !== 'undefined') {
     
     // También exponer el gameLogic completo
     window.gameLogic = {
-        getGameState, getViewState,
+        getGameState, getViewState, subscribeGameEvent,
         updateGameState, replaceGameState,
         selectTeamWithInitialSquad,
         addNews,

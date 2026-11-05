@@ -11,7 +11,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() && request.auth.token.email in ['tonaco92@gmail.com'];
+      return signedIn() && (request.auth.token.get('pcfAdmin', false) == true
+        || request.auth.token.email in ['tonaco92@gmail.com']);
     }
 
     function activePlayer() {

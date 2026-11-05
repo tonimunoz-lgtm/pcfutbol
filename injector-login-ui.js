@@ -12,7 +12,8 @@
                 const user = userCredential.user;
                 
                 // Determinar si es admin basándose en el email
-                const isAdmin = user.email?.toLowerCase() === 'tonaco92@gmail.com';
+                const {resolveAdmin}=await import('./admin-policy.js');
+                const isAdmin=await resolveAdmin(user);
 
                 // Comprobar si el usuario está suspendido (solo para no-admin)
                 if (!isAdmin) {
@@ -476,12 +477,13 @@
         
         // Esperar a que Firebase Auth esté listo
         if (window.authReadyPromise) {
-            window.authReadyPromise.then(() => {
+            window.authReadyPromise.then(async () => {
                 // Verificar si hay usuario autenticado en Firebase
                 const auth = window.firebaseAuth;
                 if (auth && auth.currentUser) {
                     const user = auth.currentUser;
-                    const isAdmin = user.email === 'tonaco92@gmail.com';
+                    const {resolveAdmin}=await import('./admin-policy.js');
+                    const isAdmin=await resolveAdmin(user);
                     
                     const userData = {
                         email: user.email,

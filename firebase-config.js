@@ -1,3 +1,4 @@
+import { prepareGameState } from './save-preparer.js';
 import { splitSnapshot, joinSnapshot, chunkIds } from './save-chunks.js';
 import { localSave, localLoad, localList, localDelete } from './local-saves.js';
 import { packGameState, unpackGameData } from './save-codec.js';
@@ -232,7 +233,7 @@ function saveGameToCloud(userId, gameId, gameName, gameState) {
     const state=structuredClone(gameState);
     // Local backups stay ordered and continue even if a cloud commit waits offline.
     const preparation=prepareQueue.then(async()=>{
-        const snapshot=await packGameState(state);
+        const snapshot=await prepareGameState(state);
         const meta={id:gameId,name:gameName,team:state.team,week:state.week,division:state.division,lastSaved:Date.now(),baseVersion:cloudVersions.get(versionKey(uid,gameId)) ?? null};
         let localSaved=false;
         try { await localSave(uid,gameId,{...meta,...snapshot}); localSaved=true; } catch(e) { console.warn('Copia local no disponible:',e); }
@@ -247,9 +248,10 @@ function saveGameToCloud(userId, gameId, gameName, gameState) {
             const ref=doc(db,'users',uid,'saved_games',gameId);
             const parts=splitSnapshot(snapshot);
             const saveVersion=crypto.randomUUID();
-            const ids=(await chunkIds(parts)).map(id=>saveVersion+'_'+id);
+            const hashes=await chunkIds(parts);
+            let ids;
             const bytes=parts.reduce((n,p)=>n+new TextEncoder().encode(p).length,0);
-            if(parts.length>40 || bytes>8000000)throw new Error('Partida demasiado grande para un guardado atómico; conserva la copia local.');
+            if(parts.length>400 || bytes>8000000)throw new Error('Partida demasiado grande para un guardado atómico; conserva la copia local.');
             const key=versionKey(uid,gameId);
             const expected=cloudVersions.get(key) ?? null;
             let previous=[];
@@ -261,14 +263,18 @@ function saveGameToCloud(userId, gameId, gameName, gameState) {
                     error.code='save/conflict';throw error;
                 }
                 previous=old.exists()?old.data().chunkIds||[]:[];
-                parts.forEach((data,i)=>tx.set(doc(ref,'chunks',ids[i]),{data}));
+                const reusable=new Map(previous.map(id=>[id.slice(id.lastIndexOf('_')+1),id]));
+                ids=hashes.map(hash=>reusable.get(hash)||saveVersion+'_'+hash);
+                const written=new Set();
+                parts.forEach((data,i)=>{if(!reusable.has(hashes[i]) && !written.has(ids[i])){tx.set(doc(ref,'chunks',ids[i]),{data});written.add(ids[i]);}});
                 tx.set(ref,{...meta,baseVersion:expected,saveVersion,saveFormat:'chunks-v1',chunkIds:ids});
             });
             cloudVersions.set(key,saveVersion);
             try {
-                for(let i=0;i<previous.length;i+=5){const cleanup=writeBatch(db);previous.slice(i,i+5).forEach(id=>cleanup.delete(doc(ref,'chunks',id)));await cleanup.commit();}
+                const obsolete=[...new Set(previous.filter(id=>!ids.includes(id)))];
+                for(let i=0;i<obsolete.length;i+=5){const cleanup=writeBatch(db);obsolete.slice(i,i+5).forEach(id=>cleanup.delete(doc(ref,'chunks',id)));await cleanup.commit();}
             }catch(error){console.warn('Guardado completo; limpieza de fragmentos antiguos pendiente:',error);}
-            return {success:true,localSaved};
+            return {success:true,localSaved,blocksWritten:new Set(ids.filter(id=>id.startsWith(saveVersion+'_'))).size,blocksReused:new Set(ids.filter(id=>!id.startsWith(saveVersion+'_'))).size};
         } catch(error){return {success:false,localSaved,error:error.message,code:error.code};}
     });
     saveQueue=task.catch(()=>{});
@@ -295,7 +301,9 @@ async function loadUserSavedGames(userId) {
 async function loadGameFromCloud(userId, gameId, preferLocal=false) {
     const forceCloud=preferLocal==='cloud';
     const uid=userId||currentUserId;if(!uid||!gameId)return {success:false,message:'Parámetros inválidos'};
-    const cached=(await localGamesFor(uid)).find(g=>g.id===gameId);
+    let cached;
+    try{cached=await localLoad(uid,gameId);}catch(_){}
+    if(!cached){try{cached=JSON.parse(localStorage.getItem(`user_games_${uid}`)||'{}')[gameId];}catch(_){}}
     const key=versionKey(uid,gameId);
     if(preferLocal===true||!firebaseConfig.enabled||!db){
         if(cached)cloudVersions.set(key,cached.baseVersion??null);

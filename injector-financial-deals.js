@@ -139,19 +139,6 @@
         addLoanRowToFinances();
     }
 
-    function processLoanPayments() {
-        const d = getD();
-        let changed = false;
-        d.loans = d.loans.map(l => {
-            if (l.weeksLeft <= 0) return l;
-            changed = true;
-            const left = l.weeksLeft - 1;
-            if (left === 0) news(`✅ Préstamo de ${fmt(l.amount)}€ completamente devuelto.`, 'success');
-            return { ...l, weeksLeft: left };
-        });
-        if (changed) { saveD(d); recalcWeekly(); }
-    }
-
     // Añadir / actualizar filas de cuotas y prima en Gastos Recurrentes (Caja)
     // NOTA: injector-finances.js ya maneja fin_loanRow y fin_totExp con los datos correctos.
     // Esta función solo actualiza la fila de prima (fd-fin-bonusrow), que es exclusiva de este módulo.
@@ -1065,40 +1052,17 @@
     // HOOKS
     // ─────────────────────────────────────────────────────────────
     function hookSimWeek() {
-        if (typeof window.simulateWeek !== 'function') { setTimeout(hookSimWeek, 300); return; }
-        if (window._fdHooked) return;
-        window._fdHooked = true;
-        let _lastSeason = null;
-
-        const orig = window.simulateWeek;
-        window.simulateWeek = async function (...args) {
-            const before = gs();
-            const result = await orig.apply(this, args);
-            const s = gs();
-            if (!before || !s || result?.ignored || result?.cupMatch || (before.week === s.week && before.currentSeason === s.currentSeason && before.seasonType === s.seasonType && (before.matchHistory||[]).length === (s.matchHistory||[]).length)) return result;
-            if (!s) return result;
-
-            // Cambio de temporada
-            if (_lastSeason && s.currentSeason && _lastSeason !== s.currentSeason) {
+        if(!gl()?.subscribeGameEvent){setTimeout(hookSimWeek,300);return;}
+        gl().subscribeGameEvent('week:committed','financial-deals',({before,result,seasonChanged})=>{
+            if(seasonChanged){
                 processNewSeason();
-                save({ fd_baseOrig: null }); // forzar reset de base
-                setTimeout(() => { recalcWeekly(); maybeGenerateOffers(); }, 700);
-            } else {
-                // En temporada normal: generar ofertas si no hay contratos (cada semana es barato)
-                maybeGenerateOffers();
+                // Keep the original base: resetting it to the total would add
+                // the surviving sponsorship and TV contracts a second time.
             }
-            _lastSeason = s.currentSeason;
-
-            // Consumir prima (ya gastada del balance en setBonus)
-            if (result?.myMatch || (before.seasonType === 'playoff' && (before.matchHistory||[]).length !== (s.matchHistory||[]).length)) consumeBonus();
-
-            // Loan expiry is posted with the debit by the weekly finance ledger.
-            recalcWeekly();
-            if (window._financeRefresh) window._financeRefresh();
-            refreshUI();
-            return result;
-        };
-        console.log('[FinDeals] hook simulateWeek ✓');
+            if(result?.myMatch || (before.seasonType==='playoff' && (before.matchHistory||[]).length!==(gs().matchHistory||[]).length))consumeBonus();
+            recalcWeekly();maybeGenerateOffers();
+            window._financeRefresh?.();refreshUI();
+        });
     }
 
     function hookOpenPage() {

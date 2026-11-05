@@ -196,5 +196,7 @@
         updateBadge();
     }
     [1500, 3500, 6500].forEach(ms => setTimeout(install, ms));
-    setInterval(updateBadge, 4000);
+    let badgeScheduled=false;
+    window.addEventListener('pcf:news-changed',()=>{if(badgeScheduled)return;badgeScheduled=true;setTimeout(()=>{badgeScheduled=false;updateBadge();},0);});
+    window.addEventListener('pcf:state-replaced',updateBadge);
 })();

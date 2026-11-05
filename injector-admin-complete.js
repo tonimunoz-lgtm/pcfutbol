@@ -1,10 +1,5 @@
 // injector-admin-complete.js (con gestión de plantillas)
 (function() {
-    // ⚙️ CONFIGURACIÓN DE ADMINISTRADORES
-    const ADMIN_EMAILS = [
-        'tonaco92@gmail.com'
-    ];
-
     const DIVISIONS = {
         'primera': 'Primera División',
         'segunda': 'Segunda División',
@@ -108,16 +103,8 @@
 
     // Función para verificar si el usuario actual es administrador
     function isUserAdmin() {
-        if (window.currentUser && window.currentUser.email) {
-            return ADMIN_EMAILS.includes(window.currentUser.email);
-        }
-        
-        const auth = window.firebaseAuth;
-        if (auth && auth.currentUser && auth.currentUser.email) {
-            return ADMIN_EMAILS.includes(auth.currentUser.email);
-        }
-        
-        return false;
+        const authUser=window.firebaseAuth?.currentUser;
+        return !!(authUser && window.currentUser?.uid===authUser.uid && window.currentUser.role==='admin');
     }
 
     // Función para convertir imagen a Base64

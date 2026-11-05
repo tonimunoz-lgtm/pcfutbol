@@ -1,33 +1,9 @@
-// ============================================================
-// injector-finances.js  v7
-//
-// BUGS CORREGIDOS vs v6:
-//
-// 1. REFORMAS: window.expandStadium/improveFacilities en index.html
-//    NO devuelven el result (sin return). Solución: llamar directamente
-//    a gameLogic.expandStadium() para obtener el resultado, y dejar
-//    que la función original también se ejecute para el alert/refresh.
-//
-// 2. LOCAL/VISITANTE: state.week ya se incrementa DENTRO de
-//    simulateFullWeek. Por eso hay que usar el calendario de la semana
-//    jugada (weekBefore) con el estado ANTES de simular (stateBefore).
-//    La proyección de PRÓXIMA jornada usa state.week + 1 DESPUÉS.
-//
-// 3. SLIDERS: el refresco del panel lee lastWeekFinance (inmutable,
-//    guardado al simular) para la sección "Última jornada". Los sliders
-//    solo actualizan la sección "Proyección" sin tocar lastWeekFinance.
-//
-// 4. DASHBOARD DOBLE CONTEO: el dashboard usa state.playerCompensations
-//    que gameLogic ya incrementa en firePlayer. Nosotros NO incrementamos
-//    ese campo, solo guardamos el detalle en seasonMovements.
-//
-// 5. DASHBOARD INGRESOS: se sincroniza con lastWeekFinance igual que
-//    el panel de finanzas.
-// ============================================================
+// Caja: presentación y registro de operaciones extraordinarias.
+// El motor ejecuta el cierre semanal en weekly-ledger.js; renderizar no liquida ni reinicia temporadas.
 (function () {
     'use strict';
 
-    window._financesSuppressBalance = true;
+    // Ordinary weekly postings are owned exclusively by the game engine.
 
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const gl  = () => window.gameLogic;
@@ -89,98 +65,13 @@
     }
     window._financeRegisterMovement = registerMovement;
 
-    // ── Aplicar balance semanal real ─────────────────────────────
-    // weekBefore y stateBefore: capturados ANTES de que simulateFullWeek
-    // incremente state.week y cambie el estado.
-    function applyWeeklyBalance(weekBefore, stateBefore, postingKey) {
-        const state = gs();
-        if (!state || !state.team || state.team !== stateBefore.team || state.financePostings?.[postingKey]) return;
-
-        const home     = isWeekHome(weekBefore, stateBefore);
-        const att      = computeAttendance(stateBefore);
-        const ticketInc= home ? Math.floor(stateBefore.ticketPrice * att) : 0;
-        const merchM   = window.pcfEconomy ? window.pcfEconomy.merch(stateBefore) : { revenue: 0, items: 0 };
-        const items    = merchM.items;
-        const merchInc = home ? merchM.revenue : 0;
-        const baseInc  = stateBefore.weeklyIncomeBase || 5000;
-        const totalInc = ticketInc + merchInc + baseInc;
-
-        // Gastos completos: salarios + staff + cuotas de prestamos + prima jugadores
-        const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0) + (stateBefore.loanSalaryExpense || 0);
-        const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
-                               .reduce((s, x) => s + (x.salary || 0), 0);
-        const loanPay  = Array.isArray(stateBefore.fd_loans) ? stateBefore.fd_loans.filter(l => l.weeksLeft > 0).reduce((n,l) => n + (Number(l.weeklyPayment) || 0), 0) : (stateBefore.fd_loanPayment || 0);  // cuotas prestamos (FinDeals)
-        const bonusPay = 0; // La prima ya se descontó al prometerla.  // prima prometida (FinDeals)
-        const benefits = window.pcfEconomy.benefits(stateBefore, ticketInc, merchInc);
-        const totalExp = salaries + staffSal + loanPay + bonusPay + benefits.total;
-        const net      = totalInc - totalExp;
-
-        const lastWeek = {
-            week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
-            ticketInc, merchInc, baseInc, totalInc,
-            totalExp, expSalaries: salaries, expStaff: staffSal,
-            expLoans: loanPay, expBonus: bonusPay, benefits,
-            net
-        };
-
-        const loans = (stateBefore.fd_loans || []).map(l => ({...l, weeksLeft:Math.max(0,(l.weeksLeft||0)-1)}));
-        saveState({ balance: state.balance + net, lastWeekFinance: lastWeek,
-            fd_loans: loans, fd_loanPayment: loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0),
-            financePostings: { ...(state.financePostings || {}), [postingKey]: true } });
-        console.log(`[Finances] Sem ${weekBefore} ${home?'LOCAL':'VISIT.'} -> +${fmt(totalInc)} -${fmt(totalExp)} (sal:${fmt(salaries)} staff:${fmt(staffSal)} loan:${fmt(loanPay)} bonus:${fmt(bonusPay)}) = ${fmt(net)}`);
-    }
-
-    // ── Cambio de temporada ──────────────────────────────────────
-    let lastSeason = null;
-    function checkSeasonChange() {
-        const state = gs();
-        if (!state || !state.currentSeason) return;
-        if (lastSeason && lastSeason !== state.currentSeason) {
-            saveState({ renovationExpenses: 0, seasonMovements: [], lastWeekFinance: null });
-        }
-        lastSeason = state.currentSeason;
-    }
+    // Weekly accounting belongs to gameLogic + weekly-ledger.js.
+    // This module only renders amounts and registers extraordinary movements.
 
     // ============================================================
     // PARCHES sobre window.* (todos escribibles)
     // ============================================================
 
-    // ── Avanzar semana ───────────────────────────────────────────
-    function patchSimulateWeek() {
-        if (typeof window.simulateWeek !== 'function') { setTimeout(patchSimulateWeek, 200); return; }
-        const orig = window.simulateWeek;
-        window.simulateWeek = async function (...args) {
-            // Capturar estado y semana ANTES de simular
-            const sb = gs();
-            const wb = sb ? sb.week : 1;
-            const result = await orig.apply(this, args);
-            const completed = gs();
-            const advanced = sb && completed && sb.team === completed.team && !(result?.ignored || result?.cupMatch) &&
-                (sb.currentSeason !== completed.currentSeason || sb.seasonType !== completed.seasonType ||
-                 sb.week !== completed.week || (sb.matchHistory || []).length !== (completed.matchHistory || []).length);
-            if (!advanced) return result;
-            const postingKey = `${sb.team}|${sb.currentSeason}|${sb.seasonType}|${wb}` +
-                (sb.seasonType === 'playoff' ? `|${(sb.matchHistory || []).length}` : '');
-            applyWeeklyBalance(wb, sb, postingKey);
-            // Entre temporadas pasa el verano: 8 semanas reales (la de transición ya cuenta 1)
-            const sa = gs();
-            if (sb && sa && sb.currentSeason !== sa.currentSeason && !sa.financePostings?.[postingKey + '|summer']) {
-                const extra = (window.PCF_OFFSEASON_WEEKS || 8) - 1;
-                const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0) + (sa.loanSalaryExpense || 0);
-                const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
-                const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
-                const summer = window.pcfEconomy.offseasonCashflow(sa, extra, window.pcfEconomy.benefits(sa).total);
-                const net = summer.net;
-                window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net, fd_loans: summer.fd_loans, fd_loanPayment: summer.fd_loanPayment,
-                    financePostings: { ...(sa.financePostings || {}), [postingKey + '|summer']: true } });
-                registerMovement(net >= 0 ? 'income' : 'expense', `Verano (${extra + 1} semanas sin partidos): ingresos fijos − sueldos`, net);
-                window.gameLogic?.addNews?.(`☀️ Verano: ${extra + 1} semanas sin partidos. Ingresos fijos ${fmt(base * extra)}€ · sueldos ${fmt((salaries + staffSal) * extra)}€.`, net >= 0 ? 'info' : 'warning');
-            }
-            if (window._financeRefresh) window._financeRefresh();
-            return result;
-        };
-        console.log('[Finances] simulateWeek ✓');
-    }
 
     // ── Remodelaciones ───────────────────────────────────────────
     // FIX: window.expandStadium en index.html NO devuelve result.
@@ -518,7 +409,6 @@
         if (!gl()) return;
         const state = gs();
         if (!state || !state.team) return;
-        checkSeasonChange();
 
         // Balance — actualizar también header y dashboard para que coincidan siempre
         const bal = state.balance || 0;
@@ -653,7 +543,7 @@
         if (!window.gameLogic) { setTimeout(init, 300); return; }
         buildFinancePanel();
         window.updateFinanceDisplay = refreshFinancePanel;
-        patchSimulateWeek();
+        window.gameLogic.subscribeGameEvent?.('week:committed','finance-panel',()=>{window._financeRefresh?.();});
         patchFacilities();
         patchFirePlayer();
         patchHireStaff();
