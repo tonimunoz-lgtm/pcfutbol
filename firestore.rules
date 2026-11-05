@@ -14,6 +14,12 @@ service cloud.firestore {
       return signedIn() && request.auth.token.email in ['tonaco92@gmail.com'];
     }
 
+    function activePlayer() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/game_users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/game_users/$(request.auth.uid)).data.get('suspended', false) == false;
+    }
+
     // Login and administration use game_users, not users.
     match /game_users/{userId} {
       allow read: if signedIn() && request.auth.uid == userId;
@@ -37,28 +43,37 @@ service cloud.firestore {
     // Catálogo de mercado compartido: publicación explícita del administrador.
     // Las operaciones de una carrera permanecen dentro de su mundo guardado.
     match /transfer_market/{teamId} {
-      allow read: if signedIn();
+      allow read: if activePlayer();
       allow write: if isAdmin();
     }
 
     // Perfil de cada usuario: él mismo; el administrador puede verlos todos y
     // suspenderlos (pestaña Usuarios del Admin).
     match /users/{userId} {
-      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow read, write: if activePlayer() && request.auth.uid == userId;
       allow read, write: if isAdmin();
 
       match /promanager_career/{sessionId} {
-        allow read, write: if signedIn() && request.auth.uid == userId;
+        allow read, write: if activePlayer() && request.auth.uid == userId;
         allow read, write: if isAdmin();
       }
 
       // Partidas guardadas: solo su dueño (y el administrador, para "Migrar usuarios")
       match /saved_games/{gameId} {
         match /chunks/{chunkId} {
-          allow read, write: if signedIn() && request.auth.uid == userId;
+          allow read, write: if activePlayer() && request.auth.uid == userId;
           allow read, write: if isAdmin();
         }
-        allow read, write: if signedIn() && request.auth.uid == userId;
+        allow read, delete: if activePlayer() && request.auth.uid == userId;
+        allow create: if activePlayer() && request.auth.uid == userId
+          && request.resource.data.saveFormat == 'chunks-v1'
+          && request.resource.data.saveVersion is string
+          && request.resource.data.baseVersion == null;
+        allow update: if activePlayer() && request.auth.uid == userId
+          && request.resource.data.saveFormat == 'chunks-v1'
+          && request.resource.data.saveVersion is string
+          && request.resource.data.saveVersion != resource.data.get('saveVersion', null)
+          && request.resource.data.baseVersion == resource.data.get('saveVersion', null);
         allow read, write: if isAdmin();
       }
     }

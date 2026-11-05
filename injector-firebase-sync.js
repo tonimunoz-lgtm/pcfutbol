@@ -56,16 +56,23 @@ const teamPending = new Map();
 window.cacheTeamData = (name, data) => teamCache.set(name, structuredClone(data));
 let catalogTask;
 // One catalog read per session; no default writes from ordinary players.
-window.preloadTeamCatalog = function() {
-    if (catalogTask) return catalogTask;
-    catalogTask = (async () => {
-        if (!window.firebaseConfig?.enabled || !window.firebaseDB) return;
+window.preloadTeamCatalog = function({retry=false}={}) {
+    if (catalogTask && !retry) return catalogTask;
+    let timeout;
+    const request=(async()=>{
+        if(!window.firebaseConfig?.enabled || !window.firebaseDB) return false;
         await window.authReadyPromise;
-        const result = await window.getAllTeamsDataFromFirebase();
-        if (!result.success) throw new Error(result.error || 'Catálogo no disponible');
-        for (const [name, data] of Object.entries(result.data)) teamCache.set(name, data);
-        return true;
-    })().catch(error => { console.warn('Catálogo: se usan las copias locales', error); return false; });
+        const result=await window.getAllTeamsDataFromFirebase();
+        if(!result.success) throw new Error(result.error||'Catálogo no disponible');
+        return result.data;
+    })();
+    catalogTask=Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('El catálogo ha tardado más de 6 segundos')),6000);})])
+        .then(data=>{
+            window.pcfCatalogOffline=!data;
+            if(data)for(const [name,value] of Object.entries(data))teamCache.set(name,value);
+            return !!data;
+        }).catch(error=>{window.pcfCatalogOffline=true;console.warn('Catálogo: se usan datos locales',error);return false;})
+        .finally(()=>clearTimeout(timeout));
     return catalogTask;
 };
 window.getTeamData = function(teamName) {
@@ -76,10 +83,6 @@ window.getTeamData = function(teamName) {
         if (teamCache.has(teamName)) return teamCache.get(teamName);
         let data;
         try { data = JSON.parse(localStorage.getItem(`team_data_${teamName}`) || 'null'); } catch (_) {}
-        if (!data && !catalogLoaded) {
-            const result = await getTeamDataFromFirebaseSafe(teamName);
-            if (result.success) data = result.data;
-        }
         data = data || getDefaultTeamDataForTeam(teamName);
         teamCache.set(teamName, data);
         return data;

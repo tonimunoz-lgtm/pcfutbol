@@ -51,40 +51,29 @@
             // Ordenar por fecha de guardado (más reciente primero)
             games.sort((a, b) => (b.lastSaved || 0) - (a.lastSaved || 0));
 
-            container.innerHTML = games.map(game => {
-                const lastSavedDate = new Date(game.lastSaved || 0);
-                const dateStr = lastSavedDate.toLocaleString('es-ES');
-                
-                return `
-                    <div class="player-card" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="color: #00ff00;">${game.name || 'Partida sin nombre'}${game.localOnly ? ' · Copia local pendiente de sincronizar' : ''}</strong><br>
-                            <span style="color: #999; font-size: 0.9em;">
-                                Equipo: ${game.team || '?'} | 
-                                Jornada: ${game.week || '?'} | 
-                                División: ${game.division || '?'}
-                            </span><br>
-                            <span style="color: #666; font-size: 0.85em;">
-                                Guardada: ${dateStr}
-                            </span>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-sm" onclick="window.loadGameFromCloudUI('${game.id}')">📂 Cargar</button>
-                            <button class="btn btn-sm" style="background: #c73446;" onclick="window.deleteGameFromCloudUI('${game.id}', '${(game.name || 'esta partida').replace(/'/g, "\\'")}')">🗑️ Borrar</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            container.replaceChildren();
+            for(const game of games){
+                const card=document.createElement('div');card.className='player-card';
+                const info=document.createElement('div'),title=document.createElement('strong');
+                title.textContent=(game.name||'Partida sin nombre')+(game.localOnly?' · Copia local pendiente de sincronizar':'');info.appendChild(title);
+                for(const text of [`Equipo: ${game.team||'?'} | Jornada: ${game.week||'?'} | División: ${game.division||'?'}`,new Date(game.lastSaved||0).toLocaleString('es-ES')]){
+                    const row=document.createElement('p');row.textContent=text;info.appendChild(row);
+                }
+                card.appendChild(info);
+                const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],['Cargar nube',()=>window.loadGameFromCloudUI(game.id,true)],['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
+                for(const [label,action] of actions){const button=document.createElement('button');button.type='button';button.className='btn btn-sm';button.textContent=label;button.onclick=action;card.appendChild(button);}
+                container.appendChild(card);
+            }
             
         } catch (error) {
             console.error('Error cargando partidas:', error);
-            document.getElementById('savedGamesListContainer').innerHTML = 
-                '<div class="alert alert-error">❌ Error al cargar las partidas: ' + error.message + '</div>';
+            document.getElementById('savedGamesListContainer').textContent = 'Error al cargar las partidas: '+error.message;
         }
     };
 
     // Función para cargar una partida específica
-    window.loadGameFromCloudUI = async function(gameId) {
+    window.loadGameFromCloudUI = async function(gameId, forceCloud=false) {
+        if(window.isSimulatingWeek?.())return alert('Espera a que termine la jornada antes de cargar otra partida.');
         if (!window.currentUserId) {
             alert('⚠️ Debes iniciar sesión para cargar partidas.');
             return;
@@ -95,7 +84,7 @@
         }
 
         try {
-            const result = await window.loadGameFromCloud(window.currentUserId, gameId);
+            const result = await window.loadGameFromCloud(window.currentUserId, gameId, forceCloud?'cloud':false);
             
             if (result.success && result.data && result.data.gameState) {
                 // Verificar que gameLogic esté disponible

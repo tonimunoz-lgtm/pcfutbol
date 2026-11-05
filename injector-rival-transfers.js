@@ -5,13 +5,13 @@
     function render(){
         const page=document.getElementById('transfers'),api=window.pcfWorld;
         if(!page||!api)return;
-        const state=window.gameLogic?.getGameState();if(!state?.world)return;
+        if(!api.hasWorld())return;
         let panel=document.getElementById('worldMarketPanel');
         if(!panel){panel=document.createElement('details');panel.id='worldMarketPanel';panel.className='data-box';page.appendChild(panel);}
         const opened=panel.open;panel.replaceChildren();panel.open=opened;
         const summary=document.createElement('summary');summary.textContent='Mundo de la partida: clubes y movimientos reales';panel.appendChild(summary);
         const select=document.createElement('select');
-        for(const c of Object.values(state.world.clubs)){const option=document.createElement('option');option.value=c.name;option.textContent=c.name;select.appendChild(option);}
+        for(const c of api.listClubs()){const option=document.createElement('option');option.value=c.name;option.textContent=c.name;select.appendChild(option);}
         panel.appendChild(select);const clubBox=document.createElement('div');panel.appendChild(clubBox);
         function showClub(){
             const c=api.getClub(select.value);if(!c)return;clubBox.replaceChildren();

@@ -1,3 +1,4 @@
+import { escapeHTML, jsAttribute, safeImageURL } from './safe-html.js';
 // ui.js - Renderizado y UI  
   
 import * as gameLogic from './gameLogic.js';  
@@ -10,7 +11,7 @@ function getTeamLogo(teamName, size = '25px') {
     if (storedData) {
         const teamData = JSON.parse(storedData);
         if (teamData.logo) {
-            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
+            return `<img src="${safeImageURL(teamData.logo)}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px; border-radius: 3px;">`;
         }
     }
     return ''; // Sin logo
@@ -84,14 +85,14 @@ function getTeamLogo(teamName, size = '25px') {
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
-                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
+                teamLogo = `<img src="${safeImageURL(teamData.logo)}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
             }
         }
 
         html += `
             <tr class="${rowClass}">
                 <td>${index + 1}</td>
-                <td class="team-name">${teamLogo}${team}</td>
+                <td class="team-name">${teamLogo}${escapeHTML(team)}</td>
                 <td>${stats.pj || 0}</td>
                 <td>${stats.g || 0}</td>
                 <td>${stats.e || 0}</td>
@@ -163,14 +164,14 @@ function renderStandingsTable(state) {
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
-                teamLogo = `<img src="${teamData.logo}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
+                teamLogo = `<img src="${safeImageURL(teamData.logo)}" style="width:25px; height:25px; object-fit:contain; margin-right:5px;">`;
             }
         }
 
         rowsHtml += `
             <tr class="${rowClass}">
                 <td>${index + 1}</td>
-                <td class="team-name">${teamLogo}${team}</td>
+                <td class="team-name">${teamLogo}${escapeHTML(team)}</td>
                 <td>${stats.pj || 0}</td>
                 <td>${stats.g || 0}</td>
                 <td>${stats.e || 0}</td>
@@ -240,7 +241,7 @@ function renderSquadList(squad, currentTeam) {
         return `  
             <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
-                <td>${p.name}</td>  
+                <td>${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong>${(p.ovrSeasonStart !== undefined && p.overall > p.ovrSeasonStart) ? `<small style="color:#1b5e20;font-weight:800;margin-left:4px" title="Ha mejorado ${p.overall - p.ovrSeasonStart} esta temporada">▲${p.overall - p.ovrSeasonStart}</small>` : ''}</td>  
                 <td>${p.potential}</td>  
                 <td>${p.age}</td>  
@@ -301,7 +302,7 @@ function renderSquadList(squad, currentTeam) {
             </button>
         `}
         <button class="btn btn-sm" style="background: #c73446; padding: 5px 8px;" 
-                onclick="window.firePlayerConfirm('${p.name}')" title="Despedir">
+                onclick="window.firePlayerConfirm(${jsAttribute(p.name)})" title="Despedir">
             🚪
         </button>
     ` : p.contractType === 'loaned_out' ? `
@@ -366,7 +367,7 @@ function renderAcademyList(academy) {
         return `  
             <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
-                <td>${p.name}</td>  
+                <td>${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential}</td>  
                 <td style="white-space:nowrap">${(() => { const st = p.ovrStart ?? p.overall; const d = p.overall - st;
@@ -384,7 +385,7 @@ function renderAcademyList(academy) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
            <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->  
                 <td>  
-                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button><button class="btn btn-sm youth-dismiss" data-player="${encodeURIComponent(p.name)}">Despedir</button>  
+                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm(${jsAttribute(p.name)})">Ascender</button><button class="btn btn-sm youth-dismiss" data-player="${escapeHTML(encodeURIComponent(p.name))}">Despedir</button>  
                 </td>  
             </tr>  
         `;  
@@ -438,7 +439,7 @@ function renderPlayerMarketList(players) {
         
         return `  
             <tr>  
-                <td>${p.name}</td>  
+                <td>${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential}</td>  
                 <td>${p.age}</td>  
@@ -505,7 +506,7 @@ function renderAvailableYoungstersMarket(youngsters) {
   
     let youngstersHtml = youngsters.map(y => `  
         <tr>  
-            <td>${y.name}</td>  
+            <td>${escapeHTML(y.name)}</td>  
             <td><strong>${y.overall}</strong></td>  
             <td>${y.potential}</td>  
             <td>${y.age}</td>  
@@ -719,7 +720,7 @@ function refreshUI(state) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
                 teamNameElement.innerHTML = `
-                    <img src="${teamData.logo}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
+                    <img src="${safeImageURL(teamData.logo)}" style="width: 25px; height: 25px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
                     ${state.team}
                 `;
             } else {
@@ -791,7 +792,7 @@ function renderNegotiationsList(state) {
         
         html += `
             <tr style="background: ${p.contractYears <= 1 ? 'rgba(255, 51, 51, 0.1)' : ''};">
-                <td>${p.name}</td>
+                <td>${escapeHTML(p.name)}</td>
                 <td>${p.overall}</td>
                 <td>${p.age}</td>
                 <td>${p.position}</td>
@@ -828,7 +829,7 @@ function renderTeamLogo(teamName, size = '30px') {
     if (storedData) {
         const teamData = JSON.parse(storedData);
         if (teamData.logo) {
-            return `<img src="${teamData.logo}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px;">`;
+            return `<img src="${safeImageURL(teamData.logo)}" style="width: ${size}; height: ${size}; object-fit: contain; vertical-align: middle; margin-right: 8px;">`;
         }
     }
     return ''; // Sin logo

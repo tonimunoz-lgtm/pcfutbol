@@ -29,7 +29,7 @@
     async function loadMarketFromFirestore() {
         if (!window.getTransferMarket) return;
         try {
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
             const players = await window.getTransferMarket([...myNames]);
             firestoreMarketPlayers = players
@@ -61,7 +61,7 @@
     function patchSellPlayerIndex() {
         const originalOpen = window.openSellPlayerModal;
         window.openSellPlayerModal = function(playerIndex) {
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const sorted = [...(state.squad || [])].sort((a, b) => b.overall - a.overall);
             if (sorted[playerIndex]) {
                 _sellPlayerName = sorted[playerIndex].name;
@@ -71,7 +71,7 @@
 
         window.confirmListPlayer = function() {
             if (!_sellPlayerName) return;
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const player = state.squad.find(p => p.name === _sellPlayerName);
             if (!player) { alert('Jugador no encontrado'); return; }
             const _sell = window.pcfEconomy?.canSell?.(player);
@@ -107,13 +107,13 @@
             window.gameLogic.updateGameState(state);
             window.gameLogic.saveToLocalStorage();
             window.closeModal('sellPlayer');
-            window.ui.refreshUI(window.gameLogic.getGameState());
+            window.ui.refreshUI(window.gameLogic.getViewState());
             _sellPlayerName = null;
         };
 
         window.updateLoanCostPreview = function() {
             if (!_sellPlayerName) return;
-            const state = window.gameLogic.getGameState();
+            const state = window.gameLogic.getViewState();
             const player = state.squad.find(p => p.name === _sellPlayerName);
             if (!player) return;
             const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
@@ -131,8 +131,8 @@
     // =====================================================
     function patchSearchPlayersMarket() {
         window.searchPlayersMarket = async function() {
-            const state = window.gameLogic.getGameState();
-            if (!state.world && !marketLoaded) { await loadMarketFromFirestore(); marketLoaded=true; }
+            const state = window.gameLogic.getViewState();
+            if (!window.pcfWorld?.hasWorld() && !marketLoaded) { await loadMarketFromFirestore(); marketLoaded=true; }
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
 
             const filters = {
@@ -159,7 +159,7 @@
                 );
 
             // Tus propios jugadores en venta no aparecen en la lista de compra
-            let all = state.world ? window.gameLogic.getPlayerMarket({}) : [...firestoreFiltered, ...generated];
+            let all = window.pcfWorld?.hasWorld() ? window.gameLogic.getPlayerMarket({}) : [...firestoreFiltered, ...generated];
 
             if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);
@@ -220,7 +220,7 @@
                 const signed = window._pendingSignPlayer;
                 window._pendingSignPlayer = null;
                 firestoreMarketPlayers = firestoreMarketPlayers.filter(p => p.name !== signed.name);
-                if (!state.world && window.removePlayerFromMarket && signed.originalTeam) {
+                if (!window.pcfWorld?.hasWorld() && window.removePlayerFromMarket && signed.originalTeam) {
                     window.removePlayerFromMarket(signed.name, signed.originalTeam)
                         .catch(e => console.warn('Error eliminando del mercado:', e));
                 }

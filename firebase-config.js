@@ -3,7 +3,7 @@ import { localSave, localLoad, localList, localDelete } from './local-saves.js';
 import { packGameState, unpackGameData } from './save-codec.js';
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
@@ -224,6 +224,8 @@ async function getAllTeamsDataFromFirebase() {
 // Serialize saves in this tab, capturing each snapshot before the next simulation.
 let saveQueue = Promise.resolve();
 let prepareQueue = Promise.resolve();
+const cloudVersions = new Map();
+const versionKey = (uid,id) => JSON.stringify([uid,id]);
 function saveGameToCloud(userId, gameId, gameName, gameState) {
     const uid=userId||currentUserId;
     if(!uid||!gameId)return Promise.resolve({success:false,error:'Parámetros inválidos'});
@@ -231,7 +233,7 @@ function saveGameToCloud(userId, gameId, gameName, gameState) {
     // Local backups stay ordered and continue even if a cloud commit waits offline.
     const preparation=prepareQueue.then(async()=>{
         const snapshot=await packGameState(state);
-        const meta={id:gameId,name:gameName,team:state.team,week:state.week,division:state.division,lastSaved:Date.now()};
+        const meta={id:gameId,name:gameName,team:state.team,week:state.week,division:state.division,lastSaved:Date.now(),baseVersion:cloudVersions.get(versionKey(uid,gameId)) ?? null};
         let localSaved=false;
         try { await localSave(uid,gameId,{...meta,...snapshot}); localSaved=true; } catch(e) { console.warn('Copia local no disponible:',e); }
         return {snapshot,meta,localSaved};
@@ -243,16 +245,29 @@ function saveGameToCloud(userId, gameId, gameName, gameState) {
             if(!firebaseConfig.enabled||!db)return {success:false,localSaved,error:'Nube no disponible; '+(localSaved?'copia local guardada':'tampoco se pudo guardar localmente')};
             if(!authReady)await authReadyPromise;
             const ref=doc(db,'users',uid,'saved_games',gameId);
-            const old=await getDoc(ref);
-            const parts=splitSnapshot(snapshot), ids=await chunkIds(parts);
+            const parts=splitSnapshot(snapshot);
+            const saveVersion=crypto.randomUUID();
+            const ids=(await chunkIds(parts)).map(id=>saveVersion+'_'+id);
             const bytes=parts.reduce((n,p)=>n+new TextEncoder().encode(p).length,0);
             if(parts.length>40 || bytes>8000000)throw new Error('Partida demasiado grande para un guardado atómico; conserva la copia local.');
-            const previous=old.exists()?old.data().chunkIds||[]:[];
-            const batch=writeBatch(db);
-            parts.forEach((data,i)=>batch.set(doc(ref,'chunks',ids[i]),{data}));
-            previous.filter(id=>!ids.includes(id)).forEach(id=>batch.delete(doc(ref,'chunks',id)));
-            batch.set(ref,{...meta,saveFormat:'chunks-v1',chunkIds:ids});
-            await batch.commit();
+            const key=versionKey(uid,gameId);
+            const expected=cloudVersions.get(key) ?? null;
+            let previous=[];
+            await runTransaction(db,async tx=>{
+                const old=await tx.get(ref);
+                const current=old.exists() ? old.data().saveVersion ?? null : null;
+                if (old.exists() && (!cloudVersions.has(key) || current!==expected) || !old.exists() && cloudVersions.has(key) && expected!==null) {
+                    const error=new Error('Otra pestaña o dispositivo ha cambiado esta partida. Exporta tu copia local y vuelve a cargar la versión de la nube antes de guardar.');
+                    error.code='save/conflict';throw error;
+                }
+                previous=old.exists()?old.data().chunkIds||[]:[];
+                parts.forEach((data,i)=>tx.set(doc(ref,'chunks',ids[i]),{data}));
+                tx.set(ref,{...meta,baseVersion:expected,saveVersion,saveFormat:'chunks-v1',chunkIds:ids});
+            });
+            cloudVersions.set(key,saveVersion);
+            try {
+                for(let i=0;i<previous.length;i+=5){const cleanup=writeBatch(db);previous.slice(i,i+5).forEach(id=>cleanup.delete(doc(ref,'chunks',id)));await cleanup.commit();}
+            }catch(error){console.warn('Guardado completo; limpieza de fragmentos antiguos pendiente:',error);}
             return {success:true,localSaved};
         } catch(error){return {success:false,localSaved,error:error.message,code:error.code};}
     });
@@ -278,9 +293,12 @@ async function loadUserSavedGames(userId) {
     } catch(_){return local.map(g=>({...g,localOnly:true}));}
 }
 async function loadGameFromCloud(userId, gameId, preferLocal=false) {
+    const forceCloud=preferLocal==='cloud';
     const uid=userId||currentUserId;if(!uid||!gameId)return {success:false,message:'Parámetros inválidos'};
     const cached=(await localGamesFor(uid)).find(g=>g.id===gameId);
-    if(preferLocal||!firebaseConfig.enabled||!db){
+    const key=versionKey(uid,gameId);
+    if(preferLocal===true||!firebaseConfig.enabled||!db){
+        if(cached)cloudVersions.set(key,cached.baseVersion??null);
         try {return cached?{success:true,data:await unpackGameData(cached),local:true}:{success:false,message:'Copia local no encontrada'};}
         catch(error){return {success:false,error:error.message};}
     }
@@ -291,7 +309,11 @@ async function loadGameFromCloud(userId, gameId, preferLocal=false) {
             const saved=await getDoc(ref);
             if(!saved.exists())throw new Error('Partida no encontrada');
             const data=saved.data();
-            if(cached && cached.lastSaved>data.lastSaved)return {success:true,data:await unpackGameData(cached),local:true};
+            cloudVersions.set(key,data.saveVersion??null);
+            if(!forceCloud && cached && cached.lastSaved>data.lastSaved){
+                cloudVersions.set(key,cached.baseVersion??null);
+                return {success:true,data:await unpackGameData(cached),local:true};
+            }
             if(data.saveFormat!=='chunks-v1')return {success:true,data:await unpackGameData(data)};
             const pieces=await Promise.all(data.chunkIds.map(id=>getDoc(doc(ref,'chunks',id))));
             if(pieces.some(p=>!p.exists())){if(attempt===0)continue;throw new Error('Guardado incompleto: faltan fragmentos.');}
@@ -299,7 +321,7 @@ async function loadGameFromCloud(userId, gameId, preferLocal=false) {
             return {success:true,data:await unpackGameData({...data,...snapshot})};
         }
     } catch(error){
-        if(cached)return {success:true,data:await unpackGameData(cached),local:true,warning:error.message};
+        if(cached){cloudVersions.set(key,cached.baseVersion??null);return {success:true,data:await unpackGameData(cached),local:true,warning:error.message};}
         return {success:false,error:error.message};
     }
 }
@@ -314,6 +336,7 @@ async function deleteGameFromCloud(userId,gameId) {
             for(let i=0;i<chunks.docs.length;i+=400){const batch=writeBatch(db);chunks.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));await batch.commit();}
             await deleteDoc(ref);
         }
+        cloudVersions.delete(versionKey(uid,gameId));
         await localDelete(uid,gameId).catch(()=>{});
         try{const old=JSON.parse(localStorage.getItem(`user_games_${uid}`)||'{}');delete old[gameId];localStorage.setItem(`user_games_${uid}`,JSON.stringify(old));}catch(_){}
         return {success:true};

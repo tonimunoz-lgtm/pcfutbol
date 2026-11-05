@@ -12,6 +12,7 @@
     'use strict';
     let busy = false;
     let autosaveTimer;
+    let pendingSaves=0;
 
     function setButtonsBusy(on) {
         document.querySelectorAll('[onclick*="simulateWeek"]').forEach(b => {
@@ -33,7 +34,11 @@
         }
         busy = true;
         setButtonsBusy(true);
+        clearTimeout(autosaveTimer);
+        autosaveTimer=null;
+        let checkpoint;
         try {
+            checkpoint=window.gameLogic?.getGameState();
             const before = window.gameLogic?.getViewState();
             const result = await window.simulateWeek();
             const after = window.gameLogic?.getViewState();
@@ -42,9 +47,14 @@
                 (before.matchHistory || []).length !== (after.matchHistory || []).length);
             if (changed && !result?.ignored) {
                 clearTimeout(autosaveTimer);
-                autosaveTimer = setTimeout(() => { window.pcfSaveCurrentGame(); }, 700);
+                autosaveTimer = setTimeout(() => { autosaveTimer=null; window.pcfSaveCurrentGame(); }, 700);
             }
         } catch (err) {
+            if(checkpoint){
+                window.gameLogic.replaceGameState(checkpoint);
+                window.gameLogic.addNews('No se ha completado el avance. Se ha restaurado el estado anterior para evitar duplicar partidos o cargos.','warning');
+                window.ui?.refreshUI?.(window.gameLogic.getViewState());
+            }
             console.error('[SimGuard] Error simulando la jornada:', err);
         } finally {
             busy = false;
@@ -57,11 +67,12 @@
         if (!state?.team || !window.saveGameToCloud || !window.currentUserId) return { success: false, skipped: true };
         const gameId = state.gameId || `autosave_${state.team}`;
         window.gameLogic.updateGameState({ gameId });
+        pendingSaves++;
         try {
             const result = await window.saveGameToCloud(window.currentUserId, gameId,
                 `[Auto] ${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
             if (!result?.success) {
-                window.gameLogic.addNews(result?.localSaved ? 'Copia local guardada. La sincronización con la nube sigue pendiente; vuelve a guardar cuando haya conexión.' : 'No se ha podido guardar la partida. Vuelve a intentarlo antes de cerrar.', 'warning');
+                window.gameLogic.addNews(result?.code === 'save/conflict' ? result.error : result?.localSaved ? 'Copia local guardada. La sincronización con la nube sigue pendiente; vuelve a guardar cuando haya conexión.' : 'No se ha podido guardar la partida. Vuelve a intentarlo antes de cerrar.', 'warning');
                 return result;
             }
             return result;
@@ -69,7 +80,13 @@
             window.gameLogic.addNews('No se ha podido completar el autoguardado en la nube. Vuelve a guardar la partida.', 'warning');
             console.warn('[SimGuard] No se pudo guardar:', error);
             return { success: false, error: error.message };
-        }
+        } finally { pendingSaves--; }
     };
+    document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='hidden' && autosaveTimer && !busy){clearTimeout(autosaveTimer);autosaveTimer=null;window.pcfSaveCurrentGame();}
+    });
+    window.addEventListener('beforeunload',event=>{
+        if(busy || autosaveTimer || pendingSaves){event.preventDefault();event.returnValue='';}
+    });
     window.isSimulatingWeek = () => busy;
 })();

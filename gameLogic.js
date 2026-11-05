@@ -518,6 +518,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
     if(options.keepTime && gameState.team) return await switchPersistentClub(teamName,divisionType,gameMode);
     const previousState=getGameState();
     await window.preloadTeamCatalog?.();
+    if(window.pcfCatalogOffline && window.pcfConfirmText && !await window.pcfConfirmText('El catálogo de equipos no está disponible. Se usarán los datos locales y se generarán las plantillas que falten. ¿Quieres crear la partida con esos datos?'))return {success:false,cancelled:true};
     stateGeneration++;worldTask=null;
     // Cambio de club en plena carrera: se conserva la temporada, la jornada y las ligas
     const snap = options.keepTime ? {
@@ -3934,6 +3935,8 @@ if (typeof window !== 'undefined') {
     window.STAFF_LEVEL_EFFECTS = STAFF_LEVEL_EFFECTS;
     window.pcfWorld = {
         ensure:ensureWorld,
+        listClubs:()=>Object.values(gameState.world?.clubs||{}).map(c=>({name:c.name,division:c.division})),
+        hasWorld:()=>!!gameState.world,
         getClub:name=>{captureWorldClub();return JSON.parse(JSON.stringify(gameState.world?.clubs[name]||null));},
         getTransfers:()=>JSON.parse(JSON.stringify(gameState.world?.transfers||[])),
         getTables:()=>JSON.parse(JSON.stringify(gameState.world?.divisions||{})),

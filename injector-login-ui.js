@@ -12,7 +12,7 @@
                 const user = userCredential.user;
                 
                 // Determinar si es admin basándose en el email
-                const isAdmin = email === 'tonaco92@gmail.com';
+                const isAdmin = user.email?.toLowerCase() === 'tonaco92@gmail.com';
 
                 // Comprobar si el usuario está suspendido (solo para no-admin)
                 if (!isAdmin) {
@@ -35,6 +35,9 @@
                         }, { merge: true });
                     } catch(e) {
                         console.warn('No se pudo comprobar game_users:', e);
+                        const { signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                        await signOut(window.firebaseAuth);
+                        return {success:false,message:'No se pudo verificar el estado de tu cuenta. Revisa la conexión e inténtalo de nuevo.'};
                     }
                 }
                 

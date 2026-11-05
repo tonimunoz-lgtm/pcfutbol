@@ -1091,6 +1091,7 @@ window.renderTeamSelectors = renderTeamSelectors;
 // Selección de equipo y arranque
 // -------------------------
 window.selectTeamAndStart = async function(teamName, division) {
+    if(window.isSimulatingWeek?.())return alert('Espera a que termine la jornada antes de cambiar de partida.');
     if (!teamName || !division) {
         alert('⚠️ Equipo o división inválidos');
         return;
@@ -1875,11 +1876,12 @@ window.selectTeamAndStart = async function(teamName, division) {
             if (!gameName) return;
 
             const gameId = 'game_' + Date.now();
-            const currentGameState = gameLogic.getGameState();
+            const currentGameState = {...gameLogic.getGameState(),gameId};
 
             try {
                 const result = await window.saveGameToCloud(window.currentUserId, gameId, gameName, currentGameState);
                 if (result.success) {
+                    gameLogic.updateGameState({gameId});
                     alert('✅ Partida guardada en la nube correctamente.');
                 } else {
                     alert('❌ Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));
@@ -2285,6 +2287,7 @@ window.onclick = function(event) {
     <script src="./injector-skin.js"></script>
     <script src="./injector-news.js"></script>
     <script src="./injector-sim-guard.js"></script>
+    <script src="./injector-backups.js"></script>
     <script src="./injector-review-fixes.js"></script>
 
   

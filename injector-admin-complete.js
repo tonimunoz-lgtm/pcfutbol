@@ -1076,8 +1076,8 @@
                     const tr = document.createElement('tr');
                     tr.style.borderBottom = '1px solid #2a2a2a';
                     tr.innerHTML = `
-                        <td style="padding:8px;">${d.name || '-'}</td>
-                        <td style="padding:8px;color:#aaa;">${d.email || doc.id}</td>
+                        <td style="padding:8px;">${esc(d.name || '-')}</td>
+                        <td style="padding:8px;color:#aaa;">${esc(d.email || doc.id)}</td>
                         <td style="padding:8px;color:#666;font-size:.82em;">${createdAt}</td>
                         <td style="padding:8px;text-align:center;">
                             <span style="padding:3px 8px;border-radius:10px;font-size:.8em;
@@ -1087,17 +1087,17 @@
                             </span>
                         </td>
                         <td style="padding:8px;text-align:center;white-space:nowrap;">
-                            <button onclick="window.adminBackend.toggleSuspend('${doc.id}', ${suspended})"
+                            <button onclick="window.adminBackend.toggleSuspend(${esc(JSON.stringify(doc.id))}, ${suspended})"
                                 style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
                                        background:${suspended ? '#2196F3' : '#ff9500'};color:#fff;font-size:.8em;">
                                 ${suspended ? '✅ Reactivar' : '⏸ Suspender'}
                             </button>
-                            <button onclick="window.adminBackend.resetUserPassword('${doc.id}', '${d.email || ''}')"
+                            <button onclick="window.adminBackend.resetUserPassword(${esc(JSON.stringify(doc.id))}, ${esc(JSON.stringify(d.email || ''))})"
                                 style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
                                        background:#555;color:#fff;font-size:.8em;">
                                 🔑 Reset PW
                             </button>
-                            <button onclick="window.adminBackend.deleteUser('${doc.id}', '${d.email || ''}')"
+                            <button onclick="window.adminBackend.deleteUser(${esc(JSON.stringify(doc.id))}, ${esc(JSON.stringify(d.email || ''))})"
                                 style="margin:2px;padding:4px 10px;border:none;border-radius:5px;cursor:pointer;
                                        background:#c73446;color:#fff;font-size:.8em;">
                                 🗑 Eliminar
@@ -1172,7 +1172,7 @@
                 // 4. Borrar perfil en game_users
                 await deleteDoc(doc(firestore, 'game_users', uid));
 
-                alert(`✅ Usuario ${email} eliminado completamente.\n\nNota: la cuenta de Firebase Auth sigue activa (requiere Admin SDK para eliminarla desde servidor). El usuario no podrá acceder al juego pero técnicamente podría registrarse de nuevo con el mismo email.`);
+                alert(`✅ Usuario ${email} eliminado completamente.\n\nNota: la cuenta de Firebase Auth sigue activa (requiere Admin SDK para eliminarla desde servidor). Su cuenta Auth todavía puede iniciar sesión y recrear el perfil. Para impedir el acceso, inhabilita o elimina la cuenta en Firebase Authentication. Borrar un perfil suspendido permite recrearlo al iniciar sesión.`);
                 this.loadUsers();
             } catch (err) {
                 alert('❌ Error: ' + err.message);
