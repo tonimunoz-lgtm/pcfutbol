@@ -33,8 +33,8 @@
         st.textContent = `
         #pcfStadHero{margin:0 0 16px;border:1px solid #06142e;border-radius:4px;overflow:hidden;background:#06142e;box-shadow:0 8px 24px rgba(0,0,0,.45)}
         #pcfStadHero .banner{position:relative;aspect-ratio:21/8;max-height:340px;width:100%;background:#0a1a38;overflow:hidden}
-        #pcfStadHero .banner img.main{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;transition:none}
-        #pcfStadHero:hover .banner img.main{transform:none}
+        #pcfStadHero .banner img.main{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform 8s ease}
+        #pcfStadHero:hover .banner img.main{transform:scale(1.04)}
         #pcfStadHero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,10,26,.05) 40%,rgba(3,10,26,.88) 100%)}
         #pcfStadHero .cap{position:absolute;left:18px;right:18px;bottom:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;color:#fff}
         #pcfStadHero .phase{font-family:'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.1em}

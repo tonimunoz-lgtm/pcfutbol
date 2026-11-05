@@ -626,13 +626,13 @@
         const injRed = Math.round((d.injuryReduction || 0) * 100);
         const constructionHTML = renderConstruction(d.construction);
 
-        // Foto del estadio — siempre en proporcion 4:3, object-fit:contain centra sin estirar
+        // Foto del estadio — siempre en proporcion 4:3, object-fit:cover centra sin estirar
         const photoHTML = s.stadiumImage
             ? `<div style="width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden;margin-bottom:4px;">
-                 <img src="${s.stadiumImage}" style="width:100%;height:100%;object-fit:contain;display:block;">
+                 <img src="${s.stadiumImage}" style="width:100%;height:100%;object-fit:cover;display:block;">
                </div>`
             : `<div style="position:relative;width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden;margin-bottom:4px;">
-                 <img src="assets/imagenes/estadio-sin-foto.webp" alt="Estadio" style="width:100%;height:100%;object-fit:contain;display:block;">
+                 <img src="assets/imagenes/estadio-sin-foto.webp" alt="Estadio" style="width:100%;height:100%;object-fit:cover;display:block;">
                  <span style="position:absolute;left:0;right:0;bottom:0;padding:4px 8px;background:rgba(3,10,26,.7);color:#cfe0ff;font-size:.7em;text-align:center;">Ilustración genérica · sube la foto real en Admin</span>
                </div>`;
 
