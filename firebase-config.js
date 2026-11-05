@@ -1,7 +1,7 @@
 import { packGameState, unpackGameData } from './save-codec.js';
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
@@ -220,7 +220,8 @@ async function saveGameToCloud(userId, gameId, gameName, gameState) {
     const finalUserId=userId||currentUserId;
     if(!finalUserId||!gameId)return {success:false,error:'Parámetros inválidos'};
     try {
-        const snapshot=await packGameState(gameState);
+        const expectedRevision = Number(gameState._cloudRevision || 0);
+        const snapshot=await packGameState({...gameState, _cloudRevision: expectedRevision + 1});
         const gameData={id:gameId,name:gameName,team:gameState.team,week:gameState.week,division:gameState.division,lastSaved:Date.now(),...snapshot};
         if(!firebaseConfig.enabled||!db){
             const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
@@ -228,13 +229,23 @@ async function saveGameToCloud(userId, gameId, gameName, gameState) {
             return {success:false,localSaved:true,error:'Firebase no disponible; copia local guardada'};
         }
         if(!authReady){try{await authReadyPromise;}catch(e){return {success:false,error:'No se pudo autenticar'};}}
-        await setDoc(doc(db,'users',finalUserId,'saved_games',gameId),gameData);
+        const gameRef = doc(db,'users',finalUserId,'saved_games',gameId);
+        const expected = expectedRevision;
+        const nextRevision = await runTransaction(db, async tx => {
+            const previous = await tx.get(gameRef);
+            const actual = previous.exists() ? Number(previous.data().cloudRevision || 0) : 0;
+            if (actual !== expected) throw new Error('Conflicto de guardado: otra pestaña o sesión modificó esta partida. Recarga antes de sobrescribir.');
+            tx.set(gameRef, {...gameData,cloudRevision:actual + 1});
+            return actual + 1;
+        });
+        gameState._cloudRevision = nextRevision;
+        gameData.cloudRevision = nextRevision;
         // Browser quota failures must not turn a successful cloud save into a reported failure.
         try {
             const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
             localStorage.setItem(`user_games_${finalUserId}`,JSON.stringify(games));
         } catch(e){console.warn('Guardado en nube completado; no cabe la copia local:',e);}
-        return {success:true};
+        return {success:true,cloudRevision:nextRevision};
     } catch(error){return {success:false,error:error.message};}
 }
 
@@ -264,7 +275,7 @@ async function loadGameFromCloud(userId, gameId) {
     if (!firebaseConfig.enabled || !db) {  
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
         if(!localGames[gameId])return {success:false,message:'Partida no encontrada'};
-        try{return {success:true,data:await unpackGameData(localGames[gameId])};}catch(error){return {success:false,error:error.message};}  
+        try{const data=await unpackGameData(localGames[gameId]);data._cloudRevision=Number(localGames[gameId].cloudRevision||0);data.gameId=gameId;return {success:true,data};}catch(error){return {success:false,error:error.message};}  
     }  
     if (!authReady) {  
         try { await authReadyPromise; } catch (error) {  
@@ -275,7 +286,11 @@ async function loadGameFromCloud(userId, gameId) {
     if (!finalUserId || !gameId) return { success: false, message: 'Parámetros inválidos' };  
     try {  
         const docSnap = await getDoc(doc(db, 'users', finalUserId, 'saved_games', gameId));  
-        return docSnap.exists() ? { success: true, data: await unpackGameData(docSnap.data()) } : { success: false, message: 'Partida no encontrada' };  
+        if (!docSnap.exists()) return {success:false,message:'Partida no encontrada'};
+        const data = await unpackGameData(docSnap.data());
+        data._cloudRevision = Number(docSnap.data().cloudRevision || 0);
+        data.gameId = gameId;
+        return {success:true,data};  
     } catch (error) {  
         return { success: false, error: error.message };  
     }  

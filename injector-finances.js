@@ -110,7 +110,7 @@
         const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
                                .reduce((s, x) => s + (x.salary || 0), 0);
         const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
-        const bonusPay = stateBefore.fd_bonus       || 0;  // prima prometida (FinDeals)
+        const bonusPay = 0; // La prima se paga al prometerla; no volver a descontarla.
         const benefits = window.pcfEconomy.benefits(stateBefore, ticketInc, merchInc);
         const totalExp = salaries + staffSal + loanPay + bonusPay + benefits.total;
         const net      = totalInc - totalExp;

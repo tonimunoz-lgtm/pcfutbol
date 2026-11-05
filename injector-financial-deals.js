@@ -1070,9 +1070,15 @@
 
         const orig = window.simulateWeek;
         window.simulateWeek = async function (...args) {
+            const before = gs();
+            const beforeWeek = before?.week, beforeSeason = before?.currentSeason;
+            const beforePhase = before?.seasonType, beforeMatches = before?.matchHistory?.length || 0;
             const result = await orig.apply(this, args);
             const s = gs();
-            if (!s) return result;
+            if (!s || result?.ignored) return result;
+            const advanced = s.week !== beforeWeek || s.currentSeason !== beforeSeason ||
+                s.seasonType !== beforePhase || (s.matchHistory || []).length !== beforeMatches;
+            if (!advanced && !result?.cupMatch) return result;
 
             // Cambio de temporada
             if (_lastSeason && s.currentSeason && _lastSeason !== s.currentSeason) {
@@ -1086,9 +1092,9 @@
             _lastSeason = s.currentSeason;
 
             // Consumir prima (ya gastada del balance en setBonus)
-            consumeBonus();
+            if (advanced || result?.cupMatch) consumeBonus();
 
-            processLoanPayments();
+            if (advanced) processLoanPayments();
             recalcWeekly();
             if (window._financeRefresh) window._financeRefresh();
             refreshUI();

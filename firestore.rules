@@ -28,6 +28,20 @@ service cloud.firestore {
       allow write: if signedIn();
     }
 
+    // Perfil de autenticación utilizado por login y panel de administración.
+    // El usuario no puede modificar su suspensión ni elevar privilegios.
+    match /game_users/{userId} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['email','name','suspended','createdAt','lastLogin'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.suspended == false;
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','lastLogin','email'])
+        && request.resource.data.email == request.auth.token.email);
+      allow delete: if isAdmin();
+    }
+
     // Perfil de cada usuario: él mismo; el administrador puede verlos todos y
     // suspenderlos (pestaña Usuarios del Admin).
     match /users/{userId} {

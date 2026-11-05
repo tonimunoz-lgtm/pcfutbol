@@ -57,6 +57,7 @@
             const result = await window.saveGameToCloud(window.currentUserId, gameId,
                 `[Auto] ${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
             if (!result?.success) throw new Error(result?.error || 'Guardado no confirmado');
+            window.gameLogic.updateGameState({_cloudRevision:result.cloudRevision});
             return result;
         } catch (error) {
             window.gameLogic.addNews('No se ha podido completar el autoguardado en la nube. Vuelve a guardar la partida.', 'warning');

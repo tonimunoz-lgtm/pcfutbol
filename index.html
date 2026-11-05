@@ -1182,17 +1182,19 @@ window.selectTeamAndStart = async function(teamName, division) {
                         window.openPage('lineup');
                         return;
                     } else {
-                        alert(`¡Alineación inválida detectada!\n\n${lineupValidation.message}\n\nTu equipo será penalizado con una derrota 0-3 por alineación indebida.`);
-                        gameLogic.addNews(`[SISTEMA - ATENCIÓN] Alineación inválida detectada: ${lineupValidation.message}. Derrota 0-3 forzada.`, 'error');
+                        alert(`Alineación inválida: ${lineupValidation.message}. Corrígela antes de continuar.`);
+                        window.openPage('lineup');
+                        return { ignored: true, reason: 'invalid-lineup' };
                     }
                 }
             }
 
             // Se espera a que termine la jornada (y el fin de temporada, si toca).
             // El resumen del partido lo muestra injectMatchSummary.
-            await gameLogic.simulateFullWeek();
+            const outcome = await gameLogic.simulateFullWeek();
             ui.refreshUI(gameLogic.getGameState());
             window.openPage('dashboard');
+            return outcome;
         };
 
         // Negociación
@@ -1868,12 +1870,14 @@ window.selectTeamAndStart = async function(teamName, division) {
             const gameName = await window.pcfPrompt('Introduce un nombre para tu partida guardada:', `Partida ${new Date().toLocaleDateString()}`);
             if (!gameName) return;
 
-            const gameId = 'game_' + Date.now();
+            const gameId = gameLogic.getGameState().gameId || ('game_' + Date.now());
+            gameLogic.updateGameState({gameId});
             const currentGameState = gameLogic.getGameState();
 
             try {
                 const result = await window.saveGameToCloud(window.currentUserId, gameId, gameName, currentGameState);
                 if (result.success) {
+                    gameLogic.updateGameState({_cloudRevision: result.cloudRevision});
                     alert('✅ Partida guardada en la nube correctamente.');
                 } else {
                     alert('❌ Error al guardar la partida en la nube: ' + (result.error || 'Error desconocido'));
@@ -2231,7 +2235,7 @@ window.onclick = function(event) {
         
         // Exponer globalmente
         window.gameLogic = gameLogic;
-        window.ui = ui;
+        window.ui = { ...ui };
         window.TEAMS_DATA = TEAMS_DATA;
         window.ATTRIBUTES = ATTRIBUTES;
         window.POSITIONS = POSITIONS;

@@ -40,7 +40,8 @@
     // rows: [{team, g, e, p, gf, gc}]
     async function awards(division, rows, season) {
         const s = gs(), seasonKey = season || s.currentSeason;
-        const recorded=window.pcfWorld?.getAwards?.(division,seasonKey);if(recorded)return recorded;
+        const recorded=window.pcfWorld?.getAwards?.(division,seasonKey);
+        if (recorded) return recorded;
         const scorers = [], keepers = [];
         for (const r of rows) {
             const squad = await squadOf(r.team, division);

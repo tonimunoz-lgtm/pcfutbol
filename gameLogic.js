@@ -1280,24 +1280,48 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         const accepted = roll < acceptanceChance;  
   
         if (accepted) {  
+            // Intercambio atómico: validar y ejecutar sobre copia del mundo antes de confirmar.
+            if (gameState.world) {
+                const draft = JSON.parse(JSON.stringify(gameState.world));
+                const buyer = draft.clubs[gameState.team], seller = draft.clubs[source.club];
+                const wanted = seller.squad.find(p => p.id === source.player.id);
+                const outgoing = names.map(name => buyer.squad.find(p => p.name === name));
+                if (!wanted || outgoing.some(p => !p) || buyer.balance < offerAmount ||
+                    buyer.squad.length - outgoing.length + 1 > 25 ||
+                    seller.squad.length - 1 + outgoing.length > 25) {
+                    return {success:false,message:'El intercambio ya no es viable. No se ha cobrado nada.'};
+                }
+                // Retirar ambos lados antes de insertar: los clubes con 25 fichas pueden intercambiar.
+                seller.squad.splice(seller.squad.indexOf(wanted), 1);
+                outgoing.forEach(p => buyer.squad.splice(buyer.squad.indexOf(p), 1));
+                wanted.club = gameState.team; wanted.salary = gameState.playerOffer?.salary || wanted.salary;
+                wanted.contractType = 'owned'; wanted.loan = false; wanted.transferListed = false;
+                buyer.squad.push(wanted);
+                outgoing.forEach(p => {p.club = source.club; p.transferListed = false; seller.squad.push(p);});
+                buyer.balance -= offerAmount; seller.balance += offerAmount;
+                const movements = [{playerId:wanted.id,name:wanted.name,from:source.club,to:gameState.team,fee:offerAmount},
+                    ...outgoing.map(p=>({playerId:p.id,name:p.name,from:gameState.team,to:source.club,fee:0}))];
+                movements.forEach(m => draft.transfers.push({id:`t_${draft.nextTransferId++}`,...m,type:'transfer',season:gameState.currentSeason,week:gameState.week,phase:gameState.seasonType}));
+                draft.revision++;
+                gameState.world = draft;
+                gameState.squad = buyer.squad;
+                outgoing.forEach(p => replaceInLineup(p.name));
+                gameState.balance = buyer.balance;
+                gameState.playerPurchases = (gameState.playerPurchases || 0) + offerAmount;
+                endNegotiation(true);
+                return {success:true,message:`¡Fichaje completado! ${wanted.name} llega al club.`};
+            }
+            // Partidas sin mundo: verificar capacidad y completar el intercambio local.
             gameState.balance -= offerAmount;
-// ✅ REGISTRAR GASTO EN FICHAJES
-if (!gameState.playerPurchases) gameState.playerPurchases = 0;
-gameState.playerPurchases += offerAmount;
-playerExchange.forEach(pName => {
-                const p=gameState.squad.find(p=>p.name===pName);
-                if(p&&gameState.world){replaceInLineup(pName);worldMove({id:p.id,from:gameState.team,to:player.club,fee:0});}
-                else {const index=gameState.squad.findIndex(p=>p.name===pName);if(index>=0)gameState.squad.splice(index,1);}
+            gameState.playerPurchases = (gameState.playerPurchases || 0) + offerAmount;
+            playerExchange.forEach(pName => {
+                const index = gameState.squad.findIndex(p => p.name === pName);
+                if (index >= 0) {replaceInLineup(pName); gameState.squad.splice(index, 1);}
             });
-  
-            const newPlayer = {  
-                ...player, ...gameState.playerOffer,
-                salary: gameState.playerOffer.salary, sourceClub: player.club, transferFee: offerAmount,
-                loan: false,  
-                club: gameState.team  
-            };  
-            endNegotiation(true);  
-            return signPlayer(newPlayer);  
+            const newPlayer = {...player,...gameState.playerOffer, salary:gameState.playerOffer.salary,
+                sourceClub:player.club,transferFee:offerAmount,loan:false,club:gameState.team};
+            endNegotiation(true);
+            return signPlayer(newPlayer);
         } else {  
             if (offerFactor < 0.6 || roll > 0.9) {  
                 endNegotiation();  
@@ -1327,7 +1351,7 @@ function setTrainingFocus(playerIndex, attribute) {
         return { success: false, message: 'Atributo no válido para entrenar.' };  
     }  
   
-    gameState.trainingFocus = { playerIndex, attribute };  
+    gameState.trainingFocus = { playerIndex, playerId: gameState.squad[playerIndex].id, attribute };  
     return { success: true, message: `Entrenamiento enfocado en ${attribute} para ${gameState.squad[playerIndex].name}.` };  
 }  
   
@@ -1336,8 +1360,10 @@ function applyWeeklyTraining() {
         return { success: false, message: 'No hay un foco de entrenamiento establecido.' };  
     }  
   
-    const player = gameState.squad[gameState.trainingFocus.playerIndex];  
-    const attribute = gameState.trainingFocus.attribute;  
+    const focus = gameState.trainingFocus;
+    // Compatibilidad con partidas antiguas: solo ellas carecen de playerId.
+    const player = focus.playerId ? gameState.squad.find(p => p.id === focus.playerId) : gameState.squad[focus.playerIndex];
+    const attribute = focus.attribute;  
   
     if (!player) {
         // El índice ya no corresponde a ningún jugador (cambio de temporada/plantilla)
@@ -2922,7 +2948,6 @@ async function simulateFullWeekInner() {
     }  
 
     // ===== VALIDAR ALINEACIÓN =====
-    const preSimLineupValidation = validateLineup(gameState.lineup);  
     applyWeeklyTraining();  
 
     // Reducir lesiones (el fisioterapeuta puede recortar una semana más: 10 % por nivel)
@@ -2950,6 +2975,7 @@ async function simulateFullWeekInner() {
         }  
     });  
 
+    const preSimLineupValidation = validateLineup(gameState.lineup);
     secondCoachAdvice();
     await boardUpdate();
 
@@ -2971,6 +2997,13 @@ async function simulateFullWeekInner() {
     // ===== SIMULAR PARTIDO DEL EQUIPO =====
     if (myTeamMatch) {  
         if (!preSimLineupValidation.success) {
+            // Una sanción se cumple también cuando el encuentro se registra como derrota administrativa.
+            gameState.squad.forEach(p => {
+                if (p.isSuspended && p.suspensionWeeks > 0) {
+                    p.suspensionWeeks--;
+                    if (!p.suspensionWeeks) p.isSuspended = false;
+                }
+            });
             // Alineación inválida
             addNews(`[SISTEMA - ALINEACIÓN INVÁLIDA] Tu equipo perdió 0-3 por alineación indebida.`, 'error');  
 
