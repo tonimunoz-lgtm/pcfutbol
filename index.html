@@ -1099,7 +1099,8 @@ window.selectTeamAndStart = async function(teamName, division) {
     console.log('Seleccionando equipo:', teamName, 'Division:', division);
 
     // Se usa window.gameLogic para respetar los módulos que envuelven esta función
-    await window.gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
+    const hired=await window.gameLogic.selectTeamWithInitialSquad(teamName, division, window.gameMode);
+    if(hired?.cancelled)return;
     ui.refreshUI(gameLogic.getGameState());
     window.closeModal('selectTeam');
 
@@ -1171,7 +1172,7 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.simulateWeek = async function() {
             const state = gameLogic.getGameState();
             // En pretemporada no hay partido oficial: no hace falta validar
-            if (state.seasonType !== 'preseason') {
+            if (state.seasonType !== 'preseason' && (state.seasonType==='playoff' || state.seasonCalendar?.some(m=>m.week===state.week&&(m.home===state.team||m.away===state.team)))) {
                 if (gameLogic.autoFixLineup) gameLogic.autoFixLineup();
                 const lineupValidation = gameLogic.validateLineup(gameLogic.getGameState().lineup);
                 if (!lineupValidation.success) {

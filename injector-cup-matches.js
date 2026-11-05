@@ -1213,6 +1213,7 @@ function boot(){
         window._cupsSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args){
             const result = await origSelect.apply(this, args);
+            if(result?.cancelled)return result;
             // Esperar competitionsReady para que comps_v2 esté listo antes de initCupCalendar
             let _done = false;
             const onReady = () => {

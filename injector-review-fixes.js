@@ -14,23 +14,42 @@
         window.gameLogic.addNews(`Cantera: ${name} ha recibido la baja.`, 'info');
         window.ui?.refreshUI(state);
     });
-    window.negotiateBoardObjective = function(state, rank, count) {
-        const label = target => target === 1 ? 'Ganar la liga' : target <= 2 && state.division !== 'primera' ? 'Luchar por el ascenso directo (top 2)' :
-            target <= 6 && state.division !== 'primera' ? `Entrar en la zona alta: puesto ${target}º o mejor` :
-            target <= Math.ceil(count / 2) ? `Terminar en la primera mitad (top ${target})` :
-            target <= count - (state.division === 'segunda' ? 4 : 3) ? `Asegurar la permanencia: puesto ${target}º o mejor` :
-            target === count ? 'Evitar quedar descolgado: competir hasta el final' : `Evitar el último puesto: terminar ${target}º o mejor`;
-        return new Promise(resolve => {
-            const root = document.createElement('div');
-            root.style.cssText = 'position:fixed;inset:0;z-index:290000;background:#000b;display:grid;place-items:center;padding:20px';
-            const proposed = state.boardTarget;
-            const relaxed = Math.min(count, proposed + Math.max(1, Math.round(count / 10)));
-            root.innerHTML = `<section style="max-width:560px;background:#10274a;color:white;padding:24px;border:1px solid #ffd700;border-radius:8px"><h2>Objetivos con la directiva</h2><p>${esc(state.team)} · ${esc(state.currentSeason)}</p><p>Plantilla: ${rank}ª de ${count} por nivel.</p><p><b>Propuesta: ${esc(label(proposed))}</b></p><p>La confianza se evaluará según el puesto acordado, la dinámica de resultados y la economía.</p><button data-target="${proposed}" class="btn">Aceptar objetivo</button><button data-target="${relaxed}" class="btn">Contraoferta: ${esc(label(relaxed))}</button><p>La directiva admite esta rebaja moderada para dar margen al proyecto.</p></section>`;
-            root.querySelectorAll('[data-target]').forEach(b => b.onclick = () => {
-                state.boardTarget = Number(b.dataset.target); state.boardObjectiveLabel = label(state.boardTarget);
-                root.remove(); resolve();
-            });
+    window.negotiateBoardObjective = function(state, rank, count, options = {}) {
+        const o=state.boardObjectives;
+        const label=target=>target===1?'Ganar la liga':target>=count-1?`Evitar el último puesto: ${target}º o mejor`:
+            target>count/2?`Consolidar la categoría: ${target}º o mejor`:`Acabar entre los ${target} primeros`;
+        return new Promise(resolve=>{
+            const root=document.createElement('div');root.style.cssText='position:fixed;inset:0;z-index:290000;background:#000b;display:grid;place-items:center;padding:20px;overflow:auto';
+            const proposed=state.boardTarget,relaxed=Math.min(count-1,proposed+Math.max(1,Math.round(count/10)));
+            root.innerHTML=`<section style="max-width:600px;background:#10274a;color:white;padding:24px;border:1px solid #ffd700;border-radius:8px"><h2>${options.joining?'Condiciones antes de firmar':'Acuerdo de temporada'}</h2><p>${esc(state.team)} · ${esc(state.currentSeason)} · Plantilla ${rank}ª de ${count}</p><p><b>${esc(label(proposed))}</b></p><ul><li>Salarios: hasta ${esc(o.wageLimit.toLocaleString('es-ES'))} €/sem.</li><li>Control de deuda: saldo mínimo ${esc(o.cashFloor.toLocaleString('es-ES'))} €.</li>${o.youthMinutes?`<li>Dar ${o.youthMinutes} minutos a jugadores de hasta 21 años.</li>`:''}${o.development?'<li>Mejorar al menos un canterano.</li>':''}${o.copaWins?`<li>Ganar ${o.copaWins} eliminatoria(s) de Copa.</li>`:''}</ul><p id="boardNegotiationResult">La directiva valora el conjunto del proyecto y revisa los objetivos secundarios cada cuatro jornadas.</p><button class="btn" data-action="accept">Aceptar y firmar</button><button class="btn" data-action="counter" ${relaxed===proposed?'disabled':''}>Proponer ${relaxed}º o mejor</button>${options.joining?'<button class="btn" data-action="cancel">Rechazar el contrato</button>':''}<p>La contraoferta rebaja el objetivo liguero, a cambio de reducir el límite salarial un 5% y dar más minutos a jóvenes. La directiva puede rechazarla.</p></section>`;
+            const finish=accepted=>{root.remove();resolve(accepted);};
+            root.querySelector('[data-action="accept"]').onclick=()=>finish(true);
+            root.querySelector('[data-action="cancel"]')?.addEventListener('click',()=>finish(false));
+            root.querySelector('[data-action="counter"]').onclick=()=>{
+                const button=root.querySelector('[data-action="counter"]');button.disabled=true;
+                const chance=Math.max(.35,.85-(relaxed-proposed-1)*.15);
+                if(Math.random()<chance){
+                    state.boardTarget=relaxed;o.leagueTarget=relaxed;o.negotiated=true;o.wageLimit=Math.round(o.wageLimit*.95);
+                    if(o.youthMinutes)o.youthMinutes+=90;
+                    state.boardConfidence=Math.max(40,(state.boardConfidence||65)-3);
+                    root.querySelector('#boardNegotiationResult').textContent=`Contraoferta aceptada: ${label(relaxed)}. Se aplican las condiciones adicionales. Pulsa Aceptar y firmar para confirmar.`;
+                }else root.querySelector('#boardNegotiationResult').textContent='La directiva rechaza la contraoferta y mantiene las condiciones iniciales. Puedes aceptarlas o rechazar el contrato.';
+            };
             document.body.appendChild(root);
         });
     };
+    function renderGoals(){
+        const page=document.getElementById('dashboard'),goals=window.pcfWorld?.getObjectives?.();if(!page||!goals?.length)return;
+        let panel=document.getElementById('boardObjectivesPanel');
+        if(!panel){panel=document.createElement('section');panel.id='boardObjectivesPanel';panel.className='data-box';page.appendChild(panel);}
+        panel.replaceChildren();const title=document.createElement('h3');title.textContent='Objetivos con la directiva';panel.appendChild(title);
+        for(const g of goals){const row=document.createElement('p');row.textContent=`${g.met?'✓':'○'} ${g.label} · Actual: ${Math.round(g.value).toLocaleString('es-ES')}`;panel.appendChild(row);}
+    }
+    function install(){
+        if(!window.ui?.refreshUI){setTimeout(install,300);return;}
+        const original=window.ui.refreshUI;
+        window.ui.refreshUI=function(...args){const result=original.apply(this,args);renderGoals();return result;};
+        renderGoals();
+    }
+    install();
 })();

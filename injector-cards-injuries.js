@@ -82,13 +82,13 @@ function hookSimulateWeek() {
     window.simulateWeek = async function() {
         // El segundo entrenador cubre bajas (lesión, sanción, venta...) antes de validar
         const pre = window.gameLogic?.getGameState();
-        if (pre && pre.seasonType !== 'preseason' && typeof window.gameLogic.autoFixLineup === 'function') {
+        if (pre && pre.seasonType !== 'preseason' && typeof window.gameLogic.autoFixLineup === 'function' && (pre.seasonType==='playoff'||pre.seasonCalendar?.some(m=>m.week===pre.week&&(m.home===pre.team||m.away===pre.team)))) {
             window.gameLogic.autoFixLineup();
         }
         const state = window.gameLogic?.getGameState();
         
         // VALIDACIÓN ANTES DE SIMULAR (en pretemporada no hay partido oficial)
-        if (state && state.lineup && state.seasonType !== 'preseason') {
+        if (state && state.lineup && state.seasonType !== 'preseason' && (state.seasonType==='playoff'||state.seasonCalendar?.some(m=>m.week===state.week&&(m.home===state.team||m.away===state.team)))) {
             console.log('🔍 Validando alineación antes de simular...');
             
             const errors = [];

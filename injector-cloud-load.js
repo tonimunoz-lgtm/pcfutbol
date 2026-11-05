@@ -106,13 +106,14 @@
 
                 // Cargar el estado del juego
                 window.gameLogic.replaceGameState(result.data.gameState);
+                await window.pcfWorld?.ensure?.();
                 
                 // Guardar también en localStorage como backup
                 window.gameLogic.saveToLocalStorage();
                 
                 // Refrescar la UI
                 if (window.ui && window.ui.refreshUI) {
-                    window.ui.refreshUI(result.data.gameState);
+                    window.ui.refreshUI(window.gameLogic.getGameState());
                 }
                 
                 // Cerrar modal

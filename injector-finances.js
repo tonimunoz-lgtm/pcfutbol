@@ -106,7 +106,7 @@
         const totalInc = ticketInc + merchInc + baseInc;
 
         // Gastos completos: salarios + staff + cuotas de prestamos + prima jugadores
-        const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0);
+        const salaries = (stateBefore.squad || []).reduce((s, p) => s + (p.salary || 0), 0) + (stateBefore.loanSalaryExpense || 0);
         const staffSal = Object.values(stateBefore.staff || {}).filter(Boolean)
                                .reduce((s, x) => s + (x.salary || 0), 0);
         const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
@@ -164,7 +164,7 @@
             const sa = gs();
             if (sb && sa && sb.currentSeason !== sa.currentSeason && !sa.financePostings?.[postingKey + '|summer']) {
                 const extra = (window.PCF_OFFSEASON_WEEKS || 8) - 1;
-                const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0);
+                const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0) + (sa.loanSalaryExpense || 0);
                 const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
                 const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
                 const net = (base - salaries - staffSal - window.pcfEconomy.benefits(sa).total) * extra;
@@ -556,7 +556,7 @@
         }
 
         // ── Gastos recurrentes ───────────────────────────────────
-        const pS     = state.squad.reduce((s, p) => s + (p.salary || 0), 0);
+        const pS     = state.squad.reduce((s, p) => s + (p.salary || 0), 0) + (state.loanSalaryExpense || 0);
         const sArr   = Object.values(state.staff).filter(Boolean);
         const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
         const loanE  = state.fd_loanPayment || 0;

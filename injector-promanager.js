@@ -272,6 +272,7 @@ console.log('🎯 Injector Promanager cargando...');
     }
 
     async function assignTeam(offer) {
+        const previousCareer=JSON.parse(JSON.stringify(pmState));
         pmState.currentTeam = offer.team;
         pmState.currentDivision = offer.division;
         pmState.unemployed = false;
@@ -283,7 +284,8 @@ console.log('🎯 Injector Promanager cargando...');
         if (window.gameLogic && window.gameLogic.selectTeamWithInitialSquad) {
             var keep = !!pmState.rehire || !!window.gameLogic.getGameState().team;
             pmState.rehire = false; pmState.waitCount = 0;
-            await window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager', { keepTime: keep });
+            const hired=await window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager', { keepTime: keep });
+            if(hired?.cancelled){Object.assign(pmState,previousCareer);return;}
             try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}
             ['selectTeam','gameMode'].forEach(function(m){ try { window.closeModal(m); } catch(e) {} });
             setTimeout(function() {

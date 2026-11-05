@@ -1456,7 +1456,7 @@ function boot() {
         window._compSelectHooked = true;
         window.gameLogic.selectTeamWithInitialSquad = async function(...args) {
             const result = await origSelect.apply(this, args);
-            store.clearComp(); store.clearPlayoff();
+            if(result?.cancelled)return result;
             initOnLoad();
             window.CupMatches?.ensureCalendar?.();
             return result;

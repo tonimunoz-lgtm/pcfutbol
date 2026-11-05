@@ -157,7 +157,7 @@
                 );
 
             // Tus propios jugadores en venta no aparecen en la lista de compra
-            let all = [...firestoreFiltered, ...generated];
+            let all = state.world ? window.gameLogic.getPlayerMarket({}) : [...firestoreFiltered, ...generated];
 
             if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);
@@ -218,7 +218,7 @@
                 const signed = window._pendingSignPlayer;
                 window._pendingSignPlayer = null;
                 firestoreMarketPlayers = firestoreMarketPlayers.filter(p => p.name !== signed.name);
-                if (window.removePlayerFromMarket && signed.originalTeam) {
+                if (!state.world && window.removePlayerFromMarket && signed.originalTeam) {
                     window.removePlayerFromMarket(signed.name, signed.originalTeam)
                         .catch(e => console.warn('Error eliminando del mercado:', e));
                 }

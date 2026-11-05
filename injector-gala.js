@@ -40,6 +40,7 @@
     // rows: [{team, g, e, p, gf, gc}]
     async function awards(division, rows, season) {
         const s = gs(), seasonKey = season || s.currentSeason;
+        const recorded=window.pcfWorld?.getAwards?.(division,seasonKey);if(recorded)return recorded;
         const scorers = [], keepers = [];
         for (const r of rows) {
             const squad = await squadOf(r.team, division);
@@ -76,11 +77,11 @@
         const out = { season: key };
         // Copa del Rey: favoritos de Primera y Segunda
         const copaPool = [...(tables.primera || []).slice(0, 8), ...(tables.segunda || []).slice(0, 3)].map(r => r.team).filter(t => t !== me);
-        out.copa = comp.copaPhase === 'champion' ? me : (pickWeighted(copaPool.length ? copaPool : ['Real Madrid CF'], 'copa' + key));
+        out.copa = comp.copaPhase === 'champion' ? me : 'No registrado';
         const mineEU = comp.europeanComp, wonEU = comp.europeanPhase === 'champion';
         ['champions', 'europaLeague', 'conferenceLague'].forEach(k => {
             const pool = EU_POOLS[k].filter(t => t !== me);
-            out[k] = (mineEU === k && wonEU) ? me : pickWeighted(pool, k + key);
+            out[k] = (mineEU === k && wonEU) ? me : 'No registrado';
         });
         out.userCopaPhase = comp.copaPhase || null;
         out.userEuropeComp = mineEU || null; out.userEuropePhase = comp.europeanPhase || null;
@@ -282,8 +283,8 @@
             css();
             const a = await awards(s.division, rows);
             if (!box) { box = document.createElement('div'); box.id = 'pcfLiveAwards'; const host = table.closest('table') || table; host.parentNode.insertBefore(box, host.nextSibling); }
-            box.innerHTML = `<div class="box"><h4>⚽ Pichichi · máximos goleadores</h4><ol>${a.pichichi.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.goals}</span></li>`).join('')}</ol><small>Los goles de tu plantilla se cuentan partido a partido; los de los rivales se reparten según los goles reales de su equipo.</small></div>
-                <div class="box"><h4>🧤 Trofeo Zamora · portero menos goleado</h4><ol>${a.zamora.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.ratio.toFixed(2)}</span></li>`).join('')}</ol><small>Goles encajados por partido del portero titular de cada equipo.</small></div>`;
+            box.innerHTML = `<div class="box"><h4>⚽ Pichichi · máximos goleadores</h4><ol>${a.pichichi.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.goals}</span></li>`).join('')}</ol><small>Estadísticas registradas por el motor; se conservan las aportaciones del jugador aunque cambie de club.</small></div>
+                <div class="box"><h4>🧤 Trofeo Zamora · portero menos goleado</h4><ol>${a.zamora.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.ratio.toFixed(2)}</span></li>`).join('')}</ol><small>Goles encajados por 90 minutos realmente disputados; clasificación provisional.</small></div>`;
         } catch (e) { console.warn('Premios en vivo:', e); } finally { liveBusy = false; }
     }
     function hook() {

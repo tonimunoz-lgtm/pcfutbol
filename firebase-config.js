@@ -1,3 +1,4 @@
+import { packGameState, unpackGameData } from './save-codec.js';
 // firebase-config.js  
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
@@ -215,33 +216,28 @@ async function getAllTeamsDataFromFirebase() {
     }  
 }  
   
-async function saveGameToCloud(userId, gameId, gameName, gameState) {  
-    if (!firebaseConfig.enabled || !db) {  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
-        localGames[gameId] = { id: gameId, name: gameName, team: gameState.team, week: gameState.week, lastSaved: Date.now(), gameState };  
-        localStorage.setItem(`user_games_${userId}`, JSON.stringify(localGames));  
-        return { success: false, error: 'Firebase no disponible' };  
-    }  
-    if (!authReady) {  
-        try { await authReadyPromise; } catch (error) {  
-            return { success: false, error: 'No se pudo autenticar' };  
-        }  
-    }  
-    const finalUserId = userId || currentUserId;  
-    if (!finalUserId || !gameId) return { success: false, error: 'Parámetros inválidos' };  
-    try {  
-        const gameData = { id: gameId, name: gameName, team: gameState.team, week: gameState.week,  
-            division: gameState.division, lastSaved: Date.now(), gameState };  
-        await setDoc(doc(db, 'users', finalUserId, 'saved_games', gameId), gameData);  
-        const localGames = JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}');  
-        localGames[gameId] = gameData;  
-        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
-        return { success: true };  
-    } catch (error) {  
-        return { success: false, error: error.message };  
-    }  
-}  
-  
+async function saveGameToCloud(userId, gameId, gameName, gameState) {
+    const finalUserId=userId||currentUserId;
+    if(!finalUserId||!gameId)return {success:false,error:'Parámetros inválidos'};
+    try {
+        const snapshot=await packGameState(gameState);
+        const gameData={id:gameId,name:gameName,team:gameState.team,week:gameState.week,division:gameState.division,lastSaved:Date.now(),...snapshot};
+        if(!firebaseConfig.enabled||!db){
+            const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
+            localStorage.setItem(`user_games_${finalUserId}`,JSON.stringify(games));
+            return {success:false,localSaved:true,error:'Firebase no disponible; copia local guardada'};
+        }
+        if(!authReady){try{await authReadyPromise;}catch(e){return {success:false,error:'No se pudo autenticar'};}}
+        await setDoc(doc(db,'users',finalUserId,'saved_games',gameId),gameData);
+        // Browser quota failures must not turn a successful cloud save into a reported failure.
+        try {
+            const games=JSON.parse(localStorage.getItem(`user_games_${finalUserId}`)||'{}');games[gameId]=gameData;
+            localStorage.setItem(`user_games_${finalUserId}`,JSON.stringify(games));
+        } catch(e){console.warn('Guardado en nube completado; no cabe la copia local:',e);}
+        return {success:true};
+    } catch(error){return {success:false,error:error.message};}
+}
+
 async function loadUserSavedGames(userId) {  
     if (!firebaseConfig.enabled || !db) {  
         return Object.values(JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}'));  
@@ -257,7 +253,7 @@ async function loadUserSavedGames(userId) {
         querySnapshot.forEach((d) => games.push(d.data()));  
         const localGames = {};  
         games.forEach(g => { localGames[g.id] = g; });  
-        localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));  
+        try{localStorage.setItem(`user_games_${finalUserId}`, JSON.stringify(localGames));}catch(error){console.warn('No cabe la copia local del listado de partidas:',error);}
         return games;  
     } catch (error) {  
         return Object.values(JSON.parse(localStorage.getItem(`user_games_${finalUserId}`) || '{}'));  
@@ -267,7 +263,8 @@ async function loadUserSavedGames(userId) {
 async function loadGameFromCloud(userId, gameId) {  
     if (!firebaseConfig.enabled || !db) {  
         const localGames = JSON.parse(localStorage.getItem(`user_games_${userId}`) || '{}');  
-        return localGames[gameId] ? { success: true, data: localGames[gameId] } : { success: false, message: 'Partida no encontrada' };  
+        if(!localGames[gameId])return {success:false,message:'Partida no encontrada'};
+        try{return {success:true,data:await unpackGameData(localGames[gameId])};}catch(error){return {success:false,error:error.message};}  
     }  
     if (!authReady) {  
         try { await authReadyPromise; } catch (error) {  
@@ -278,7 +275,7 @@ async function loadGameFromCloud(userId, gameId) {
     if (!finalUserId || !gameId) return { success: false, message: 'Parámetros inválidos' };  
     try {  
         const docSnap = await getDoc(doc(db, 'users', finalUserId, 'saved_games', gameId));  
-        return docSnap.exists() ? { success: true, data: docSnap.data() } : { success: false, message: 'Partida no encontrada' };  
+        return docSnap.exists() ? { success: true, data: await unpackGameData(docSnap.data()) } : { success: false, message: 'Partida no encontrada' };  
     } catch (error) {  
         return { success: false, error: error.message };  
     }  
