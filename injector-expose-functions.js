@@ -690,7 +690,7 @@ window.generateOfferForPlayer = function(player) {
         document.getElementById('offerBuyerTeam').textContent = buyerTeam;
         document.getElementById('offerPlayerName').textContent = player.name;
         document.getElementById('offerType').textContent = '💼 Traspaso Definitivo';
-        document.getElementById('offerAmount').textContent = offerAmount.toLocaleString('es-ES') + '€';
+        document.getElementById('receivedOfferAmount').textContent = offerAmount.toLocaleString('es-ES') + '€';
         document.getElementById('offerAsking').textContent = player.askingPrice.toLocaleString('es-ES') + '€';
         
         window.gameLogic.addNews(
@@ -715,7 +715,7 @@ window.generateOfferForPlayer = function(player) {
         document.getElementById('offerBuyerTeam').textContent = buyerTeam;
         document.getElementById('offerPlayerName').textContent = player.name;
         document.getElementById('offerType').textContent = '🔄 Cesión (1 año)';
-        document.getElementById('offerAmount').textContent = `Asumen ${wagePercentTheyPay}% del salario`;
+        document.getElementById('receivedOfferAmount').textContent = `Asumen ${wagePercentTheyPay}% del salario`;
         document.getElementById('offerAsking').textContent = 'Cesión';
         
         window.gameLogic.addNews(

@@ -1078,6 +1078,9 @@ function showResultModal(match,result,processed){
 .cr-gi{display:flex;align-items:center;gap:8px;padding:7px;border-radius:7px;margin-bottom:5px;background:rgba(255,255,255,.05);border-left:3px solid}
 .cr-gi.m{border-color:#4CAF50}.cr-gi.t{border-color:#f44336}
 .cr-mn{color:#FFD700;font-weight:bold;min-width:32px;font-size:.88em}
+.cr-gcols{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cr-gcol{display:flex;flex-direction:column;min-width:0}
+.cr-gcol.r .cr-gi{flex-direction:row-reverse;text-align:right;border-left:0;border-right:3px solid}
+.cr-gcol.r .cr-gi.m{border-color:#4CAF50}.cr-gcol.r .cr-gi.t{border-color:#f44336}.cr-none{opacity:.45;padding:7px}
 .cr-sc{color:#fff;flex:1;font-weight:600}.cr-tt{color:rgba(255,255,255,.45);font-size:.82em}
 .cr-sr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.88em;color:#fff}
 .cr-sn{color:rgba(255,255,255,.5);flex:1;text-align:center}
@@ -1098,7 +1101,7 @@ function showResultModal(match,result,processed){
 </div>
 ${extraLine}
 <div class="cr-out" style="color:${outColor}">${outEmoji} ${outLabel}</div>
-${goals.length?`<div class="cr-sec"><h4>⚽ Goles</h4>${goals.map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span><span class="cr-tt">(${g.team})</span></div>`).join('')}</div>`:''}
+${goals.length?`<div class="cr-sec"><h4>⚽ Goles</h4><div class="cr-gcols"><div class="cr-gcol l">${goals.filter(g=>!!g.mine===!!meLeft).sort((a,b)=>a.min-b.min).map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div><div class="cr-gcol r">${goals.filter(g=>!!g.mine!==!!meLeft).sort((a,b)=>a.min-b.min).map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div></div></div>`:''}
 <div class="cr-sec"><h4>📊 Estadísticas</h4>
 <div class="cr-sr"><strong>${poss}%</strong><span class="cr-sn">Posesión</span><strong>${100-poss}%</strong></div>
 <div class="cr-sr"><strong>${shots.my}</strong><span class="cr-sn">Remates</span><strong>${shots.opp}</strong></div>

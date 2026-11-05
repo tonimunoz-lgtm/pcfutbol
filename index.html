@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="pcf6-theme.css">
 <link rel="stylesheet" href="pcf-mobile.css">
+<script src="./injector-storage-guard.js"></script>
 <script src="./injector-crest-cleaner.js"></script>
 
 
@@ -351,7 +352,7 @@
                 </tr>
                 <tr>
                     <td>Cantidad Ofrecida:</td>
-                    <td id="offerAmount" style="font-weight: bold; color: #4CAF50;"></td>
+                    <td id="receivedOfferAmount" style="font-weight: bold; color: #4CAF50;"></td>
                 </tr>
                 <tr>
                     <td>Tu Precio Solicitado:</td>
@@ -700,7 +701,7 @@
         <div class="modal-content">
             <span class="modal-close" onclick="window.closeModal('signYoungster')">&times;</span>
             <h1>Contratar Joven</h1>
-            <div id="availableYoungstersList"></div>
+            <div id="availableYoungstersModalList"></div>
         </div>
     </div>
 

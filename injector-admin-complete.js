@@ -365,6 +365,17 @@
                         </details>
                     </div>
 
+                    <div class="admin-box" style="margin-top: 24px;">
+                        <h3>💾 Almacenamiento y optimización</h3>
+                        <p class="admin-muted">Los escudos y las fotos de estadio se guardan como texto dentro de la base de datos y el navegador copia cada equipo en su memoria local (límite ≈ 5 MB). Si pesan mucho, esa copia falla y los guardados dan error de «cuota excedida».</p>
+                        <div class="admin-actions">
+                            <button class="btn" onclick="window.pcfStorageTools.showReport()">📊 Ver uso</button>
+                            <button class="btn admin-btn-orange" onclick="window.pcfStorageTools.purgeBrowser()">🧹 Vaciar caché del navegador</button>
+                            <button class="btn admin-btn-green" onclick="window.pcfStorageTools.optimizeAll()">🗜️ Optimizar escudos y fotos</button>
+                        </div>
+                        <div id="pcfStorageOut" style="margin-top:10px;font-size:.88rem;line-height:1.5"></div>
+                    </div>
+
                     <button class="btn admin-btn-red" style="margin-top: 20px;" onclick="document.getElementById('adminModal').classList.remove('active')">Cerrar</button>
                 </div>
 
@@ -945,8 +956,8 @@
 
             try {
                 if (logoFile) {
-                    if (logoFile.size > 200 * 1024) {
-                        alert('⚠️ El escudo es demasiado grande. Máximo 200KB.');
+                    if (logoFile.size > 3 * 1024 * 1024) {
+                        alert('⚠️ El escudo es demasiado grande. Máximo 3 MB (se reducirá solo).');
                         return;
                     }
                     teamData.logo = await fileToBase64(logoFile);
@@ -954,14 +965,18 @@
                     if (window.cleanCrestDataURL) {
                         teamData.logo = await window.cleanCrestDataURL(teamData.logo);
                     }
+                    // Reducir a 160 px: pesa unos pocos KB en lugar de cientos
+                    if (window.pcfStorageTools) teamData.logo = await window.pcfStorageTools.compress(teamData.logo, { max: 160, type: 'image/webp', q: 0.85 });
                 }
 
                 if (stadiumFile) {
-                    if (stadiumFile.size > 500 * 1024) {
-                        alert('⚠️ La imagen del estadio es demasiado grande. Máximo 500KB.');
+                    if (stadiumFile.size > 6 * 1024 * 1024) {
+                        alert('⚠️ La imagen del estadio es demasiado grande. Máximo 6 MB (se reducirá sola).');
                         return;
                     }
                     teamData.stadiumImage = await fileToBase64(stadiumFile);
+                    // Reducir a 800 px en JPEG: unas decenas de KB
+                    if (window.pcfStorageTools) teamData.stadiumImage = await window.pcfStorageTools.compress(teamData.stadiumImage, { max: 800, type: 'image/jpeg', q: 0.78, flatten: true });
                 }
 
                 const saveResult = await window.saveTeamDataToFirebase(this.currentTeam, teamData);

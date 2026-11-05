@@ -132,7 +132,7 @@
             const pct = parseInt(document.getElementById('loanWageContribution')?.value);
             amount = isNaN(pct) ? 50 : Math.max(0, Math.min(100, pct));
         } else {
-            amount = parseInt(document.getElementById('offerAmount')?.value);
+            amount = parseInt((document.querySelector('input#offerAmount') || document.getElementById('offerAmount'))?.value);
             const sel = document.getElementById('playerExchangeSelect');
             exchange = sel ? Array.from(sel.selectedOptions).map(o => o.value) : [];
         }
@@ -256,10 +256,45 @@
                 <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:3px;"><div style="height:100%;width:${Math.min(99, v)}%;background:${color(v)}"></div></div></div>`;
         }).join('');
     }
+    // ── Jugador comprable y cedible: el usuario elige qué pedir ──
+    let _mode = 'transfer';
+    function enhanceModeSwitch() {
+        const st = gs(), p = st && st.negotiatingPlayer;
+        const loanBox = document.getElementById('negotiationLoanOffer'), trBox = document.getElementById('negotiationTransferOffer');
+        let sw = document.getElementById('pcfModeSwitch');
+        if (!p || st.negotiationStep !== 2 || !p.loanListed || !p.transferListed || !loanBox || !trBox) { if (sw) sw.remove(); return; }
+        // el motor original solo prepara el bloque de cesión: preparamos también el de traspaso
+        const input = document.querySelector('input#offerAmount');
+        if (input && (!input.value || input.value === '0')) input.value = p.askingPrice || 0;
+        try { window.populatePlayerExchangeSelect && window.populatePlayerExchangeSelect(); } catch (e) { /* */ }
+        if (!sw) {
+            sw = document.createElement('div'); sw.id = 'pcfModeSwitch';
+            sw.style.cssText = 'display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap';
+            loanBox.parentNode.insertBefore(sw, loanBox);
+        }
+        sw.innerHTML = `<button type="button" data-m="transfer" class="pcf-mode-btn"><b>💶 Comprar al jugador</b><small>Precio pedido: ${fmt(p.askingPrice || 0)}€</small></button>
+            <button type="button" data-m="loan" class="pcf-mode-btn"><b>🔄 Pedir cesión</b><small>Pagas una parte de su sueldo</small></button>`;
+        const apply = () => {
+            loanBox.style.display = _mode === 'loan' ? 'block' : 'none';
+            trBox.style.display = _mode === 'transfer' ? 'block' : 'none';
+            sw.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === _mode));
+            if (_mode === 'transfer') { try { enhanceExchange(); } catch (e) { /* */ } } else { try { refreshLoanInfo(); } catch (e) { /* */ } }
+        };
+        sw.querySelectorAll('button').forEach(b => { b.onclick = () => { _mode = b.dataset.m; apply(); }; });
+        apply();
+    }
+    (function () {
+        const css = document.createElement('style');
+        css.textContent = `.pcf-mode-btn{flex:1 1 200px;text-align:left;cursor:pointer;padding:9px 14px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(122,160,212,.45);color:#cfe0ff;font-family:inherit;transition:all .15s}
+        .pcf-mode-btn b{display:block;font-size:.95rem;letter-spacing:.03em}.pcf-mode-btn small{display:block;opacity:.75;font-size:.76rem;margin-top:2px}
+        .pcf-mode-btn:hover{border-color:var(--pcf-gold,#ffd24a)}
+        .pcf-mode-btn.on{background:rgba(255,210,74,.18);border-color:var(--pcf-gold,#ffd24a);color:#fff;box-shadow:0 0 0 1px var(--pcf-gold,#ffd24a)}`;
+        document.head.appendChild(css);
+    })();
     function renderAttrsHook() {
         const orig = window.updateNegotiationModal;
         if (typeof orig !== 'function' || orig._pcfAttrs) return;
-        window.updateNegotiationModal = function (...a) { const r = orig.apply(this, a); try { renderAttrs(); refreshLoanInfo(); enhanceExchange(); } catch (e) { /* */ } return r; };
+        window.updateNegotiationModal = function (...a) { const r = orig.apply(this, a); try { renderAttrs(); refreshLoanInfo(); enhanceModeSwitch(); if (!(gs()?.negotiatingPlayer?.loanListed && gs()?.negotiatingPlayer?.transferListed)) enhanceExchange(); } catch (e) { /* */ } return r; };
         window.updateNegotiationModal._pcfAttrs = true;
     }
 
