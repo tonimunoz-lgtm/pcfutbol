@@ -1,0 +1,267 @@
+[
+  {
+    "file": "AUDITORIA_2026-11-05.md",
+    "previous_sha256": null,
+    "sha256": "d2646c80bcc33fdfab97f7d5523e521f8abf97fd6beb8f88e87ffbf2a138dc53"
+  },
+  {
+    "file": "LEEME_PRIMERO.md",
+    "previous_sha256": null,
+    "sha256": "6f4176fd80627e0f91a9b706da9a863309591e3b32cf1e5ea71d465e63ce42bd"
+  },
+  {
+    "file": "firebase-config.js",
+    "previous_sha256": "342f81f471a6afce67b94704c7a6f856a3e7da5e78709325437751eaab026d2f",
+    "sha256": "d51b4237e4151b7615309db3d2e52d0852db7b19f58de7340578a0c7d4a2f16c"
+  },
+  {
+    "file": "firestore.rules",
+    "previous_sha256": "718d16bac8bb81078d8c846e4beaedb4ae699834507f9faebb19d8dd9a0743a6",
+    "sha256": "c7d20c420fb72ce812c2cc3fa6aab21ed743a128b84410b7795f0f77531016e6"
+  },
+  {
+    "file": "gameLogic.js",
+    "previous_sha256": "b3f2baa70af20a8ca332ecca1155f50877b9232628d6ced39cf784d5503584e7",
+    "sha256": "29107a2328a4078f29eabdd127f20b251d6cb3ce4cafdf392602f31972d54580"
+  },
+  {
+    "file": "index.html",
+    "previous_sha256": "d02db883315cedd49455a74f252ecde4cedaf7db170200f305071f7b410e6193",
+    "sha256": "6ff876f084fb298c1ede3320e88f46ba1f4ffc13ffd2a4f89aeb3a8b6ff9d93a"
+  },
+  {
+    "file": "injector-admin-complete.js",
+    "previous_sha256": "38d8d6efb34120a11a5ae9a54ced3ab1534a15ba94836de6d9421f652fc493ae",
+    "sha256": "405fcd7fa850f15c6114ad598f2464e80c499278f7ddaadeaab124b726edfada"
+  },
+  {
+    "file": "injector-cards-injuries.js",
+    "previous_sha256": "88ed486903352b7eb21d4076c9b4cf4ccb49f4b2e0ab4d50ebfed5cc26119904",
+    "sha256": "a240567239fd2580e15ce3b3a340e0daf6b6a308558051dd91a78be63f9bcae8"
+  },
+  {
+    "file": "injector-cloud-load.js",
+    "previous_sha256": "61391697d23518746983971a1c47e6560172ed9e6c92041f1e12ddb397570673",
+    "sha256": "933ea3725aec5b6ea521f0cfb45dcc0b677be8ff1e27748780f0332e50f379b8"
+  },
+  {
+    "file": "injector-commercial-v2.js",
+    "previous_sha256": "782dd43a8030d1191d0679667e11a3ab7efacc63656f846200cb24b39a4946db",
+    "sha256": "d75a97de01502af4638cdd5002389d8f4bff9f3c3da00197ff20ab795d92a4e7"
+  },
+  {
+    "file": "injector-competitions.js",
+    "previous_sha256": "37d4cbeab3818c1597e4a9698b7e6fc40539c8bac507eacd3336396abd3debf6",
+    "sha256": "6f997e2579cfa64d29b428dd119f775b0883d140d4d07f03650614b47ae5c75f"
+  },
+  {
+    "file": "injector-cup-matches.js",
+    "previous_sha256": "f6c544f15bdbaf6f46f409c189d606d25fcf1fe2a99b2eef2e40d0fef7ee71a6",
+    "sha256": "577eb00dc1e6ffe4ccc30b9d87ab513dea87b11a01c7f348aac811ab20b03d0a"
+  },
+  {
+    "file": "injector-expose-functions.js",
+    "previous_sha256": "a3e3f6f6658f259c9a2dd7138451b79764b53f9fae697e1c8c5a8c1a2a09e971",
+    "sha256": "991c7c8a89d04b4f8ca94d9d492d7e019052e1a205fa5fd79f270f265c111f2d"
+  },
+  {
+    "file": "injector-facilities.js",
+    "previous_sha256": "ef654575c597affdd5bb8addb3e6409d19fb54d14b9521f891031979fc57b8d9",
+    "sha256": "6df665255f4fd0ac7159c2e4a7f0d6f996e08f90ff874016fa29742463c73792"
+  },
+  {
+    "file": "injector-finances.js",
+    "previous_sha256": "667996fc7692a2fa23108fc1fdee05e9b64029195dc613b21d7a29040f2be62d",
+    "sha256": "bfdbdbe8a29d7b41daa020f3f002281005e8b4112cb33836fa82523ae573bff2"
+  },
+  {
+    "file": "injector-financial-deals.js",
+    "previous_sha256": "f91d285d75a00ba7479777534cad7827ec3bfebcec0bc80c28d96f7d82ae9160",
+    "sha256": "0e1711aa715e6295370e56ecf01b54174cc9f8c7a2c2f27544f300c4fa44cb2c"
+  },
+  {
+    "file": "injector-firebase-sync.js",
+    "previous_sha256": "2d0f718b01f4fe41e20eca20ea68d53455de80766874b001ffdd16cd84487862",
+    "sha256": "740cca43fcb09a91090fe79e00800c0cb720bdb6ac8537e4eac58eb1488c6db4"
+  },
+  {
+    "file": "injector-free-agents.js",
+    "previous_sha256": "b9378af74716a1e64af2554086bc5d8ef3f9a9c07efca0c5cf76a5516e43b9c5",
+    "sha256": "eba7d4cc56eb137e944ce6ec98715fedb85fe38159584e18cba475979b88984d"
+  },
+  {
+    "file": "injector-gala.js",
+    "previous_sha256": "87af63b0da1724e5e7f7ebbfd8bb678f1ff46873a6735589655b5ab0598e147b",
+    "sha256": "195dad9c83c873a4eff091af319519735aba491a614dca558949214d244d347c"
+  },
+  {
+    "file": "injector-intro.js",
+    "previous_sha256": "d262a9630b63ff188d99ef0ce3e0bf5c071a301d2dd217c8ed84eeedc017eafd",
+    "sha256": "6afd0f7d652962e3e762e7908062b7efcf02ea84387ec1e1d77ce0b61fd456dc"
+  },
+  {
+    "file": "injector-last-result.js",
+    "previous_sha256": "d0d378253e725dd2266b23b862daa27546624b77276632df8dd24c7931fb0d67",
+    "sha256": "a31fab749de3015410f0576f1ae5f0a7ff6d0f6b8109890e0c7f1727f166f0bb"
+  },
+  {
+    "file": "injector-lineup-pro.js",
+    "previous_sha256": "b5c8e91dae66e2dff84f57e9887d4d4393d313838b241b664f84cbd0bceb7f99",
+    "sha256": "843c9b6a8629d9f92d8d9772794ff753eb2cd80e9210cd280667db23c5fe1f0b"
+  },
+  {
+    "file": "injector-lineup-save.js",
+    "previous_sha256": "cc9270974570dd25581f4d02266f57cb2466f0c516947aefd54be1b66007e384",
+    "sha256": "bd4b695869fbe67702449d4521a633552aa3341c1bacce147b87831a917dd3fb"
+  },
+  {
+    "file": "injector-negotiations.js",
+    "previous_sha256": "11d0d0f3fc99045b1101ced731bc13c7263505652f479a7d38c6d60c43fd5715",
+    "sha256": "9ebb62d65f1dc14a3b53e88394189dc45dca082875551abeb322cba282508703"
+  },
+  {
+    "file": "injector-news.js",
+    "previous_sha256": "30c9d1d9a4bf4d1fb2f1cc3ec2f20614cb79336651a1cb47689a9c3cf874b03e",
+    "sha256": "9dca9b57d2ece0394af2619d5e2a961abe16be9430ec5d1870bac49dbf7fe45e"
+  },
+  {
+    "file": "injector-player-arrows.js",
+    "previous_sha256": "f997e16bbb594a4c5cd1c1861a0d7e705394ee4b48208c19a389b8a5cffcdaa6",
+    "sha256": "50980cccba9b7207e3ebacd8ed0fb342a531446d852dc5c6a85384c75b5d8805"
+  },
+  {
+    "file": "injector-positions.js",
+    "previous_sha256": "5ffd0713d71ba0a93135df2e06ada7a59a654fd0770c573749e4397836b215fa",
+    "sha256": "121bc5237175d9599496e54a81f1f8aed73a646e9d5e2cb7758c70ff48d36d98"
+  },
+  {
+    "file": "injector-prizes.js",
+    "previous_sha256": "b5786ad2f1507348c4e59004cda70e0d1ffd0219793973921122eab37009551b",
+    "sha256": "52f396ecf34fa6aec244f2b1442d427defc6e012fb349fdbabccf4a207ed372f"
+  },
+  {
+    "file": "injector-promanager.js",
+    "previous_sha256": "b75af5f68af5edea6e52b5ed70e81b25d43e3a2edcc018a25378b2b359147c2a",
+    "sha256": "36d15da78cfc4aab6026889df362d7d954093eea7d737b7755c4e5120676b2e2"
+  },
+  {
+    "file": "injector-promesas.js",
+    "previous_sha256": "38c187dc6b4f5da4a213b8f8d3291b99e26d7f99ef1a217b872bf0734ced926b",
+    "sha256": "98dad1358f7b7a58267f01918605f0c6625c8353067316ffed2d23af60e3972c"
+  },
+  {
+    "file": "injector-renewals-delay.js",
+    "previous_sha256": "2980e17f24c0d0102d58cb68d8110be7dbfbf1c5590272bcd58f552a6142c991",
+    "sha256": "0408d1c230af05768132347ef5bb313fb2744f6443aa5de1f2d1db3715eaaba1"
+  },
+  {
+    "file": "injector-review-fixes.js",
+    "previous_sha256": "caba29f72b474b6a5c0ddcbbb8d9daf071aa37c80c5ba8788c071a883cccf04b",
+    "sha256": "2a461670be3b86fecbf3f748f9cc1a6638d16c3f97616752e276f362d489041c"
+  },
+  {
+    "file": "injector-rival.js",
+    "previous_sha256": "5f5e13ff04095fab9142ea5cce989d9df0bd4c4831a3015a0de1a35dda40de04",
+    "sha256": "d25c7ca23639c6088037d946e03ad26d05238dcf437b2909564e69edff3728da"
+  },
+  {
+    "file": "injector-salary-mood.js",
+    "previous_sha256": "9f2f86af93f1a378390aa544575a8a8baebec6e0a82fcefc02d9d4bd57c0390a",
+    "sha256": "43ff155114786e75f844683c23e3e4eb9ce5eb53c69f494ccbad9154c23b6b0b"
+  },
+  {
+    "file": "injector-scout-analista.js",
+    "previous_sha256": "5dca9c97186d7eb3977e31fc3649bac0ecf2d6e94ad22e17a4aceda155c93310",
+    "sha256": "d9578c72b1dceb13173c98cc81e9793fb52253e82478da424917432109ed08d7"
+  },
+  {
+    "file": "injector-sim-guard.js",
+    "previous_sha256": "af00826ff51f877609952714cfbf177586e1bd010a28bde4ee3f6da46d0c98cf",
+    "sha256": "0b839199a7fa14af7aa6dbebdd2eb2f832a00465fa068231c7991f5206850786"
+  },
+  {
+    "file": "injector-stadium-visual.js",
+    "previous_sha256": "b6d7a526f738486892c2c828eca508cb6b5980efd232a6be6c6c994f8acec3fb",
+    "sha256": "0c4300592334791dd5b7a9ab0c6c33def2550641db1c108505d5a37cc1e8f0af"
+  },
+  {
+    "file": "injector-storage-guard.js",
+    "previous_sha256": "c86e31352c49dddc6a5b09446c4e7ca0c0f64742db3ae088066abf2f58a7840f",
+    "sha256": "f74022dd69c73a599da4e336de0f255f398e1d754ead14e5eaa002bc9f216077"
+  },
+  {
+    "file": "injector-tactics.js",
+    "previous_sha256": "fecc452481f4d182409952e950f6e38645053ac4678efa761ceaecc489977efc",
+    "sha256": "38c723051d7c9bc4d770cc548b03fa0c2b6fa96ab2f142e832c71772499b09d3"
+  },
+  {
+    "file": "injector-transfer-market.js",
+    "previous_sha256": "ce331ca8199c05fab3a633f4990bdc395b7ddce589ffe78dd66cd0237bdc5237",
+    "sha256": "a9a33aba53956bde37d613fc753b8031bfd1f9773e33262a1dda47447d4dad6c"
+  },
+  {
+    "file": "injector-urgent-panel.js",
+    "previous_sha256": "ad9bffa99a1bd082ad6bbca2e2fcff4bd66f6ce1a30127e5bfde2bbddccc8288",
+    "sha256": "9607b6196be074abb4702cd08b7cdb7ac593a34c301b272d7b06a62369010304"
+  },
+  {
+    "file": "injector-youth-training.js",
+    "previous_sha256": "dafe47dd3c8378447e7d70e35b7ce361e7adc2b425531cd3fe846eeb7271360c",
+    "sha256": "cea4e14e44d89472282af447c9fd7a0f760b2de13ca7ac96c725ed5b03a7a541"
+  },
+  {
+    "file": "local-saves.js",
+    "previous_sha256": null,
+    "sha256": "f0551e842628079245ba0cfcb661eab1e61347fbbe0166ef6d6f67918ade7d23"
+  },
+  {
+    "file": "save-chunks.js",
+    "previous_sha256": null,
+    "sha256": "5b61e14f0093081457d33c9fe3957320169d2cfd7978a0b2e9fa3aff0dbf7c5a"
+  },
+  {
+    "file": "save-codec.js",
+    "previous_sha256": "2170dc51e930242e25a602e8c078f7fc7f5144f1ef3a18490938a0e2669adde8",
+    "sha256": "40945a3ac5a2237434aa6ae154cdae274ff4c3b89839afaec1caca79493e1d2d"
+  },
+  {
+    "file": "style.css",
+    "previous_sha256": "9cb9b88ba6cb0fafb2c5e0017b9fa27c519345e127f7774d5ed82e47af587fe3",
+    "sha256": "5609074efdda392133ee6202f94c84f0a55aba5f681eeaf55a23e59b47750c0d"
+  },
+  {
+    "file": "teamData.js",
+    "previous_sha256": "ea4ac4c671afd56a7de4889d2a88a63142587a1c26c4169273d1bf3e86e81344",
+    "sha256": "de2fa29b544ddc38f56401f91bb2e7b165c941de9730c6208154e39b3f6c8f18"
+  },
+  {
+    "file": "tests/check-syntax.py",
+    "previous_sha256": null,
+    "sha256": "e17d198bb8d3b1de085fbceb1092e840ed6dbb73d925341f2c7182e7bc07163c"
+  },
+  {
+    "file": "tests/cloud-integration.mjs",
+    "previous_sha256": null,
+    "sha256": "c39625dd2af1430c5b75e986647137cab9a6187770cb9f9c0ceecf7359dc2a75"
+  },
+  {
+    "file": "tests/regression.mjs",
+    "previous_sha256": null,
+    "sha256": "bb2095bb68676f48d9a80c6d42b3fb7e9acefd406098c7060f8b889bf1be203d"
+  },
+  {
+    "file": "tests/world-integration.mjs",
+    "previous_sha256": null,
+    "sha256": "eaa7c67efc720c9d9c61869dca1f0d348db33cc348e281ec4ab7863ab55322b4"
+  },
+  {
+    "file": "ui.js",
+    "previous_sha256": "70521d78de069f82dc1d934ad425d0de5a04f4e2023f344f98f620dc352d4954",
+    "sha256": "529afdae6d6e22eafd477b0d321960ecd00c652ede31c068ef00a96ace8ba3b5"
+  },
+  {
+    "file": "world-model.js",
+    "previous_sha256": "03e09dd717e68e5d0ce9c62582eae94c00fdc987c623e39fc80911ac222c86c6",
+    "sha256": "d6a95063b99f7d224f26a2b77833cbaa5ec9a00b0cfa6ed82e5a68f5940ad358"
+  }
+]
