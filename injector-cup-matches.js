@@ -410,12 +410,6 @@ async function prepareMatch(m) {
     return m;
 }
 
-function poisson(lambda) {
-    const L = Math.exp(-lambda); let k = 0, p = 1;
-    do { k++; p *= Math.random(); } while (p > L);
-    return k - 1;
-}
-
 // ¿Este partido decide la eliminatoria? (partido único o vuelta)
 function decidesTie(m) {
     if (m.type === 'copa') return m.id !== 'copa_sf_1';
@@ -428,31 +422,6 @@ function aggregateBefore(m) {
     const cal = getCal();
     const leg1 = cal.find(x => x.id === m.id.replace(/_2$/, '_1'));
     return { my: leg1?.result?.myGoals || 0, opp: leg1?.result?.oppGoals || 0 };
-}
-
-function resolveTie(m, result) {
-    if (!decidesTie(m)) return result;
-    const agg = aggregateBefore(m);
-    let my = agg.my + result.myGoals, opp = agg.opp + result.oppGoals;
-    if (my !== opp) { result.qualified = my > opp; return result; }
-    // Prórroga (30 minutos ≈ un tercio de los goles esperados)
-    const etMy = poisson((result.myXG || 1.2) / 3), etOpp = poisson((result.oppXG || 1.2) / 3);
-    result.extraTime = { my: etMy, opp: etOpp };
-    result.myGoals += etMy; result.oppGoals += etOpp;
-    my += etMy; opp += etOpp;
-    if (my !== opp) { result.qualified = my > opp; }
-    else {
-        // Penaltis: 5 por equipo y muerte súbita
-        let pm = 0, po = 0, i = 0;
-        for (; i < 5; i++) { if (Math.random() < 0.76) pm++; if (Math.random() < 0.76) po++; }
-        while (pm === po && i < 30) { if (Math.random() < 0.76) pm++; if (Math.random() < 0.76) po++; i++; }
-        result.penalties = { my: pm, opp: po };
-        result.qualified = pm > po;
-    }
-    result.win = result.myGoals > result.oppGoals;
-    result.draw = result.myGoals === result.oppGoals;
-    result.loss = !result.win && !result.draw;
-    return result;
 }
 
 // ============================================================
@@ -516,7 +485,9 @@ function simLeagueRound(myResult) {
         const a=others[i],b=others[i+1];
         if(!field.table[a])field.table[a]={name:a,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
         if(!field.table[b])field.table[b]={name:b,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
-        const ga=Math.floor(Math.random()*3),gb=Math.floor(Math.random()*3);
+        const simulated=window.calculateMatchOutcomeImproved({teamName:a,opponentName:b,
+            teamOverall:foreignRating(a),opponentOverall:foreignRating(b),isHome:true});
+        const ga=simulated.teamGoals,gb=simulated.opponentGoals;
         field.table[a].pj++;field.table[a].gf+=ga;field.table[a].gc+=gb;
         field.table[b].pj++;field.table[b].gf+=gb;field.table[b].gc+=ga;
         if(ga>gb){field.table[a].g++;field.table[a].pts+=3;field.table[b].p++;}
@@ -537,34 +508,9 @@ function getMyLeaguePos() {
 // ============================================================
 // SIMULAR PARTIDO DEL JUGADOR
 // ============================================================
-function simMatch(match) {
-    const gs=getGS();
-    let myRating = 75;
-    if (window.calculateTeamEffectiveOverallImproved && gs?.lineup?.length) {
-        myRating = window.calculateTeamEffectiveOverallImproved(gs.lineup.slice(0,11), gs.formation || '433');
-    } else if (gs?.squad?.length) {
-        myRating = gs.squad.reduce((a,b)=>a+(b.overall||70),0)/gs.squad.length;
-    }
-    const oppRating = match.oppRating || 75;
-    const forms = (gs?.lineup||[]).map(p=>p.form||75);
-    const myForm = forms.length ? forms.reduce((a,b)=>a+b,0)/forms.length : 75;
-
-    // Mismo motor que la liga (Poisson). "team" = nosotros; la prima y la
-    // táctica se aplican a nuestro lado (homeIsUser indica el lado "team").
-    const engine = window.calculateMatchOutcomeImproved;
-    const out = engine ? engine({
-        teamOverall: myRating, opponentOverall: oppRating,
-        teamFormation: gs?.formation || '433', teamMentality: gs?.mentality || 'balanced',
-        isHome: !!match.isHome, neutral: !!match.neutral, teamForm: myForm, opponentForm: 75,
-        homeIsUser: true, awayIsUser: false
-    }) : { teamGoals: Math.floor(Math.random()*3), opponentGoals: Math.floor(Math.random()*3), teamXG: 1.2, opponentXG: 1.2 };
-
-    const myG = out.teamGoals, opG = out.opponentGoals;
-    const result = { myGoals:myG, oppGoals:opG, myXG: out.teamXG, oppXG: out.opponentXG,
-        win: myG>opG, draw: myG===opG, loss: myG<opG,
-        myTeam: gs?.team, opponent: match.opponent, isHome: match.isHome, neutral: !!match.neutral };
-    console.log(`🏆 Copa/Europa: ${gs?.team} (${myRating.toFixed(1)}) ${myG}-${opG} ${match.opponent} (${oppRating})`);
-    return resolveTie(match, result);
+async function simMatch(match) {
+    if (!window.playCupFootballMatch) throw new Error('Motor de partidos no disponible.');
+    return await window.playCupFootballMatch({ ...match, decidesTie: decidesTie(match), aggregate: aggregateBefore(match) });
 }
 
 // ============================================================
@@ -574,7 +520,7 @@ function processResult(match, result) {
     const cal=getCal();
     const comp=getCompState();
     const entry=cal.find(m=>m.id===match.id);
-    if(entry){entry.played=true;entry.result={myGoals:result.myGoals,oppGoals:result.oppGoals};saveCal(cal);}
+    if(entry){entry.played=true;entry.result=JSON.parse(JSON.stringify(result));saveCal(cal);}
 
     // ── COPA DEL REY ───────────────────────────────────────
     if(match.type==='copa'){
@@ -739,37 +685,6 @@ function addMatchRevenue(match) {
 }
 
 // ============================================================
-// GOLEADORES
-// ============================================================
-function genScorers(team,n,isMine,squad){
-    const gs=getGS();
-    const out=[],used=new Set();
-    const weight=p=>p.position==='DC'?4:p.position==='EXT'||p.position==='MCO'?3:['MC','MI','MD'].includes(p.position)?2:p.position==='POR'?0:1;
-    const pickFrom=arr=>{
-        const pool=arr.filter(p=>weight(p)>0);
-        const tot=pool.reduce((a,p)=>a+weight(p),0);
-        let r=Math.random()*tot;
-        for(const p of pool){ r-=weight(p); if(r<=0) return p.name; }
-        return pool[0]?.name;
-    };
-    for(let i=0;i<n;i++){
-        let min;do{min=Math.floor(Math.random()*90)+1;}while(used.has(min));used.add(min);
-        let name;
-        if(isMine&&gs?.squad?.length){
-            const xi=(gs.lineup||[]).filter(Boolean);
-            name=pickFrom(xi.length?xi:gs.squad.filter(p=>!p.isInjured));
-        }else if(squad&&squad.length){
-            name=pickFrom(squad);                       // equipo español: su plantilla real
-        }else{
-            const list=SURNAMES[COUNTRY_OF(team)]||SURNAMES.xx; // extranjero: apellido de su país
-            name=list[Math.floor(Math.random()*list.length)];
-        }
-        out.push({name:name||'—',min,team,mine:isMine});
-    }
-    return out.sort((a,b)=>a.min-b.min);
-}
-
-// ============================================================
 // MODAL 1 — ANUNCIO DEL PARTIDO (HYPE)
 // ============================================================
 function showAnnouncementModal(match) {
@@ -784,16 +699,16 @@ function showAnnouncementModal(match) {
 
         // ── Datos de lesionados y alineación ──────────────────
         function getInjuredList() {
-            const squad = gs?.squad || [];
-            return squad.filter(p => p.isInjured);
+            const squad = getGS()?.squad || [];
+            return squad.filter(p => p.isInjured || p.isSuspended);
         }
         function getLineup() {
-            return gs?.lineup || [];
+            return getGS()?.lineup || [];
         }
         function getInjuredInLineup() {
             const lineup = getLineup();
             const injured = new Set(getInjuredList().map(p => p.name));
-            return lineup.filter(p => injured.has(p.name));
+            return lineup.filter(p => p && injured.has(p.name));
         }
 
         // ── Prima actual ───────────────────────────────────────
@@ -809,17 +724,17 @@ function showAnnouncementModal(match) {
             const inLineup = getInjuredInLineup();
             let html = injured.map(p =>
                 `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">
-                    <span style="color:#f44336">🚑</span>
+                    <span style="color:#f44336">${p.isSuspended?'🚫':'🚑'}</span>
                     <span style="color:#fff;flex:1">${p.name}</span>
                     <span style="color:#888;font-size:.8em">${p.position||''}</span>
-                    ${getLineup().some(l=>l.name===p.name)
+                    ${getLineup().some(l=>l&&l.name===p.name)
                         ? '<span style="color:#FF8F00;font-size:.75em;background:rgba(255,143,0,.2);padding:2px 6px;border-radius:4px">⚠️ EN 11</span>'
                         : ''}
                 </div>`
             ).join('');
             if (inLineup.length) {
                 html += `<div style="margin-top:8px;padding:8px;background:rgba(255,143,0,.15);border:1px solid #FF8F00;border-radius:8px;font-size:.82em;color:#FF8F00">
-                    ⚠️ Tienes ${inLineup.length} jugador(es) lesionado(s) en el once. ¡Revisa la alineación!
+                    ⚠️ Tienes ${inLineup.length} jugador(es) lesionado(s) o sancionado(s) en el once. ¡Revisa la alineación!
                 </div>`;
             }
             return html;
@@ -1013,16 +928,16 @@ function showResultModal(match,result,processed){
         const outEmoji=pens?(result.qualified?'🎉':'😞'):win?'🎉':draw?'🤝':'😞';
 
         const etMy=result.extraTime?.my||0, etOpp=result.extraTime?.opp||0;
-        const goals=[...genScorers(myTeam,result.myGoals-etMy,true),...genScorers(match.opponent,result.oppGoals-etOpp,false,match.oppSquad)]
-            .concat([...genScorers(myTeam,etMy,true),...genScorers(match.opponent,etOpp,false,match.oppSquad)].map(g=>({...g,min:91+Math.floor(Math.random()*29)})))
-            .sort((a,b)=>a.min-b.min);
+        const goals=(result.goals || []).map(g=>({...g,min:g.minute,mine:g.team===myTeam}));
         // El local a la izquierda (en la final, el que salió en el sorteo)
         const meLeft = match.neutral ? match.drawnHome !== false : !!match.isHome;
         const extraLine = result.penalties
             ? `<div style="color:#FFD700;font-weight:bold;margin:6px 0">Prórroga · Penaltis ${meLeft?`${result.penalties.my}-${result.penalties.opp}`:`${result.penalties.opp}-${result.penalties.my}`}</div>`
             : result.extraTime ? `<div style="color:#FFD700;font-weight:bold;margin:6px 0">Tras la prórroga</div>` : '';
-        const poss=win?52+Math.floor(Math.random()*14):draw?46+Math.floor(Math.random()*8):36+Math.floor(Math.random()*12);
-        const shots={my:Math.max(result.myGoals*2,Math.floor(Math.random()*8)+5),opp:Math.max(result.oppGoals*2,Math.floor(Math.random()*8)+5)};
+        const stats=Object.fromEntries(Object.entries(result.stats || {}).map(([k,v])=>[k,meLeft?v:[v[1],v[0]]]));
+        const poss=stats.possession?.[0] ?? 50;
+        const shots={my:stats.shots?.[0] ?? '—',opp:stats.shots?.[1] ?? '—'};
+
 
         // Banner contextual
         let banner='';
@@ -1106,8 +1021,8 @@ ${goals.length?`<div class="cr-sec"><h4>⚽ Goles</h4><div class="cr-gcols"><div
 <div class="cr-sec"><h4>📊 Estadísticas</h4>
 <div class="cr-sr"><strong>${poss}%</strong><span class="cr-sn">Posesión</span><strong>${100-poss}%</strong></div>
 <div class="cr-sr"><strong>${shots.my}</strong><span class="cr-sn">Remates</span><strong>${shots.opp}</strong></div>
-<div class="cr-sr"><strong>${result.myGoals+Math.floor(Math.random()*3)+1}</strong><span class="cr-sn">A puerta</span><strong>${result.oppGoals+Math.floor(Math.random()*3)+1}</strong></div>
-<div class="cr-sr"><strong>${Math.floor(Math.random()*6)+2}</strong><span class="cr-sn">Corners</span><strong>${Math.floor(Math.random()*6)+2}</strong></div>
+<div class="cr-sr"><strong>${stats.shotsOnTarget?.[0] ?? '—'}</strong><span class="cr-sn">A puerta</span><strong>${stats.shotsOnTarget?.[1] ?? '—'}</strong></div>
+<div class="cr-sr"><strong>${stats.corners?.[0] ?? '—'}</strong><span class="cr-sn">Corners</span><strong>${stats.corners?.[1] ?? '—'}</strong></div>
 </div>
 ${banner}
 <button class="cr-btn" id="cuResClose">✅ Continuar</button>
@@ -1140,6 +1055,14 @@ ${banner}
             el.style.opacity='0';el.style.transform='scale(.97)';el.style.transition='all .22s';
             setTimeout(()=>{el.remove();resolve();},220);
         }
+        const record = document.createElement('div'); record.className = 'cr-sec';
+        for (const event of (result.timeline || []).filter(e=>['red','yellow','injury','substitution','tactic'].includes(e.type))) {
+            const row=document.createElement('div');
+            row.textContent = `${event.minute}' · ${event.team}: ${event.type==='substitution'?event.on+' por '+event.off:event.type==='tactic'?'Cambio de mentalidad: '+event.mentality:(event.type==='red'?'🟥 ':event.type==='yellow'?'🟨 ':'🏥 ')+event.player}`;
+            record.appendChild(row);
+        }
+        el.querySelector('.cr-stats')?.appendChild(record);
+        if (!record.parentNode) document.getElementById('cuResClose').parentNode.insertBefore(record,document.getElementById('cuResClose'));
         document.getElementById('cuResClose').onclick = closeModal;
         setTimeout(()=>{const e=document.getElementById('cupResModal');if(e){e.remove();resolve();}},30000);
     });
@@ -1171,7 +1094,12 @@ function hookCupSimulateWeek(){
         await showAnnouncementModal(pending);
 
         // 2. Simular
-        const result=simMatch(pending);
+        let result;
+        try { result=await simMatch(pending); } catch(e) {
+            window.gameLogic.addNews('No se ha jugado el partido: '+e.message,'warning');
+            if(window.pcfNotify)await window.pcfNotify('Revisa la alineación',e.message);else alert(e.message);
+            return {ignored:true};
+        }
 
         // 3. Taquilla si es en casa
         addMatchRevenue(pending);
@@ -1267,7 +1195,7 @@ window.CupMatches = {
         const fake={id:'test_'+Date.now(),type,phase,isGroup,isKnockout:isKnock,isFinal:phase==='final'||phase==='copa_final',
             matchday:md,isHome:md%2===1,opponent:opponent||'Bayern München',played:false};
         await showAnnouncementModal(fake);
-        const r=simMatch(fake);
+        const r=await simMatch(fake);
         await showResultModal(fake,r,{advances:r.win});
     }
 };

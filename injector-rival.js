@@ -74,7 +74,7 @@
     async function getRivalSquad(rivalName) {
         if (window.getAISquadCached) {
             const squad = await window.getAISquadCached(rivalName, getDivision(), gs().currentSeason);
-            return { squad, isReal: false };
+            return { squad: window.projectMatchFitness ? window.projectMatchFitness(squad,gs()) : squad, isReal: false };
         }
         // Mínimo: 11 jugadores básicos
         const pos11 = ['POR','DFC','DFC','LI','LD','MC','MC','MCO','EXT','EXT','DC'];
@@ -395,7 +395,8 @@
         const last = getRivalLastResults(rivalName);
         const h2h  = getH2H(rivalName);
         const form = formString(last);
-        const mySquad = s.squad || [];
+        const mySquad = window.projectMatchFitness ? window.projectMatchFitness(s.squad || [],s,true) : s.squad || [];
+        s.squad = mySquad;
         const comparison = mySquad.length > 0 ? getTeamComparison(mySquad, rivalSquad) : [];
         const notes = getNotes(rivalName);
 
@@ -620,9 +621,12 @@
     // ── Resumen del partido: pronóstico, líneas, peligros y plan ──
     function renderMatchPreview(s, rivalName, rivalSquad, rivalXI, myLineup, isHome, myEff, rivalEff) {
         if (myEff == null || rivalEff == null || !window.calculateMatchOutcomeImproved) return '';
-        // Pronóstico con el mismo motor de los partidos
+        // Estimación mediante simulaciones reproducibles del mismo motor
         const r = window.calculateMatchOutcomeImproved({ teamOverall: myEff, opponentOverall: rivalEff,
-            isHome: isHome !== false, preview: true, teamFormation: s.formation || '433',
+            isHome: isHome !== false, preview: true, teamLineup: myLineup, opponentLineup: rivalXI,
+            teamName: s.team, opponentName: rivalName, teamBench: window.selectMatchBench(s.squad || [],myLineup),
+            opponentBench: window.selectMatchBench(rivalSquad,rivalXI), teamInjuryRisk: window.matchInjuryRisk(s),
+            teamPlan: s.matchPlan || 'hold', opponentPlan: 'react', teamAutoSubs: s.autoSubstitutions !== false, teamFormation: s.formation || '433',
             teamMentality: s.mentality || 'balanced', opponentFormation: window.chooseAIFormation(rivalSquad),
             opponentMentality: 'balanced', teamForm: window.averageMatchForm(myLineup),
             opponentForm: window.averageMatchForm(rivalXI), homeIsUser: true, awayIsUser: false });
@@ -652,7 +656,7 @@
         <div style="background:rgba(255,210,74,.07);border:1px solid rgba(255,210,74,.3);border-radius:12px;padding:14px;margin-bottom:16px;
                     display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
             <div>
-                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">🔮 Pronóstico ${isHome === false ? '(fuera)' : '(en casa)'}</div>
+                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">🔮 Pronóstico estimado ${isHome === false ? '(fuera)' : '(en casa)'}</div>
                 <div style="display:flex;height:22px;border-radius:5px;overflow:hidden;font-size:.75em;font-weight:bold;">
                     <div title="Victoria" style="width:${pc(w)}%;background:#2e7d32;display:flex;align-items:center;justify-content:center;">${pc(w)}%</div>
                     <div title="Empate" style="width:${pc(d)}%;background:#8d6e00;display:flex;align-items:center;justify-content:center;">${pc(d)}%</div>

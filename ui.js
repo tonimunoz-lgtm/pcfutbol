@@ -212,7 +212,7 @@ function renderSquadList(squad, currentTeam) {
                         <th>POS</th>
                         <th>PIE</th>
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}
-                        <th>FORMA</th>
+                        <th>FORMA / FÍSICO</th>
                         <th>ESTADO</th>
                         <th>CONTRATO</th>
                         <th>DURACIÓN</th>
@@ -247,7 +247,7 @@ function renderSquadList(squad, currentTeam) {
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.form || 0}</td>  
+                <td>${p.form || 0}<br><small title="Condición física; se recupera con descanso">Físico ${Math.round(p.condition ?? 100)}%</small></td>  
                 <td>${statusText}</td>
                 
                 <!-- ✅ COLUMNAS EN ORDEN CORRECTO -->
@@ -349,7 +349,7 @@ function renderAcademyList(academy) {
                         <th>POS</th>  
                         <th>PIE</th>  
                         ${ATTRIBUTES.map(attr => `<th>${attr}</th>`).join('')}  
-                        <th>FORMA</th>  
+                        <th>FORMA / FÍSICO</th>  
                         <th>ESTADO</th>  
                         <th>PART.</th>  
                         <th>SALARIO</th>  
@@ -378,7 +378,7 @@ function renderAcademyList(academy) {
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
                 ${ATTRIBUTES.map(attr => `<td>${p[attr] || 0}</td>`).join('')}  
-                <td>${p.form || 0}</td>  
+                <td>${p.form || 0}<br><small title="Condición física; se recupera con descanso">Físico ${Math.round(p.condition ?? 100)}%</small></td>  
                 <td>${statusText}</td>  
                 <td>${p.matches || 0}</td>  
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  

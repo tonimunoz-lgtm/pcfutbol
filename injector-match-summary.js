@@ -15,138 +15,11 @@ window.injectMatchSummary = function(matchResult) {
 
     console.log(`⚽ Partido: ${homeTeam} ${homeGoals}-${awayGoals} ${awayTeam}`);
 
-    // ========================================
-    // GENERAR GOLEADORES CON MINUTOS REALISTAS
-    // ========================================
-
-    // Obtener estado del juego para usar jugadores reales
-    const _gameState = window.gameLogic ? window.gameLogic.getGameState() : null;
-    const _myTeam = _gameState ? _gameState.team : null;
-
-    // Jugadores de nuestro equipo aptos para marcar (excluir portero)
-    const _getMyTeamScorers = () => {
-        if (!_gameState || !_gameState.lineup || _gameState.lineup.length === 0) return null;
-        // Más probabilidad de marcar para delanteros y extremos que para centrales
-        const W = { DC: 10, EXT: 6, MCO: 5, MC: 2, LI: 1, LD: 1, DFC: 1 };
-        const pool = [];
-        _gameState.lineup.filter(p => p && p.position !== 'POR').forEach(p => {
-            const n = Math.max(1, Math.round((W[p.position] || 1) * Math.pow((p.overall || 60) / 70, 3)));
-            for (let k = 0; k < n; k++) pool.push(p.name);
-        });
-        return pool;
-    };
-
-    // Jugadores del equipo rival desde localStorage (si fueron cargados en admin)
-    const _getRivalScorers = (rivalName) => {
-        try {
-            const stored = localStorage.getItem('team_data_' + rivalName);
-            if (stored) {
-                const data = JSON.parse(stored);
-                if (data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
-                    return data.squad.filter(p => p.position !== 'POR').map(p => p.name);
-                }
-            }
-        } catch(e) {}
-        return null;
-    };
-
-    // Pool de nombres genéricos de respaldo
-    const _genericNames = [
-        'García', 'Martínez', 'López', 'Sánchez', 'González',
-        'Pérez', 'Rodríguez', 'Fernández', 'Jiménez', 'Romero',
-        'Torres', 'Varela', 'Moreno', 'Ruiz', 'Herrera',
-        'Díaz', 'Ortiz', 'Castro', 'Vega', 'Molina'
-    ];
-
-    const generateGoalScorers = (team, numGoals, isHome) => {
-        const scorers = [];
-        const usedMinutes = new Set();
-
-        // Determinar pool de nombres
-        let namePool = null;
-        if (team === _myTeam) {
-            namePool = _getMyTeamScorers();
-        } else {
-            namePool = _getRivalScorers(team);
-        }
-        if (!namePool || namePool.length === 0) namePool = _genericNames;
-
-        for (let i = 0; i < numGoals; i++) {
-            let minute;
-            do {
-                minute = Math.floor(Math.random() * 90) + 1;
-            } while (usedMinutes.has(minute));
-            usedMinutes.add(minute);
-
-            scorers.push({
-                name: namePool[Math.floor(Math.random() * namePool.length)],
-                minute: minute,
-                team: team
-            });
-        }
-
-        return scorers.sort((a, b) => a.minute - b.minute);
-    };
-    
-    const allGoals = (matchResult.goals || []).slice().sort((a, b) => a.minute - b.minute);
-    const homeScorers = allGoals.filter(g => g.team === homeTeam);
-    const awayScorers = allGoals.filter(g => g.team === awayTeam);
-
-    // ========================================
-    // ESTADÍSTICAS REALISTAS
-    // ========================================
-    const totalGoals = homeGoals + awayGoals;
-    const goalDifference = Math.abs(homeGoals - awayGoals);
-    
-    // Posesión: equipo con más goles tiene más posesión (con algo de aleatoriedad)
-    let homePossession = 50;
-    if (homeGoals > awayGoals) {
-        homePossession = 52 + Math.floor(Math.random() * 15) + (goalDifference * 3);
-    } else if (awayGoals > homeGoals) {
-        homePossession = 35 + Math.floor(Math.random() * 10) - (goalDifference * 3);
-    } else {
-        homePossession = 45 + Math.floor(Math.random() * 10);
-    }
-    homePossession = Math.max(30, Math.min(70, homePossession));
-    const awayPossession = 100 - homePossession;
-    
-    // Estadísticas basadas en posesión y goles
-    const stats = {
-        possession: [homePossession, awayPossession],
-        shots: [
-            Math.max(homeGoals * 2, Math.floor(Math.random() * 8) + 8),
-            Math.max(awayGoals * 2, Math.floor(Math.random() * 8) + 8)
-        ],
-        shotsOnTarget: [
-            homeGoals + Math.floor(Math.random() * 4) + 2,
-            awayGoals + Math.floor(Math.random() * 4) + 2
-        ],
-        corners: [Math.floor(Math.random() * 8) + 2, Math.floor(Math.random() * 8) + 2],
-        fouls: [Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 12) + 8],
-        yellowCards: [0, 0],
-        redCards: [0, 0],
-        offsides: [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)],
-        passes: [
-            Math.floor(homePossession * 5 + Math.random() * 100),
-            Math.floor(awayPossession * 5 + Math.random() * 100)
-        ],
-        passAccuracy: [
-            Math.floor(70 + Math.random() * 20),
-            Math.floor(70 + Math.random() * 20)
-        ],
-        saves: [
-            awayGoals > 0 ? Math.floor(Math.random() * 5) + 2 : 0,
-            homeGoals > 0 ? Math.floor(Math.random() * 5) + 2 : 0
-        ]
-    };
-
-    // ========================================
-    // Hechos del partido: misma fuente que las sanciones y las noticias.
-    const allCards = (matchResult.cards || []).slice().sort((a, b) => a.minute - b.minute);
+    const allGoals = (matchResult.goals || []).slice().sort((a,b)=>a.minute-b.minute);
+    const allCards = (matchResult.cards || []).slice().sort((a,b)=>a.minute-b.minute);
     const injuries = matchResult.injuries || [];
-    stats.yellowCards = [homeTeam, awayTeam].map(t => allCards.filter(c => c.team === t && c.type === 'yellow').length);
-    stats.redCards = [homeTeam, awayTeam].map(t => allCards.filter(c => c.team === t && c.type === 'red').length);
-
+    const substitutions = matchResult.substitutions || [];
+    const stats = matchResult.stats || Object.fromEntries(['possession','shots','shotsOnTarget','corners','fouls','yellowCards','redCards','offsides','passes','passAccuracy','saves'].map(k=>[k,['—','—']]));
     // ========================================
     // CREAR MODAL HTML
     // ========================================
@@ -225,6 +98,14 @@ window.injectMatchSummary = function(matchResult) {
         </div>
     `;
     
+    if (substitutions.length) {
+        const list = document.createElement('div'); list.className = 'ms-block';
+        const title = document.createElement('h3'); title.textContent = 'Sustituciones'; list.appendChild(title);
+        for (const change of substitutions) {
+            const row = document.createElement('div'); row.textContent = `${change.minute}' · ${change.team}: ${change.on} por ${change.off} (${change.reason})`; list.appendChild(row);
+        }
+        modal.querySelector('.match-container').appendChild(list);
+    }
     ensureSummaryStyles();
     document.body.appendChild(modal);
     console.log('✅ Modal profesional añadido al DOM');

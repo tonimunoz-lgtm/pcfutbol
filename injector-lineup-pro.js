@@ -72,7 +72,8 @@
         if (!p) return null;
         if (p.isInjured) return { cls: 'inj', icon: 'lesionado', text: `Lesionado: ${p.weeksOut || 1} semana(s) de baja` };
         if (p.isSuspended) return { cls: 'sus', icon: 'sancionado', text: `Sancionado: ${p.suspensionWeeks || 1} partido(s)` };
-        if ((p.yellowCards || 0) === YELLOW_LIMIT() - 1) return { cls: 'warn', icon: 'apercibido', text: `Apercibido: una amarilla más y será sancionado` };
+        if ((p._yellowCycle ?? ((p.yellowCards || 0) % YELLOW_LIMIT())) === YELLOW_LIMIT() - 1) return { cls: 'warn', icon: 'apercibido', text: `Apercibido: una amarilla más y será sancionado` };
+        if ((p.condition ?? 100) < 70) return { cls: 'warn', icon: 'apercibido', text: `Fatiga: condición física ${Math.round(p.condition)}%. Conviene rotar.` };
         if (p.contractType === 'loaned_out') return { cls: 'loan', icon: 'cedido', text: `Cedido al ${p.loanedTo || 'otro club'}` };
         return null;
     }
@@ -270,6 +271,7 @@
                     <div class="pcf-row"><span>Amarillas / rojas</span><span>${p.yellowCards || 0} / ${p.redCards || 0}</span></div>
                 </div>
                 <div class="pcf-card-sec">
+                    <div class="pcf-row"><span>Condición física</span><span>${Math.round(p.condition ?? 100)}%</span></div><div class="pcf-row"><span>Minutos disputados</span><span>${p.minutes || 0}</span></div>
                     <h3>Contrato</h3>
                     <div class="pcf-row"><span>Tipo</span><span>${esc(contract)}</span></div>
                     <div class="pcf-row"><span>Años restantes</span><span>${p.contractYears ?? 0}</span></div>

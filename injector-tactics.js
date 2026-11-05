@@ -94,7 +94,7 @@
         'high': {
             label: 'Presión alta',
             emoji: '🔥',
-            desc: 'Robo rápido del balón. Desgaste físico elevado.',
+            desc: 'Robo arriba según resistencia; mayor desgaste y espacios a la espalda.',
             attackBonus: 1.06, defenseBonus: 0.96, midfieldBonus: 1.08
         },
         'medium': {
@@ -140,7 +140,7 @@
         'counter': {
             label: 'Contraataque',
             emoji: '🏃',
-            desc: 'Ceder el balón y atacar espacios a la espalda.',
+            desc: 'Depende de la velocidad y de los espacios que deje el rival; reduce el control.',
             attackBonus: 1.03, defenseBonus: 1.06
         }
     };
@@ -180,11 +180,7 @@
 
     // ── Render tarjetas de selección ─────────────────────────────
     const pctTxt = v => v === undefined ? '' : Math.abs(v - 1) < 0.005 ? '=' : `${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`;
-    function effectLine(d) {
-        const a = d.attackBonus ?? d.attackMult, df = d.defenseBonus ?? d.defenseMult;
-        if (a === undefined && df === undefined) return '';
-        return `<div style="font-size:.66em;margin-top:5px;color:#e6eefb;">⚔️ ${pctTxt(a)} · 🛡️ ${pctTxt(df)}</div>`;
-    }
+    function effectLine(d) { return ''; }
     function ensureSectionStyles() {
         if (document.getElementById('tcSecStyles')) return;
         const st = document.createElement('style');
@@ -426,13 +422,24 @@
             ${renderCards(INSTRUCTION_DATA, specialInstr, 'window._tacticsSetInstruction', 5)}
         </div>
 
+        <div class="tc-sec"><div class="tc-sec-label">Plan durante el partido</div>
+            <label>Reacción automática <select onchange="window._setFootballPlan(this.value)">
+                <option value="hold" ${s.matchPlan==='hold'||!s.matchPlan?'selected':''}>Mantener el planteamiento</option>
+                <option value="react" ${s.matchPlan==='react'?'selected':''}>Atacar desde el 60 si vamos perdiendo</option>
+                <option value="attack" ${s.matchPlan==='attack'?'selected':''}>Atacar desde el minuto 60</option>
+                <option value="protect" ${s.matchPlan==='protect'?'selected':''}>Reaccionar si perdemos y proteger ventaja desde el 75</option>
+            </select></label>
+            <label><input type="checkbox" ${s.autoSubstitutions!==false?'checked':''} onchange="window._setFootballAutoSubs(this.checked)"> Sustituciones automáticas por lesión y fatiga (hasta cinco)</label>
+            <p>La presión alta desgasta más. El plan y los cambios se aplican durante el encuentro.</p>
+        </div>
         <!-- BALANCE RESULTANTE -->
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
                     border-radius:10px;padding:12px 14px;margin-bottom:8px;">
             <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
-                📊 Balance táctico resultante
+                📊 Perfil táctico orientativo
             </div>
-            ${renderBalanceBar(formation, mentality, pressStyle, specialInstr)}
+            <p>${PRESS_DATA[pressStyle]?.desc || ''}</p><p>${INSTRUCTION_DATA[specialInstr]?.desc || ''}</p>
+            <small>El efecto depende de los atributos, la condición física y el planteamiento rival.</small>
         </div>`;
     }
 
@@ -549,22 +556,16 @@
             if (s && side) {
                 const press   = s.pressStyle          || 'medium';
                 const instr   = s.specialInstruction  || 'none';
-                const pd = PRESS_DATA[press]       || PRESS_DATA['medium'];
-                const id = INSTRUCTION_DATA[instr] || INSTRUCTION_DATA['none'];
-                const atkMod = pd.attackBonus  * id.attackBonus;
-                const defMod = pd.defenseBonus * id.defenseBonus;
-                // Ataque: multiplica nuestros goles esperados. Defensa: divide los del rival.
-                params = { ...params };
-                params[side + 'AttackMod']  = (params[side + 'AttackMod']  || 1) * atkMod;
-                params[side + 'DefenseMod'] = (params[side + 'DefenseMod'] || 1) * defMod;
-                if (!params.preview && (atkMod !== 1 || defMod !== 1)) {
-                    console.log(`[Tactics] Presión "${press}" + Instrucción "${instr}" → ataque ×${atkMod.toFixed(2)}, defensa ×${defMod.toFixed(2)}`);
-                }
+                params = { ...params, [side + 'Press']: press, [side + 'Instruction']: instr };
+
             }
             return orig.call(this, params);
         };
         console.log('[Tactics] hook matchEngine ✓');
     }
+
+    window._setFootballPlan = value => gl().updateGameState({ matchPlan: value });
+    window._setFootballAutoSubs = value => gl().updateGameState({ autoSubstitutions: value });
 
     // ── Hook openPage para refrescar al abrir ─────────────────────
     function hookOpenPage() {
