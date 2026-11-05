@@ -250,7 +250,7 @@
         const E = window.pcfEconomy;
         const value = E ? E.marketValue(agent) : (agent.value || 0);
         const bonus = E ? E.roundMoney(value * 0.25) : Math.round(value * 0.25);
-        const salary = Math.max(agent.salary || 0, E ? E.expectedSalary(agent, state.division) : 0);
+        const salary = Math.max(100, agent.salary || 0, E ? E.expectedSalary(agent, state.division) : (agent.overall || 50) * 35);
         if ((state.balance || 0) < bonus) {
             await window.pcfNotify('Agente libre', `No tienes dinero para la prima de fichaje de ${agent.name}: ${bonus.toLocaleString('es-ES')}€ (saldo: ${(state.balance || 0).toLocaleString('es-ES')}€).`);
             return;
@@ -273,6 +273,8 @@
             salary,
             club: state.team,
             isFreeAgent: false,
+            transferListed: false, loanListed: false,
+            releaseClause: Math.max(10000, Math.round(value * 2.5 / 10000) * 10000),
             expiryGracePeriod: undefined,
             joinedSeason: state.currentSeason, joinedPhase: state.seasonType, joinedWeek: state.week
         };

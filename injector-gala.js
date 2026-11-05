@@ -189,6 +189,7 @@
 
         // 4 Ascensos y descensos
         const moves = sum.moves || [];
+        const rfefWinners = moves.filter(m => m.to === 'segunda' && /rfef/.test(m.from));
         const cats = [['segunda', 'primera', 'Primera División'], ['rfef_grupo1', 'segunda', 'Segunda División'], ['rfef_grupo2', 'segunda', 'Segunda División'], ['promesas', 'rfef_grupo1', 'Primera RFEF Grupo 1'], ['promesas', 'rfef_grupo2', 'Primera RFEF Grupo 2']];
         const ups = {}, downs = {};
         moves.forEach(m => { (ups[m.to] = ups[m.to] || []).push(m); (downs[m.from] = downs[m.from] || []).push(m); });
@@ -200,7 +201,7 @@
                 ${up.length ? `<div class="pg-up"><h3>⬆ Suben (${up.length})</h3><ul class="pg-list">${up.map(li).join('')}</ul></div>` : ''}
                 ${dn.length ? `<div class="pg-down" style="margin-top:10px"><h3>⬇ Bajan (${dn.length})</h3><ul class="pg-list">${dn.map(li).join('')}</ul></div>` : ''}</div>`;
         };
-        out.push(`<div class="pg-slide"><h2 class="pg-h">Ascensos y descensos</h2><div class="pg-grid">${DIVS.map(([d, n]) => upDown(d, n)).join('') || '<div class="pg-card">No ha habido movimientos esta temporada.</div>'}</div></div>`);
+        out.push(`<div class="pg-slide"><h2 class="pg-h">Ascensos y descensos</h2>${rfefWinners.length ? `<div class="pg-card"><h3>Primera RFEF → Segunda (${rfefWinners.length})</h3><ul class="pg-list">${rfefWinners.map(li).join('')}</ul></div>` : ''}<div class="pg-grid">${DIVS.map(([d, n]) => upDown(d, n)).join('') || '<div class="pg-card">No ha habido movimientos esta temporada.</div>'}</div></div>`);
 
         // 5 Pichichi / 6 Zamora
         const awCard = (kind) => DIVS.map(([d, name]) => {
@@ -280,7 +281,7 @@
             if (pj < 2) { box?.remove(); return; }
             css();
             const a = await awards(s.division, rows);
-            if (!box) { box = document.createElement('div'); box.id = 'pcfLiveAwards'; const host = table.closest('div') || table.parentNode; host.parentNode.insertBefore(box, host.nextSibling); }
+            if (!box) { box = document.createElement('div'); box.id = 'pcfLiveAwards'; const host = table.closest('table') || table; host.parentNode.insertBefore(box, host.nextSibling); }
             box.innerHTML = `<div class="box"><h4>⚽ Pichichi · máximos goleadores</h4><ol>${a.pichichi.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.goals}</span></li>`).join('')}</ol><small>Los goles de tu plantilla se cuentan partido a partido; los de los rivales se reparten según los goles reales de su equipo.</small></div>
                 <div class="box"><h4>🧤 Trofeo Zamora · portero menos goleado</h4><ol>${a.zamora.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.ratio.toFixed(2)}</span></li>`).join('')}</ol><small>Goles encajados por partido del portero titular de cada equipo.</small></div>`;
         } catch (e) { console.warn('Premios en vivo:', e); } finally { liveBusy = false; }
@@ -291,5 +292,8 @@
         const st = window.showCompTab;
         if (typeof st === 'function' && !st._pcfGala) { const w = function (t, ...a) { const r = st.call(this, t, ...a); if (t === 'liga') setTimeout(renderLive, 300); else document.getElementById('pcfLiveAwards')?.remove(); return r; }; w._pcfGala = true; window.showCompTab = w; }
     }
+    document.addEventListener('click', e => {
+        if (e.target.closest('[onclick*="standings"], [onclick*="liga"]')) setTimeout(renderLive, 500);
+    });
     [1500, 4000, 7000, 11000].forEach(ms => setTimeout(hook, ms));
 })();

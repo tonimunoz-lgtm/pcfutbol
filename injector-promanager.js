@@ -281,7 +281,7 @@ console.log('🎯 Injector Promanager cargando...');
         window.gameMode = 'promanager';
 
         if (window.gameLogic && window.gameLogic.selectTeamWithInitialSquad) {
-            var keep = !!pmState.rehire;
+            var keep = !!pmState.rehire || !!window.gameLogic.getGameState().team;
             pmState.rehire = false; pmState.waitCount = 0;
             await window.gameLogic.selectTeamWithInitialSquad(offer.team, offer.division, 'promanager', { keepTime: keep });
             try { window.ui.refreshUI(window.gameLogic.getGameState()); } catch(e) {}

@@ -1927,3 +1927,17 @@ Salida
     #tactics-extras { font-size: 0.9em; }
     .tc-xi-chip { padding: 2px 5px; font-size: 0.9em; }
 }
+
+/* Keep player column labels visible while scrolling their table. */
+#squadList thead th, #academyList thead th, #transferMarketList thead th,
+.table-container thead th, .table-responsive thead th {
+ position: sticky; top: 0; z-index: 5; background: #10274a;
+}
+
+#squadList, #academyList, #marketList { max-height: 70vh; overflow: auto; }
+#marketList thead th { position: sticky; top: 0; z-index: 5; background: #10274a; }
+#pcfStadHero .step { background: transparent; border: 0; cursor: pointer; padding: 0; font-family: inherit; }
+#pcfStadHero .step:focus-visible { outline: 2px solid #ffd24a; }
+
+#availablePlayersSearchResult, #availableYoungstersList { max-height: 70vh; overflow: auto; }
+#availablePlayersSearchResult thead th, #availableYoungstersList thead th { position:sticky; top:0; z-index:5; background:#10274a; }

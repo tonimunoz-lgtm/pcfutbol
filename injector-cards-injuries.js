@@ -300,175 +300,44 @@ function hookSimulateWeek() {
             console.log('✅ Alineación válida, continuando con simulación...');
         }
         
-        const previousGlobalWeek = globalWeekCounter;
-        globalWeekCounter++;
-        
-        const isPreseason = state?.seasonType === 'preseason';
-        
-        console.log(`📅 Semana global ${globalWeekCounter} (anterior: ${previousGlobalWeek}, last processed: ${lastProcessedGlobalWeek}), Semana ${state?.week}, Pretemporada: ${isPreseason}`);
-        
-        // Las sanciones solo se cumplen en partidos oficiales
-        if (state && !isPreseason && globalWeekCounter !== lastProcessedGlobalWeek) {
-            console.log(`🔄 Procesando sanciones para semana global ${globalWeekCounter}`);
-            
-            const recoveredSuspensions = processWeeklySuspensions(state.squad);
-            recoveredSuspensions.forEach(name => {
-                const news = `✅ ${name} cumplió su sanción y vuelve a estar disponible`;
-                window.gameLogic.addNews(news, 'info');
-                console.log('📰', news);
-            });
-            
-            lastProcessedGlobalWeek = globalWeekCounter;
-            console.log(`✅ Semana ${globalWeekCounter} marcada como procesada`);
-            
-            window.gameLogic.updateGameState(state);
-        } else {
-            console.log(`⏭️ Saltando sanciones - ya procesadas para semana global ${globalWeekCounter}`);
+        const before = state ? `${state.team}|${state.currentSeason}|${state.seasonType}|${state.week}` : '';
+        const result = await originalSimulate.apply(this, arguments);
+        const after = window.gameLogic?.getGameState();
+        if (after && before !== `${after.team}|${after.currentSeason}|${after.seasonType}|${after.week}` && window.saveGameToCloud && window.currentUserId) {
+            try {
+                const gameId = after.gameId || `autosave_${after.team}`;
+                after.gameId = gameId;
+                window.gameLogic.updateGameState({ gameId });
+                await window.saveGameToCloud(window.currentUserId, gameId, `[Auto] ${after.team} - Jornada ${after.week}`, JSON.parse(JSON.stringify(after)));
+            } catch (e) { console.warn('No se pudo completar el autoguardado:', e); }
         }
-        
-        await originalSimulate();
-        
-        const newState = window.gameLogic?.getGameState();
-        
-        if (newState && !isPreseason && globalWeekCounter === lastProcessedGlobalWeek) {
-            console.log(`🎴 Generando tarjetas/lesiones para semana ${globalWeekCounter}`);
-            
-            const matchCards = [];
-            const matchInjuries = [];
-            
-            if (!newState.lineup || newState.lineup.length === 0) {
-                console.warn('⚠️ No hay alineación guardada');
-                return;
-            }
-            
-            console.log(`👥 Procesando alineación:`, newState.lineup.map(p => p?.name).filter(Boolean));
-            
-            const newsBeforeProcessing = newState.newsFeed.length;
-            
-            newState.lineup.forEach((lineupPlayer, idx) => {
-                if (!lineupPlayer) return;
-                
-                const squadPlayer = newState.squad.find(sp => sp.name === lineupPlayer.name);
-                
-                if (!squadPlayer) {
-                    console.warn(`⚠️ ${lineupPlayer.name} no encontrado en squad`);
-                    return;
-                }
-                
-                const cardResult = simulateMatchCards(squadPlayer);
-                if (cardResult) {
-                    cardResult.minute = Math.floor(Math.random() * 90) + 1;
-                    matchCards.push(cardResult);
-                    
-                    let newsText;
-                    if (cardResult.red) {
-                        newsText = `🟥 ${squadPlayer.name} vio tarjeta roja - Sancionado ${cardResult.suspension} partidos`;
-                    } else if (cardResult.suspension > 0) {
-                        newsText = `⚠️ ${squadPlayer.name} acumula 5 amarillas - Sancionado 1 partido`;
-                    } else {
-                        newsText = `🟨 ${squadPlayer.name} vio tarjeta amarilla`;
-                    }
-                    
-                    window.gameLogic.addNews(newsText, cardResult.red ? 'error' : 'warning');
-                    console.log('📰 TARJETA:', newsText);
-                }
-                
-                const injuryResult = simulateMatchInjuries(squadPlayer, newState.staff);
-                if (injuryResult) {
-                    injuryResult.minute = Math.floor(Math.random() * 90) + 1;
-                    matchInjuries.push(injuryResult);
-                    const newsText = `🏥 ${squadPlayer.name} se lesionó (${injuryResult.type}) - ${injuryResult.weeks} semanas`;
-                    
-                    window.gameLogic.addNews(newsText, 'warning');
-                    console.log('📰 LESIÓN:', newsText);
-                }
-                
-                lineupPlayer.yellowCards = squadPlayer.yellowCards;
-                lineupPlayer.redCards = squadPlayer.redCards;
-                lineupPlayer.isSuspended = squadPlayer.isSuspended;
-                lineupPlayer.suspensionWeeks = squadPlayer.suspensionWeeks;
-                lineupPlayer.isInjured = squadPlayer.isInjured;
-                lineupPlayer.weeksOut = squadPlayer.weeksOut;
-                lineupPlayer.injuryType = squadPlayer.injuryType;
-            });
-            
-            window.lastMatchCardsAndInjuries = {
-                cards: matchCards,
-                injuries: matchInjuries,
-                week: newState.week
-            };
-            
-            window.gameLogic.updateGameState(newState);
-            
-            // AUTO-GUARDAR en Firebase después de cada jornada
-            if (window.saveGameToCloud && window.currentUserId) {
-                console.log('💾 Auto-guardando en Firebase...');
-                
-                function cleanForFirebase(obj) {
-                    if (obj === null || obj === undefined) return null;
-                    if (Array.isArray(obj)) return obj.map(cleanForFirebase);
-                    if (typeof obj === 'object') {
-                        const clean = {};
-                        for (const k in obj) {
-                            const v = obj[k];
-                            if (v !== undefined) {
-                                clean[k] = cleanForFirebase(v);
-                            }
-                        }
-                        return clean;
-                    }
-                    return obj;
-                }
-                const cleanState = cleanForFirebase(newState);
-                const gameId = cleanState.gameId || `autosave_${cleanState.team}`;
-                if (!newState.gameId) {
-                    newState.gameId = gameId;
-                }
-                
-                const gameName = `[Auto] ${newState.team} - Jornada ${newState.week}`;
-                
-                window.saveGameToCloud(window.currentUserId, gameId, gameName, cleanState).then(result => {
-                    if (result.success) {
-                        console.log('✅ Partida auto-guardada en Firebase');
-                    } else {
-                        console.warn('⚠️ Error al auto-guardar:', result.error);
-                    }
-                }).catch(err => {
-                    console.error('❌ Error en auto-guardado:', err);
-                });
-            } else {
-                console.warn('⚠️ Auto-guardado no disponible - saveGameToCloud o currentUserId no encontrado');
-            }
-            
-            const newsAfterProcessing = newState.newsFeed.length;
-            const newsAdded = newsAfterProcessing - newsBeforeProcessing;
-            console.log(`📰 Noticias añadidas: ${newsAdded} (antes: ${newsBeforeProcessing}, después: ${newsAfterProcessing})`);
-            
-            setTimeout(() => {
-                const feed = document.getElementById('newsFeed');
-                const currentState = window.gameLogic.getGameState();
-                
-                if (feed && currentState.newsFeed && currentState.newsFeed.length > 0) {
-                    console.log(`🔄 Actualizando feed con ${currentState.newsFeed.length} noticias`);
-                    
-                    feed.innerHTML = currentState.newsFeed.slice(0, 20).map(n => `
-                        <div class="alert ${n.type === 'error' ? 'alert-error' : n.type === 'warning' ? 'alert-warning' : n.type === 'success' ? 'alert-success' : 'alert-info'}" style="font-size: 0.9em; margin-bottom: 5px;">
-                            <strong>S${n.week}:</strong> ${n.message}
-                        </div>
-                    `).join('');
-                    console.log('✅ Feed actualizado en DOM');
-                } else {
-                    console.warn('⚠️ Feed no encontrado o sin noticias');
-                }
-            }, 800);
-            
-            console.log(`✅ ${matchCards.length} tarjetas, ${matchInjuries.length} lesiones`);
-        }
+        return result;
     };
 }
-
 setTimeout(hookSimulateWeek, 1000);
 setTimeout(hookSimulateWeek, 2000);
+
+// Called once from the actual match, before result rendering and autosave.
+window.processMatchDiscipline = function(state, homeTeam, awayTeam, homeLineup, awayLineup) {
+    const cards = [], injuries = [];
+    const participants = new Set((state.team === homeTeam ? homeLineup : awayLineup).filter(Boolean).map(p => p.name));
+    processWeeklySuspensions((state.squad || []).filter(p => !participants.has(p.name)));
+    for (const [team, lineup] of [[homeTeam, homeLineup], [awayTeam, awayLineup]]) {
+        for (const p of lineup.filter(Boolean)) {
+            const c = simulateMatchCards(p);
+            if (c) {
+                cards.push({ ...c, type: c.red ? 'red' : 'yellow', team, minute: 1 + Math.floor(Math.random() * 90) });
+                if (team === state.team) window.gameLogic.addNews(`${c.red ? '🟥' : '🟨'} ${p.name}${c.suspension ? ' — sancionado ' + c.suspension + ' partido(s)' : ''}`, c.red ? 'error' : 'warning');
+            }
+            const injury = simulateMatchInjuries(p, team === state.team ? state.staff : {});
+            if (injury) {
+                injuries.push({ ...injury, team, minute: 1 + Math.floor(Math.random() * 90) });
+                if (team === state.team) window.gameLogic.addNews(`🏥 ${p.name}: ${injury.type}, ${injury.weeks} semanas`, 'warning');
+            }
+        }
+    }
+    return { cards, injuries };
+};
 
 // ============================================
 // VALIDACIÓN DE ALINEACIÓN
@@ -537,90 +406,6 @@ setTimeout(() => {
         console.log('✅ Validación activada');
     }
 }, 2000);
-
-// ============================================
-// MODAL
-// ============================================
-
-setTimeout(() => {
-    if (window.injectMatchSummary) {
-        const originalInject = window.injectMatchSummary;
-        
-        window.injectMatchSummary = function(matchResult) {
-            console.log('🎬 Modal llamado');
-            
-            originalInject(matchResult);
-            
-            setTimeout(() => {
-                if (window.lastMatchCardsAndInjuries) {
-                    const modal = document.getElementById('matchSummaryModal');
-                    if (!modal) {
-                        console.warn('⚠️ Modal no encontrado');
-                        return;
-                    }
-                    
-                    const data = window.lastMatchCardsAndInjuries;
-                    console.log('✏️ Reemplazando con datos reales:', data);
-                    
-                    const oldCardsSections = modal.querySelectorAll('.cards-section, .injuries-section');
-                    oldCardsSections.forEach(section => section.remove());
-                    console.log(`🗑️ Eliminadas ${oldCardsSections.length} secciones antiguas`);
-                    
-                    const statsSection = modal.querySelector('.stats-section');
-                    if (statsSection) {
-                        if (data.cards.length > 0) {
-                            const cardsHTML = `
-                                <div class="cards-section">
-                                    <h3>🟨🟥 Tarjetas (TU EQUIPO)</h3>
-                                    <div class="cards-list">
-                                        ${data.cards.map(card => `
-                                            <div class="card-item home">
-                                                <span class="card-icon">${card.red ? '🟥' : '🟨'}</span>
-                                                <span class="card-minute">${card.minute || '?'}'</span>
-                                                <span class="card-player">${card.player}</span>
-                                                ${card.suspension > 0 ? `<span class="card-team">(Sanción: ${card.suspension} partidos)</span>` : ''}
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                            statsSection.insertAdjacentHTML('afterend', cardsHTML);
-                            console.log('✅ Tarjetas añadidas:', data.cards.map(c => c.player));
-                        }
-                        
-                        if (data.injuries.length > 0) {
-                            const injuriesHTML = `
-                                <div class="injuries-section">
-                                    <h3>🚑 Lesiones (TU EQUIPO)</h3>
-                                    <div class="injuries-list">
-                                        ${data.injuries.map(inj => `
-                                            <div class="injury-item">
-                                                <span class="injury-minute">${inj.minute || '?'}'</span>
-                                                <span class="injury-player">${inj.player}</span>
-                                                <span class="injury-team">${inj.type} (${inj.weeks} sem)</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            const lastSection = modal.querySelector('.cards-section') || statsSection;
-                            lastSection.insertAdjacentHTML('afterend', injuriesHTML);
-                            console.log('✅ Lesiones añadidas:', data.injuries.map(i => i.player));
-                        }
-                    }
-                    
-                    delete window.lastMatchCardsAndInjuries;
-                    console.log('🗑️ Datos limpiados');
-                } else {
-                    console.warn('⚠️ No hay datos guardados');
-                }
-            }, 300);
-        };
-        
-        console.log('✅ Modal integrado');
-    }
-}, 3000);
 
 // ============================================
 // UI PLANTILLA

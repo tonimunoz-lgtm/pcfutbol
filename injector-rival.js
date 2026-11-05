@@ -72,22 +72,9 @@
 
     // ── Obtener plantilla rival (real si existe, sino generada) ───
     async function getRivalSquad(rivalName) {
-        // Intentar Firebase/localStorage igual que generateAISquad
-        if (window.getTeamData) {
-            try {
-                const teamData = await window.getTeamData(rivalName);
-                if (teamData?.squad?.length > 0) {
-                    return { squad: teamData.squad.map(p => ({
-                        ...p, overall: quickOverall(p),
-                        form: p.form || 75, isInjured: p.isInjured || false
-                    })), isReal: true };
-                }
-            } catch(e) { /* fallback */ }
-        }
-        // Generar realista según división
-        if (window.generateAISquad) {
-            const sq = await window.generateAISquad(rivalName, getDivision());
-            return { squad: sq, isReal: false };
+        if (window.getAISquadCached) {
+            const squad = await window.getAISquadCached(rivalName, getDivision(), gs().currentSeason);
+            return { squad, isReal: false };
         }
         // Mínimo: 11 jugadores básicos
         const pos11 = ['POR','DFC','DFC','LI','LD','MC','MC','MCO','EXT','EXT','DC'];
@@ -419,9 +406,9 @@
             return window.calculateTeamEffectiveOverallImproved(window.pickBestXI(squad, f), f);
         };
         const rivalEff = effOf(rivalSquad);
-        const myLineup = (s.lineup || []).map(l => mySquad.find(p => p.name === l.name) || l);
+        const myLineup = (s.lineup || []).map(l => l && (mySquad.find(p => p.name === l.name) || l));
         const myEff = window.calculateTeamEffectiveOverallImproved && myLineup.length
-            ? window.calculateTeamEffectiveOverallImproved(myLineup.map(p => (p.isInjured || p.isSuspended) ? null : p), s.formation || '433') : null;
+            ? window.calculateTeamEffectiveOverallImproved(myLineup.map(p => (!p || p.isInjured || p.isSuspended) ? null : p), s.formation || '433') : null;
         const rivalAvg = rivalEff != null ? Math.round(rivalEff) : (xi.length ? Math.round(xi.reduce((sum,p)=>sum+quickOverall(p),0)/xi.length) : 70);
         const myXI     = getStartingXI(mySquad);
         const myAvg    = myEff != null ? Math.round(myEff) : (myXI.length ? Math.round(myXI.reduce((sum,p)=>sum+quickOverall(p),0)/myXI.length) : 70);
@@ -634,14 +621,13 @@
     function renderMatchPreview(s, rivalName, rivalSquad, rivalXI, myLineup, isHome, myEff, rivalEff) {
         if (myEff == null || rivalEff == null || !window.calculateMatchOutcomeImproved) return '';
         // Pronóstico con el mismo motor de los partidos
-        let w = 0, d = 0, l = 0;
-        const N = 3000;
-        for (let i = 0; i < N; i++) {
-            const r = window.calculateMatchOutcomeImproved({ teamOverall: myEff, opponentOverall: rivalEff, isHome: isHome !== false,
-                teamFormation: s.formation || '433', teamMentality: s.mentality || 'balanced' });
-            if (r.teamGoals > r.opponentGoals) w++; else if (r.teamGoals === r.opponentGoals) d++; else l++;
-        }
-        const pc = x => Math.round(x / N * 100);
+        const r = window.calculateMatchOutcomeImproved({ teamOverall: myEff, opponentOverall: rivalEff,
+            isHome: isHome !== false, preview: true, teamFormation: s.formation || '433',
+            teamMentality: s.mentality || 'balanced', opponentFormation: window.chooseAIFormation(rivalSquad),
+            opponentMentality: 'balanced', teamForm: window.averageMatchForm(myLineup),
+            opponentForm: window.averageMatchForm(rivalXI), homeIsUser: true, awayIsUser: false });
+        const { win: w, draw: d, loss: l } = r.probabilities;
+        const pc = x => Math.round(x * 100);
         // Comparación por líneas
         const LINES = { 'Portería': ['POR'], 'Defensa': ['DFC', 'LI', 'LD'], 'Medio': ['MC', 'MCO', 'MD', 'MI'], 'Ataque': ['EXT', 'DC'] };
         const lineAvg = (list, pos) => {

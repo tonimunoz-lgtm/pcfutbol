@@ -198,10 +198,8 @@
                                 <input id="adminStadiumName" type="text" placeholder="Ej: Santiago Bernabéu">
                                 <label>Capacidad:</label>
                                 <input id="adminStadiumCapacity" type="number" step="1000" min="1000">
-                                <label>Foto del estadio (.png/.jpg - máx 500KB):</label>
-                                <input id="adminStadiumImage" type="file" accept="image/png,image/jpeg">
-                                <small class="admin-muted">Se guardará como Base64 en Firestore</small>
-                                <div id="adminStadiumPreview" style="margin-top: 10px;"></div>
+                                <input id="adminStadiumImage" type="file" hidden disabled>
+                                <div id="adminStadiumPreview" hidden></div>
                             </div>
 
                             <div class="admin-box">

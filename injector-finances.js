@@ -111,14 +111,15 @@
                                .reduce((s, x) => s + (x.salary || 0), 0);
         const loanPay  = stateBefore.fd_loanPayment || 0;  // cuotas prestamos (FinDeals)
         const bonusPay = stateBefore.fd_bonus       || 0;  // prima prometida (FinDeals)
-        const totalExp = salaries + staffSal + loanPay + bonusPay;
+        const benefits = window.pcfEconomy.benefits(stateBefore, ticketInc, merchInc);
+        const totalExp = salaries + staffSal + loanPay + bonusPay + benefits.total;
         const net      = totalInc - totalExp;
 
         const lastWeek = {
             week: weekBefore, home, att: home ? att : 0, items: home ? items : 0,
             ticketInc, merchInc, baseInc, totalInc,
             totalExp, expSalaries: salaries, expStaff: staffSal,
-            expLoans: loanPay, expBonus: bonusPay,
+            expLoans: loanPay, expBonus: bonusPay, benefits,
             net
         };
 
@@ -159,7 +160,7 @@
                 const salaries = (sa.squad || []).reduce((t, p) => t + (p.salary || 0), 0);
                 const staffSal = Object.values(sa.staff || {}).filter(Boolean).reduce((t, x) => t + (x.salary || 0), 0);
                 const base = sa.weeklyIncomeBase || 5000;   // TV, patrocinio e ingresos fijos (sin taquilla: no hay partidos)
-                const net = (base - salaries - staffSal) * extra;
+                const net = (base - salaries - staffSal - window.pcfEconomy.benefits(sa).total) * extra;
                 window.gameLogic?.updateGameState?.({ balance: (sa.balance || 0) + net });
                 registerMovement(net >= 0 ? 'income' : 'expense', `Verano (${extra + 1} semanas sin partidos): ingresos fijos − sueldos`, net);
                 window.gameLogic?.addNews?.(`☀️ Verano: ${extra + 1} semanas sin partidos. Ingresos fijos ${fmt(base * extra)}€ · sueldos ${fmt((salaries + staffSal) * extra)}€.`, net >= 0 ? 'info' : 'warning');
@@ -551,7 +552,16 @@
         const sArr   = Object.values(state.staff).filter(Boolean);
         const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
         const loanE  = state.fd_loanPayment || 0;
-        const totE   = pS + stS + loanE;
+        const benefits = window.pcfEconomy.benefits(state, state.lastWeekFinance?.ticketInc || 0, state.lastWeekFinance?.merchInc || 0);
+        const totE = pS + stS + loanE + benefits.total;
+        const totalRow = document.getElementById('fin_totExp')?.closest('tr');
+        if (totalRow) {
+            document.getElementById('fin_benefits')?.remove();
+            const row = document.createElement('tr'); row.id = 'fin_benefits';
+            const cell = document.createElement('td'); cell.colSpan = 2;
+            cell.textContent = `Incentivos semanales: casa ${fmt(benefits.house)}€ · coche ${fmt(benefits.car)}€ · % entradas ${fmt(benefits.tickets)}€ · % merchandising ${fmt(benefits.merch)}€`;
+            row.appendChild(cell); totalRow.before(row);
+        }
         setText('fin_pSal',  fmt(pS)  + '€/sem', '#f44336');
         setText('fin_pCnt',  `— ${state.squad.length} jugadores`);
         setText('fin_sSal',  fmt(stS) + '€/sem', '#f44336');

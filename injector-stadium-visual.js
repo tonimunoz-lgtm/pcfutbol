@@ -74,11 +74,11 @@
         else if (cap >= 105000 && allDone) { file = 'estadio-final.webp'; tag = 'Fase final'; }
         else file = `estadio-${String(stage + 1).padStart(2, '0')}.webp`;
         const next = STAGES[stage + 1];
-        const club = s.stadiumImage;
+        const club = null;
         const phaseTxt = file === 'estadio-final.webp' ? 'Fase final' : `Fase ${stage + 1} de 10`;
         const nameTxt = file === 'estadio-final.webp' ? 'Todo construido' : STAGE_NAME[stage];
         const works = seatWork ? `<div class="works">🏗 REMODELACIÓN · ${seatWork.name?.replace(/^\W+/, '') || 'Gradas'} · ${seatWork.weeksLeft} sem<i><u style="width:${Math.round((1 - seatWork.weeksLeft / Math.max(1, seatWork.weeksTotal || seatWork.weeksLeft)) * 100)}%"></u></i></div>` : '';
-        const steps = STAGES.map((min, i) => `<div class="step ${i < stage ? 'done' : i === stage ? 'now' : ''}" title="${STAGE_NAME[i]} · desde ${fmt(min)} asientos"><span>${i + 1}</span></div>`).join('');
+        const steps = STAGES.map((min, i) => `<button type="button" data-cap="${i === 9 ? 105000 : STAGES[i + 1]}" class="step ${i < stage ? 'done' : i === stage ? 'now' : ''}" title="${STAGE_NAME[i]} · desde ${fmt(min)} asientos"><span>${i + 1}</span></button>`).join('');
         const facs = STADIUM_FAC.map(([id, label]) => {
             const building = work.some(w => w.id === id);
             return `<span class="fac ${done.has(id) ? '' : building ? 'work' : 'off'}" title="${label}${done.has(id) ? ' · construido' : building ? ' · en obras' : ' · sin construir'}"><img src="assets/iconos/instalaciones/${FAC_ICON[id]}.webp" alt="">${label}</span>`;
@@ -92,6 +92,12 @@
             <div class="cap"><div class="phase"><small>${s.stadiumName || 'Estadio'}</small><b>${phaseTxt} · ${nameTxt}</b></div>
                 <div class="seats"><b>${fmt(cap)} asientos</b><span>${next ? 'Siguiente fase a los ' + fmt(next) : stage === 9 && cap < 105000 ? 'Aforo máximo: 105.000' : 'Máximo alcanzado'}</span></div></div></div>
             <div class="track">${steps}</div><div class="facs">${facs}</div>`;
+        el.querySelectorAll('[data-cap]').forEach(button => button.onclick = () => {
+            const capacity = Number(button.dataset.cap);
+            const info = window.pcfStadiumRequirements?.(capacity) || 'Sin requisitos adicionales';
+            if (window.pcfNotify) window.pcfNotify('Requisitos de la fase', info);
+            else alert(info);
+        });
         const tg = el.querySelector('.toggle');
         if (tg) {
             let showClub = false;

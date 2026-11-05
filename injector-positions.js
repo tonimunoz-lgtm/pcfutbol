@@ -128,10 +128,10 @@
         const sep = (txt, sub) => { const tr = document.createElement('tr'); tr.className = 'pcf-sep'; tr.innerHTML = `<td colspan="${ths.length}">${txt}${sub ? `<small>${sub}</small>` : ''}</td>`; return tr; };
         tbody.innerHTML = '';
         let n = 1; const put = (r, noconv) => { if (r.children[0]) r.children[0].textContent = n++; r.classList.toggle('pcf-noconv', !!noconv); tbody.appendChild(r); };
-        tbody.appendChild(sep('Once titular', `${st.formation || ''} · ${startersRows.length} jugadores`));
+        tbody.appendChild(sep('Titulares', ''));
         startersRows.forEach(r => put(r, false));
-        if (benchRows.length) { tbody.appendChild(sep('Jugadores convocados', 'Suplentes en el banquillo')); benchRows.forEach(r => put(r, false)); }
-        if (restRows.length) { tbody.appendChild(sep('Jugadores no convocados', 'Lesionados, sancionados, cedidos y resto de la plantilla')); restRows.forEach(r => put(r, true)); }
+        if (benchRows.length) { tbody.appendChild(sep('Convocados', '')); benchRows.forEach(r => put(r, false)); }
+        if (restRows.length) { tbody.appendChild(sep('No convocados', '')); restRows.forEach(r => put(r, true)); }
         tbody.dataset.pcfGroup = sig;
     }
 

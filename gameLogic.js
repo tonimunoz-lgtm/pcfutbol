@@ -481,11 +481,14 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
         currentSeason: gameState.currentSeason, seasonType: gameState.seasonType, week: gameState.week,
         leagues: gameState.leagues ? JSON.parse(JSON.stringify(gameState.leagues)) : null,
         lastSeasonSummary: gameState.lastSeasonSummary, news: (gameState.newsFeed || []).slice(0, 12),
-        previousTeam: gameState.team
+        previousTeam: gameState.team, previousDivision: gameState.division,
+        standings: JSON.parse(JSON.stringify(gameState.standings)),
+        calendar: gameState.seasonCalendar, history: gameState.matchHistory, aiSquads: gameState.aiSquads
     } : null;
     // Partida nueva: el estado vuelve al inicial (personal, instalaciones, préstamos,
     // ofertas, datos de otros módulos...). Solo se conservan los agentes libres del mercado.
     const keepFreeAgents = gameState.freeAgentsPool;
+    aiSquadCache.clear();
     Object.keys(gameState).forEach(k => { delete gameState[k]; });
     Object.assign(gameState, JSON.parse(JSON.stringify(INITIAL_GAME_STATE)));
     if (Array.isArray(keepFreeAgents)) gameState.freeAgentsPool = keepFreeAgents;
@@ -538,6 +541,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
         gameState.week = snap.week;
         gameState.lastSeasonSummary = snap.lastSeasonSummary;
         gameState.newsFeed = snap.news;
+        gameState.aiSquads = snap.aiSquads || {};
     }
     if (!gameState.leagues[divisionType]) gameState.leagues[divisionType] = [];
     Object.keys(gameState.leagues).forEach(k => {
@@ -551,7 +555,11 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
     gameState.seasonCalendar = generateLeagueCalendar(teamsInDivision);
     gameState.maxSeasonWeeks = seasonLength(gameState.seasonCalendar);
     // Mitad de temporada: la nueva liga lleva jugadas las jornadas anteriores
-    if (snap && snap.seasonType === 'regular' && snap.week > 1) {
+    if (snap && snap.previousDivision === divisionType) {
+        gameState.standings = snap.standings;
+        gameState.seasonCalendar = snap.calendar;
+        gameState.matchHistory = snap.history;
+    } else if (snap && snap.seasonType === 'regular' && snap.week > 1) {
         const played = [];
         gameState.standings = await simulateLeagueTable(teamsInDivision, divisionType, gameState.currentSeason, snap.week, played);
         gameState.matchHistory = played;
@@ -564,6 +572,7 @@ async function selectTeamWithInitialSquad(teamName, divisionType, gameMode, opti
     if (snap) addNews(`🎯 Nuevo club: ${teamName}. Retomas la temporada ${gameState.currentSeason} en la jornada ${gameState.week}.`, 'info');
     else addNews(`¡Bienvenido al PC Fútbol Manager, temporada ${gameState.currentSeason}!`, 'info');
     gameState.boardConfidence = 65; gameState.boardWarn = 0; gameState.boardTargetSeason = null;
+    await computeBoardTarget();
     updateWeeklyFinancials();
 }
 
@@ -916,7 +925,9 @@ function signPlayer(player) {
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
     }  
     
-    const newPlayer = { ...player };  
+    const newPlayer = { ...player };
+    newPlayer.value = Math.max(1000, Number(newPlayer.value) || marketValue(newPlayer));
+    if (!newPlayer.loan) newPlayer.salary = Math.max(100, Number(newPlayer.salary) || expectedSalary(newPlayer, gameState.division));  
     
     ATTRIBUTES.forEach(attr => {  
         if (newPlayer[attr] === undefined) {  
@@ -954,7 +965,7 @@ function signPlayer(player) {
         if (newPlayer.potential > 80) multiplier += 1.0;
         if (newPlayer.overall > 80) multiplier += 1.0;
         const clause = Math.floor(newPlayer.value * multiplier);
-        newPlayer.releaseClause = Math.round(clause / 10000) * 10000;
+        newPlayer.releaseClause = Math.max(10000, Math.round(clause / 10000) * 10000);
     }
   
     markJoined(newPlayer);
@@ -1057,10 +1068,17 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
-    let acceptanceChance = 0.5;  
-  
+    offeredSalary = Number(offeredSalary);
+    offeredMerchPercent = Math.max(0, Math.min(100, Number(offeredMerchPercent) || 0));
+    offeredTicketPercent = Math.max(0, Math.min(100, Number(offeredTicketPercent) || 0));
+    if (!Number.isFinite(offeredSalary) || offeredSalary <= 0) return { success: false, message: 'Indica un salario semanal positivo.' };
+    let acceptanceChance = 0.5;
+
     const refSalary = Math.max(player.salary || 0, expectedSalary(player, gameState.division)) || 1;
-    const salaryFactor = offeredSalary / refSalary;  
+    const extraPay = (Number(offeredCar) || 0) + (Number(offeredHouse) || 0)
+        + computeMerch(gameState).revenue * offeredMerchPercent / 100 / 2
+        + computeAttendance(gameState) * gameState.ticketPrice * offeredTicketPercent / 100 / 2;
+    const salaryFactor = (offeredSalary + extraPay) / refSalary;  
     if (salaryFactor > 1.5) acceptanceChance += 0.4;  
     else if (salaryFactor > 1.2) acceptanceChance += 0.15;  
     else if (salaryFactor < 0.8) acceptanceChance -= 0.2;  
@@ -1110,7 +1128,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
                 }
             }
             const newPlayer = {  
-                ...player,  
+                ...player, ...gameState.playerOffer,
                 salary: offeredSalary,  
                 loan: false,  
                 club: gameState.team,
@@ -1159,7 +1177,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         }  
   
         const actualWageToPay = player.salary * (myWageContribution / 100);  
-        const finalWageForUs = actualWageToPay - (player.loanWageContribution || 0);  
+        const finalWageForUs = Math.max(0, actualWageToPay);  
   
         let acceptanceChance = 0.5;  
         if (myWageContribution >= 80) acceptanceChance += 0.3;  
@@ -1167,7 +1185,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         else if (myWageContribution < 30) acceptanceChance -= 0.2;  
   
         const roll = Math.random();  
-        const accepted = roll < acceptanceChance;  
+        const accepted = myWageContribution === 100 || roll < acceptanceChance;  
   
         if (accepted) {  
             gameState.clubOffer = { type: 'loan', wageContribution: myWageContribution, finalWageForUs };  
@@ -1217,7 +1235,7 @@ playerExchange.forEach(pName => {
             });  
   
             const newPlayer = {  
-                ...player,  
+                ...player, ...gameState.playerOffer,
                 salary: gameState.playerOffer.salary,  
                 loan: false,  
                 club: gameState.team  
@@ -1478,7 +1496,7 @@ function calculateTeamEffectiveOverall(lineup, formation = '433') {
     let total = 0;
     layout.forEach((slot, index) => {
         const player = lineup[index];
-        if (!player || player.isInjured) return; // hueco = 0 (jugar con 10 se nota)
+        if (!player || player.isInjured || player.isSuspended) return; // hueco = 0 (jugar con 10 se nota)
         let factor = 0.5;
         if (player.position === slot.pos) factor = 1.0;
         else if ((POSITION_COMPATIBILITY[slot.pos] || []).includes(player.position)) factor = 0.85;
@@ -1497,7 +1515,7 @@ function calculateTeamEffectiveOverall(lineup, formation = '433') {
 const MATCH_ENGINE = {
     baseHomeGoals: 1.36,
     baseAwayGoals: 1.06,
-    strengthSlope: 0.40,   // sensibilidad por cada 10 puntos de media de diferencia
+    strengthSlope: 0.45,   // sensibilidad por cada 10 puntos de media de diferencia
     maxGoals: 9
 };
 
@@ -1508,8 +1526,23 @@ function poissonSample(lambda) {
     return k - 1;
 }
 
+function matchProbabilities(homeXG, awayXG) {
+    const distribution = x => {
+        const ps = [Math.exp(-x)];
+        for (let k = 1; k < MATCH_ENGINE.maxGoals; k++) ps.push(ps[k - 1] * x / k);
+        ps.push(Math.max(0, 1 - ps.reduce((a, b) => a + b, 0)));
+        return ps;
+    };
+    const h = distribution(homeXG), a = distribution(awayXG);
+    let win = 0, draw = 0, loss = 0;
+    h.forEach((hp, i) => a.forEach((ap, j) => {
+        if (i > j) win += hp * ap; else if (i === j) draw += hp * ap; else loss += hp * ap;
+    }));
+    return { win, draw, loss };
+}
+
 function formFactor(form) {
-    const f = Math.max(0, Math.min(100, Number(form) || 75));
+    const f = Math.max(0, Math.min(100, Number.isFinite(Number(form)) ? Number(form) : 75));
     return 0.9 + f / 750; // forma 75 → 1,00 · 99 → 1,03 · 50 → 0,97
 }
 
@@ -1527,10 +1560,11 @@ function calculateMatchOutcomeImproved({
     teamDefenseMod = 1,
     opponentAttackMod = 1,
     opponentDefenseMod = 1,
+    preview = false,
     neutral = false          // final en campo neutral: sin ventaja de local
 }) {
-    const teamStrength = (teamOverall || 50) * formFactor(teamForm);
-    const oppStrength = (opponentOverall || 50) * formFactor(opponentForm);
+    const teamStrength = (Number.isFinite(teamOverall) ? teamOverall : 50) * formFactor(teamForm);
+    const oppStrength = (Number.isFinite(opponentOverall) ? opponentOverall : 50) * formFactor(opponentForm);
     const diff = (teamStrength - oppStrength) / 10;
 
     const tm = getFormationModifiers(teamFormation, teamMentality);
@@ -1547,8 +1581,9 @@ function calculateMatchOutcomeImproved({
         * om.attackBonus * opponentAttackMod / (tm.defenseBonus * teamDefenseMod));
 
     return {
-        teamGoals: Math.min(MATCH_ENGINE.maxGoals, poissonSample(teamXG)),
-        opponentGoals: Math.min(MATCH_ENGINE.maxGoals, poissonSample(oppXG)),
+        teamGoals: preview ? 0 : Math.min(MATCH_ENGINE.maxGoals, poissonSample(teamXG)),
+        opponentGoals: preview ? 0 : Math.min(MATCH_ENGINE.maxGoals, poissonSample(oppXG)),
+        probabilities: matchProbabilities(teamXG, oppXG),
         teamXG: Math.round(teamXG * 100) / 100,
         opponentXG: Math.round(oppXG * 100) / 100
     };
@@ -1580,6 +1615,7 @@ function ageAISquad(squad, years) {
         let delta = 0;
         for (let k = 0; k < years; k++) delta += yearly((p.age || 25) + k);
         q.age = (p.age || 25) + years;
+        q.goals = 0;
         if (delta > 0 && q.potential) delta = Math.min(delta, Math.max(0, q.potential - (q.overall || 60)));
         if (delta) {
             ATTRIBUTES.forEach(a => { if (q[a] !== undefined) q[a] = Math.max(15, Math.min(99, q[a] + delta)); });
@@ -1591,6 +1627,8 @@ function ageAISquad(squad, years) {
 
 async function getAISquadCached(teamName, division, season) {
     const key = `${season}|${division}|${teamName}`;
+    gameState.aiSquads = gameState.aiSquads || {};
+    if (gameState.aiSquads[key]) return gameState.aiSquads[key];
     if (!aiSquadCache.has(key)) {
         const gen = (typeof window !== 'undefined' && window.generateAISquad) || generateAISquad;
         const years = seasonIndex(season);
@@ -1604,7 +1642,9 @@ async function getAISquadCached(teamName, division, season) {
         }));
     }
     try {
-        return await aiSquadCache.get(key);
+        const squad = await aiSquadCache.get(key);
+        gameState.aiSquads[key] = squad;
+        return squad;
     } catch (e) {
         aiSquadCache.delete(key);
         return generateAISquad(teamName, division);
@@ -1615,7 +1655,7 @@ async function buildSide(teamName, gameState) {
     if (teamName === gameState.team) {
         const formation = gameState.formation || '433';
         return {
-            lineup: gameState.lineup,
+            lineup: (gameState.lineup || []).map(p => p && ((gameState.squad || []).find(q => q.name === p.name) || null)),
             formation,
             mentality: gameState.mentality || 'balanced',
             isUser: true
@@ -1627,7 +1667,7 @@ async function buildSide(teamName, gameState) {
     return {
         lineup: pickBestXI(squad, formation),
         formation,
-        mentality: r < 0.2 ? 'offensive' : (r < 0.8 ? 'balanced' : 'defensive'),
+        mentality: 'balanced',
         isUser: false
     };
 }
@@ -1662,8 +1702,23 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         homeIsUser: home.isUser,
         awayIsUser: away.isUser
     });
+    const scorers = (lineup, count, team) => {
+        const pool = lineup.filter(p => p && p.position !== 'POR');
+        const weights = { DC: 10, EXT: 6, MCO: 5, MC: 2 };
+        const total = pool.reduce((n, p) => n + (weights[p.position] || 1), 0);
+        return Array.from({ length: count }, () => {
+            let r = Math.random() * total;
+            const player = pool.find(p => (r -= weights[p.position] || 1) < 0) || pool[0];
+            if (player) player.goals = (player.goals || 0) + 1;
+            return { name: player?.name || team, team, minute: 1 + Math.floor(Math.random() * 90) };
+        });
+    };
+    const goals = [...scorers(home.lineup, outcome.teamGoals, homeTeamName), ...scorers(away.lineup, outcome.opponentGoals, awayTeamName)];
     const homeGoals = outcome.teamGoals;
     const awayGoals = outcome.opponentGoals;
+    const events = (home.isUser || away.isUser) && window.processMatchDiscipline
+        ? window.processMatchDiscipline(gameState, homeTeamName, awayTeamName, home.lineup, away.lineup)
+        : { cards: [], injuries: [] };
 
     console.log(`🏟️ ${homeTeamName} (${homeOverall.toFixed(1)}, ${home.formation}) ${homeGoals}-${awayGoals} ${awayTeamName} (${awayOverall.toFixed(1)}, ${away.formation})`);
 
@@ -1676,6 +1731,7 @@ async function playMatchImproved(homeTeamName, awayTeamName, gameState) {
         awayOverall,
         homeFormation: home.formation,
         awayFormation: away.formation,
+        goals, cards: events.cards, injuries: events.injuries,
         homeXG: outcome.teamXG,
         awayXG: outcome.opponentXG
     };
@@ -1690,6 +1746,8 @@ if (typeof window !== 'undefined') {
     window.pickBestXI = pickBestXI;
     window.chooseAIFormation = chooseAIFormation;
     window.MATCH_ENGINE = MATCH_ENGINE;
+    window.getAISquadCached = getAISquadCached;
+    window.averageMatchForm = averageForm;
 }
 
 console.log('✅ Motor de partidos mejorado cargado (Fase 1)');
@@ -1834,9 +1892,10 @@ async function computeBoardTarget() {
     // Previous season: la confianza se enfría hacia 60
     gameState.boardConfidence = Math.round(((gameState.boardConfidence ?? 65) * 0.5 + 30) * 10) / 10;
     gameState.boardWarn = 0;
-    gameState.boardTarget = Math.min(teams.length, Math.max(1, Math.round(rank * 0.9)));
+    gameState.boardTarget = Math.min(teams.length, Math.max(1, rank));
     gameState.boardTargetSeason = gameState.currentSeason;
     gameState.boardLastPraise = -99;
+    if (window.negotiateBoardObjective) await window.negotiateBoardObjective(gameState, rank, teams.length);
     addNews(`[Directiva] Objetivo de la temporada: terminar ${gameState.boardTarget === 1 ? 'campeón' : `en el puesto ${gameState.boardTarget}º o mejor`} (tu plantilla es la ${rank}ª de ${teams.length} por nivel).`, 'info');
 }
 
@@ -2492,7 +2551,8 @@ async function simulateFullWeekInner() {
 
         if (gameState.week > PRESEASON_WEEKS) {  
             gameState.seasonType = 'regular';  
-            gameState.week = 1;  
+            gameState.week = 1;
+            if (gameState.boardTargetSeason !== gameState.currentSeason) await computeBoardTarget();
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${divisionName(gameState.division)}!`, 'success');  
         }  
 
@@ -2593,6 +2653,7 @@ async function simulateFullWeekInner() {
             const result = await processMatch(myTeamMatch.home, myTeamMatch.away, gameState);
             
             myMatchResult = { 
+                goals: result.goals || [], cards: result.cards || [], injuries: result.injuries || [],
                 home: result.homeTeam, 
                 away: result.awayTeam, 
                 homeGoals: result.homeGoals, 
@@ -2602,6 +2663,7 @@ async function simulateFullWeekInner() {
             
             gameState.matchHistory.push({ 
                 week: gameState.week, 
+                goals: result.goals || [], cards: result.cards || [], injuries: result.injuries || [],
                 home: result.homeTeam, 
                 away: result.awayTeam, 
                 score: `${result.homeGoals}-${result.awayGoals}` 
@@ -3514,6 +3576,19 @@ if (typeof window !== 'undefined') {
     window.STAFF_LEVEL_EFFECTS = STAFF_LEVEL_EFFECTS;
     window.pcfEconomy = {
         ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        benefits: (state, ticket = 0, merch = 0) => {
+            const result = { house: 0, car: 0, tickets: 0, merch: 0 };
+            for (const p of state.squad || []) {
+                if (p.contractType === 'loaned_out') continue;
+                result.house += typeof p.house === 'number' ? p.house : (p.house ? 250 : 0);
+                result.car += typeof p.car === 'number' ? p.car : (p.car ? 100 : 0);
+                result.tickets += ticket * Math.max(0, Math.min(100, Number(p.ticketPercent) || 0)) / 100;
+                result.merch += merch * Math.max(0, Math.min(100, Number(p.merchPercent) || 0)) / 100;
+            }
+            Object.keys(result).forEach(k => result[k] = Math.round(result[k]));
+            result.total = result.house + result.car + result.tickets + result.merch;
+            return result;
+        },
         makeOffer: (playerName) => {
             const p = gameState.squad.find(x => x.name === playerName);
             return p ? makeOfferForPlayer(p) : null;

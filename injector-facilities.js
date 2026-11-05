@@ -606,6 +606,15 @@
             ${rows}</div>`;
     }
 
+    window.pcfStadiumRequirements = function(capacity) {
+        const s = gs(), d = getFacData();
+        const ph = SEAT_PHASES.find(p => capacity <= p.upTo) || SEAT_PHASES[SEAT_PHASES.length - 1];
+        const upgrades = [...STADIUM_UPGRADES, ...TRAINING_UPGRADES];
+        const ids = ph.requires === 'ALL' ? upgrades.filter(u => u.unique).map(u => u.id) : ph.requires;
+        const done = new Set([...d.stadiumDone, ...d.trainingDone]);
+        return ids.length ? ids.map(id => `${done.has(id) ? '✓' : 'Pendiente:'} ${stripEmoji(upgrades.find(u => u.id === id)?.name || id)}`).join('\n') : 'Sin requisitos adicionales';
+    };
+
     function buildPage() {
         const container = document.getElementById('facilities');
         if (!container) return;
@@ -646,40 +655,9 @@
 
         container.innerHTML = `
         <div class="page-header">
-            <h1>🏟️ Estadio e Instalaciones</h1>
+            <h1>🏟️ Estadio e Instalaciones</h1><span>👥 Afición ${fmt(s.fanbase)} · 🏋️ Entrenamiento Nv.${s.trainingLevel || 1} · Popularidad ${s.popularity || 50}/100</span>
             <button class="page-close-btn" onclick="closePage('facilities')">✖ CERRAR</button>
         </div>
-
-        <!-- RESUMEN + FOTO: flex-wrap para que en móvil se apilen -->
-        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-            <!-- Stats: crecen para llenar espacio, mínimo 200px -->
-            <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;">
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.83em;">🏟️ ${s.stadiumName || 'Estadio'}</span>
-                    <span style="color:#FFD700;font-weight:bold;">${fmt(s.stadiumCapacity)} esp.</span>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.83em;">👥 Afición</span>
-                    <span style="color:#4CAF50;font-weight:bold;">${fmt(s.fanbase)}</span>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.83em;">🏋️ Entrenamiento</span>
-                    <span style="color:#2196F3;font-weight:bold;">Nv.${s.trainingLevel || 1}${injRed > 0 ? ' -'+injRed+'%' : ''}</span>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#888;font-size:.83em;">📊 Popularidad</span>
-                    <span style="color:#9C27B0;font-weight:bold;">${s.popularity || 50}/100</span>
-                </div>
-            </div>
-            <!-- Foto: ancho fijo 160px en desktop, 100% en móvil -->
-            <div style="flex:0 0 auto;width:clamp(120px,35%,200px);">
-                ${photoHTML}
-                <div style="color:#444;font-size:.7em;text-align:center;">Admin → foto</div>
-            </div>
-        </div>
-
-        <!-- PLAN DE OBRAS -->
-        ${renderPlan(s, d)}
 
         <!-- OBRAS EN CURSO -->
         ${constructionHTML}

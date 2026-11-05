@@ -148,6 +148,7 @@
             if (player.satisfaction === undefined) return;
             if (player.satisfaction >= CONFIG.unhappyThreshold) return;
             if (player.transferListed) return; // ya está en el mercado
+            if (window.pcfEconomy?.canSell && !window.pcfEconomy.canSell(player).ok) return;
 
             // Muy insatisfecho → puede pedir la venta
             if (player.satisfaction < CONFIG.unhappyTransferRequest) {

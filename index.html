@@ -727,10 +727,10 @@
                 
                 <div class="negotiation-incentives">
                     <div><input type="checkbox" id="offeredBonus"><label for="offeredBonus">Prima por Fichaje</label></div>
-                    <div><input type="checkbox" id="offeredCar"><label for="offeredCar">Coche</label></div>
-                    <div><input type="checkbox" id="offeredHouse"><label for="offeredHouse">Casa</label></div>
-                    <div><input type="checkbox" id="offeredMerchPercent"><label for="offeredMerchPercent">% Merchandising</label></div>
-                    <div><input type="checkbox" id="offeredTicketPercent"><label for="offeredTicketPercent">% Entradas</label></div>
+                    <div><label for="offeredCar">Coche (coste semanal)</label><select id="offeredCar"><option value="0">Sin coche</option><option value="100">Básico · 100 €/sem</option><option value="300">Superior · 300 €/sem</option><option value="700">Lujo · 700 €/sem</option></select></div>
+                    <div><label for="offeredHouse">Casa (coste semanal)</label><select id="offeredHouse"><option value="0">Sin casa</option><option value="250">Piso · 250 €/sem</option><option value="600">Casa · 600 €/sem</option><option value="1500">Lujo · 1.500 €/sem</option></select></div>
+                    <div><label for="offeredMerchPercent">% Merchandising de la semana</label><input type="number" id="offeredMerchPercent" min="0" max="100" step="0.1" value="0"></div>
+                    <div><label for="offeredTicketPercent">% Entradas de la semana</label><input type="number" id="offeredTicketPercent" min="0" max="100" step="0.1" value="0"></div>
                 </div>
                 <button class="btn" onclick="window.submitPlayerOffer()">Hacer Oferta al Jugador</button>
                 <button class="btn" style="background: #c73446;" onclick="window.endNegotiationUI(false)">Cancelar Negociación</button>
@@ -1251,10 +1251,10 @@ window.selectTeamAndStart = async function(teamName, division) {
                 document.getElementById('negotiationStep1').style.display = 'block';
                 document.getElementById('offeredSalary').value = player.salary;
                 document.getElementById('offeredBonus').checked = false;
-                document.getElementById('offeredCar').checked = false;
-                document.getElementById('offeredHouse').checked = false;
-                document.getElementById('offeredMerchPercent').checked = false;
-                document.getElementById('offeredTicketPercent').checked = false;
+                document.getElementById('offeredCar').value = '0';
+                document.getElementById('offeredHouse').value = '0';
+                document.getElementById('offeredMerchPercent').value = '0';
+                document.getElementById('offeredTicketPercent').value = '0';
             } else if (state.negotiationStep === 2) {
                 document.getElementById('negotiationStep2').style.display = 'block';
 
@@ -1283,10 +1283,10 @@ window.selectTeamAndStart = async function(teamName, division) {
         window.submitPlayerOffer = function() {
             const offeredSalary = parseInt(document.getElementById('offeredSalary').value);
             const offeredBonus = document.getElementById('offeredBonus').checked;
-            const offeredCar = document.getElementById('offeredCar').checked;
-            const offeredHouse = document.getElementById('offeredHouse').checked;
-            const offeredMerchPercent = document.getElementById('offeredMerchPercent').checked;
-            const offeredTicketPercent = document.getElementById('offeredTicketPercent').checked;
+            const offeredCar = Number(document.getElementById('offeredCar').value) || 0;
+            const offeredHouse = Number(document.getElementById('offeredHouse').value) || 0;
+            const offeredMerchPercent = Number(document.getElementById('offeredMerchPercent').value) || 0;
+            const offeredTicketPercent = Number(document.getElementById('offeredTicketPercent').value) || 0;
 
             const result = gameLogic.offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent);
             alert(result.message);
@@ -1531,8 +1531,12 @@ window.selectTeamAndStart = async function(teamName, division) {
 
         // Staff Display
         function updateStaffDisplay(state) {
-            Object.keys(STAFF_ROLES).forEach(role => {
+            [...new Set([...Object.keys(STAFF_ROLES), 'entrenadorJuveniles'])].forEach(role => {
                 const staff = state.staff[role];
+                if (role === 'entrenadorJuveniles' && staff && !(Number(staff.salary) > 0)) {
+                    staff.salary = 500 + Math.round(1500 * (staff.level || 1) / 5);
+                    gameLogic.updateGameState({ staff: state.staff });
+                }
                 const nameElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Name`);
                 const levelElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Level`);
                 const salaryElem = document.getElementById(`staff${role.charAt(0).toUpperCase() + role.slice(1)}Salary`);
@@ -2274,6 +2278,7 @@ window.onclick = function(event) {
     <script src="./injector-skin.js"></script>
     <script src="./injector-news.js"></script>
     <script src="./injector-sim-guard.js"></script>
+    <script src="./injector-review-fixes.js"></script>
 
   
 

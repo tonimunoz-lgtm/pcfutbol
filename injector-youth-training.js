@@ -288,7 +288,7 @@ console.log('🏫 Youth Training Injector cargando...');
             <td>🏫 Entrenador Juveniles</td>
             <td id="staffEntrenadorJuvenilesName">No Contratado</td>
             <td id="staffEntrenadorJuvenilesLevel">-</td>
-            <td id="staffEntrenadorJuvenilesalary">-</td>
+            <td id="staffEntrenadorJuvenilesSalary">-</td>
             <td id="staffEntrenadorJuvenilesClausula">-</td>
             <td><button class="btn btn-sm" id="btnHireEntrenadorJuveniles" onclick="window.openYouthCoachModal()">Contratar</button></td>
         `;
@@ -303,7 +303,7 @@ console.log('🏫 Youth Training Injector cargando...');
 
         const nameEl = document.getElementById('staffEntrenadorJuvenilesName');
         const lvlEl  = document.getElementById('staffEntrenadorJuvenilesLevel');
-        const salEl  = document.getElementById('staffEntrenadorJuvenilesalary');  // note: typo en id para evitar colisión
+        const salEl  = document.getElementById('staffEntrenadorJuvenilesSalary');  // note: typo en id para evitar colisión
         const clausEl= document.getElementById('staffEntrenadorJuvenilesClausula');
         const btnEl  = document.getElementById('btnHireEntrenadorJuveniles');
 

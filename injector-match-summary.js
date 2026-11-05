@@ -88,21 +88,9 @@ window.injectMatchSummary = function(matchResult) {
         return scorers.sort((a, b) => a.minute - b.minute);
     };
     
-    const homeScorers = generateGoalScorers(homeTeam, homeGoals, true);
-    const awayScorers = generateGoalScorers(awayTeam, awayGoals, false);
-    const allGoals = [...homeScorers, ...awayScorers].sort((a, b) => a.minute - b.minute);
-
-    // Cuenta los goles de TU plantilla (alimenta el Pichichi)
-    try {
-        const gl = window.gameLogic, st = gl && gl.getGameState && gl.getGameState();
-        if (st && st.squad) {
-            const mine = allGoals.filter(g => g.team === st.team);
-            if (mine.length) {
-                mine.forEach(g => { const pl = st.squad.find(x => x.name === g.name); if (pl) pl.goals = (pl.goals || 0) + 1; });
-                gl.updateGameState({ squad: st.squad });
-            }
-        }
-    } catch (e) { console.warn('Goles del equipo:', e); }
+    const allGoals = (matchResult.goals || []).slice().sort((a, b) => a.minute - b.minute);
+    const homeScorers = allGoals.filter(g => g.team === homeTeam);
+    const awayScorers = allGoals.filter(g => g.team === awayTeam);
 
     // ========================================
     // ESTADÍSTICAS REALISTAS
@@ -135,8 +123,8 @@ window.injectMatchSummary = function(matchResult) {
         ],
         corners: [Math.floor(Math.random() * 8) + 2, Math.floor(Math.random() * 8) + 2],
         fouls: [Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 12) + 8],
-        yellowCards: [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)],
-        redCards: [Math.random() < 0.1 ? 1 : 0, Math.random() < 0.1 ? 1 : 0],
+        yellowCards: [0, 0],
+        redCards: [0, 0],
         offsides: [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)],
         passes: [
             Math.floor(homePossession * 5 + Math.random() * 100),
@@ -153,50 +141,11 @@ window.injectMatchSummary = function(matchResult) {
     };
 
     // ========================================
-    // GENERAR TARJETAS CON JUGADORES
-    // ========================================
-    const generateCards = (team, numYellow, numRed) => {
-        const cards = [];
-        let namePool = team === _myTeam ? _getMyTeamScorers() : _getRivalScorers(team);
-        if (!namePool || namePool.length === 0) namePool = _genericNames;
-
-        for (let i = 0; i < numYellow; i++) {
-            cards.push({
-                type: 'yellow',
-                player: namePool[Math.floor(Math.random() * namePool.length)],
-                minute: Math.floor(Math.random() * 90) + 1,
-                team: team
-            });
-        }
-        
-        for (let i = 0; i < numRed; i++) {
-            cards.push({
-                type: 'red',
-                player: namePool[Math.floor(Math.random() * namePool.length)],
-                minute: Math.floor(Math.random() * 90) + 1,
-                team: team
-            });
-        }
-        
-        return cards;
-    };
-    
-    const homeCards = generateCards(homeTeam, stats.yellowCards[0], stats.redCards[0]);
-    const awayCards = generateCards(awayTeam, stats.yellowCards[1], stats.redCards[1]);
-    const allCards = [...homeCards, ...awayCards].sort((a, b) => a.minute - b.minute);
-
-    // ========================================
-    // LESIONES (opcional, con baja probabilidad)
-    // ========================================
-    const injuries = [];
-    if (Math.random() < 0.2) {
-        const injuredPlayer = ['Savic', 'Hermoso', 'Llorente', 'Correa'][Math.floor(Math.random() * 4)];
-        injuries.push({
-            player: injuredPlayer,
-            minute: Math.floor(Math.random() * 90) + 1,
-            team: Math.random() < 0.5 ? homeTeam : awayTeam
-        });
-    }
+    // Hechos del partido: misma fuente que las sanciones y las noticias.
+    const allCards = (matchResult.cards || []).slice().sort((a, b) => a.minute - b.minute);
+    const injuries = matchResult.injuries || [];
+    stats.yellowCards = [homeTeam, awayTeam].map(t => allCards.filter(c => c.team === t && c.type === 'yellow').length);
+    stats.redCards = [homeTeam, awayTeam].map(t => allCards.filter(c => c.team === t && c.type === 'red').length);
 
     // ========================================
     // CREAR MODAL HTML

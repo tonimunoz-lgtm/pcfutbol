@@ -557,7 +557,7 @@
                 params = { ...params };
                 params[side + 'AttackMod']  = (params[side + 'AttackMod']  || 1) * atkMod;
                 params[side + 'DefenseMod'] = (params[side + 'DefenseMod'] || 1) * defMod;
-                if (atkMod !== 1 || defMod !== 1) {
+                if (!params.preview && (atkMod !== 1 || defMod !== 1)) {
                     console.log(`[Tactics] Presión "${press}" + Instrucción "${instr}" → ataque ×${atkMod.toFixed(2)}, defensa ×${defMod.toFixed(2)}`);
                 }
             }

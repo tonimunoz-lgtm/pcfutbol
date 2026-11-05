@@ -384,7 +384,7 @@ function renderAcademyList(academy) {
                 <td>${p.salary.toLocaleString('es-ES')}€</td>  
            <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->  
                 <td>  
-                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button>  
+                    <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm('${p.name}')">Ascender</button><button class="btn btn-sm youth-dismiss" data-player="${encodeURIComponent(p.name)}">Despedir</button>  
                 </td>  
             </tr>  
         `;  

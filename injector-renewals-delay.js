@@ -132,7 +132,7 @@
             const accepted = Math.random() < prob;
 
             if (accepted) {
-                player.contractYears = renewal.newYears;
+                player.contractYears = Math.max(0, Number(player.contractYears) || 0) + Number(renewal.newYears);
                 player.salary = renewal.newSalary;
                 player.releaseClause = renewal.newClause;
 
@@ -144,10 +144,10 @@
                 }
 
                 news(
-                    `✅ ¡${renewal.playerName} ha aceptado la renovación! Firmó por ${renewal.newYears} años a ${renewal.newSalary.toLocaleString('es-ES')}€/sem`,
+                    `✅ ¡${renewal.playerName} ha aceptado la renovación! Añade ${renewal.newYears} años y queda con ${player.contractYears} años de contrato a ${renewal.newSalary.toLocaleString('es-ES')}€/sem`,
                     'success'
                 );
-                news(`🗞️ PRENSA: ${renewal.playerName} renueva con el ${state.team} hasta ${(parseInt(String(state.currentSeason).split('/')[1]) || 2027) + renewal.newYears - 1}.`, 'info');
+                news(`🗞️ PRENSA: ${renewal.playerName} renueva con el ${state.team} hasta ${(parseInt(String(state.currentSeason).split('/')[1]) || 2027) + player.contractYears - 1}.`, 'info');
 
                 // Toast no-bloqueante en lugar de alert
                 showToast(`✅ ${renewal.playerName} ha renovado su contrato por ${renewal.newYears} años`, 'success');
