@@ -26,7 +26,14 @@ window.injectMatchSummary = function(matchResult) {
     // Jugadores de nuestro equipo aptos para marcar (excluir portero)
     const _getMyTeamScorers = () => {
         if (!_gameState || !_gameState.lineup || _gameState.lineup.length === 0) return null;
-        return _gameState.lineup.filter(p => p && p.position !== 'POR').map(p => p.name);
+        // Más probabilidad de marcar para delanteros y extremos que para centrales
+        const W = { DC: 10, EXT: 6, MCO: 5, MC: 2, LI: 1, LD: 1, DFC: 1 };
+        const pool = [];
+        _gameState.lineup.filter(p => p && p.position !== 'POR').forEach(p => {
+            const n = Math.max(1, Math.round((W[p.position] || 1) * Math.pow((p.overall || 60) / 70, 3)));
+            for (let k = 0; k < n; k++) pool.push(p.name);
+        });
+        return pool;
     };
 
     // Jugadores del equipo rival desde localStorage (si fueron cargados en admin)
@@ -84,6 +91,18 @@ window.injectMatchSummary = function(matchResult) {
     const homeScorers = generateGoalScorers(homeTeam, homeGoals, true);
     const awayScorers = generateGoalScorers(awayTeam, awayGoals, false);
     const allGoals = [...homeScorers, ...awayScorers].sort((a, b) => a.minute - b.minute);
+
+    // Cuenta los goles de TU plantilla (alimenta el Pichichi)
+    try {
+        const gl = window.gameLogic, st = gl && gl.getGameState && gl.getGameState();
+        if (st && st.squad) {
+            const mine = allGoals.filter(g => g.team === st.team);
+            if (mine.length) {
+                mine.forEach(g => { const pl = st.squad.find(x => x.name === g.name); if (pl) pl.goals = (pl.goals || 0) + 1; });
+                gl.updateGameState({ squad: st.squad });
+            }
+        }
+    } catch (e) { console.warn('Goles del equipo:', e); }
 
     // ========================================
     // ESTADÍSTICAS REALISTAS

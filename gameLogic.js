@@ -331,7 +331,8 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
     const nextSeasonYear = parseInt(gameState.currentSeason.split('/')[0]) + 1;  
     const newSeasonName = `${nextSeasonYear}/${nextSeasonYear + 1}`;  
   
-    gameState.week = 1;  
+    gameState.week = 1;
+    (gameState.squad || []).forEach(p => { p.goals = 0; });      // los goles del Pichichi se cuentan por temporada  
     gameState.matchHistory = [];  
     gameState.standings = {};  
     gameState.newsFeed = [];  
@@ -2376,7 +2377,12 @@ async function endSeason() {
     }
     const fullText = summary.europe ? `${text}\n🌍 Clasificado para la ${summary.europe}.` : text;
 
-    alert(fullText);
+    // Gala de fin de temporada (si el módulo está cargado); si no, el aviso de siempre
+    if (typeof window !== 'undefined' && typeof window.showSeasonGala === 'function') {
+        try { await window.showSeasonGala(summary, fullText); } catch (e) { console.error('Gala:', e); alert(fullText); }
+    } else {
+        alert(fullText);
+    }
     setupNewSeason(currentDivision, nextDivisionKey);
     // El resumen se añade DESPUÉS de reiniciar las noticias de la nueva temporada
     fullText.split('\n').slice(1).reverse().forEach(line => addNews(line, summary.userMove && summary.userMove.reason.startsWith('ascenso') ? 'success' : 'info'));
