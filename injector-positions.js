@@ -177,6 +177,7 @@
         const els = [...c.querySelectorAll('.next-match-title, #nextMatchTeams, #nextMatchDate')];
         if (!els.length) return;
         els.forEach(e => { e.style.fontSize = ''; });
+        if(c.classList.contains('match-overview'))return; // Rectangular layout wraps naturally; no circle fitting.
         const r = c.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R = r.width / 2;
         const far = () => {
             let w = 0;

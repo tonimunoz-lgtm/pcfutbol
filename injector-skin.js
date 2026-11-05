@@ -190,6 +190,7 @@
             if (!h1) return;
             const first = h1.firstElementChild;
             if (first && first.classList.contains('pcf-page-icon')) return;
+            if (first?.classList.contains("pcf-symbol") && LEADING_EMOJI.test(first.textContent.trim())) first.remove();
             // quitar el emoji inicial del primer nodo de texto
             const tn = [...h1.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
             if (tn) tn.textContent = tn.textContent.replace(/^\s+/, '').replace(LEADING_EMOJI, '');

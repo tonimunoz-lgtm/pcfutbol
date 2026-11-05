@@ -14,81 +14,24 @@ console.log('🎮 Game Selection Modal Injector (SIMPLIFICADO) cargando...');
         
         const modalHTML = `
             <div id="gameSelectionModal" class="modal">
-                <div class="modal-content" style="max-width: 600px; padding: 40px;">
-                    <h2 style="text-align: center; margin-bottom: 10px; color: #4CAF50; font-size: 32px;">
-                        ¡Bienvenido al PC Fútbol Manager!
-                    </h2>
-                    
-                    <p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #aaa;">
-                        Selecciona una opción para continuar
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <button id="btnNewGameSelection" class="game-selection-btn" style="
-                            padding: 40px 20px;
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            border: none;
-                            border-radius: 15px;
-                            cursor: pointer;
-                            color: white;
-                            font-size: 18px;
-                            font-weight: bold;
-                            transition: all 0.3s ease;
-                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-                        ">
-                            <div style="font-size: 48px; margin-bottom: 10px;">🎮</div>
-                            <div>NUEVA PARTIDA</div>
-                            <div style="font-size: 12px; margin-top: 8px; opacity: 0.8;">Comienza desde cero</div>
+                <section class="modal-content pcf-welcome">
+                    <p class="pcf-eyebrow">TU CLUB. TU DECISIÓN.</p>
+                    <h2>Bienvenido al PC Fútbol Manager</h2>
+                    <p class="pcf-welcome-intro">Empieza un nuevo proyecto deportivo o continúa tu carrera.</p>
+                    <div class="game-selection-options">
+                        <button id="btnNewGameSelection" class="game-selection-btn">
+                            <img src="assets/modern/new.svg" alt="">
+                            <span>Nueva partida</span><small>Construye tu próximo proyecto</small>
                         </button>
-                        
-                        <button id="btnLoadGameSelection" class="game-selection-btn" style="
-                            padding: 40px 20px;
-                            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                            border: none;
-                            border-radius: 15px;
-                            cursor: pointer;
-                            color: white;
-                            font-size: 18px;
-                            font-weight: bold;
-                            transition: all 0.3s ease;
-                            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-                        ">
-                            <div style="font-size: 48px; margin-bottom: 10px;">☁️</div>
-                            <div>CARGAR PARTIDA</div>
-                            <div style="font-size: 12px; margin-top: 8px; opacity: 0.8;">Desde la nube</div>
+                        <button id="btnLoadGameSelection" class="game-selection-btn">
+                            <img src="assets/modern/load.svg" alt="">
+                            <span>Cargar partida</span><small>Vuelve al banquillo</small>
                         </button>
                     </div>
-                    
-                    <div style="text-align: center; margin-top: 20px;">
-                        <button id="btnLogoutSelection" style="
-                            background: transparent;
-                            border: 1px solid #666;
-                            color: #999;
-                            padding: 10px 30px;
-                            border-radius: 8px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.borderColor='#fff'; this.style.color='#fff';" 
-                           onmouseout="this.style.borderColor='#666'; this.style.color='#999';">
-                            🚪 Cerrar Sesión
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <style>
-                .game-selection-btn:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-                }
-                
-                .game-selection-btn:active {
-                    transform: translateY(-2px);
-                }
-            </style>
-        `;
-        
+                    <footer class="pcf-welcome-footer"><button id="btnLogoutSelection" class="btn btn-sm"><img src="assets/modern/logout.svg" class="pcf-ui-icon" alt="">Cerrar sesión</button></footer>
+                </section>
+            </div>`;
+
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
         // Event listeners

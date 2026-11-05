@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="pcf6-theme.css">
 <link rel="stylesheet" href="pcf-mobile.css">
+<link rel="stylesheet" href="pcf-modern.css">
 <script src="./injector-storage-guard.js"></script>
 <script src="./injector-crest-cleaner.js"></script>
 
@@ -24,16 +25,21 @@
         
     <!-- HEADER -->
     <div class="header">
-        <div class="header-info">
+        <div class="header-info club-identity">
             <img id="teamLogoHeader" class="team-logo-header" src="" alt="Logo" style="display: none;">
             <div class="info-box">
                 <span id="teamName">-</span>
             </div>
         </div>
         
-        <div class="header-title">⚽ PC FÚTBOL MANAGER</div>
+        <div class="header-title"><img src="assets/modern/ball.svg" class="brand-mark" alt=""><span>PC FÚTBOL <small>MANAGER</small></span></div>
+        <nav class="header-actions" aria-label="Partidas">
+            <button class="center-option load-btn header-action" onclick="window.openSettingsPage()"><img class="pcf-ui-icon" src="assets/modern/load.svg" alt="">Cargar</button>
+            <button class="center-option save-btn header-action" onclick="window.saveCurrentGame()"><img class="pcf-ui-icon" src="assets/modern/save.svg" alt="">Guardar</button>
+            <button class="center-option exit-btn header-action" onclick="window.openModal('gameMode')"><img class="pcf-ui-icon" src="assets/modern/new.svg" alt="">Nuevo juego</button>
+        </nav>
         
-        <div class="header-info">
+        <div class="header-info club-meta">
             <div class="info-box">
                 <span>Jornada:</span>
                 <span id="weekNo">1</span>
@@ -65,6 +71,18 @@
             <button class="menu-button green-button entreno-icon" onclick="window.openTrainingPanel()">Entrenamiento</button>
         </div>
 
+       <!-- PARTIDO Y AVANCE: zona central entre Equipo y Fichajes -->
+       <div class="main-center-row fixture-panel" aria-label="Próximo partido y avance de jornada">
+           <div class="main-center-circle match-overview">
+               <div id="nextMatchInfo">
+                   <div class="next-match-title">PRÓXIMO PARTIDO</div>
+                   <div id="nextMatchDate">-</div>
+                   <div id="nextMatchTeams">-</div>
+               </div>
+           </div>
+           <button class="center-option simulate-btn fixture-advance" onclick="window.simulateWeek()"><img class="pcf-ui-icon" src="assets/modern/play.svg" alt=""><span>Seguir</span></button>
+       </div>
+
         <!-- CUADRANTE INFERIOR IZQUIERDO: FICHAJES -->
         <div class="quadrant bottom-left">
             <div class="section-title"><img class="pcf-ui-icon" src="assets/iconos/ui/seccion-fichajes.webp" alt="" aria-hidden="true">FICHAJES</div>
@@ -83,31 +101,6 @@
             <button class="menu-button red-button stadium-icon" onclick="openPage('facilities')">Estadio</button>
         </div>
 
-       <!-- FILA CENTRAL PRINCIPAL -->
-<div class="main-center-row">
-
-    <!-- BOTONES IZQUIERDA -->
-    <div class="center-buttons left">
-        <button class="center-option load-btn" onclick="window.openSettingsPage()"><img class="pcf-ui-icon" src="assets/iconos/ui/boton-cargar.webp" alt="" aria-hidden="true">Cargar Juego</button>
-        <button class="center-option save-btn" onclick="window.saveCurrentGame()"><img class="pcf-ui-icon" src="assets/iconos/ui/boton-guardar.webp" alt="" aria-hidden="true">Guardar</button>
-    </div>
-
-    <!-- CÍRCULO CENTRAL -->
-    <div class="main-center-circle">
-        <div id="nextMatchInfo">
-            <div id="nextMatchDate">-</div>
-            <div class="next-match-title">PRÓXIMO PARTIDO</div>
-            <div id="nextMatchTeams">-</div>
-        </div>
-    </div>
-
-    <!-- BOTONES DERECHA -->
-    <div class="center-buttons right">
-        <button class="center-option exit-btn" onclick="window.openModal('gameMode')"><img class="pcf-ui-icon" src="assets/iconos/ui/boton-nuevo.webp" alt="" aria-hidden="true">Nuevo Juego</button>
-        <button class="center-option simulate-btn" onclick="window.simulateWeek()"><img class="pcf-ui-icon" src="assets/iconos/ui/boton-seguir.webp" alt="" aria-hidden="true">Seguir</button>
-    </div>
-
-</div>
 
     </div>
 
@@ -661,14 +654,14 @@
             <h1>¿Cómo quieres jugar?</h1>
             <div class="pcf-mode-grid">
                 <button class="pcf-mode-card" onclick="window.startGameMode('manager')">
-                    <img class="pcf-mode-banner" src="assets/imagenes/modo-elige-club.webp" alt="">
+                    <img class="pcf-mode-banner" src="assets/modern/mode-club.svg" alt="">
                     <span class="pcf-mode-title">Elige tu club</span>
                     <span class="pcf-mode-tag">Modo clásico</span>
                     <span class="pcf-mode-desc">Escoge cualquier equipo de Primera, Segunda o Primera RFEF y dirígelo desde el primer día, con su plantilla y su presupuesto reales.</span>
                     <span class="pcf-mode-ideal">Ideal si quieres llevar a tu equipo favorito.</span>
                 </button>
                 <button class="pcf-mode-card" onclick="window.startGameMode('promanager')">
-                    <img class="pcf-mode-banner" src="assets/imagenes/modo-carrera.webp" alt="">
+                    <img class="pcf-mode-banner" src="assets/modern/mode-career.svg" alt="">
                     <span class="pcf-mode-title">Carrera de entrenador</span>
                     <span class="pcf-mode-tag">Empieza desde abajo</span>
                     <span class="pcf-mode-desc">Eres un técnico sin experiencia: solo te llaman clubes de categorías inferiores. Gana partidos, sube tu reputación y recibirás ofertas de equipos más grandes… pero si los resultados no llegan, te pueden destituir.</span>
@@ -2284,6 +2277,7 @@ window.onclick = function(event) {
     <script src="./injector-salary-mood.js"></script>
     <script src="./injector-negotiations.js"></script>
     <script src="./injector-lineup-pro.js"></script>
+    <script src="./injector-visual-refresh.js"></script>
     <script src="./injector-skin.js"></script>
     <script src="./injector-news.js"></script>
     <script src="./injector-sim-guard.js"></script>
