@@ -8,10 +8,6 @@
 
     // Función para abrir el modal de partidas guardadas
     window.openSavedGamesModal = async function() {
-        if (!window.currentUserId) {
-            alert('⚠️ Debes iniciar sesión para acceder a tus partidas guardadas en la nube.');
-            return;
-        }
 
         // Crear modal si no existe
         if (!document.getElementById('savedGamesModal')) {
@@ -21,7 +17,10 @@
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 700px;">
                     <span class="modal-close" onclick="document.getElementById('savedGamesModal').classList.remove('active')">&times;</span>
-                    <h1>☁️ Partidas Guardadas en la Nube</h1>
+                    <h1>📂 Cargar partida</h1>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+                        <button type="button" class="btn btn-sm" id="pcfImportBackupButton">Importar copia</button>
+                    </div>
                     <div id="savedGamesListContainer" style="margin-top: 20px;">
                         <div class="alert alert-info">Cargando partidas...</div>
                     </div>
@@ -32,7 +31,13 @@
         }
 
         // Abrir modal
+        const importButton=document.getElementById('pcfImportBackupButton');
+        if(importButton)importButton.onclick=()=>window.pcfImportBackup?.();
         document.getElementById('savedGamesModal').classList.add('active');
+        if(!window.currentUserId){
+            document.getElementById('savedGamesListContainer').textContent='Inicia sesión para ver tus partidas de la nube, o importa una copia desde tu equipo.';
+            return;
+        }
         
         // Cargar partidas
         try {

@@ -131,6 +131,7 @@
     // =====================================================
     function patchSearchPlayersMarket() {
         window.searchPlayersMarket = async function() {
+            window.pcfWorld?.ensureMarket?.();
             const state = window.gameLogic.getViewState();
             if (!window.pcfWorld?.hasWorld() && !marketLoaded) { await loadMarketFromFirestore(); marketLoaded=true; }
             const myNames = new Set((state.squad || []).map(p => p.name.toLowerCase()));
@@ -151,15 +152,9 @@
             const firestoreNames = new Set(firestoreMarketPlayers.map(p => p.name.toLowerCase()));
             const myListedNames  = new Set(myListed.map(p => p.name.toLowerCase()));
             const scoutLevel = state.staff?.scout?.level || 0;
-            const generated = window.gameLogic.getPlayerMarket({})
-                .filter(p =>
-                    !firestoreNames.has(p.name.toLowerCase()) &&
-                    !myListedNames.has(p.name.toLowerCase()) &&
-                    !myNames.has(p.name.toLowerCase())
-                );
-
-            // Tus propios jugadores en venta no aparecen en la lista de compra
-            let all = window.pcfWorld?.hasWorld() ? window.gameLogic.getPlayerMarket({}) : [...firestoreFiltered, ...generated];
+            const candidates=window.gameLogic.getPlayerMarket({});
+            const generated=candidates.filter(p=>!firestoreNames.has(p.name.toLowerCase()) && !myListedNames.has(p.name.toLowerCase()) && !myNames.has(p.name.toLowerCase()));
+            let all=window.pcfWorld?.hasWorld()?candidates:[...firestoreFiltered,...generated];
 
             if (filters.position && filters.position !== 'ALL')
                 all = all.filter(p => p.position === filters.position);
@@ -177,7 +172,7 @@
             const noneChecked = !listedChecked && !freeChecked;
 
             let listed = [];
-            if (noneChecked) listed = all;
+            if (noneChecked) listed = [...all].sort((a,b)=>Number(!!(b.transferListed||b.loanListed))-Number(!!(a.transferListed||a.loanListed))||(b.overall||0)-(a.overall||0));
             else if (listedChecked) listed = all.filter(p => (filters.transferListed && p.transferListed) || (filters.loanListed && p.loanListed));
 
             const passes = p =>

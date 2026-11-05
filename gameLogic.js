@@ -1784,12 +1784,51 @@ function runWorldMarket() {
     for(const m of emitted.slice(0,3))addNews(m.type==='renewal'?`📋 ${m.to} renueva a ${m.name} por 3 temporadas.`:`🔄 ${m.to} ficha a ${m.name} del ${m.from} por ${m.fee.toLocaleString('es-ES')}€.`, 'info');
     w.revision++;return emitted;
 }
+// Initialize career-market decisions once per season. Catalog templates are never written.
+function ensureMarketState(){
+    const w=gameState.world;if(!w)return;
+    if(w.marketReadySeason===w.season){if(!gameState.freeAgentsSeason)gameState.freeAgentsSeason=gameState.currentSeason;return;}
+    const clubIds=new Set();
+    for(const c of Object.values(w.clubs)){
+        for(const player of c.squad){
+            if(!player.contractType)player.contractType=player.loanOwner||player.loan?'loaned':'owned';
+            if(player.id)clubIds.add(player.id);
+        }
+        if(c.name===gameState.team)continue;
+        const starters=new Set(pickBestXI(c.squad,chooseAIFormation(c.squad)).filter(Boolean).map(p=>p.id||p.name));
+        const reserves=c.squad.filter(p=>p.contractType==='owned' && !p.loanOwner && !starters.has(p.id||p.name));
+        if(!c.squad.some(p=>p.transferListed)){
+            for(const player of [...reserves].sort((a,b)=>(a.overall||0)-(b.overall||0)||(b.age||0)-(a.age||0)).slice(0,2))player.transferListed=true;
+        }
+        if(!c.squad.some(p=>p.loanListed)){
+            for(const player of reserves.filter(p=>!p.transferListed && (p.age||99)<=26).sort((a,b)=>a.age-b.age).slice(0,2))player.loanListed=true;
+        }
+    }
+    // A previous UI initializer ran before club selection and its pool was reset.
+    // The career itself now owns the initial pool, so it is ready before the first search.
+    const seen=new Set();
+    gameState.freeAgentsPool=(gameState.freeAgentsPool||[]).filter(p=>{
+        if(p.id && (clubIds.has(p.id)||seen.has(p.id)))return false;
+        if(!p.id)p.id=`p_${w.nextPlayerId++}`;
+        seen.add(p.id);p.club='Libre';p.isFreeAgent=true;p.contractType='free';p.contractYears=0;return true;
+    });
+    if(!gameState.freeAgentsPool.length && w.freeAgentsSeededSeason!==w.season){
+        const target=SQUAD_QUALITY[gameState.division]?.target||55;
+        for(let i=0;i<10;i++){
+            const player=buildGeneratedPlayer(['POR','DFC','LI','LD','MC','MCO','MD','MI','EXT','DC'][i],Math.max(35,target-12+(i%3)*5),gameState.division==='promesas'?14+i%4:24+i%10,gameState.division);
+            registerWorldFreeAgent(player);
+        }
+    }
+    w.freeAgentsSeededSeason=w.season;gameState.freeAgentsSeason=gameState.currentSeason;
+    w.marketReadySeason=w.season;w.revision++;
+}
 function marketFromWorld(filters={}) {
     const w=gameState.world;if(!w)return null;
-    const players=Object.values(w.clubs).filter(c=>c.name!==gameState.team).flatMap(c=>c.squad.filter(p=>p.contractType==='owned').map(p=>({...p,sourceClub:c.name,originalTeam:c.name,value:marketValue(p),askingPrice:p.askingPrice||roundMoney(marketValue(p)*1.1)})));
+    ensureMarketState();
+    const players=Object.values(w.clubs).filter(c=>c.name!==gameState.team).flatMap(c=>c.squad.filter(p=>p.contractType==='owned' && !p.loanOwner).map(p=>({...p,club:c.name,sourceClub:c.name,originalTeam:c.name,value:marketValue(p),askingPrice:p.askingPrice||roundMoney(marketValue(p)*1.1)})));
     return players.filter(p=>(!(filters.name||filters.searchName)||p.name.toLowerCase().includes((filters.name||filters.searchName).toLowerCase()))&&
         (!filters.position||filters.position==='ALL'||p.position===filters.position)&&(!filters.minOverall||p.overall>=Number(filters.minOverall))&&(!filters.maxAge||p.age<=Number(filters.maxAge))&&
-        (!filters.transferListed||p.transferListed)&&(!filters.loanListed||p.loanListed));
+        (!(filters.transferListed||filters.loanListed)||(filters.transferListed&&p.transferListed)||(filters.loanListed&&p.loanListed)));
 }
 function registerWorldFreeAgent(player) {
     const w=gameState.world;
@@ -3950,6 +3989,7 @@ if (typeof window !== 'undefined') {
     window.STAFF_LEVEL_EFFECTS = STAFF_LEVEL_EFFECTS;
     window.pcfWorld = {
         ensure:ensureWorld,
+        ensureMarket:ensureMarketState,
         listClubs:()=>Object.values(gameState.world?.clubs||{}).map(c=>({name:c.name,division:c.division})),
         hasWorld:()=>!!gameState.world,
         getClub:name=>{captureWorldClub();return JSON.parse(JSON.stringify(gameState.world?.clubs[name]||null));},
