@@ -1002,7 +1002,15 @@ function weeksSinceJoined(p) {
     const abs = (phase, w) => (phase === 'preseason' ? w : pre + w);
     return abs(gameState.seasonType, gameState.week) - abs(p.joinedPhase, p.joinedWeek);
 }
+// No se puede quedar el club sin portero: debe seguir habiendo al menos uno en propiedad tras la salida.
+function lastKeeperGuard(p) {
+    if (!p || p.position !== 'POR') return null;
+    const others = (gameState.squad || []).filter(x => x.name !== p.name && x.position === 'POR' && x.contractType !== 'loaned_out');
+    return others.length ? null : { ok: false, message: `${p.name} es tu único portero: ficha o asciende otro antes de dejarlo salir.` };
+}
 function canSellPlayer(p) {
+    const keeper = lastKeeperGuard(p);
+    if (keeper) return keeper;
     const w = weeksSinceJoined(p);
     if (w >= MIN_WEEKS_BEFORE_SALE) return { ok: true };
     const left = MIN_WEEKS_BEFORE_SALE - w;
@@ -1329,7 +1337,13 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         const roll = Math.random();  
         const accepted = roll < acceptanceChance;  
   
+        if (accepted && !gameState.playerOffer) {
+            // Sin oferta previa al jugador no hay condiciones de contrato: no se descuenta nada.
+            return { success: false, message: 'Primero debes llegar a un acuerdo personal con el jugador.', type: 'error' };
+        }
         if (accepted) {  
+            const balanceBefore = gameState.balance, purchasesBefore = gameState.playerPurchases || 0;
+            try {
             gameState.balance -= offerAmount;
 // ✅ REGISTRAR GASTO EN FICHAJES
 if (!gameState.playerPurchases) gameState.playerPurchases = 0;
@@ -1348,6 +1362,12 @@ playerExchange.forEach(pName => {
             };  
             endNegotiation(true);  
             return signPlayer(newPlayer);  
+            } catch (error) {
+                // Cualquier fallo a mitad de la operación devuelve el dinero.
+                gameState.balance = balanceBefore; gameState.playerPurchases = purchasesBefore;
+                console.error('offerToClub:', error);
+                return { success: false, message: 'No se pudo completar el fichaje; no se ha cobrado nada.', type: 'error' };
+            }
         } else {  
             if (offerFactor < 0.6 || roll > 0.9) {  
                 endNegotiation();  
@@ -3644,6 +3664,8 @@ function firePlayer(playerName) {
     if (player.contractType !== 'owned') {
         return { success: false, message: 'Solo puedes despedir jugadores en propiedad.' };
     }
+    const keeperGuard = lastKeeperGuard(player);
+    if (keeperGuard) return { success: false, message: keeperGuard.message };
     
     // Calcular indemnización (salario × años restantes)
     const compensation = player.salary * player.contractYears * 52; // 52 semanas/año
