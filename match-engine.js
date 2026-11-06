@@ -159,10 +159,11 @@ export function simulateFootballMatch(params = {}) {
             }
             if(!params.disableDiscipline && rng()<.14*(s.press==='high'?1.18:1)){
                 s.fouls++;
-                const offender=choose(s.active.filter(Boolean),p=>['DFC','MCD','MC'].includes(p.position)?2:1,rng);
+                // Un jugador ya amonestado juega con más cuidado (calibrado: ≈0,13 rojas y ≈4,7 amarillas por partido).
+                const offender=choose(s.active.filter(Boolean),p=>(['DFC','MC'].includes(p.position)?2:1)*(p.matchYellow>=1?.18:1),rng);
                 if(offender){
                     const draw=rng();
-                    if(draw<.006)dismiss(s,offender,minute,timeline);
+                    if(draw<.0012)dismiss(s,offender,minute,timeline);
                     else if(draw<.19){
                         offender.matchYellow++;timeline.push({type:'yellow',team:s.team,player:offender.name,minute});
                         if(offender.matchYellow>=2)dismiss(s,offender,minute,timeline,true);

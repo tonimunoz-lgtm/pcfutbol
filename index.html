@@ -2,12 +2,21 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0b2346">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="PC Fútbol">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="assets/pwa/apple-touch-icon-180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/pwa/favicon-32.png">
     <title>PC Fútbol Manager</title>
   <!-- Interfaz adaptable para móvil y pantallas de poca altura -->
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="pcf6-theme.css">
 <link rel="stylesheet" href="pcf-mobile.css">
+<link rel="stylesheet" href="pcf-pwa.css">
 <script src="./injector-storage-guard.js"></script>
 <script src="./injector-crest-cleaner.js"></script>
 
@@ -2261,6 +2270,7 @@ window.onclick = function(event) {
     <script src="./injector-match-summary.js"></script>
     <script type="module" src="./injector-cards-injuries.js"></script>
     <script src="./injector-lineup-mobile.js"></script>
+    <script src="./injector-lineup-tap.js"></script>
     <script src="injector-transfer-market.js"></script>
     <script src="injector-finances.js"></script>
     <script src="injector-competitions.js"></script>
@@ -2311,6 +2321,12 @@ window.onclick = function(event) {
     </div>
 </div>
 
+<script>
+// PWA: service worker (solo en https o localhost)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW no registrado:', e.message)));
+}
+</script>
 <script>
 // Limpiar localStorage de partidas al cargar la página
 (function() {

@@ -12,7 +12,8 @@ service cloud.firestore {
 
     function isAdmin() {
       return signedIn() && (request.auth.token.get('pcfAdmin', false) == true
-        || request.auth.token.email in ['tonaco92@gmail.com']);
+        || (request.auth.token.get('email_verified', false) == true
+            && request.auth.token.email in ['tonaco92@gmail.com']));
     }
 
     function activePlayer() {

@@ -10,8 +10,8 @@
 (function() {
 
     function reposicionarSlots() {
-        // Solo actuar en movil
-        if (window.innerWidth > 640) return;
+        // Solo actuar en movil (mismo criterio que pcf-mobile.css)
+        if (!window.matchMedia('(max-width:767px), (max-height:500px) and (max-width:1100px)').matches) return;
 
         var slots = document.querySelectorAll('.pitch-position-placeholder');
         if (!slots.length) return;
@@ -31,8 +31,14 @@
         //   new height = slotWidth original  = 18%  -> pero queremos mas alto, usamos 12%
 
         slots.forEach(function(slot) {
-            var leftOrig = parseFloat(slot.style.left);   // % en campo horizontal
-            var topOrig  = parseFloat(slot.style.top);    // % en campo horizontal
+            // Se parte SIEMPRE de los valores originales (guardados la primera vez):
+            // asi repetir la funcion (resize, giro, barra de direcciones) no los transforma de nuevo.
+            if (slot.dataset.pcfL === undefined) {
+                slot.dataset.pcfL = slot.style.left;
+                slot.dataset.pcfT = slot.style.top;
+            }
+            var leftOrig = parseFloat(slot.dataset.pcfL);   // % en campo horizontal
+            var topOrig  = parseFloat(slot.dataset.pcfT);   // % en campo horizontal
 
             // Transformar coordenadas para campo vertical
             var newTop  = leftOrig;
