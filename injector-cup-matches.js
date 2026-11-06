@@ -1128,6 +1128,8 @@ function hookCupSimulateWeek(){
         await prepareMatch(pending);
         { const cal=getCal(); const e=cal.find(m=>m.id===pending.id); if(e){ e.opponent=pending.opponent; saveCal(cal);} }
 
+        // Entre el partido de liga y el de copa/Europa hay 3-4 días de descanso: recuperación parcial.
+        try { window.pcfMidweekRecovery?.(15); } catch (e) { /* */ }
         // 0. Igual que en liga: sustituye en el once a lesionados/sancionados antes de validar
         //    (sin esto, un sancionado en el once impedía jugar la copa una y otra vez).
         try { window.gameLogic.autoFixLineup?.(); } catch (e) { console.warn('autoFixLineup (copa):', e.message); }

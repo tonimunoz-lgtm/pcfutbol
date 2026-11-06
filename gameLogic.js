@@ -697,7 +697,38 @@ function autoFixLineup({ announce = true } = {}) {
     if (announce && changes.length) {
         addNews(`🔁 [Segundo Entrenador] Cambios en el once por bajas: ${changes.join(', ')}.`, 'info');
     }
+    // Rotación automática (se apaga con gameState.autoRotate=false): descansa a los titulares fatigados.
+    if (gameState.autoRotate !== false && gameState.seasonType !== 'preseason') {
+        const rested = rotateTiredPlayers();
+        if (announce && rested.length) addNews(`🔄 [Rotación] ${rested.join('; ')}.`, 'info');
+        changes.push(...rested);
+    }
     return changes;
+}
+
+// Mismo criterio que usa la IA al elegir once: rendimiento = media × (0,62 + 0,38 × condición).
+// Un titular cede su puesto si un suplente disponible, de su posición (o compatible), rinde ahora
+// al menos 2 puntos más. Así el usuario no queda en desventaja por no rotar a mano.
+function rotateTiredPlayers() {
+    const layout = getFormationLayout(gameState.formation || '433');
+    const lineup = gameState.lineup, out = [];
+    if (!Array.isArray(lineup) || lineup.length !== layout.length) return out;
+    const cond = p => Math.max(1, Math.min(100, p.condition ?? 100));
+    const score = x => (x.overall || 0) * (.62 + .38 * cond(x) / 100);
+    const inXI = new Set(lineup.map(p => p.name));
+    const order = lineup.map((p, i) => ({ p, i })).filter(x => cond(x.p) < 90).sort((a, b) => score(a.p) - score(b.p));
+    for (const { p, i } of order) {
+        const want = layout[i].pos;
+        const pool = gameState.squad.filter(x => isAvailable(x) && !inXI.has(x.name) && score(x) >= score(p) + 2 &&
+            ((want === 'POR') === (x.position === 'POR')));
+        const exact = pool.filter(x => x.position === want);
+        const compat = pool.filter(x => x.position !== want && want !== 'POR' && (POSITION_COMPATIBILITY[want] || []).includes(x.position));
+        const pick = (exact.length ? exact : compat).sort((a, b) => score(b) - score(a))[0];
+        if (!pick) continue;
+        lineup[i] = pick; inXI.delete(p.name); inXI.add(pick.name);
+        out.push(`${p.name} (${Math.round(cond(p))} %) descansa y juega ${pick.name}`);
+    }
+    return out;
 }
 
 // ── Plantillas generadas (equipos sin plantilla real) ──────────
@@ -889,7 +920,10 @@ function marketValue(p) {
 function expectedSalary(p, division) {
     const ovr = p.overall || calculatePlayerOverall(p) || 50;
     const divFactor = { primera: 1, segunda: 0.45, rfef_grupo1: 0.15, rfef_grupo2: 0.15, promesas: 0.05 }[division] ?? 0.5;
-    return roundMoney(Math.max(300, 1000 * Math.pow(1.18, ovr - 60) * 0.8 * Math.max(divFactor, 0.05)));
+    const raw = Math.max(300, 1000 * Math.pow(1.18, ovr - 60) * 0.8 * Math.max(divFactor, 0.05));
+    const rounded = roundMoney(raw);
+    // roundMoney usa pasos de 1.000: los sueldos bajos de RFEF (≈300) quedaban en 0 y esos clubes no pagaban nada.
+    return (rounded === 0 && division !== 'promesas') ? Math.max(300, Math.round(raw / 50) * 50) : rounded;
 }
 
 // Bonus del secretario técnico en negociaciones: de +0 (nivel 1) a +0,15 (nivel 5).
@@ -2001,9 +2035,11 @@ async function getAISquadCached(teamName, division, season) {
 function recoverMatchFitness(squad, state, user) {
     const tick = `${state.currentSeason}|${state.seasonType}|${state.week}` +
         (state.seasonType === 'playoff' ? `|${(state.matchHistory || []).length}` : '');
+    // Recuperación semanal base 18 (antes 15); el preparador físico (+1,5/nivel) y el fisio (+1/nivel) del usuario suman.
+    const weeklyRecovery = 18 + (user ? (state.staff?.entrenador?.level || 0) * 1.5 + (state.staff?.fisio?.level || 0) : 0);
     for (const p of squad) {
         if (p._fitnessTick && p._fitnessTick !== tick) {
-            p.condition = Math.min(100, (p.condition ?? 100) + 15);
+            p.condition = Math.min(100, (p.condition ?? 100) + weeklyRecovery);
             if (!user && p.isInjured && p.weeksOut > 0) {
                 p.weeksOut--; if (!p.weeksOut) { p.isInjured = false; p.injuryType = null; }
             }
@@ -4113,6 +4149,8 @@ if (typeof window !== 'undefined') {
         canSell: (p) => canSellPlayer(p)
     };
     window.autoFixLineup = autoFixLineup;
+    // Descanso parcial entre partidos de una misma semana (copa/Europa): 3-4 días de recuperación.
+    window.pcfMidweekRecovery = (points = 15) => { for (const p of gameState.squad || []) p.condition = Math.min(100, (p.condition ?? 100) + points); };
     // Para copas y competiciones: fuerza y plantilla reales de un equipo español
     window.pcfTeamStrength = async (team, division) => {
         const div = division || teamDivision(team) || 'segunda';

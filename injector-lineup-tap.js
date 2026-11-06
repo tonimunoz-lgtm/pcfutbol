@@ -17,8 +17,8 @@
         const st = document.createElement('style');
         st.id = 'pcfTapStyles';
         st.textContent = `
-        #pcfTapSwapBtn{display:block;width:100%;max-width:420px;margin:8px auto;min-height:44px;font-weight:700;cursor:pointer}
-        #pcfTapSwapBtn.on{background:linear-gradient(180deg,#ffd700,#c99a00)!important;color:#000!important}
+        #pcfTapSwapBtn,#pcfRotateBtn{display:block;width:100%;max-width:420px;margin:8px auto;min-height:44px;font-weight:700;cursor:pointer}
+        #pcfTapSwapBtn.on,#pcfRotateBtn.on{background:linear-gradient(180deg,#ffd700,#c99a00)!important;color:#000!important}
         body.pcf-tap-on #pitchContainer .pitch-player,body.pcf-tap-on #reservesList .draggable-player{cursor:pointer}
         .pcf-tap-selected{outline:3px solid #ffd700!important;box-shadow:0 0 12px 2px #ffd700!important;transform:scale(1.04)}
         body.pcf-tap-on #pitchContainer .pitch-position-placeholder{outline:1px dashed rgba(255,215,0,.6)}`;
@@ -41,9 +41,29 @@
         document.querySelectorAll('.pcf-tap-selected').forEach(e => e.classList.remove('pcf-tap-selected'));
     }
 
+    // Rotación automática: un titular fatigado cede su puesto a un suplente que rinda ahora más.
+    function refreshRotateButton(msg) {
+        let btn = document.getElementById('pcfRotateBtn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'pcfRotateBtn'; btn.type = 'button'; btn.className = 'btn';
+            btn.addEventListener('click', () => {
+                const on = window.gameLogic.getGameState().autoRotate !== false;
+                window.gameLogic.updateGameState({ autoRotate: !on });
+                refreshRotateButton(document.getElementById('lineupMessage'));
+            });
+            msg.after(btn);
+        }
+        const on = window.gameLogic?.getGameState?.().autoRotate !== false;
+        btn.classList.toggle('on', on);
+        btn.textContent = on ? '🔄 Rotación automática: ACTIVADA' : '🔄 Rotación automática: DESACTIVADA';
+        btn.title = 'Si está activada, antes de cada partido un titular fatigado cede su puesto a un suplente de su posición que rinda ahora más (media × condición), como hace la IA.';
+    }
+
     function refreshButton() {
         const msg = document.getElementById('lineupMessage');
         if (!msg) return;
+        refreshRotateButton(msg);
         let btn = document.getElementById('pcfTapSwapBtn');
         if (!window.matchMedia(MQ).matches) { btn?.remove(); document.body.classList.remove('pcf-tap-on'); return; }
         if (!btn) {
