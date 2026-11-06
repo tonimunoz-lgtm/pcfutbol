@@ -13,6 +13,7 @@
     const gl = () => window.gameLogic;
     const gs = () => gl()?.getViewState?.();
     const fmt = n => Math.round(n).toLocaleString('es-ES');
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const DIVS = [['primera', 'Primera División'], ['segunda', 'Segunda División'], ['rfef_grupo1', 'Primera RFEF · Grupo 1'], ['rfef_grupo2', 'Primera RFEF · Grupo 2'], ['promesas', 'Liga Promesas']];
     const DIV_NAME = Object.fromEntries(DIVS);
 
@@ -27,7 +28,7 @@
     const badge = team => {
         const ini = String(team || '?').replace(/^(CD|UD|CF|FC|RC|RCD|SD|AD|CE|Real|Club|Atlético|Athletic)\s+/i, '').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
         const hue = Math.round(hash01(team) * 360);
-        return `<span class="pg-badge" style="background:hsl(${hue},55%,32%);border-color:hsl(${hue},70%,62%)">${ini}</span>`;
+        return `<span class="pg-badge" style="background:hsl(${hue},55%,32%);border-color:hsl(${hue},70%,62%)">${esc(ini)}</span>`;
     };
 
     // ── Pichichi y Zamora ───────────────────────────────────────
@@ -63,29 +64,23 @@
     window.pcfAwards = awards;
 
     // ── Campeones de Copa y Europa ──────────────────────────────
-    const EU_POOLS = {
-        champions: ['Manchester City', 'Real Madrid CF', 'Bayern München', 'PSG', 'Liverpool FC', 'Arsenal FC', 'Inter de Milán', 'Bayer Leverkusen', 'FC Barcelona', 'Atlético de Madrid', 'Borussia Dortmund', 'Juventus', 'AC Milan', 'Atalanta'],
-        europaLeague: ['Tottenham', 'AS Roma', 'Lazio', 'Ajax', 'Benfica', 'FC Porto', 'Sevilla FC', 'Villarreal CF', 'Real Sociedad', 'Athletic Club', 'Eintracht Frankfurt', 'Olympique Lyon', 'Marsella', 'Fenerbahçe', 'Aston Villa'],
-        conferenceLague: ['Fiorentina', 'Real Betis', 'Celtic', 'Legia Varsovia', 'PAOK', 'Olympiacos', 'Club Brugge', 'Slavia Praga', 'Lille', 'Molde', 'Rapid Viena', 'Panathinaikos']
-    };
     function champions(summary) {
         const s = gs(), key = summary.season || s.currentSeason;
-        const saved = (s.seasonAwards || {})[key];
-        if (saved && saved.champions) return saved;
-        const comp = (window.CompetitionsSystem?.getComp?.()) || {};
-        const me = s.team, tables = summary.tables || {};
-        const out = { season: key };
-        // Copa del Rey: favoritos de Primera y Segunda
-        const copaPool = [...(tables.primera || []).slice(0, 8), ...(tables.segunda || []).slice(0, 3)].map(r => r.team).filter(t => t !== me);
-        out.copa = comp.copaPhase === 'champion' ? me : 'No registrado';
-        const mineEU = comp.europeanComp, wonEU = comp.europeanPhase === 'champion';
-        ['champions', 'europaLeague', 'conferenceLague'].forEach(k => {
-            const pool = EU_POOLS[k].filter(t => t !== me);
-            out[k] = (mineEU === k && wonEU) ? me : 'No registrado';
-        });
-        out.userCopaPhase = comp.copaPhase || null;
-        out.userEuropeComp = mineEU || null; out.userEuropePhase = comp.europeanPhase || null;
-        gl().updateGameState({ seasonAwards: { ...(s.seasonAwards || {}), [key]: { ...(saved || {}), ...out } } });
+        const saved = (s.seasonAwards || {})[key] || {};
+        const recorded = summary.cupChampions || window.pcfWorld?.tournaments?.champions(key);
+        const comp = window.CompetitionsSystem?.getComp?.() || s.competitions || {};
+        const out = { season:key, finals:recorded?.finals || saved.finals || {},
+            historyPartial:recorded?.historyPartial || saved.historyPartial || {} };
+        const known = value => typeof value === 'string' && value &&
+            !['No registrado','Historial no disponible','Pendiente','—'].includes(value);
+        for (const k of ['copa','champions','europaLeague','conferenceLague']) {
+            if (recorded?.[k]) out[k] = recorded[k];
+            else if (known(saved[k])) out[k] = saved[k];
+            else if (!recorded && comp.season === key && comp.team === s.team &&
+                (k === 'copa' ? ['champion','winner'].includes(comp.copaPhase) : comp.europeanComp === k && ['champion','winner'].includes(comp.europeanPhase))) out[k] = s.team;
+            else out[k] = recorded ? 'Pendiente' : 'Historial no disponible';
+        }
+        gl().updateGameState({ seasonAwards:{...(s.seasonAwards || {}),[key]:{...saved,...out}} });
         return out;
     }
 
@@ -185,7 +180,11 @@
             return `<div class="pg-card ${t.team === me ? 'me' : ''}"><div class="lbl">${name}</div><div class="big">${badge(t.team)}<span>${t.team}</span></div><div class="meta">${t.pts} puntos · ${t.gf} goles a favor</div></div>`; }).join('')}</div></div>`);
 
         // 3 Copa y Europa
-        const eu = (k, label, icon) => `<div class="pg-card ${ch[k] === me ? 'me' : ''}"><div class="lbl">${icon} ${label}</div><div class="big">${badge(ch[k])}<span>${ch[k]}</span></div>${ch[k] === me ? '<div class="meta" style="color:#ffd24a">¡Campeón con tu club!</div>' : ''}</div>`;
+        const eu = (k, label, icon) => {
+            const f = ch.finals?.[k];
+            const finalText = f ? `Final: ${esc(f.home)} ${f.homeGoals}–${f.awayGoals} ${esc(f.away)}${f.penalties ? ` · Penaltis ${f.penalties.home}–${f.penalties.away}` : f.extraTime ? ' · Prórroga' : ''}` : '';
+            return `<div class="pg-card ${ch[k] === me ? 'me' : ''}"><div class="lbl">${icon} ${label}</div><div class="big">${badge(ch[k])}<span>${esc(ch[k])}</span></div>${ch[k] === me ? '<div class="meta" style="color:#ffd24a">¡Campeón con tu club!</div>' : ''}${finalText ? `<div class="meta">${finalText}</div>` : ''}${ch.historyPartial?.[k] ? '<div class="meta" style="font-size:.78rem;opacity:.7">Cuadro incorporado con la temporada en curso.</div>' : ''}</div>`;
+        };
         out.push(`<div class="pg-slide"><h2 class="pg-h">Copa y Europa</h2><div class="pg-grid">${eu('copa', 'Copa del Rey', '🏆')}${eu('champions', 'Champions League', '⭐')}${eu('europaLeague', 'Europa League', '🟠')}${eu('conferenceLague', 'Conference League', '🟢')}</div></div>`);
 
         // 4 Ascensos y descensos

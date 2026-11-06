@@ -170,6 +170,19 @@ function saveCompState(c) {
     window.gameLogic?.updateGameState({ competitions: c });
 }
 
+function syncWorldCalendar(cal) {
+    const world=window.pcfWorld?.tournaments;
+    if(!world)return;
+    for(const m of cal){
+        if(m.played)continue;
+        const binding=world.fixture(m);
+        if(binding?.bye){m.eliminated=true;continue;}
+        if(binding){m.opponent=binding.opponent;m.isHome=binding.isHome;m.neutral=binding.neutral;}
+    }
+    const comp=getCompState();
+    if(comp?.europeanComp){const field=world.field(comp.europeanComp);if(field)getCupData().leagueField=field;}
+}
+
 // ============================================================
 // INICIALIZACIÓN DEL CALENDARIO AL INICIO DE TEMPORADA
 // ============================================================
@@ -216,6 +229,8 @@ function initCupCalendar() {
     const gs   = getGS();
     const comp = getCompState();
     if (!gs || !comp) return;
+    window.pcfWorld?.tournaments?.ensure({pools:EU_POOLS,
+        ratings:Object.fromEntries(Object.entries(FOREIGN_TIERS).flatMap(([rating,teams])=>teams.map(t=>[t,Number(rating)])))});
 
     // No regenerar si ya existe para esta temporada y equipo
     const d = getCupData();
@@ -230,6 +245,8 @@ function initCupCalendar() {
                 flushCupData();
             }
         }
+        syncWorldCalendar(d.calendar);
+        flushCupData();
         console.log('📅 Calendario copas ya existe para esta temporada');
         return;
     }
@@ -309,6 +326,7 @@ function initCupCalendar() {
     d.calendar  = cal;
     d.calSeason = season;
     d.calTeam   = myTeam;
+    syncWorldCalendar(cal);
     flushCupData(); // CRÍTICO: persiste en gameState real
     console.log(`📅 Total: ${cal.length} partidos.`, cal.slice(0,3).map(m=>`${m.type}@J${m.afterLigaWeek}`).join(', ')+'...');
 }
@@ -383,6 +401,10 @@ function facedRivals() {
 
 // Garantiza que el partido tiene rival (ida/vuelta con el mismo)
 function ensureOpponent(m) {
+    const world=window.pcfWorld?.tournaments;
+    const binding=world?.fixture(m);
+    if(binding&&!binding.bye){m.opponent=binding.opponent;m.isHome=binding.isHome;m.neutral=binding.neutral;return;}
+    if(world?.ensure()&&!binding)throw new Error('El cruce de esta ronda aún no está disponible en el cuadro de la competición.');
     if (m.opponent && m.opponent !== 'null') return;
     const cal = getCal();
     if (/_2$/.test(m.id)) {
@@ -411,7 +433,7 @@ async function prepareMatch(m) {
             m.oppSquad = (squad || []).map(p => ({ name: p.name, position: p.position }));
         } catch (e) { m.oppRating = null; }
     }
-    if (!m.oppRating) m.oppRating = foreignRating(m.opponent) + (Math.floor(Math.random() * 5) - 2);
+    if (!m.oppRating) m.oppRating = window.pcfWorld?.tournaments?.rating(m.opponent) || foreignRating(m.opponent) + (Math.floor(Math.random() * 5) - 2);
     if (m.neutral) {
         // Sorteo de quién actúa como local en la final
         m.drawnHome = Math.random() < 0.5;
@@ -470,6 +492,9 @@ function getPendingMatch(week) {
 // SIMULAR JORNADA — los otros 35 equipos también juegan
 // ============================================================
 function simLeagueRound(myResult) {
+    const comp=getCompState();
+    const globalField=comp?.europeanComp&&window.pcfWorld?.tournaments?.field(comp.europeanComp);
+    if(globalField){saveField(globalField);return;}
     const field = getField();
     if (!field) return;
 
@@ -510,7 +535,7 @@ function getMyLeaguePos() {
     const field=getField();
     if(!field)return 36;
     return Object.values(field.table)
-        .sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc)))
+        .sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||(b.gf-a.gf)||a.name.localeCompare(b.name))
         .findIndex(t=>t.isPlayer)+1;
 }
 
@@ -529,6 +554,8 @@ function processResult(match, result) {
     const cal=getCal();
     const comp=getCompState();
     const entry=cal.find(m=>m.id===match.id);
+    if(entry?.played)return {ignored:true};
+    window.pcfWorld?.tournaments?.record(match,result);
     if(entry){entry.played=true;entry.result=JSON.parse(JSON.stringify(result));saveCal(cal);}
 
     // ── COPA DEL REY ───────────────────────────────────────
@@ -549,10 +576,12 @@ function processResult(match, result) {
             const nextPhase=order[idx+1];
             const nextMatches=cal.filter(m=>m.type==='copa'&&m.phase===nextPhase&&!m.played);
             if(nextMatches.length){
-                const rival=getCopaRival(getGS()?.division, nextPhase, [...(comp.copaResults||[]).map(r=>r.rival), match.opponent]);
+                const world=window.pcfWorld?.tournaments;
+                const rival=world ? world.fixture(nextMatches[0])?.opponent || null
+                    : getCopaRival(getGS()?.division, nextPhase, [...(comp.copaResults||[]).map(r=>r.rival), match.opponent]);
                 nextMatches.forEach(m=>{ m.opponent=rival; });
                 const label=(PHASE_NAMES[nextPhase]||nextPhase);
-                window.gameLogic?.addNews?.(`🎲 Sorteo de Copa del Rey — ${label}: te enfrentarás al ${rival}.`, 'info');
+                if(rival)window.gameLogic?.addNews?.(`🎲 Sorteo de Copa del Rey — ${label}: te enfrentarás al ${rival}.`, 'info');
             }
         }else{
             comp.copaPhase='eliminated';

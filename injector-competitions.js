@@ -757,9 +757,9 @@ function injectCompUI() {
     const isRFEF    = division.includes('rfef');
     const isSegunda = division === 'segunda';
     const hasPO     = isRFEF || isSegunda;
-    const hasEU     = !isRFEF;
+    const hasEU     = true; // Consultar los cuadros no implica estar clasificado.
     const comp      = store.getComp();
-    const hasCopa   = comp?.copaQualified || hasEU;
+    const hasCopa   = true;
 
     const tabs = document.createElement('div');
     tabs.id = 'comp-tabs';
@@ -837,11 +837,56 @@ window.showCompTab = function(tab) {
     } else {
         if(ligaTbl) ligaTbl.style.display='none';
         if(legend)  legend.style.display='none';
-        if(tab==='europa')  { document.getElementById('comp-europa-panel')?.classList.add('on');  renderEuropa(); }
-        if(tab==='copa')    { document.getElementById('comp-copa-panel')?.classList.add('on');    renderCopa(); }
+        if(tab==='europa')  { document.getElementById('comp-europa-panel')?.classList.add('on');  renderEuropa(); renderWorldCupResults('comp-europa-panel',['champions','europaLeague','conferenceLague']); }
+        if(tab==='copa')    { document.getElementById('comp-copa-panel')?.classList.add('on');    renderCopa(); renderWorldCupResults('comp-copa-panel',['copa']); }
         if(tab==='playoff') { document.getElementById('comp-playoff-panel')?.classList.add('on'); renderPlayoff(); }
     }
 };
+
+function renderWorldCupResults(panelId, keys) {
+    const panel=document.getElementById(panelId),state=window.gameLogic?.getViewState();
+    const world=window.pcfWorld?.tournaments?.get(state?.currentSeason);
+    if(!panel||!world)return;
+    panel.querySelector('.pcf-world-cups')?.remove();
+    const host=document.createElement('section');host.className='pcf-world-cups data-box';host.style.cssText='margin-top:18px;min-width:0;overflow-wrap:anywhere';
+    const title=document.createElement('h3');title.textContent='Cuadros de la temporada '+world.season;host.appendChild(title);
+    const names={copa:'Copa del Rey',champions:'Champions League',europaLeague:'Europa League',conferenceLague:'Conference League'};
+    const phases={copa_r1:'Primera ronda',copa_r32:'Dieciseisavos',copa_r16:'Octavos',copa_qf:'Cuartos',copa_sf:'Semifinales',copa_final:'Final',playoff:'Playoff',round16:'Octavos',quarterfinals:'Cuartos',semifinals:'Semifinales',final:'Final'};
+    for(const key of keys){
+        const c=world.competitions[key];if(!c)continue;
+        const details=document.createElement('details');details.style.cssText='margin:10px 0;padding:10px;border:1px solid #56749e;border-radius:4px';
+        const summary=document.createElement('summary');summary.style.cssText='cursor:pointer;min-height:32px;font-weight:bold';
+        summary.textContent=names[key]+(c.champion?' · Campeón: '+c.champion:' · En juego');details.appendChild(summary);
+        if(c.historyPartial){const p=document.createElement('p');p.textContent='Cuadro incorporado con la temporada en curso; se conservan los resultados disponibles.';details.appendChild(p);}
+        if(c.table){
+            const league=document.createElement('details'),label=document.createElement('summary');
+            label.textContent='Fase liga · '+(c.league||[]).filter(d=>d.fixtures.every(m=>m.played)).length+'/'+c.league.length+' jornadas';league.appendChild(label);
+            const table=document.createElement('table');table.className='cg-table';
+            const head=document.createElement('thead'),tr=document.createElement('tr');
+            for(const text of ['Equipo','PJ','Pts','GF','GC']){const th=document.createElement('th');th.textContent=text;tr.appendChild(th);}head.appendChild(tr);table.appendChild(head);
+            const body=document.createElement('tbody');
+            const rows=Object.values(c.table).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf||a.name.localeCompare(b.name));
+            for(const r of rows){const line=document.createElement('tr');for(const value of [r.name,r.pj,r.pts,r.gf,r.gc]){const td=document.createElement('td');td.textContent=value;line.appendChild(td);}body.appendChild(line);}
+            table.appendChild(body);league.appendChild(table);details.appendChild(league);
+        }
+        for(const round of c.rounds){
+            const h=document.createElement('h4');h.textContent=phases[round.phase]||round.phase;h.style.marginTop='12px';details.appendChild(h);
+            for(const tie of round.ties){
+                if(!tie.a&&!tie.b)continue;
+                const p=document.createElement('p');p.style.cssText='font-size:.82rem;line-height:1.4;margin:5px 0';
+                if(tie.bye)p.textContent=(tie.winner||tie.a||tie.b)+' · Exento';
+                else {
+                    const scores=tie.matches.filter(m=>m.played&&!m.legacySummary).map(m=>m.home+' '+m.homeGoals+'–'+m.awayGoals+' '+m.away+(m.penalties?' (penaltis '+m.penalties.home+'–'+m.penalties.away+')':''));
+                    p.textContent=scores.length?scores.join(' · '):tie.a+' – '+tie.b+' · Pendiente';
+                    if(tie.winner)p.textContent+=' · Clasificado: '+tie.winner;
+                }
+                details.appendChild(p);
+            }
+        }
+        host.appendChild(details);
+    }
+    panel.appendChild(host);
+}
 
 // ============================================================
 // RENDER: EUROPA — formato real 2025-26 (fase liga 36 equipos)
@@ -895,7 +940,7 @@ function renderEuropa() {
         // Tabla con todos los equipos ordenados por puntos
         const sorted = Object.values(field.table).sort((a,b) => {
             const pd = b.pts - a.pts; if(pd!==0) return pd;
-            return (b.gf-b.gc) - (a.gf-a.gc);
+            return (b.gf-b.gc) - (a.gf-a.gc) || b.gf-a.gf || a.name.localeCompare(b.name);
         });
 
         // Mostrar top 10 + posición del jugador si está fuera
@@ -1385,6 +1430,9 @@ function onNewSeason(before, after) {
             else if(cfg.europaLeague?.includes(myPos)) euroComp='europaLeague';
             else if(cfg.conferenceLague?.includes(myPos)) euroComp='conferenceLague';
         }
+        const leagueRows=summary?.tables?.primera || (before.division==='primera'?sorted.map(([team])=>({team})):[]);
+        const places=window.pcfWorld?.tournaments?.places(leagueRows,summary?.cupChampions);
+        if(places&&before.team===after.team)euroComp=places[after.team]||null;
 
         const comp=initCompetitionsForSeason(after.team, newDiv, newSeason, euroComp);
         if(comp.europeanComp) window.gameLogic?.addNews(`🏆 ¡Clasificados para la ${compName(comp.europeanComp)} ${newSeason}!`,'success');

@@ -1,4 +1,5 @@
 import { settleWeeklyFinance } from './weekly-ledger.js';
+import { createCompetitionSeason, advanceCompetitionSeason, userCompetitionFixture, recordCompetitionResult, competitionChampions, competitionLeagueField, europeanPlaces } from './competition-engine.js';
 import { createGameEvents } from './game-events.js';
 const gameEvents=createGameEvents();
 const subscribeGameEvent=(topic,key,fn)=>gameEvents.subscribe(topic,key,fn);
@@ -1594,6 +1595,56 @@ function calculateMatchOutcomeImproved(params) {
 // ========================================
 let worldTask = null;
 function worldSeasonWeeks(){return Math.max(seasonLength(gameState.seasonCalendar),...Object.values(gameState.world?.divisions||{}).map(d=>seasonLength(d.calendar)));}
+function ensureSeasonTournaments(options = {}) {
+    const w=gameState.world,comp=gameState.competitions;
+    if(!w || !comp || comp.season!==gameState.currentSeason)return null;
+    if(w.tournaments?.season===gameState.currentSeason){
+        w.tournaments.controlledTeam=gameState.team;
+        w.tournaments.controlledKeys=[...(comp.copaQualified?['copa']:[]),...(comp.europeanComp?[comp.europeanComp]:[])];
+        return w.tournaments;
+    }
+    const ratings={...(options.ratings||{})};
+    for(const c of Object.values(w.clubs)){
+        const formation=chooseAIFormation(c.squad);
+        ratings[c.name]=calculateTeamEffectiveOverall(pickBestXI(c.squad,formation),formation);
+    }
+    const domesticEurope={};
+    const previous=gameState.lastSeasonSummary;
+    if(previous?.season!==gameState.currentSeason && previous?.tables?.primera){
+        Object.assign(domesticEurope,europeanPlaces(previous.tables.primera,previous.cupChampions));
+    }else if(gameState.currentSeason==='2026/2027'){
+        Object.assign(domesticEurope,{'FC Barcelona':'champions','Real Madrid CF':'champions','Villarreal CF':'champions','Atlético de Madrid':'champions','Real Betis Balompié':'champions','Athletic Club':'europaLeague','RC Celta de Vigo':'europaLeague','Rayo Vallecano':'conferenceLague'});
+    }
+    if(comp.europeanComp)domesticEurope[gameState.team]=comp.europeanComp;
+    const cupData=gameState.cupData;
+    const sameSeason=cupData?.calSeason===gameState.currentSeason&&cupData?.calTeam===gameState.team;
+    w.tournaments=createCompetitionSeason({season:gameState.currentSeason,team:gameState.team,comp,
+        calendar:sameSeason?cupData.calendar||[]:[],field:sameSeason?cupData.leagueField:null,
+        leagues:gameState.leagues||{},pools:options.pools,ratings,domesticEurope,
+        week:gameState.seasonType==='preseason'?0:gameState.week});
+    w.revision++;
+    return w.tournaments;
+}
+function advanceSeasonTournaments(week) {
+    const model=ensureSeasonTournaments();if(!model)return null;
+    const revision=model.revision;
+    advanceCompetitionSeason(model,week,simulateFootballMatch);
+    if(model.revision!==revision)gameState.world.revision++;
+    return model;
+}
+function seasonTournaments(season=gameState.currentSeason) {
+    const w=gameState.world;
+    return w?.tournaments?.season===season?w.tournaments:w?.seasons?.find(s=>s.season===season)?.tournaments||null;
+}
+function finishSeasonTournaments(season) {
+    if(season!==gameState.currentSeason)return null;
+    const model=advanceSeasonTournaments(Infinity);
+    if(!model)return null;
+    const out=competitionChampions(model);
+    // Pending player fixtures are never replaced by invented results.
+    if(['copa','champions','europaLeague','conferenceLague'].some(k=>!out[k]))addNews('Hay una competición sin campeón confirmado; se conserva su cuadro pendiente.','warning');
+    return out;
+}
 function captureWorldClub() {
     const w=gameState.world,c=w?.clubs?.[gameState.team];if(!c)return;
     assignPlayerIds(w,gameState.squad,gameState.team);assignPlayerIds(w,gameState.academy||[],gameState.team);
@@ -1851,7 +1902,8 @@ function appendWorldCareer(player,season,club) {
 function rollWorldSeason(summary) {
     const w=gameState.world;if(!w)return;
     for(let week=1;week<(window.PCF_OFFSEASON_WEEKS||8);week++)closeWorldClubFinances(week,'summer');
-    w.seasons.push({season:summary.season,tables:summary.tables,moves:summary.moves,transfers:w.transfers.filter(m=>m.season===summary.season),statistics:w.statistics});
+    w.seasons.push({season:summary.season,tables:summary.tables,moves:summary.moves,transfers:w.transfers.filter(m=>m.season===summary.season),statistics:w.statistics,tournaments:w.tournaments||null});
+    w.tournaments=null;
     if(w.seasons.length>6)w.seasons.shift();
     for(const [div,names] of Object.entries(gameState.leagues))for(const name of names){const c=w.clubs[name];if(c)c.division=div;}
     for(const c of Object.values(w.clubs)){
@@ -2888,6 +2940,10 @@ async function endSeason() {
         else if (pos >= 6 && pos <= 7) summary.europe = 'Europa League';
         else if (pos === 8) summary.europe = 'Conference League';
     }
+    summary.cupChampions=finishSeasonTournaments(summary.season);
+    const nextEurope=europeanPlaces(summary.tables?.primera||[],summary.cupChampions)[gameState.team];
+    if(nextEurope)summary.europe={champions:'Champions League',europaLeague:'Europa League',conferenceLague:'Conference League'}[nextEurope];
+    else delete summary.europe;
     const fullText = summary.europe ? `${text}\n🌍 Clasificado para la ${summary.europe}.` : text;
 
     // Gala de fin de temporada (si el módulo está cargado); si no, el aviso de siempre
@@ -3135,6 +3191,7 @@ async function simulateFullWeekInner() {
 
     // Close every league on the same world date; these fixtures are never re-simulated.
     captureWorldClub();await advanceWorldLeagues(gameState.week);
+    advanceSeasonTournaments(gameState.week);
     closeWorldClubFinances(gameState.week,'regular');runWorldMarket();
     // ===== ACTUALIZAR PRÓXIMO PARTIDO =====
     gameState.week++;
@@ -3988,6 +4045,24 @@ if (typeof window !== 'undefined') {
     window.sortStandings = sortStandings;
     window.STAFF_LEVEL_EFFECTS = STAFF_LEVEL_EFFECTS;
     window.pcfWorld = {
+        tournaments: {
+            places:europeanPlaces,
+            ensure:options=>!!ensureSeasonTournaments(options),
+            advance:week=>!!advanceSeasonTournaments(week),
+            fixture:descriptor=>{const model=advanceSeasonTournaments(gameState.week);return model?JSON.parse(JSON.stringify(userCompetitionFixture(model,descriptor))):null;},
+            record:(descriptor,result)=>{
+                const model=ensureSeasonTournaments();if(!model)return null;
+                const revision=model.revision;
+                const recorded=recordCompetitionResult(model,descriptor,result);
+                advanceCompetitionSeason(model,gameState.week,simulateFootballMatch);
+                if(model.revision!==revision)gameState.world.revision++;
+                return recorded;
+            },
+            field:key=>{const model=seasonTournaments();return model?competitionLeagueField(model,key):null;},
+            rating:team=>seasonTournaments()?.ratings?.[team]??null,
+            champions:season=>{const model=seasonTournaments(season);return model?competitionChampions(model):null;},
+            get:season=>JSON.parse(JSON.stringify(seasonTournaments(season)))
+        },
         ensure:ensureWorld,
         ensureMarket:ensureMarketState,
         listClubs:()=>Object.values(gameState.world?.clubs||{}).map(c=>({name:c.name,division:c.division})),
