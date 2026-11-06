@@ -12,12 +12,12 @@
 //     · 25-36  → Eliminados
 //   Conference: fase liga 6 jornadas, mismos cortes
 //   Eliminatorias: ida + vuelta (excepto final)
-//   Copa del Rey: solo primera/segunda
+//   Copa del Rey: clubes clasificados por el sistema de competiciones
 //
 // FIXES vs versión anterior:
 //   ✅ Sin localStorage — todo en gameState.cupData
 //   ✅ Solo genera partidos si el equipo está clasificado
-//   ✅ Copa solo en primera/segunda (no RFEF)
+//   ✅ Copa también para clubes de RFEF clasificados
 //   ✅ Resto de 35 equipos simulan sus partidos cada jornada
 //   ✅ Ingresos de taquilla en partidos en casa
 // ============================================================
@@ -173,6 +173,45 @@ function saveCompState(c) {
 // ============================================================
 // INICIALIZACIÓN DEL CALENDARIO AL INICIO DE TEMPORADA
 // ============================================================
+function buildCopaCalendar(gs, comp) {
+    const divisions = ['primera','segunda','rfef_grupo1','rfef_grupo2'];
+    if (!divisions.includes(gs.division) || comp.copaQualified !== true ||
+        !comp.copaPhase || ['eliminated','champion','winner'].includes(comp.copaPhase)) return [];
+
+    const aliases = {round1:'copa_r1',round32:'copa_r32',round16:'copa_r16',quarters:'copa_qf',semis:'copa_sf',final:'copa_final'};
+    const current = aliases[comp.copaPhase] || comp.copaPhase;
+    const order = ['copa_r1','copa_r32','copa_r16','copa_qf','copa_sf','copa_final'];
+    const currentIndex = order.indexOf(current);
+    if (currentIndex < 0) return [];
+
+    const isPrimera = gs.division === 'primera';
+    const rounds = [
+        {id:'copa_r1',p:'copa_r1',w:6,h:true},
+        {id:'copa_r32',p:'copa_r32',w:isPrimera?8:10,h:isPrimera},
+        {id:'copa_r16',p:'copa_r16',w:isPrimera?13:15,h:!isPrimera},
+        {id:'copa_qf',p:'copa_qf',w:isPrimera?18:20,h:true},
+        {id:'copa_sf_1',p:'copa_sf',w:isPrimera?24:25,h:false},
+        {id:'copa_sf_2',p:'copa_sf',w:isPrimera?26:27,h:true},
+        {id:'copa_final',p:'copa_final',w:36,h:false,isFinal:true}
+    ];
+    const history = comp.copaResults || [];
+    // Missing calendars in old saves resume at the current round, never replay
+    // completed rounds. Preserve the first leg if the semifinal has started.
+    const firstLeg = history.slice().reverse().find(r => (aliases[r.phase] || r.phase) === 'copa_sf' && r.leg === 1);
+    const currentOpponent = firstLeg && current === 'copa_sf'
+        ? firstLeg.opponent || firstLeg.rival
+        : getCopaRival(gs.division, current, history.map(x => x.opponent || x.rival));
+    return rounds.filter(r => order.indexOf(r.p) >= currentIndex).map(r => {
+        const played = r.id === 'copa_sf_1' && !!firstLeg;
+        const opponent = r.p === 'copa_sf' && firstLeg
+            ? firstLeg.opponent || firstLeg.rival
+            : r.p === current ? currentOpponent : null;
+        return {id:r.id,type:'copa',phase:r.p,afterLigaWeek:r.w,isHome:r.h,
+            isFinal:r.isFinal||false,opponent,played,eliminated:false,
+            ...(played ? {result:JSON.parse(JSON.stringify(firstLeg))} : {})};
+    });
+}
+
 function initCupCalendar() {
     const gs   = getGS();
     const comp = getCompState();
@@ -181,6 +220,16 @@ function initCupCalendar() {
     // No regenerar si ya existe para esta temporada y equipo
     const d = getCupData();
     if (d.calSeason === comp.season && d.calTeam === comp.team && (d.calendar||[]).length > 0) {
+        // Repair only missing Copa fixtures. Keep the saved European calendar,
+        // standings and all already played matches intact.
+        if (!d.calendar.some(m => m.type === 'copa')) {
+            const missing = buildCopaCalendar(gs, comp);
+            if (missing.length) {
+                d.calendar.push(...missing);
+                d.calendar.sort((a,b)=>a.afterLigaWeek-b.afterLigaWeek);
+                flushCupData();
+            }
+        }
         console.log('📅 Calendario copas ya existe para esta temporada');
         return;
     }
@@ -253,48 +302,8 @@ function initCupCalendar() {
         console.log(`❌ ${gs.team} no clasificado para Europa → sin partidos europeos`);
     }
 
-    // ── COPA DEL REY: solo primera/segunda ─────────────────
-    // Copa: generar si es primera/segunda (aunque copaPhase no esté inicializada aún)
-    const copaOk = (division==='primera'||division==='segunda') &&
-                   comp.copaPhase !== 'eliminated' && comp.copaPhase !== 'champion';
-    if (copaOk) {
-        const isPrimera = division === 'primera';
-        const rounds = isPrimera
-            ? [{id:'copa_r32',  p:'copa_r32', w:8,  h:true},
-               {id:'copa_r16',  p:'copa_r16', w:13, h:false},
-               {id:'copa_qf',   p:'copa_qf',  w:18, h:true},
-               {id:'copa_sf_1', p:'copa_sf',  w:24, h:false},
-               {id:'copa_sf_2', p:'copa_sf',  w:26, h:true},
-               {id:'copa_final',p:'copa_final',w:36, h:false, isFinal:true}]
-            : [{id:'copa_r1',   p:'copa_r1',  w:6,  h:true},
-               {id:'copa_r32',  p:'copa_r32', w:10, h:false},
-               {id:'copa_r16',  p:'copa_r16', w:15, h:true},
-               {id:'copa_qf',   p:'copa_qf',  w:20, h:false},
-               {id:'copa_sf_1', p:'copa_sf',  w:25, h:true},
-               {id:'copa_sf_2', p:'copa_sf',  w:27, h:false},
-               {id:'copa_final',p:'copa_final',w:36, h:false, isFinal:true}];
-        rounds.forEach(r => {
-            cal.push({
-                id:r.id, type:'copa', phase:r.p,
-                afterLigaWeek:r.w, isHome:r.h,
-                isFinal:r.isFinal||false,
-                opponent:null, played:false, eliminated:false
-            });
-        });
-        // Pre-asignar rival Copa (cambia cada ronda)
-        // Solo se sortea la primera ronda; las siguientes, al llegar a ellas (como en la realidad)
-        const copaMatches = cal.filter(m=>m.type==='copa');
-        copaMatches.forEach((m,i)=>{
-            m.opponent = i===0 ? getCopaRival(division, m.phase, []) : null;
-        });
-        console.log(`🥇 Copa del Rey calendario OK (${division})`);
-    } else {
-        if (division!=='primera'&&division!=='segunda') {
-            console.log(`❌ ${division} no participa en Copa del Rey`);
-        } else {
-            console.log(`⚠️ Copa: division=${division} copaPhase=${comp.copaPhase} → no se generan partidos copa`);
-        }
-    }
+    // Eligibility comes from the same saved competition used by the UI.
+    cal.push(...buildCopaCalendar(gs, comp));
 
     cal.sort((a,b)=>a.afterLigaWeek-b.afterLigaWeek);
     d.calendar  = cal;
@@ -527,7 +536,7 @@ function processResult(match, result) {
         // Ida de semifinales: no decide nada todavía
         if(match.id==='copa_sf_1'){
             const sf2=cal.find(m=>m.id==='copa_sf_2'); if(sf2){ sf2.opponent=match.opponent; }
-            comp.copaResults=[...(comp.copaResults||[]),{phase:'copa_sf',leg:1,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:result.win}];
+            comp.copaResults=[...(comp.copaResults||[]),{phase:'copa_sf',leg:1,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:result.win,matchWon:result.win,qualified:false}];
             saveCal(cal);saveCompState(comp);
             return {advances:null,isLeg:true};
         }
@@ -549,7 +558,7 @@ function processResult(match, result) {
             comp.copaPhase='eliminated';
             cal.filter(m=>m.type==='copa'&&!m.played).forEach(m=>m.eliminated=true);
         }
-        comp.copaResults=[...(comp.copaResults||[]),{phase:match.phase,leg:match.id==='copa_sf_2'?2:undefined,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:qualified,extraTime:result.extraTime||null,penalties:result.penalties||null}];
+        comp.copaResults=[...(comp.copaResults||[]),{phase:match.phase,leg:match.id==='copa_sf_2'?2:undefined,rival:match.opponent,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,win:qualified,matchWon:result.win,qualified,extraTime:result.extraTime||null,penalties:result.penalties||null}];
         saveCal(cal);saveCompState(comp);
         return {advances:qualified};
     }

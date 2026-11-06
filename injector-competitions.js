@@ -1361,7 +1361,14 @@ function hookSimulateWeek() {
 }
 
 function onNewSeason(before, after) {
-    const sorted = Object.entries(before.standings||{}).sort((a,b)=>{
+    // El snapshot anterior al último partido todavía no contiene su resultado.
+    // El resumen cerrado sí incluye la clasificación definitiva y los playoffs.
+    const summary = after.lastSeasonSummary?.season === before.currentSeason
+        ? after.lastSeasonSummary : null;
+    const finalRows = summary?.tables?.[before.division];
+    const sorted = Array.isArray(finalRows)
+        ? finalRows.map(row => [row.team, row])
+        : Object.entries(before.standings||{}).sort((a,b)=>{
         const pd=(b[1].pts||0)-(a[1].pts||0); return pd!==0?pd:((b[1].gf||0)-(b[1].gc||0))-((a[1].gf||0)-(a[1].gc||0));
     });
     const myPos = sorted.findIndex(([n])=>n===before.team)+1;
@@ -1372,7 +1379,7 @@ function onNewSeason(before, after) {
 
         // Competición europea según posición final
         let euroComp=null;
-        if(newDiv==='primera'){
+        if(before.team===after.team && before.division==='primera' && newDiv==='primera'){
             const cfg=COMPETITION_CONFIG.primera;
             if(cfg.champions?.includes(myPos)) euroComp='champions';
             else if(cfg.europaLeague?.includes(myPos)) euroComp='europaLeague';

@@ -61,6 +61,34 @@ export function assertWorldOwnership(world,freeAgents=[]) {
     for(const p of freeAgents){if(!p.id||ids.has(p.id))throw new Error(`Agente libre duplicado: ${p.name}`);ids.add(p.id);}
     return true;
 }
+// Count completed ties, not individual wins (a semifinal has two legs).
+// Older saves use aliases and store qualification in win/advanced.
+export function countCopaRoundsWon(results = []) {
+    const aliases = {round1:'copa_r1',round32:'copa_r32',round16:'copa_r16',quarters:'copa_qf',semis:'copa_sf',final:'copa_final'};
+    const rounds = new Set();
+    for (const r of results || []) {
+        if (!r || r.leg === 1) continue;
+        const phase = aliases[r.phase] || r.phase;
+        if (!['copa_r1','copa_r32','copa_r16','copa_qf','copa_sf','copa_final'].includes(phase)) continue;
+        if (r.qualified ?? r.advanced ?? r.win) rounds.add(phase);
+    }
+    return rounds.size;
+}
+
+function copaRoundsBaseline(objectives, results) {
+    if (Number.isInteger(objectives.copaRoundsBaseline)) return objectives.copaRoundsBaseline;
+    // Legacy objectives counted every win, including a semifinal first leg.
+    // Rebuild their checkpoint from the corresponding prefix of the history.
+    const previousWins = objectives.copaWinsBaseline || 0;
+    if (!previousWins) return 0;
+    let wins = 0, end = 0;
+    while (end < results.length && wins < previousWins) {
+        if (results[end]?.win) wins++;
+        end++;
+    }
+    return countCopaRoundsWon(results.slice(0, end));
+}
+
 export function buildBoardObjectives(state,rank,count) {
     const n=Math.max(2,count),remaining=Math.max(1,(state.maxSeasonWeeks||38)-(state.seasonType==='regular'?(state.week||1)-1:0));
     const target=Math.min(n-1,Math.max(1,rank));
@@ -71,6 +99,7 @@ export function buildBoardObjectives(state,rank,count) {
         development:(state.academy||[]).some(p=>(p.potential||0)>(p.overall||0))?1:0,
         youthMinutesBaseline:(state.squad||[]).filter(p=>p.age<=21).reduce((n,p)=>n+(p.minutes||0),0),
         copaWinsBaseline:(state.competitions?.copaResults||[]).filter(r=>r.win).length,
+        copaRoundsBaseline:countCopaRoundsWon(state.competitions?.copaResults),
         youthBaseline:Object.fromEntries((state.academy||[]).map(p=>[p.id||p.name,p.overall||0])),
         copaWins:['primera','segunda'].includes(state.division)&&!state.competitions?.historyUnavailable&&state.competitions?.copaQualified!==false?(rank<=Math.ceil(n*.25)?2:1):0,
         negotiated:false,joinedWeek:state.week||1};
@@ -82,13 +111,15 @@ export function evaluateBoardObjectives(state) {
     const wages=(state.squad||[]).reduce((s,p)=>s+(Number(p.salary)||0),0)+(state.loanSalaryExpense||0);
     const youth=(state.squad||[]).filter(p=>p.age<=21).reduce((s,p)=>s+(p.minutes||0),0);
     const grown=[...(state.academy||[]),...(state.squad||[])].filter(p=>Object.hasOwn(o.youthBaseline||{},p.id||p.name)&&(p.overall||0)>o.youthBaseline[p.id||p.name]).length;
-    const wins=(state.competitions?.copaResults||[]).filter(r=>r.win).length;
+    const copaResults=state.competitions?.copaResults||[];
+    const wins=countCopaRoundsWon(copaResults);
+    const copaBaseline=copaRoundsBaseline(o,copaResults);
     const result=[{key:'league',label:`Liga: puesto ${o.leagueTarget}º o mejor`,value:position,met:position>0&&position<=o.leagueTarget},
         {key:'wages',label:`Salarios: máximo ${o.wageLimit.toLocaleString('es-ES')} €/sem`,value:wages,met:wages<=o.wageLimit},
         {key:'cash',label:'Mantener la deuda bajo control',value:state.balance||0,met:(state.balance||0)>=o.cashFloor}];
     if(o.youthMinutes)result.push({key:'youth',label:`Jóvenes: ${o.youthMinutes} minutos`,value:Math.max(0,youth-(o.youthMinutesBaseline||0)),met:youth-(o.youthMinutesBaseline||0)>=o.youthMinutes});
     if(o.development)result.push({key:'development',label:'Mejorar al menos un canterano',value:grown,met:grown>=1});
-    if(o.copaWins)result.push({key:'copa',label:`Copa: ganar ${o.copaWins} eliminatoria(s)`,value:Math.max(0,wins-(o.copaWinsBaseline||0)),met:wins-(o.copaWinsBaseline||0)>=o.copaWins});
+    if(o.copaWins)result.push({key:'copa',label:`Copa: ganar ${o.copaWins} eliminatoria(s)`,value:Math.max(0,wins-copaBaseline),met:wins-copaBaseline>=o.copaWins});
     return result;
 }
 
