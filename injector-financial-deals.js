@@ -188,6 +188,11 @@
         d.bonus = amount;
         saveD(d);
         save({ balance: (s.balance || 0) + previousBonus - amount });
+        // Apuntes en la Caja: la prima se paga al prometerla (gasto inmediato); si sustituye a otra, se devuelve la anterior.
+        if (window._financeRegisterMovement) {
+            if (previousBonus > 0) window._financeRegisterMovement('bonus', 'Prima anterior sustituida (devuelta)', previousBonus);
+            if (amount > 0) window._financeRegisterMovement('bonus', 'Prima a la plantilla (próximo partido)', -amount);
+        }
         news(`💰 Prima de ${fmt(amount)}€ prometida a los jugadores para el próximo partido`, 'info');
         refreshUI();
         if (window._financeRefresh) window._financeRefresh();

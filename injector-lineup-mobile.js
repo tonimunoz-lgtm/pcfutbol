@@ -45,12 +45,12 @@
             var newLeft = 100 - topOrig - 18; // 18 = slotHeight original en %
 
             // Ajuste fino para que queden centrados y no se salgan
-            newLeft = Math.max(1, Math.min(newLeft, 78));
+            newLeft = Math.max(1, Math.min(newLeft, 82));
             newTop  = Math.max(1, Math.min(newTop,  88));
 
             slot.style.left   = newLeft + '%';
             slot.style.top    = newTop  + '%';
-            slot.style.width  = '20%';
+            slot.style.width  = '18%';
             slot.style.height = '11%';
         });
     }

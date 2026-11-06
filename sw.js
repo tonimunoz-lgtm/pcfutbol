@@ -1,7 +1,7 @@
 // Service worker mínimo: red primero y copia de respaldo (solo mismo origen).
 // Firebase y otros dominios externos NO se tocan. Sube CACHE al publicar una versión nueva.
-const CACHE = 'pcf-static-v1';
-const CORE = ['./', './index.html', './style.css', './pcf6-theme.css', './pcf-mobile.css', './pcf-pwa.css', './manifest.webmanifest'];
+const CACHE = 'pcf-static-v2';
+const CORE = ['./', './index.html', './style.css', './pcf6-theme.css', './pcf-mobile.css', './pcf-pwa.css', './pcf-mobile-fixes.css', './manifest.webmanifest'];
 self.addEventListener('install', e => e.waitUntil(
     caches.open(CACHE)
         .then(c => Promise.all(CORE.map(u => c.add(u).catch(() => null))))   // un fallo suelto no cancela la instalación

@@ -1002,6 +1002,13 @@ function weeksSinceJoined(p) {
     const abs = (phase, w) => (phase === 'preseason' ? w : pre + w);
     return abs(gameState.seasonType, gameState.week) - abs(p.joinedPhase, p.joinedWeek);
 }
+// Apunte en el historial de movimientos de la Caja (misma estructura que _financeRegisterMovement).
+// Se evita el duplicado exacto (misma semana, tipo, texto e importe) salvo en primas.
+function logMovement(type, description, amount) {
+    const list = gameState.seasonMovements || (gameState.seasonMovements = []);
+    if (type !== 'bonus' && list.some(m => m.week === gameState.week && m.type === type && m.description === description && m.amount === amount)) return;
+    list.push({ week: gameState.week, type, description, amount });
+}
 // No se puede quedar el club sin portero: debe seguir habiendo al menos uno en propiedad tras la salida.
 function lastKeeperGuard(p) {
     if (!p || p.position !== 'POR') return null;
@@ -1156,6 +1163,7 @@ function sellPlayer(name) {
     if(!moved.success)return moved;
     gameState.pendingOffers=(gameState.pendingOffers||[]).filter(o=>o.player?.id!==player.id&&o.player?.name!==name);
     gameState.playerSalesIncome=(gameState.playerSalesIncome||0)+fee;
+    logMovement('sale', `Venta: ${name}`, fee);
     updateWeeklyFinancials();addNews(`💰 ${name} vendido al ${buyer.club} por ${fee.toLocaleString('es-ES')}€.`, 'success');
     return {success:true,message:`${name} vendido por ${fee.toLocaleString('es-ES')}€.`};
 }
@@ -3683,6 +3691,7 @@ function firePlayer(playerName) {
     // Registrar gasto
     if (!gameState.playerCompensations) gameState.playerCompensations = 0;
     gameState.playerCompensations += compensation;
+    logMovement('compensation', `Indemnizacion: ${playerName}`, -compensation);
     
     // Eliminar jugador
     gameState.squad.splice(playerIndex, 1);
@@ -3909,6 +3918,7 @@ function acceptOffer(offerIndex) {
     if(!moved.success){alert(moved.message);return;}
     replaceInLineup(current.name);
     if(!loan)gameState.playerSalesIncome=(gameState.playerSalesIncome||0)+offer.amount;
+    if(!loan)logMovement('sale', `Venta: ${current.name} (oferta del ${offer.club})`, offer.amount);
     addNews(loan?`🔄 ${current.name} cedido al ${offer.club}; asume el ${percentage}% del salario.`:
         `💰 ${current.name} vendido al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}€.`, 'success');
 

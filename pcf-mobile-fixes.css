@@ -1,0 +1,46 @@
+/* Ajustes solo para móvil (mismo criterio que pcf-mobile.css). Escritorio no cambia. */
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+
+    /* ── Personal del club: sin scroll horizontal ───────────────── */
+    #staff .pcf-table-scroll { overflow-x: hidden; }
+    #staff table { table-layout: fixed; width: 100%; min-width: 0; }
+    #staff th, #staff td { padding: 5px 3px !important; font-size: .68rem !important; line-height: 1.15;
+        white-space: normal !important; overflow-wrap: anywhere; letter-spacing: 0 !important; text-align: center; }
+    #staff th { font-size: .58rem !important; overflow-wrap: normal; word-break: normal; padding: 6px 2px !important; }
+    #staff th:first-child, #staff td.pcf-staff-role { text-align: left; font-weight: 700; }
+    #staff th:nth-child(1) { width: 26%; }
+    #staff th:nth-child(2) { width: 18%; }
+    #staff th:nth-child(3) { width: 9%; }
+    #staff th:nth-child(4) { width: 15%; }
+    #staff th:nth-child(5) { width: 14%; }
+    #staff th:nth-child(6) { width: 18%; }
+    #staff .pcf-staff-icon { display: block; width: 20px; height: 20px; margin: 0 0 2px 0 !important; }
+    #staff .btn, #staff .btn-sm { width: 100%; min-width: 0; min-height: 30px; padding: 4px 2px !important;
+        font-size: .52rem !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+
+    /* ── Alineación: botones en la cabecera y campo entero a la vista ── */
+    #lineup .page-header { gap: 4px !important; }
+    #lineup .page-header h1 { flex: 1 1 auto; font-size: .8rem !important; }
+    #pcfLineupTools { display: flex; gap: 4px; align-items: center; margin-left: auto; }
+    #pcfLineupTools .btn { width: 38px; min-width: 38px; max-width: 38px; height: 34px; min-height: 34px !important;
+        margin: 0; padding: 0 !important; display: flex; align-items: center; justify-content: center;
+        font-size: 0 !important; line-height: 1; letter-spacing: 0; }
+    #pcfLineupTools .btn::before { content: attr(data-ico); font-size: 18px; }
+    #pcfLineupTools .btn.on { box-shadow: 0 0 0 2px #ffd700 inset; }
+    #lineup #lineupMessage.alert-info, #lineup #pcfLineupBar { display: none !important; }
+    #lineup .lineup-main-container { gap: 6px !important; }
+    /* Alto = hueco disponible bajo la cabecera de la página; el ancho sale de la proporción 9:16 */
+    #lineup #pitchContainer { height: min(calc(100dvh - var(--pcf-header-h, 96px) - 76px), calc((100vw - 16px) * 16 / 9)) !important;
+        width: auto !important; max-width: 100% !important; margin: 0 auto; }
+}
+
+/* ── Plantilla: «Nº» y «Jugador» fijos a la izquierda al desplazar en horizontal ── */
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+    #squad .pcf-player-scroll table th:nth-child(1), #squad .pcf-player-scroll table td:nth-child(1) {
+        position: sticky !important; left: 0; z-index: 4; width: 26px; min-width: 26px; max-width: 26px;
+        padding-left: 2px !important; padding-right: 2px !important; text-align: center; }
+    #squad .pcf-player-scroll table th:nth-child(2), #squad .pcf-player-scroll table td:nth-child(2) {
+        position: sticky !important; left: 26px; z-index: 4; width: 92px; min-width: 92px; max-width: 92px;
+        white-space: normal; line-height: 1.15; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
+    #squad .pcf-player-scroll table thead th:nth-child(1), #squad .pcf-player-scroll table thead th:nth-child(2) { z-index: 9; }
+}

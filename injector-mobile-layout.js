@@ -74,6 +74,9 @@
         if (media.matches) {
             document.querySelectorAll('.page table, .modal table').forEach(table => {
                 if (table.parentElement?.classList.contains('pcf-table-scroll')) return;
+                // Las tablas de jugadores ya scrollean en ambos ejes con la cabecera fija (.pcf-player-scroll);
+                // envolverlas de nuevo hacía que la cabecera dejase de quedarse pegada al hacer scroll.
+                if (table.closest('.pcf-player-scroll')) return;
                 const wrap = document.createElement('div');
                 wrap.className = 'pcf-table-scroll';
                 wrap.tabIndex = 0;
@@ -82,6 +85,7 @@
                 table.before(wrap);
                 wrap.appendChild(table);
             });
+            document.querySelectorAll('.pcf-player-scroll .pcf-table-scroll').forEach(wrap => wrap.replaceWith(...wrap.childNodes));
             document.querySelectorAll('section:has([data-action="counter"])').forEach(section => section.classList.add('pcf-mobile-board'));
         } else {
             document.querySelectorAll('.pcf-table-scroll').forEach(wrap => wrap.replaceWith(...wrap.childNodes));

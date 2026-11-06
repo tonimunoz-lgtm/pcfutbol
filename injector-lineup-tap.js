@@ -9,6 +9,7 @@
 (function () {
     'use strict';
     const MQ = '(pointer:coarse), (max-width:767px)';
+    const MOBILE = '(max-width:767px), (max-height:500px) and (max-width:1100px)';
     let active = false;
     let selected = null; // { name, from: 'pitch' | 'reserve', slotId }
 
@@ -60,12 +61,41 @@
         btn.title = 'Si está activada, antes de cada partido un titular fatigado cede su puesto a un suplente de su posición que rinda ahora más (media × condición), como hace la IA.';
     }
 
+    // En móvil los tres botones (cambio, rotación, automática) viven en la cabecera, junto al título y «Cerrar»;
+    // así se gana espacio y el campo entra entero. En escritorio vuelven a su sitio de siempre.
+    function placeTools(msg) {
+        const header = document.querySelector('#lineup .page-header');
+        if (!header) return;
+        const mobile = window.matchMedia(MOBILE).matches;
+        const swap = document.getElementById('pcfTapSwapBtn'), rot = document.getElementById('pcfRotateBtn'), auto = document.getElementById('pcfAutoLineupBtn');
+        const ico = [[swap, '↔', 'Modo cambio: tocar dos jugadores para intercambiarlos'],
+                     [rot, '🔄', 'Rotación automática'], [auto, '⚡', 'Alineación automática']];
+        let tools = document.getElementById('pcfLineupTools');
+        if (mobile) {
+            if (!tools) {
+                tools = document.createElement('div'); tools.id = 'pcfLineupTools';
+                header.insertBefore(tools, header.querySelector('.page-close-btn'));
+            }
+            for (const [b, i, label] of ico) {
+                if (!b) continue;
+                b.dataset.ico = i; b.setAttribute('aria-label', label); if (!b.title) b.title = label;
+                if (b.parentElement !== tools) tools.appendChild(b);
+            }
+        } else if (tools) {
+            if (rot) msg.after(rot);
+            if (swap) msg.after(swap);
+            if (auto) document.getElementById('pcfLineupBar')?.prepend(auto);
+            tools.remove();
+        }
+    }
+
     function refreshButton() {
         const msg = document.getElementById('lineupMessage');
         if (!msg) return;
         refreshRotateButton(msg);
+        placeTools(msg);
         let btn = document.getElementById('pcfTapSwapBtn');
-        if (!window.matchMedia(MQ).matches) { btn?.remove(); document.body.classList.remove('pcf-tap-on'); return; }
+        if (!window.matchMedia(MQ).matches) { btn?.remove(); document.body.classList.remove('pcf-tap-on'); placeTools(msg); return; }
         if (!btn) {
             btn = document.createElement('button');
             btn.id = 'pcfTapSwapBtn';
@@ -78,6 +108,7 @@
             });
             msg.after(btn);
         }
+        placeTools(msg);
         btn.classList.toggle('on', active);
         btn.textContent = active ? '✔ Modo cambio ACTIVO: toca dos jugadores' : '↔ Modo cambio (tocar en vez de arrastrar)';
         document.body.classList.toggle('pcf-tap-on', active);
@@ -140,6 +171,8 @@
             const r = orig.apply(this, args);
             refreshButton();
             restoreSelection();
+            // El botón «Alineación automática» lo crea otro módulo unos ms después: se recoloca al terminar.
+            setTimeout(() => { const m = document.getElementById('lineupMessage'); if (m) placeTools(m); }, 250);
             return r;
         };
         window.renderLineupPageUI._pcfTap = true;

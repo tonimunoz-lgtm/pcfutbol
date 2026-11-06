@@ -50,7 +50,7 @@
         const state = gs();
         if (!state) return;
         const movements = state.seasonMovements || [];
-        const dup = movements.some(m =>
+        const dup = type !== 'bonus' && movements.some(m =>
             m.week === state.week && m.type === type &&
             m.description === description && m.amount === amount
         );
@@ -333,9 +333,11 @@
                 <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_lTotI">—</td><td></td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios plantilla + staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lExp">—</td><td></td></tr>
+            <tr id="fin_lBenRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏠 Incentivos semanales (casa, coche, %)</td>
+                <td style="text-align:right;color:#f44336;" id="fin_lBenExp">—</td><td></td></tr>
             <tr id="fin_lLoanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lLoanExp">—</td><td></td></tr>
-            <tr id="fin_lBonusRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">💰 Prima jugadores</td>
+            <tr id="fin_lBonusRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">💰 Primas pagadas esta jornada <span style="color:#666;font-size:.8em;">(ya descontadas al prometerlas; no entran en el neto)</span></td>
                 <td style="text-align:right;color:#f44336;" id="fin_lBonusExp">—</td><td></td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Resultado neto</td>
@@ -369,6 +371,7 @@
             <tr><td style="padding:6px 4px;color:#aaa;">💸 Inversion en fichajes</td><td style="text-align:right;" id="fin_mPur">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">💰 Ingresos por ventas</td><td style="text-align:right;" id="fin_mSal">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">🚪 Indemnizaciones jugadores</td><td style="text-align:right;" id="fin_mCom">0€</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">🎁 Primas a jugadores</td><td style="text-align:right;" id="fin_mBon">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">👔 Clausulas + indem. staff</td><td style="text-align:right;" id="fin_mStf">0€</td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Balance de mercado</td>
@@ -440,9 +443,14 @@
             const lLoanRow = document.getElementById('fin_lLoanRow');
             if (lLoanRow) lLoanRow.style.display = (lw.expLoans || 0) > 0 ? '' : 'none';
             setText('fin_lLoanExp', fmt(lw.expLoans || 0) + '€', '#f44336');
+            const lBenRow = document.getElementById('fin_lBenRow');
+            const benW = Math.round(lw.benefits?.total || 0);
+            if (lBenRow) lBenRow.style.display = benW > 0 ? '' : 'none';
+            setText('fin_lBenExp', fmt(benW) + '€', '#f44336');
+            const bonW = -(state.seasonMovements || []).filter(m => m.type === 'bonus' && m.week === lw.week).reduce((n, m) => n + m.amount, 0);
             const lBonusRow = document.getElementById('fin_lBonusRow');
-            if (lBonusRow) lBonusRow.style.display = (lw.expBonus || 0) > 0 ? '' : 'none';
-            setText('fin_lBonusExp', fmt(lw.expBonus || 0) + '€', '#f44336');
+            if (lBonusRow) lBonusRow.style.display = bonW > 0 ? '' : 'none';
+            setText('fin_lBonusExp', fmt(bonW) + '€', '#f44336');
             setText('fin_lNet',     (lw.net >= 0 ? '+' : '') + fmt(lw.net) + '€', lw.net >= 0 ? '#4CAF50' : '#f44336');
         } else {
             setText('fin_lastLabel', '(sin jornadas jugadas todavía)');
@@ -483,11 +491,13 @@
         const mvs  = state.seasonMovements || [];
         const stfC = mvs.filter(m => m.type === 'staff_hire' || m.type === 'staff_compensation')
                         .reduce((s, m) => s + Math.abs(m.amount), 0);
-        const mBal = sal - pur - com - stfC;
+        const bon  = -mvs.filter(m => m.type === 'bonus').reduce((n, m) => n + m.amount, 0);
+        const mBal = sal - pur - com - stfC - bon;
 
         setText('fin_mPur', fmt(pur)  + '€', pur  > 0 ? '#f44336' : '#777');
         setText('fin_mSal', fmt(sal)  + '€', sal  > 0 ? '#4CAF50' : '#777');
         setText('fin_mCom', fmt(com)  + '€', com  > 0 ? '#f44336' : '#777');
+        setText('fin_mBon', fmt(bon)  + '€', bon  > 0 ? '#f44336' : '#777');
         setText('fin_mStf', fmt(stfC) + '€', stfC > 0 ? '#f44336' : '#777');
         setText('fin_mBal', (mBal >= 0 ? '+' : '') + fmt(mBal) + '€', mBal >= 0 ? '#4CAF50' : '#f44336');
 
@@ -520,7 +530,7 @@
         const mListEl = document.getElementById('fin_mList');
         if (mListEl) {
             const all = mvs.filter(m => m.type !== 'renovation');
-            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫' };
+            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫', bonus: '🎁' };
             mListEl.innerHTML = all.length === 0
                 ? '<span style="color:#555;">Sin movimientos registrados esta temporada.</span>'
                 : [...all].reverse().map(m => {
