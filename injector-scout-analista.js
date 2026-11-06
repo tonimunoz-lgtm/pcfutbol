@@ -41,9 +41,8 @@
         // Nivel 3: OVR 50-65, pot hasta 85
         // Nivel 4: OVR 55-70, pot hasta 90
         // Nivel 5: OVR 60-75, pot hasta 95
-        const minOvr = 35 + scoutLevel * 5;
-        const maxOvr = 50 + scoutLevel * 5;
-        const potBonus = scoutLevel >= 3 ? (scoutLevel - 2) * 5 : 0;
+        const minOvr = 35 + scoutLevel * 4;
+        const maxOvr = 48 + scoutLevel * 4;
 
         const age = 15 + Math.floor(Math.random() * 5); // 15-19
 
@@ -56,7 +55,15 @@
 
         // Overall simplificado
         const overall = Math.round(ATTRS.reduce((s, a) => s + attrs[a], 0) / ATTRS.length);
-        const potential = Math.min(97, overall + 10 + potBonus + Math.floor(Math.random() * (15 + scoutLevel * 3)));
+        // Potencial: casi todas las promesas son del montón; un ojeador mejor encuentra más "buenas" y alguna "joya" (rara).
+        //   normal: media + 3..13 · buena: media + 12..22 · joya: media + 22..32 (tope 95)
+        const gemChance  = [0.002, 0.004, 0.008, 0.02, 0.035, 0.05][scoutLevel] ?? 0.002;
+        const goodChance = [0.10, 0.14, 0.18, 0.24, 0.30, 0.35][scoutLevel] ?? 0.10;
+        const roll = Math.random();
+        const growth = roll < gemChance ? 22 + Math.random() * 10
+                     : roll < gemChance + goodChance ? 12 + Math.random() * 10
+                     : 3 + Math.random() * 10;
+        const potential = Math.max(overall + 2, Math.min(95, Math.round(overall + growth)));
 
         // Nombre aleatorio
         const firstNames = ['Alejandro','Carlos','Diego','Marcos','Adrián','Iker','Pablo','Sergio','Álvaro','Raúl',
@@ -70,8 +77,9 @@
 
         const foot = Math.random() < 0.7 ? 'Diestro' : 'Zurdo';
         const salary = Math.floor(overall * 20 + Math.random() * 100);
-        const value  = Math.floor(overall * 400 + potential * 600);
-        const cost   = Math.floor(value * (0.3 + Math.random() * 0.4));
+        // Valor exponencial en media y potencial (antes lineal: una joya de potencial 97 costaba ~40.000€)
+        const value  = Math.floor(25000 * Math.pow(1.13, overall - 40) * Math.pow(1.09, Math.max(0, potential - overall - 8)));
+        const cost   = Math.max(5000, Math.floor(value * (0.55 + Math.random() * 0.2)));
 
         return {
             name, position: position || POSITIONS_ALL[Math.floor(Math.random()*POSITIONS_ALL.length)],

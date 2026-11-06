@@ -37,9 +37,10 @@ console.log('🏫 Youth Training Injector cargando...');
     };
 
     // Progresión semanal base por nivel de entrenador
-    const YOUTH_WEEKLY_PROG = { 1: 0.06, 2: 0.10, 3: 0.15, 4: 0.22, 5: 0.30 };
+    // (antes 0,06–0,30: un nivel 5 subía ≈ +12 de media por temporada; ahora ≈ +1 (nivel 1) a +4 (nivel 5) por temporada)
+    const YOUTH_WEEKLY_PROG = { 1: 0.025, 2: 0.04, 3: 0.06, 4: 0.085, 5: 0.11 };
     // Bonus extra al cambio de temporada (simula verano de 5-8 semanas reales)
-    const YOUTH_SEASON_BONUS = { 1: 0.8, 2: 1.5, 3: 2.5, 4: 3.5, 5: 5.0 };
+    const YOUTH_SEASON_BONUS = { 1: 0.25, 2: 0.4, 3: 0.6, 4: 0.8, 5: 1.0 };
 
     // Umbral para proponer ascenso
     const PROMOTE_THRESHOLD_OVERALL = 65;

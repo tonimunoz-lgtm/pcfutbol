@@ -602,10 +602,20 @@ if (dashTransferBalanceEl) {
   
     const warningAlert = document.getElementById('warningAlert');  
     if (warningAlert) {  
-        if (weekly < 0) {  
+        // La destitución depende de la CAJA, no del margen de una semana (en la jornada 1 no hay taquilla y el
+        // margen sale negativo aunque haya millones). Solo se avisa si hay deuda o si la caja se agota pronto.
+        const cash = Number(state.balance) || 0;
+        const runwayWeeks = weekly < 0 ? cash / -weekly : Infinity;
+        let warnText = '';
+        if (cash < 0) {
+            warnText = `⚠️ ATENCIÓN: Tu club está en números rojos (deuda de ${Math.abs(cash).toLocaleString('es-ES')}€). Si continúa así, ¡podrías ser destituido!`;
+        } else if (weekly < 0 && runwayWeeks < 12) {
+            warnText = `⚠️ AVISO: el margen semanal es negativo (${weekly.toLocaleString('es-ES')}€/semana) y la caja (${cash.toLocaleString('es-ES')}€) solo aguanta unas ${Math.max(1, Math.floor(runwayWeeks))} semanas a este ritmo.`;
+        }
+        if (warnText) {
             warningAlert.innerHTML = `  
                 <div class="alert alert-warning" style="border-color: #ff3333; background: rgba(255, 51, 51, 0.1); color: #ff3333;">  
-                    ⚠️ ATENCIÓN: Tu club está en números rojos (${weekly.toLocaleString('es-ES')}€/semana). Si continúa así, ¡podrías ser destituido!  
+                    ${warnText}  
                 </div>  
             `;  
             warningAlert.style.display = 'block';  

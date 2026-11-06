@@ -195,7 +195,13 @@
                 type: 'market_stuck',
                 icon: '📭',
                 title: `Sin ofertas: ${p.name}`,
-                desc: `Lleva ${p.weeksOnMarket} semanas en el mercado sin interesados. Considera bajar el precio.`,
+                desc: (() => {
+                    const v = window.pcfEconomy?.marketValue ? window.pcfEconomy.marketValue(p) : 0;
+                    const ask = p.askingPrice || 0;
+                    const f = n => Math.round(n).toLocaleString('es-ES') + '€';
+                    return `Lleva ${p.weeksOnMarket} semanas en el mercado sin interesados.` +
+                        (v && ask ? ` Pides ${f(ask)}; su valor de mercado ronda ${f(v)}${p.releaseClause > 0 ? ` y su cláusula es ${f(p.releaseClause)}` : ''}. Bájalo hacia ese valor.` : ' Considera bajar el precio.');
+                })(),
                 color: '#607D8B',
                 action: `openPage('squad')`,
                 actionLabel: 'Ver plantilla',

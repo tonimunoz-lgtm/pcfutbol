@@ -1435,7 +1435,15 @@ function onNewSeason(before, after) {
         if(places&&before.team===after.team)euroComp=places[after.team]||null;
 
         const comp=initCompetitionsForSeason(after.team, newDiv, newSeason, euroComp);
-        if(comp.europeanComp) window.gameLogic?.addNews(`🏆 ¡Clasificados para la ${compName(comp.europeanComp)} ${newSeason}!`,'success');
+        if(comp.europeanComp){
+            // Motivo de la clasificación (antes no se explicaba: tras un ascenso parecía un error)
+            const titles=summary?.cupChampions||{};
+            let why='';
+            if(titles.copa===after.team) why=' como campeón de la Copa del Rey';
+            else if(titles[comp.europeanComp]===after.team) why=` como campeón de la ${compName(comp.europeanComp)}`;
+            else if(before.division==='primera'&&myPos) why=` por acabar ${myPos}º en liga`;
+            window.gameLogic?.addNews(`🏆 ¡Clasificados para la ${compName(comp.europeanComp)} ${newSeason}${why}!`,'success');
+        }
         if(comp.copaQualified) window.gameLogic?.addNews(`🥇 Participaréis en la Copa del Rey ${newSeason}`,'info');
 
         // Init playoff para la nueva división

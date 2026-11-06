@@ -16,6 +16,7 @@ import { getTeamData, saveTeamData } from './teamData.js';
 
 
 import { simulateFootballMatch, syntheticLineup } from './match-engine.js';
+import { detectFilialPairs, TIER as DIVISION_TIER } from './filiales.js';
 import { CLUB_FIELDS, assignPlayerIds, locatePlayer, moveWorldPlayer, returnWorldLoans, assertWorldOwnership, buildBoardObjectives, evaluateBoardObjectives, retirementProbability, offseasonCashflow } from './world-model.js';
 
 // Primera temporada de una partida nueva
@@ -986,7 +987,31 @@ function pickBuyerClub(value, playerOverall) {
     return { club: clubs[Math.floor(Math.random() * clubs.length)], division: div };
 }
 
-  
+
+// Como pickBuyerClub, pero si nadie puede pagar el importe completo (jugadores cuyo valor supera el tope del mercado
+// o la caja de los clubes), el club con más capacidad ofrece lo que realmente puede pagar (≥ 35 % del objetivo).
+// Devuelve { club, division, amount } o null.
+function pickBuyerClubFlex(target, playerOverall) {
+    const exact = pickBuyerClub(target, playerOverall);
+    if (exact) return { ...exact, amount: target };
+    const leagues = gameState.leagues || buildLeaguesFromConfig();
+    const cands = [];
+    for (const d of Object.keys(ECONOMY.maxSpend)) {
+        for (const t of (leagues[d] || [])) {
+            if (t === gameState.team) continue;
+            const c = gameState.world?.clubs?.[t];
+            if (c && c.squad.length >= 25) continue;
+            const budget = c ? Math.max(0, c.balance) * 0.85 : ECONOMY.maxSpend[d];
+            const amount = roundMoney(Math.min(target, ECONOMY.maxSpend[d], budget));
+            if (amount >= target * 0.35 && amount > 0) cands.push({ club: t, division: d, amount });
+        }
+    }
+    if (!cands.length) return null;
+    cands.sort((x, y) => y.amount - x.amount);
+    const top = cands.slice(0, 3);
+    return top[Math.floor(Math.random() * top.length)];
+}
+
 // Un jugador recién llegado no se puede vender hasta pasadas 10 jornadas
 const MIN_WEEKS_BEFORE_SALE = 10;
 function markJoined(p) {
@@ -1156,8 +1181,8 @@ function sellPlayer(name) {
     if(!player)return {success:false,message:'Jugador no encontrado.'};
     if(player.contractType!=='owned')return {success:false,message:'Solo puedes vender jugadores en propiedad.'};
     const allowed=canSellPlayer(player);if(!allowed.ok)return {success:false,message:allowed.message};
-    const fee=roundMoney(marketValue(player)*.6),buyer=pickBuyerClub(fee,player.overall);
-    if(!buyer)return {success:false,message:'No hay un comprador con presupuesto suficiente.'};
+    const wanted=roundMoney(marketValue(player)*.6),buyer=pickBuyerClubFlex(wanted,player.overall),fee=buyer?buyer.amount:0;
+    if(!buyer||fee<=0)return {success:false,message:'No hay un comprador con presupuesto suficiente.'};
     replaceInLineup(name);
     const moved=worldMove({id:player.id,from:gameState.team,to:buyer.club,fee,salary:expectedSalary(player,buyer.division)});
     if(!moved.success)return moved;
@@ -1970,6 +1995,14 @@ function rollWorldSeason(summary) {
     for(const [div,names] of Object.entries(gameState.leagues))for(const name of names){const c=w.clubs[name];if(c)c.division=div;}
     for(const c of Object.values(w.clubs)){
         if(c.name===gameState.team){c.squad=gameState.squad;continue;}
+        // Prestigio del club: nivel medio de sus mejores 16 jugadores la primera vez que se renueva el mundo.
+        // Sesga la reposición para que los clubes grandes sigan reponiendo con calidad aunque desciendan.
+        if (c.prestige === undefined) {
+            const top = c.squad.map(p => p.overall || 0).sort((x, y) => y - x).slice(0, 16);
+            if (top.length) c.prestige = Math.round(top.reduce((x, y) => x + y, 0) / top.length);
+        }
+        const divTarget = SQUAD_QUALITY[c.division]?.target || 55;
+        const clubTarget = Math.round(divTarget * 0.5 + Math.min(divTarget + 12, Math.max(divTarget - 6, c.prestige ?? divTarget)) * 0.5);
         const oldDivision = Object.values(w.divisions).find(d => d.standings[c.name]);
         const previousGames=oldDivision?.standings[c.name]?.pj ?? 0;
         const survivors=[];
@@ -1991,8 +2024,8 @@ function rollWorldSeason(summary) {
         for(const p of academy){p.age++;if(p.overall<(p.potential||p.overall)){for(const a of ATTRIBUTES)p[a]=Math.min(99,(p[a]||40)+1);p.overall=Math.min(p.potential,calculatePlayerOverall(p));}}
         c.snapshot.academy=academy.filter(p=>{if(p.age<20)return true;if(c.squad.length<25){p.contractType='owned';p.contractYears=3;c.squad.push(p);}else registerWorldFreeAgent(p);return false;});
         while(c.squad.length<20){const count=pos=>c.squad.filter(p=>p.position===pos).length;const pos=SQUAD_TEMPLATE.find(pos=>count(pos)<SQUAD_TEMPLATE.filter(x=>x===pos).length)||'MC';
-            const p=buildGeneratedPlayer(pos,(SQUAD_QUALITY[c.division]?.target||55)-4,18+Math.floor(Math.random()*3),c.division);assignPlayerIds(w,[p],c.name);c.squad.push(p);}
-        while(c.snapshot.academy.length<6){const p=buildGeneratedPlayer(SQUAD_TEMPLATE[Math.floor(Math.random()*SQUAD_TEMPLATE.length)],(SQUAD_QUALITY[c.division]?.target||55)-14,16,c.division);assignPlayerIds(w,[p],c.name);c.snapshot.academy.push(p);}
+            const p=buildGeneratedPlayer(pos,clubTarget-4,18+Math.floor(Math.random()*3),c.division);assignPlayerIds(w,[p],c.name);c.squad.push(p);}
+        while(c.snapshot.academy.length<6){const p=buildGeneratedPlayer(SQUAD_TEMPLATE[Math.floor(Math.random()*SQUAD_TEMPLATE.length)],clubTarget-14,16,c.division);assignPlayerIds(w,[p],c.name);c.snapshot.academy.push(p);}
         c.financeTicks={};
         for(const k of ['fd_sponsor','fd_tv'])if(c.snapshot[k]?.active){const d=c.snapshot[k];d.yearsLeft=Math.max(0,(d.yearsLeft||1)-1);d.active=d.yearsLeft>0;}
         c.snapshot.weeklyIncomeBase=(c.snapshot.fd_baseOrig??c.snapshot.weeklyIncomeBase??5000)+
@@ -2693,6 +2726,9 @@ async function resolveSeasonEnd(pre = null) {
         }
     }
 
+    // 2b) Normativa de filiales
+    const filialNotes = applyFilialRules(moves, leagues, order);
+
     // 3) Aplicar movimientos (un equipo solo se mueve una vez)
     const moved = new Set();
     const finalMoves = moves.filter(m => !moved.has(m.team) && moved.add(m.team));
@@ -2714,8 +2750,9 @@ async function resolveSeasonEnd(pre = null) {
     gameState.lastSeasonSummary = {
         season, userDivision: userDiv, userPosition: userRow,
         userMove: userMove || null,
-        tables, playoffs, moves: finalMoves
+        tables, playoffs, moves: finalMoves, filialNotes
     };
+    filialNotes.forEach(n => addNews(n, 'info'));
     return gameState.lastSeasonSummary;
 }
 
@@ -2977,6 +3014,95 @@ async function advancePlayoff() {
     return finish();
 }
 
+// ── Portadas de prensa y premio del manager ──────────────────
+const PRESS_TROPHY = { copa: 'Copa del Rey', liga: 'Campeón de liga', ascenso: 'Ascenso', champions: 'Champions League',
+    europaLeague: 'Europa League', conferenceLague: 'Conference League' };
+// Añade una portada a la cola (la muestra injector-press.js) y anota el título en el palmarés.
+function queuePress(item) {
+    const list = gameState.pendingPress || (gameState.pendingPress = []);
+    list.push({ ...item, id: `${item.kind}-${gameState.currentSeason}-${list.length}-${Date.now() % 100000}`, season: item.season || gameState.currentSeason });
+    if (PRESS_TROPHY[item.kind]) (gameState.trophies || (gameState.trophies = [])).push({ season: item.season || gameState.currentSeason,
+        kind: item.kind, label: PRESS_TROPHY[item.kind], division: item.division || item.to || gameState.division });
+}
+function seasonAwardsAndPress(summary) {
+    if (!summary) return;
+    const div = summary.userDivision, pos = summary.userPosition;
+    if (pos === 1) queuePress({ kind: 'liga', division: div, points: summary.tables?.[div]?.[0]?.pts });
+    if (summary.userMove && /^ascenso/.test(summary.userMove.reason || '')) queuePress({ kind: 'ascenso', to: summary.userMove.to, reason: summary.userMove.reason });
+    let goals = [];
+    try { goals = evaluateBoardObjectives(gameState); } catch (e) { goals = []; }
+    if (goals.length && goals.every(g => g.met)) {
+        // Todos los objetivos de la directiva cumplidos: bonus, confianza máxima y mención en el palmarés de entrenadores
+        const bonusByDiv = { primera: 2000000, segunda: 500000, rfef_grupo1: 120000, rfef_grupo2: 120000, promesas: 30000 };
+        const bonus = bonusByDiv[div] || 0;
+        const [a, b] = String(gameState.currentSeason).split('/').map(Number);
+        const nextSeason = `${a + 1}/${b + 1}`;
+        gameState.balance += bonus;
+        gameState.fd_prizes = [...(gameState.fd_prizes || []), { key: `manager-${gameState.currentSeason}`, label: 'Premio de la directiva: objetivos cumplidos', amount: bonus, season: nextSeason, week: 1 }];
+        gameState.boardConfidence = Math.min(100, (gameState.boardConfidence ?? 65) + 15);
+        (gameState.managerAwards || (gameState.managerAwards = [])).push({ season: gameState.currentSeason, type: 'objetivos', label: 'Entrenador del Año', bonus });
+        queuePress({ kind: 'premio', bonus });
+        addNews(`🎖️ La directiva premia al míster por cumplir todos los objetivos de la temporada: +${bonus.toLocaleString('es-ES')}€ y máxima confianza.`, 'success');
+    }
+}
+if (typeof window !== 'undefined') window.pcfQueuePress = queuePress;
+
+// Aplica la normativa de filiales a los movimientos de fin de temporada (modifica `moves` en el sitio).
+// Devuelve la lista de avisos para la prensa.
+function applyFilialRules(moves, leagues, order) {
+    const pairs = detectFilialPairs(Object.values(leagues).flat());
+    const entries = Object.entries(pairs);
+    const notes = [];
+    if (!entries.length) return notes;
+    const tier = d => DIVISION_TIER[d] || 9;
+    const finalDiv = () => {
+        const m = {};
+        for (const [d, arr] of Object.entries(leagues)) arr.forEach(t => { m[t] = d; });
+        moves.forEach(mv => { m[mv.team] = mv.to; });
+        return m;
+    };
+    const movedSet = () => new Set(moves.map(m => m.team));
+    const groupSizes = () => { const n = {}; const f = finalDiv(); Object.values(f).forEach(d => { n[d] = (n[d] || 0) + 1; }); return n; };
+    const conflictFree = (team, destDiv, fin) => !pairs[team] || tier(destDiv) > tier(fin[pairs[team]]);
+    const nameOf = d => (typeof divisionName === 'function' ? divisionName(d) : d);
+    for (let guard = 0; guard < 16; guard++) {
+        const fin = finalDiv();
+        let changed = false;
+        for (const [f, p] of entries) {
+            const tf = tier(fin[f]), tp = tier(fin[p]);
+            if (tf > tp) continue;                                  // el filial está más abajo: correcto
+            const mvF = moves.find(m => m.team === f);
+            if (mvF && /ascenso/.test(mvF.reason) && tier(mvF.from) > tp) {
+                // El filial iba a ascender a la categoría de su primer equipo (o superior): se anula y sube el siguiente
+                moves.splice(moves.indexOf(mvF), 1);
+                const used = movedSet();
+                const cand = order(mvF.from).find(t => t !== f && !used.has(t) && conflictFree(t, mvF.to === 'rfef' ? 'rfef_grupo1' : mvF.to, fin));
+                if (cand) moves.push({ team: cand, from: mvF.from, to: mvF.to, reason: `ascenso (plaza del filial ${f})` });
+                notes.push(`📜 Normativa de filiales: ${f} no puede ascender a ${nameOf(mvF.to)} porque ${p} ya juega allí.${cand ? ` Asciende ${cand} en su lugar.` : ''}`);
+                changed = true; break;
+            }
+            // Coinciden (o el filial está por encima): el filial desciende un escalón por debajo de su primer equipo
+            const downTier = tp + 1;
+            const candidates = Object.keys(DIVISION_TIER).filter(d => tier(d) === downTier && d !== 'rfef' && leagues[d]);
+            if (!candidates.length) continue;
+            const sizes = groupSizes();
+            const dd = candidates.includes(fin[f]) ? fin[f] : candidates.sort((a, b) => (sizes[a] || 0) - (sizes[b] || 0))[0];
+            const from = (mvF ? mvF.from : fin[f]);
+            const origin = fin[f];
+            if (mvF) moves.splice(moves.indexOf(mvF), 1);
+            moves.push({ team: f, from, to: dd, reason: 'descenso (filial: no puede jugar en la categoría de su primer equipo)' });
+            const used = movedSet();
+            const cand = order(dd).find(t => t !== f && !used.has(t) && conflictFree(t, origin, fin));
+            if (cand) moves.push({ team: cand, from: dd, to: origin, reason: `ascenso (plaza del filial ${f})` });
+            notes.push(`📜 Normativa de filiales: ${f} no puede coincidir con ${p} en la misma categoría y desciende a ${nameOf(dd)}.${cand ? ` ${cand} ocupa su plaza.` : ''}`);
+            changed = true; break;
+        }
+        if (!changed) break;
+    }
+    return notes;
+}
+if (typeof window !== 'undefined') window.pcfApplyFilialRules = applyFilialRules;
+
 async function endSeason() {
     const currentDivision = gameState.division;
     // ¿Juega tu equipo un playoff? Entonces la temporada sigue en fase 'playoff'
@@ -3009,6 +3135,7 @@ async function endSeason() {
     if(nextEurope)summary.europe={champions:'Champions League',europaLeague:'Europa League',conferenceLague:'Conference League'}[nextEurope];
     else delete summary.europe;
     const fullText = summary.europe ? `${text}\n🌍 Clasificado para la ${summary.europe}.` : text;
+    try { seasonAwardsAndPress(summary); } catch (e) { console.error('Prensa/premios:', e); }
 
     // Gala de fin de temporada (si el módulo está cargado); si no, el aviso de siempre
     if (typeof window !== 'undefined' && typeof window.showSeasonGala === 'function') {
@@ -3749,25 +3876,45 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
 
     if (player.transferListed) {
         const asking = player.askingPrice > 0 ? player.askingPrice : value;
-        const ratio = asking / Math.max(1, value);
-        let chance = ratio <= 1 ? 0.6 : ratio <= 1.3 ? 0.3 : ratio <= 1.6 ? 0.08 : 0;
-        if ((player.weeksOnMarket || 0) >= 4 && ratio <= 1.3) chance += 0.15;
+        // Cualquiera puede pagar la cláusula de rescisión: el precio efectivo nunca supera la cláusula.
+        const clause = Number(player.releaseClause) > 0 ? Number(player.releaseClause) : 0;
+        const askEff = clause > 0 ? Math.min(asking, clause) : asking;
+        const ratio = askEff / Math.max(1, value);
+        // Aunque pidas demasiado, siempre hay alguna oferta a la baja de vez en cuando.
+        let chance = ratio <= 1 ? 0.6 : ratio <= 1.3 ? 0.3 : ratio <= 1.6 ? 0.08 : 0.04;
+        if ((player.weeksOnMarket || 0) >= 4 && ratio <= 1.6) chance += 0.15;
         if (Math.random() >= chance) {
             if (ratio > 1.6 && player.weeksOnMarket === 4) {
-                addNews(`[Secretario Técnico] Nadie pregunta por ${player.name}: pides ${asking.toLocaleString('es-ES')}€ y su valor de mercado ronda ${value.toLocaleString('es-ES')}€.`, 'warning');
+                addNews(`[Secretario Técnico] Pocos se interesan por ${player.name}: pides ${asking.toLocaleString('es-ES')}€ y su valor de mercado ronda ${value.toLocaleString('es-ES')}€.`, 'warning');
             }
             return null;
         }
-        const buyer = pickBuyerClub(Math.min(asking, value), player.overall || 60);
+        // Importe objetivo: lo que valga (con cierto margen), sin pasar de lo que piden ni del tope del mercado.
+        const topSpend = Math.max(...Object.values(ECONOMY.maxSpend));
+        const target = roundMoney(Math.min(askEff, topSpend, value * (ratio > 1.6 ? 0.75 : 1.15)));
+        const buyer = pickBuyerClubFlex(target, player.overall || 60);
         if (!buyer || offers.some(o => o.player?.name === player.name && o.club === buyer.club)) return null;
 
-        // Nunca más de lo que piden ni más de lo que el club puede pagar
-        const maxAmount = Math.min(ECONOMY.maxSpend[buyer.division], roundMoney(value * 1.15));
-        const amount = roundMoney(Math.min(asking, maxAmount, value * (0.8 + Math.random() * 0.35)));
+        const maxAmount = Math.min(ECONOMY.maxSpend[buyer.division], buyer.amount, roundMoney(value * 1.15));
+        let amount = roundMoney(Math.min(askEff, maxAmount, Math.max(buyer.amount * 0.8, value * (0.8 + Math.random() * 0.35))));
+        amount = Math.min(amount, buyer.amount);
         if (amount <= 0) return null;
+
+        // El comprador puede pagar la cláusula entera: la paga y el traspaso se cierra solo.
+        if (clause > 0 && buyer.amount >= clause && amount >= clause * 0.999) {
+            replaceInLineup(player.name);
+            const moved = worldMove({ id: player.id, from: gameState.team, to: buyer.club, fee: clause, salary: expectedSalary(player, buyer.division) });
+            if (!moved.success) return null;
+            gameState.pendingOffers = (gameState.pendingOffers || []).filter(o => o.player?.id !== player.id && o.player?.name !== player.name);
+            gameState.playerSalesIncome = (gameState.playerSalesIncome || 0) + clause;
+            logMovement('sale', `Cláusula pagada por ${buyer.club}: ${player.name}`, clause);
+            updateWeeklyFinancials();
+            addNews(`💥 ${buyer.club} ha pagado la cláusula de rescisión de ${player.name}: ${clause.toLocaleString('es-ES')}€. El traspaso se cierra sin negociación.`, 'success');
+            return null;
+        }
         offer = {
             type: 'transfer', player, club: buyer.club, amount,
-            originalAskingPrice: asking, maxAmount: Math.min(maxAmount, Math.max(amount, asking)),
+            originalAskingPrice: asking, maxAmount: Math.min(maxAmount, Math.max(amount, askEff)),
             week: gameState.week, season: gameState.currentSeason, timestamp: Date.now()
         };
         addNews(`📨 ¡Oferta recibida! ${buyer.club} ofrece ${amount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${asking.toLocaleString('es-ES')}€)`,

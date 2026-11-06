@@ -572,6 +572,7 @@ function processResult(match, result) {
             const order=['copa_r1','copa_r32','copa_r16','copa_qf','copa_sf','copa_final'];
             const idx=order.indexOf(match.phase);
             comp.copaPhase=order[idx+1]||'champion';
+            if(comp.copaPhase==='champion'&&window.pcfQueuePress)window.pcfQueuePress({kind:'copa',opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,penalties:result.penalties?`${result.penalties.my}-${result.penalties.opp}`:null,scorers:(result.goals||[]).filter(g=>g.team===result.myTeam).map(g=>g.name)});
             // Sorteo de la siguiente ronda (ahora, no antes)
             const nextPhase=order[idx+1];
             const nextMatches=cal.filter(m=>m.type==='copa'&&m.phase===nextPhase&&!m.played);
@@ -669,6 +670,7 @@ function processResult(match, result) {
             const won = result.qualified ?? result.win;
             comp.europeanPhase=won?'champion':'eliminated';
             if(won)window.gameLogic?.addNews(`🏆 ¡¡CAMPEONES DE LA ${(CUP_CONFIG[match.type]?.name||'').toUpperCase()}!!`,'success');
+            if(won&&window.pcfQueuePress&&['champions','europaLeague','conferenceLague'].includes(match.type))window.pcfQueuePress({kind:match.type,opponent:match.opponent,myGoals:result.myGoals,oppGoals:result.oppGoals,penalties:result.penalties?`${result.penalties.my}-${result.penalties.opp}`:null,scorers:(result.goals||[]).filter(g=>g.team===result.myTeam).map(g=>g.name)});
             saveCompState(comp);
             return {advances:won};
         }
@@ -1009,11 +1011,22 @@ function showResultModal(match,result,processed){
                 ?`<div style="background:rgba(76,175,80,.2);border:1px solid #4CAF50;border-radius:10px;padding:12px;margin-top:14px;color:#4CAF50;font-weight:bold">✅ ¡AVANZAMOS! Global: ${gs}</div>`
                 :`<div style="background:rgba(244,67,54,.2);border:1px solid #f44336;border-radius:10px;padding:12px;margin-top:14px;color:#f44336;font-weight:bold">❌ Eliminados — Global: ${gs}</div>`;
         }else if(match.type==='copa'){
-            banner=result.win
-                ?(match.phase==='copa_final'
-                    ?`<div style="background:rgba(255,215,0,.2);border:2px solid #FFD700;border-radius:10px;padding:18px;margin-top:14px;text-align:center"><div style="font-size:2em">🥇</div><div style="color:#FFD700;font-weight:900">¡COPA DEL REY!</div></div>`
-                    :`<div style="background:rgba(76,175,80,.2);border:1px solid #4CAF50;border-radius:10px;padding:12px;margin-top:14px;color:#4CAF50;font-weight:bold">✅ ¡Pasamos a la siguiente ronda!</div>`)
-                :`<div style="background:rgba(244,67,54,.2);border:1px solid #f44336;border-radius:10px;padding:12px;margin-top:14px;color:#f44336;font-weight:bold">❌ Eliminados de la Copa del Rey</div>`;
+            // Se decide con el resultado de la ELIMINATORIA (global en ida y vuelta, prórroga y penaltis),
+            // no con el de este partido suelto: antes un empate en la vuelta tras ganar la ida salía como «Eliminados».
+            const box=(bg,bd,col,txt)=>`<div style="background:${bg};border:1px solid ${bd};border-radius:10px;padding:12px;margin-top:14px;color:${col};font-weight:bold">${txt}</div>`;
+            if(processed.isLeg&&processed.advances===null){
+                banner=`<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;margin-top:14px;text-align:center;color:rgba(255,255,255,.7);font-size:.88em">
+                ⏳ Vuelta ${match.isHome?'en campo rival':'en casa'} — resultado ida: <strong style="color:#FFD700">${result.myGoals}-${result.oppGoals}</strong></div>`;
+            }else{
+                const adv=processed.advances??result.qualified??result.win;
+                let globalTxt='';
+                if(match.id==='copa_sf_2'){const ag=aggregateBefore(match);globalTxt=` Global: ${ag.my+result.myGoals}-${ag.opp+result.oppGoals}`;}
+                banner=adv
+                    ?(match.phase==='copa_final'
+                        ?`<div style="background:rgba(255,215,0,.2);border:2px solid #FFD700;border-radius:10px;padding:18px;margin-top:14px;text-align:center"><div style="font-size:2em">🥇</div><div style="color:#FFD700;font-weight:900">¡COPA DEL REY!</div></div>`
+                        :box('rgba(76,175,80,.2)','#4CAF50','#4CAF50',`✅ ¡Pasamos a la siguiente ronda!${globalTxt}`))
+                    :box('rgba(244,67,54,.2)','#f44336','#f44336',`❌ Eliminados de la Copa del Rey${globalTxt}`);
+            }
         }
 
         const el=document.createElement('div');
@@ -1056,6 +1069,7 @@ function showResultModal(match,result,processed){
 ${extraLine}
 <div class="cr-out" style="color:${outColor}">${outEmoji} ${outLabel}</div>
 ${goals.length?`<div class="cr-sec"><h4>⚽ Goles</h4><div class="cr-gcols"><div class="cr-gcol l">${goals.filter(g=>!!g.mine===!!meLeft).sort((a,b)=>a.min-b.min).map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div><div class="cr-gcol r">${goals.filter(g=>!!g.mine!==!!meLeft).sort((a,b)=>a.min-b.min).map(g=>`<div class="cr-gi ${g.mine?'m':'t'}"><span class="cr-mn">${g.min}'</span><span class="cr-sc">${g.name}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div></div></div>`:''}
+${(result.injuries||[]).length?`<div class="cr-sec"><h4>🚑 Lesiones</h4><div class="cr-gcols"><div class="cr-gcol l">${(result.injuries||[]).filter(x=>(x.team===myTeam)===!!meLeft).sort((a,b)=>a.minute-b.minute).map(x=>`<div class="cr-gi ${x.team===myTeam?'m':'t'}"><span class="cr-mn">${x.minute}'</span><span class="cr-sc">${x.player}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div><div class="cr-gcol r">${(result.injuries||[]).filter(x=>(x.team===myTeam)!==!!meLeft).sort((a,b)=>a.minute-b.minute).map(x=>`<div class="cr-gi ${x.team===myTeam?'m':'t'}"><span class="cr-mn">${x.minute}'</span><span class="cr-sc">${x.player}</span></div>`).join('')||'<div class="cr-none">—</div>'}</div></div></div>`:''}
 <div class="cr-sec"><h4>📊 Estadísticas</h4>
 <div class="cr-sr"><strong>${poss}%</strong><span class="cr-sn">Posesión</span><strong>${100-poss}%</strong></div>
 <div class="cr-sr"><strong>${shots.my}</strong><span class="cr-sn">Remates</span><strong>${shots.opp}</strong></div>
@@ -1181,6 +1195,8 @@ function hookCupSimulateWeek(){
 // ============================================================
 window.CupMatches = {
     ensureCalendar: initCupCalendar,
+    // Expuesto para pruebas: muestra el modal de resultado con datos dados
+    _showResultModal: (match, result, processed) => showResultModal(match, result, processed),
     // Partidos aún por jugar (desbloqueados y sin eliminar): el juego no cierra la temporada hasta jugarlos
     pendingCount: () => {
         const comp = getCompState() || {};

@@ -378,6 +378,15 @@
                 <td style="text-align:right;font-weight:bold;" id="fin_mBal">0€</td></tr>
         </table>
 
+        <!-- PREMIOS -->
+        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
+            🏆 Premios de competición <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
+        </h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
+            <tr><td style="padding:6px 4px;color:#aaa;">💶 Premios cobrados (liga, copa y Europa)</td><td style="text-align:right;font-weight:bold;" id="fin_pTot">0€</td></tr>
+        </table>
+        <div id="fin_pList" style="font-size:.85em;color:#aaa;margin-bottom:22px;"></div>
+
         <!-- REMODELACIONES -->
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
             🏗️ Remodelaciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
@@ -501,6 +510,19 @@
         setText('fin_mStf', fmt(stfC) + '€', stfC > 0 ? '#f44336' : '#777');
         setText('fin_mBal', (mBal >= 0 ? '+' : '') + fmt(mBal) + '€', mBal >= 0 ? '#4CAF50' : '#f44336');
 
+        // ── Premios de competición ───────────────────────────────
+        const prizes = (Array.isArray(state.fd_prizes) ? state.fd_prizes : []).filter(p => p.season === state.currentSeason);
+        const prizeTot = prizes.reduce((n, p) => n + (Number(p.amount) || 0), 0);
+        setText('fin_pTot', fmt(prizeTot) + '€', prizeTot > 0 ? '#4CAF50' : '#777');
+        const pListEl = document.getElementById('fin_pList');
+        if (pListEl) pListEl.innerHTML = prizes.length === 0
+            ? '<span style="color:#777;font-style:italic;">Todavía no has cobrado premios esta temporada.</span>'
+            : [...prizes].reverse().map(p =>
+                `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e1e1e;">
+                    <span>Sem ${p.week} — ${p.label}</span>
+                    <span style="color:#4CAF50;margin-left:16px;white-space:nowrap;">+${fmt(p.amount)}€</span>
+                 </div>`).join('');
+
         // ── Remodelaciones ───────────────────────────────────────
         const rens = mvs.filter(m => m.type === 'renovation');
         // Detectar estadio: palabras clave del sistema antiguo Y nuevo injector de instalaciones
@@ -530,7 +552,7 @@
         const mListEl = document.getElementById('fin_mList');
         if (mListEl) {
             const all = mvs.filter(m => m.type !== 'renovation');
-            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫', bonus: '🎁' };
+            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫', bonus: '🎁', income: '🏆' };
             mListEl.innerHTML = all.length === 0
                 ? '<span style="color:#555;">Sin movimientos registrados esta temporada.</span>'
                 : [...all].reverse().map(m => {

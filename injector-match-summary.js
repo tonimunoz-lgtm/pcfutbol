@@ -58,6 +58,14 @@ window.injectMatchSummary = function(matchResult) {
                         <div class="ms-col away">${allCards.filter(c => c.team !== homeTeam).map(c => `<div class="ms-ev">${c.player} <span class="ms-min">${c.minute}'</span> ${c.type === 'yellow' ? '🟨' : '🟥'}</div>`).join('') || '<div class="ms-none">—</div>'}</div>
                     </div>
                 </div>` : ''}
+                ${injuries.length > 0 ? `
+                <div class="ms-block ms-injuries">
+                    <h3>🚑 Lesiones</h3>
+                    <div class="ms-two">
+                        <div class="ms-col home">${injuries.filter(x => x.team === homeTeam).map(x => `<div class="ms-ev"><span class="ms-min">${x.minute}'</span> ${x.player}</div>`).join('') || '<div class="ms-ev ms-none">—</div>'}</div>
+                        <div class="ms-col away">${injuries.filter(x => x.team !== homeTeam).map(x => `<div class="ms-ev">${x.player} <span class="ms-min">${x.minute}'</span></div>`).join('') || '<div class="ms-ev ms-none">—</div>'}</div>
+                    </div>
+                </div>` : ''}
                 <div class="ms-block ms-poss-block">
                     <h3>📊 Posesión</h3>
                     <div class="ms-poss"><span>${stats.possession[0]}%</span>
@@ -75,20 +83,6 @@ window.injectMatchSummary = function(matchResult) {
                 </div>
             </div>
             
-            ${injuries.length > 0 ? `
-            <div class="injuries-section">
-                <h3>🚑 Lesiones</h3>
-                <div class="injuries-list">
-                    ${injuries.map(inj => `
-                        <div class="injury-item">
-                            <span class="injury-minute">${inj.minute}'</span>
-                            <span class="injury-player">${inj.player}</span>
-                            <span class="injury-team">(${inj.team})</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
             
             <div class="match-footer">
                 <button class="btn-continue" onclick="this.closest('#matchSummaryModal').remove()">
