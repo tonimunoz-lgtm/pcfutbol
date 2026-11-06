@@ -6,7 +6,7 @@
     #staff table { table-layout: fixed; width: 100%; min-width: 0; }
     #staff th, #staff td { padding: 5px 3px !important; font-size: .68rem !important; line-height: 1.15;
         white-space: normal !important; overflow-wrap: anywhere; letter-spacing: 0 !important; text-align: center; }
-    #staff th { font-size: .58rem !important; overflow-wrap: normal; word-break: normal; padding: 6px 2px !important; }
+    #staff th { font-size: .62rem !important; overflow-wrap: normal; word-break: normal; padding: 6px 2px !important; }
     #staff th:first-child, #staff td.pcf-staff-role { text-align: left; font-weight: 700; }
     #staff th:nth-child(1) { width: 26%; }
     #staff th:nth-child(2) { width: 18%; }
@@ -16,7 +16,7 @@
     #staff th:nth-child(6) { width: 18%; }
     #staff .pcf-staff-icon { display: block; width: 20px; height: 20px; margin: 0 0 2px 0 !important; }
     #staff .btn, #staff .btn-sm { width: 100%; min-width: 0; min-height: 30px; padding: 4px 2px !important;
-        font-size: .52rem !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+        font-size: .6rem !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; line-height: 1.1; }
 
     /* ── Alineación: botones en la cabecera y campo entero a la vista ── */
     #lineup .page-header { gap: 4px !important; }
@@ -29,6 +29,7 @@
     #pcfLineupTools .btn.on { box-shadow: 0 0 0 2px #ffd700 inset; }
     #lineup #lineupMessage.alert-info, #lineup #pcfLineupBar { display: none !important; }
     #lineup .lineup-main-container { gap: 6px !important; }
+    #lineup .pitch-player span { font-size: .6rem !important; }
     /* Alto = hueco disponible bajo la cabecera de la página; el ancho sale de la proporción 9:16 */
     #lineup #pitchContainer { height: min(calc(100dvh - var(--pcf-header-h, 96px) - 76px), calc((100vw - 16px) * 16 / 9)) !important;
         width: auto !important; max-width: 100% !important; margin: 0 auto; }
@@ -43,4 +44,106 @@
         position: sticky !important; left: 26px; z-index: 4; width: 92px; min-width: 92px; max-width: 92px;
         white-space: normal; line-height: 1.15; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
     #squad .pcf-player-scroll table thead th:nth-child(1), #squad .pcf-player-scroll table thead th:nth-child(2) { z-index: 9; }
+}
+
+/* ═══ Ronda 4: revisión de pantallas en 360 px y tablet ═══════════════════ */
+
+#finance h2 span { color: #9fb0cc !important; }
+/* Contraste en Caja (todas las resoluciones): los grises claros pensados para fondo oscuro
+   quedaban sobre celdas azul claro (≈2:1). */
+#finance td[style*="#aaa"], #finance td[style*="#999"] { color: #2c3e5c !important; }
+#finance td[style*="#777"], #finance td[style*="#666"], #finance td[style*="#888"], #finance td[style*="#555"],
+#finance td span[style*="#666"], #finance td span[style*="#777"] { color: #4a5878 !important; }
+
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+
+    /* Títulos de cabecera: se parten en dos líneas en vez de cortarse con «…» */
+    .page-header h1 { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.12; }
+    .page-header { flex-wrap: wrap; }
+    /* Estadio: el resumen (afición, entrenamiento, popularidad) va en su propia línea, pequeño */
+    #facilities .page-header > span { order: 3; flex: 1 1 100%; min-width: 0; max-width: 100%; white-space: normal !important; overflow-wrap: anywhere; font-size: .7rem !important; line-height: 1.25; opacity: .9; }
+
+    /* Clasificación: que quepa «PTS» sin desplazar */
+    #standings .pcf-table-scroll { overflow-x: hidden; }
+    #standings table { table-layout: fixed; width: 100%; min-width: 0; }
+    #standings th, #standings td { padding: 5px 2px !important; font-size: .7rem !important; letter-spacing: 0 !important;
+        white-space: nowrap; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+    #standings th { text-overflow: clip !important; font-size: .64rem !important; }
+    #standings th:nth-child(10) { width: 10%; }
+    #standings th:nth-child(1) { width: 9%; }
+    #standings th:nth-child(2) { width: 30%; }
+    #standings td:nth-child(2) { white-space: normal; line-height: 1.1; text-overflow: clip; }
+    #standings td:nth-child(2), #standings th:nth-child(2) { text-align: left; padding-left: 4px !important; }
+
+    /* Fichajes: filtro compacto */
+    #transfers > div[style*="flex-wrap"] { gap: 8px !important; margin-bottom: 12px !important; }
+    #transfers #marketSearchName, #transfers #marketPosition { flex: 1 1 100%; width: 100% !important; }
+    #transfers #marketMinOverall, #transfers #marketMaxAge { flex: 1 1 calc(50% - 4px); width: auto !important; min-width: 0; }
+    #transfers > div[style*="flex-wrap"] label { flex: 0 0 auto; white-space: nowrap; font-size: .82rem; }
+    #transfers input[type="checkbox"], #dashboard input[type="checkbox"] { width: 20px !important; height: 20px !important;
+        min-height: 0 !important; padding: 0 !important; margin: 0; flex: 0 0 20px; }
+    #transfers > div[style*="flex-wrap"] .btn { flex: 1 1 calc(50% - 4px); width: auto !important; min-width: 0; }
+
+    /* Comercial: ninguna tarjeta puede ensanchar la página */
+    #commercial .pcf-com-grid > * { min-width: 0; }
+    #commercial .btn, #fd-btn-offers { white-space: normal; max-width: 100%; }
+
+    /* Caja: filas en rejilla (etiqueta + importe, detalle debajo), sin scroll horizontal */
+    #finance .pcf-table-scroll { overflow-x: hidden; }
+    #finance table, #finance tbody { display: block; width: 100% !important; min-width: 0 !important; }
+    #finance tr { display: grid; grid-template-columns: minmax(0, 1fr) 112px; align-items: center; }
+    #finance td:nth-child(2) { text-align: right; }
+    #finance td { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+    #finance td:nth-child(3) { grid-column: 1 / -1; font-size: .72rem; padding-top: 0 !important; }
+    #finance td:nth-child(3):empty { display: none; }
+
+    /* Objetivos táctiles: botones secundarios (Renovar, etc.) */
+    #dashboard .btn, #dashboard button { min-height: 36px; }
+
+    /* Cantera y Negociaciones: «Jugador» fijo a la izquierda al desplazar */
+    #academy .pcf-player-scroll table th:nth-child(1), #academy .pcf-player-scroll table td:nth-child(1) {
+        position: sticky !important; left: 0; z-index: 4; width: 26px; min-width: 26px; max-width: 26px;
+        padding-left: 2px !important; padding-right: 2px !important; text-align: center; }
+    #academy .pcf-player-scroll table th:nth-child(2), #academy .pcf-player-scroll table td:nth-child(2) {
+        position: sticky !important; left: 26px; z-index: 4; width: 92px; min-width: 92px; max-width: 92px;
+        white-space: normal; line-height: 1.15; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
+    #academy .pcf-player-scroll table thead th:nth-child(1), #academy .pcf-player-scroll table thead th:nth-child(2) { z-index: 9; }
+    #negotiations .pcf-player-scroll table th:nth-child(1), #negotiations .pcf-player-scroll table td:nth-child(1) {
+        position: sticky !important; left: 0; z-index: 4; min-width: 96px; max-width: 110px; white-space: normal; line-height: 1.15;
+        box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
+    #negotiations .pcf-player-scroll table thead th:nth-child(1) { z-index: 9; }
+}
+
+/* Indicación de «hay más columnas a la derecha» (móvil y tablet): el borde derecho se difumina */
+@media (max-width: 1100px) {
+    .pcf-player-scroll.pcf-more-right, .pcf-table-scroll.pcf-more-right {
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent); }
+}
+
+/* Tablet (768–1100 px): columnas fijas también aquí */
+@media (min-width: 768px) and (max-width: 1100px) {
+    #squad .pcf-player-scroll table th:nth-child(1), #squad .pcf-player-scroll table td:nth-child(1),
+    #academy .pcf-player-scroll table th:nth-child(1), #academy .pcf-player-scroll table td:nth-child(1) {
+        position: sticky !important; left: 0; z-index: 4; width: 40px; min-width: 40px; max-width: 40px; box-sizing: border-box; }
+    #squad .pcf-player-scroll table th:nth-child(2), #squad .pcf-player-scroll table td:nth-child(2),
+    #academy .pcf-player-scroll table th:nth-child(2), #academy .pcf-player-scroll table td:nth-child(2) {
+        position: sticky !important; left: 40px; z-index: 4; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
+    #squad .pcf-player-scroll table thead th:nth-child(-n+2), #academy .pcf-player-scroll table thead th:nth-child(-n+2) { z-index: 9; }
+}
+
+/* Pantallas táctiles (móvil y tablet): objetivos de pulsación de al menos ~36 px */
+@media (pointer: coarse) {
+    .page .btn, .page .btn-sm, .page button { min-height: 36px; }
+    .page input[type="checkbox"] { width: 20px; height: 20px; min-height: 0; }
+}
+
+/* Móvil apaisado: el campo vertical no cabe en 390 px de alto; se deja a un tamaño legible y se hace scroll */
+@media (orientation: landscape) and (max-height: 500px) {
+    #lineup #pitchContainer { height: auto !important; width: min(100%, 360px) !important; aspect-ratio: 9 / 16; }
+}
+
+/* Nombres largos en las tarjetas del campo: puntos suspensivos en vez de cortarse por ambos lados */
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+    #lineup .pitch-player > :first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }

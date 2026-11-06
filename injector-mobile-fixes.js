@@ -56,3 +56,25 @@
     watch();
     install();
 })();
+
+// Difumina el borde derecho de las tablas que se pueden desplazar en horizontal (señal de "hay más columnas").
+(function () {
+    'use strict';
+    const SEL = '.pcf-player-scroll, .pcf-table-scroll';
+    function update(box) {
+        const more = box.scrollWidth - box.clientWidth - box.scrollLeft > 4;
+        box.classList.toggle('pcf-more-right', more);
+    }
+    function bind(box) {
+        if (box._pcfFade) { update(box); return; }
+        box._pcfFade = true;
+        box.addEventListener('scroll', () => update(box), { passive: true });
+        update(box);
+    }
+    function scan() { document.querySelectorAll(SEL).forEach(bind); }
+    let t = 0;
+    new MutationObserver(() => { if (t) return; t = setTimeout(() => { t = 0; scan(); }, 120); })
+        .observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', () => document.querySelectorAll(SEL).forEach(update));
+    scan();
+})();
