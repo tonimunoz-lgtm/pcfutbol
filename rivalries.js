@@ -8,6 +8,7 @@
 export const RIVALRIES = [
     { a: 'Real Madrid CF', b: 'FC Barcelona', name: 'El Clásico', level: 2 },
     { a: 'Real Madrid CF', b: 'Atlético de Madrid', name: 'Derbi madrileño', level: 2 },
+    { a: 'Real Madrid CF', b: 'Can Rull Romulo Tronchoni, CFU C', name: 'Nuevo Derbi', level: 2 },
     { a: 'Atlético de Madrid', b: 'Rayo Vallecano', name: 'Derbi madrileño', level: 1 },
     { a: 'Getafe CF', b: 'Rayo Vallecano', name: 'Derbi del sur de Madrid', level: 1 },
     { a: 'Getafe CF', b: 'Atlético de Madrid', name: 'Derbi madrileño', level: 1 },
