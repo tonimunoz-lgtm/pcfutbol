@@ -2,7 +2,7 @@
 // injector-press.js — Portadas de prensa al ganar un título o conseguir un hito.
 // Cola: gameState.pendingPress = [{ id, kind, season, ... }]. Otros módulos añaden elementos (Copa, Europa, fin de
 // temporada) y este módulo los muestra de uno en uno cuando no hay otro aviso en pantalla.
-// kinds: copa · liga · ascenso · champions · europaLeague · conferenceLague · premio
+// kinds: copa · liga · ascenso · champions · europaLeague · conferenceLague · premio · derbi
 // Imágenes opcionales en assets/prensa/<kind>.webp (si no existen se usa un degradado con un emoji).
 // ============================================================
 (function () {
@@ -13,7 +13,9 @@
         rfef_grupo2: 'Primera RFEF (Grupo 2)', promesas: 'Liga Promesas' };
     const COMP = { copa: 'Copa del Rey', champions: 'Champions League', europaLeague: 'Europa League', conferenceLague: 'Conference League' };
     const PAPERS = ['El Diario del Fútbol', 'La Voz del Balón', 'Sport Total', 'El Gol de Hoy'];
-    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️' };
+    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥' };
+    // «El Clásico» → «el Clásico»; «Derbi madrileño» → «el derbi madrileño»
+    const withArticle = n => /^El /.test(n) ? n.replace(/^El /, 'el ') : 'el ' + n.charAt(0).toLowerCase() + n.slice(1);
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const hash = s => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
     const pick = (arr, seed) => arr[seed % arr.length];
@@ -75,6 +77,32 @@
             a.paragraphs = [`La directiva de ${team} reconoce la gestión del entrenador tras cumplir todos y cada uno de los objetivos de la temporada ${item.season}.`,
                 `${item.bonus ? `El club abona un bonus de ${fmt(item.bonus)}€ y ` : ''}la confianza de la directiva en el míster alcanza su nivel más alto. Su nombre ya figura en el palmarés de entrenadores del club.`];
             a.side = ['«Con este míster, el club tiene futuro»: palabras del presidente', 'Otros clubes, interesados en sus servicios'];
+        } else if (item.kind === 'derbi') {
+            const dn = item.derbyName || 'Derbi', opp2 = item.opponent || 'su eterno rival', sc = `${item.myGoals}-${item.oppGoals}`, d = withArticle(dn);
+            a.kicker = `${dn.toUpperCase()} · TEMPORADA ${item.season}`;
+            a.emoji = item.result === 'W' ? '🔥' : item.result === 'L' ? '😔' : '🤝';
+            if (item.result === 'W') {
+                a.headline = pick([`¡${team} gana ${d}!`, `${team} se impone en ${d}`, `${d.charAt(0).toUpperCase() + d.slice(1)} es de ${team}`], seed);
+                a.sub = `${sc} ante ${opp2}: la ciudad se tiñe de fiesta`;
+                a.paragraphs = [`${team} se llevó ${d} tras vencer ${sc} a ${opp2} en un partido de máxima tensión.`,
+                    `La afición celebró el triunfo hasta bien entrada la noche. En el vestuario, la alegría fue desbordante: el equipo sabe que este resultado se recordará durante mucho tiempo.`];
+                a.side = [`${opp2}, hundido: «Nos han superado»`, 'La directiva felicita al equipo por la victoria'];
+                a.quote = pick(['«Esto es por la afición. Sabíamos lo que significaba este partido.»', '«Un derbi se gana con el corazón. Estoy orgulloso de mis jugadores.»', '«Nos lo habían puesto difícil, pero el grupo estuvo a la altura.»'], seed >> 2);
+            } else if (item.result === 'L') {
+                a.headline = pick([`${opp2} se lleva ${d}`, `Golpe en ${d}: ${team} cae ante ${opp2}`, `Derrota dolorosa de ${team} en ${d}`], seed);
+                a.sub = `${sc} en contra: la afición pide explicaciones`;
+                a.paragraphs = [`${team} perdió ${sc} ante ${opp2} en ${d}, un resultado que duele más de lo habitual.`,
+                    `En la grada reinó el silencio al final y la prensa no tardó en señalar al banquillo. El vestuario tendrá que levantar la cabeza de inmediato.`];
+                a.side = [`${opp2} celebra el triunfo en casa ajena`, 'La directiva exige una reacción inmediata'];
+                a.quote = pick(['«Duele, y mucho. Hay que levantarse y seguir trabajando.»', '«Pido perdón a la afición. No es el resultado que merecían.»', '«No hay excusas. Asumo la responsabilidad.»'], seed >> 2);
+            } else {
+                a.headline = pick([`Tablas en ${d}`, `Reparto de puntos en ${d}`, `${team} y ${opp2} no se hacen daño`], seed);
+                a.sub = `${sc} en un partido de máxima tensión`;
+                a.paragraphs = [`${team} y ${opp2} igualaron ${sc} en ${d}, con ocasiones para ambos y un ambiente electrizante.`,
+                    `El empate deja un sabor agridulce: ninguno logró imponerse en un partido que ambos querían ganar.`];
+                a.side = ['Ambos entrenadores reclaman más de su equipo', 'La afición despide a los jugadores con una ovación'];
+                a.quote = pick(['«Un punto que sabe a poco, pero hay que sumar.»', '«El equipo lo dio todo; el fútbol hoy no quiso decantarse.»', '«Nos vamos con la sensación de que pudimos ganar.»'], seed >> 2);
+            }
         } else {
             a.headline = `${team}: gran noticia`; a.sub = ''; a.paragraphs = [''];
         }

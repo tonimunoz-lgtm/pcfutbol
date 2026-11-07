@@ -16,3 +16,10 @@ Estilo común (añádelo a todos los prompts):
 | `europaLeague.webp` | Players lifting an orange-lit European trophy on a stage at night, fireworks and confetti, fans cheering in the stands |
 | `conferenceLague.webp` | Players celebrating with a green-lit European trophy at a stadium at night, scarves held up by supporters, confetti |
 | `premio.webp` | Football manager in a suit holding a small golden award on a stage, applauding club executives in the background, warm indoor lighting (anonymous, face not clearly visible) |
+
+## Derbis
+| Archivo | Prompt (en inglés para la IA de imágenes; añade el estilo común de arriba) |
+|---|---|
+| `derbi.webp` | two groups of anonymous football fans in opposite-colored scarves facing each other across a packed stadium stand, flares and smoke, intense derby atmosphere, wide composition, subject centered |
+
+La misma imagen se usa para victoria, empate y derrota. Se publica una portada en cualquier resultado de un **gran derbi** (nivel 2) y solo en las victorias de los derbis menores (nivel 1).

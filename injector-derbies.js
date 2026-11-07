@@ -72,6 +72,8 @@
                 balance = clamp(balance + 1.5 * lv * sign, 0, 100); pop = clamp(pop + 1 * lv * sign, 0, 100);
                 squad = moodAll({ ...s, squad }, 3 * lv * sign);
             }
+            // Portada de prensa: gran derbi (nivel 2) en cualquier resultado; derbi menor (nivel 1) solo si se gana
+            if (window.pcfQueuePress && (lv >= 2 || r === 'W')) window.pcfQueuePress({ kind: 'derbi', result: r, derbyName: rv.name, opponent: rival, myGoals: gf, oppGoals: ga, level: lv });
             newsOut.push(r === 'W' ? `🔥 ${rv.name}: ¡victoria ante ${rival} (${gf}-${ga})! La afición está en éxtasis.`
                 : r === 'L' ? `🔥 ${rv.name}: derrota ante ${rival} (${gf}-${ga}). La afición pide explicaciones y el vestuario lo acusa.`
                 : `🔥 ${rv.name}: empate ante ${rival} (${gf}-${ga}). Sabe a poco.`);
