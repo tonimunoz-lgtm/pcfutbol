@@ -2410,7 +2410,7 @@ async function computeBoardTarget(joining=false) {
     const dominance = rank === 1 && ratings.length > 1 ? ratings[0][1] - ratings[1][1] : 0;
     const prev = gameState.lastSeasonSummary;
     const promoted = !!(prev && /^ascenso/.test(prev.userMove?.reason || '') && prev.userDivision && prev.userDivision !== gameState.division);
-    gameState.boardObjectives=buildBoardObjectives(gameState,rank,teams.length,{dominance,promoted});
+    gameState.boardObjectives=buildBoardObjectives(gameState,rank,teams.length,{dominance,promoted,toleranceBonus:difficultyParams(gameState).tolerance});
     gameState.boardTarget=gameState.boardObjectives.leagueTarget;
     if (window.negotiateBoardObjective) {
         const accepted=await window.negotiateBoardObjective(gameState,rank,teams.length,{joining});
@@ -2453,6 +2453,7 @@ async function boardUpdate() {
         if(goals.length)delta+=Math.max(-1,Math.min(1,(met/goals.length-.5)*2));
         gameState.boardSecondaryLastKey=secondaryKey;
     }
+    if (delta < 0) delta *= difficultyParams(gameState).boardNeg;      // dificultad: paciencia de la directiva
     const before = gameState.boardConfidence ?? 65;
     const conf = Math.max(0, Math.min(100, before + Math.max(-6, Math.min(4, delta))));
     gameState.boardConfidence = Math.round(conf * 10) / 10;
@@ -3480,13 +3481,31 @@ function computeMerch(state, price) {
 // Son una parte fija de lo que ingresa el club por semana (media entre semanas de casa y fuera + contratos base),
 // así crecen con el tamaño del club: sueldos + estructura rondan el 80-90 % de los ingresos (antes los sueldos
 // eran solo ≈20 % y los grandes acumulaban 100+ M€ al año).
+// ── Dificultad ──────────────────────────────────────────────
+// Se elige al empezar (y se puede cambiar desde Noticias). Afecta a: gastos de estructura, margen del objetivo de la
+// directiva, paciencia de la directiva con los malos resultados, ingresos de los rivales y cuánto se ayuda al club
+// cuando tiene problemas (ver injector-difficulty.js).
+const DIFFICULTY = {
+    easy:   { label: 'Fácil',   aid: 1.5, cooldown: 0.7, structure: 0.85, tolerance: 1,  boardNeg: 0.75, aiDeal: 0.95 },
+    normal: { label: 'Normal',  aid: 1.0, cooldown: 1.0, structure: 1.00, tolerance: 0,  boardNeg: 1.00, aiDeal: 1.00 },
+    hard:   { label: 'Difícil', aid: 0.5, cooldown: 1.5, structure: 1.12, tolerance: -1, boardNeg: 1.25, aiDeal: 1.12 }
+};
+function difficultyParams(state) { return DIFFICULTY[(state || gameState)?.difficulty] || DIFFICULTY.normal; }
+function setDifficulty(level) {
+    if (!DIFFICULTY[level]) return { success: false };
+    gameState.difficulty = level; gameState.difficultyChosen = true;
+    addNews(`⚙️ Dificultad: ${DIFFICULTY[level].label}.`, 'info');
+    return { success: true, level };
+}
+if (typeof window !== 'undefined') window.pcfDifficulty = { LEVELS: DIFFICULTY, params: difficultyParams, set: setDifficulty };
+
 const STRUCTURE_RATE = { primera: 0.60, segunda: 0.50, rfef_grupo1: 0.35, rfef_grupo2: 0.35, promesas: 0.15 };
 function structureCost(state, att, merchRev) {
     const rate = STRUCTURE_RATE[state.division] ?? 0.4;
     const a = att !== undefined ? att : computeAttendance(state);
     const m = merchRev !== undefined ? merchRev : computeMerch(state).revenue;
     const perHomeMatch = (Number(state.ticketPrice ?? 12) || 0) * a + m;
-    return Math.round(rate * (0.5 * perHomeMatch + (state.weeklyIncomeBase ?? 5000)));
+    return Math.round(rate * difficultyParams(state).structure * (0.5 * perHomeMatch + (state.weeklyIncomeBase ?? 5000)));
 }
 
 // Los clubes de IA no firman contratos como el usuario: se les da el equivalente en TV + patrocinio (anual, igual que
@@ -3494,7 +3513,7 @@ function structureCost(state, att, merchRev) {
 const AI_DEAL_BASE = { primera: 33000000, segunda: 8000000, rfef_grupo1: 1200000, rfef_grupo2: 1200000, promesas: 2000 };
 function aiDealWeekly(state) {
     const base = AI_DEAL_BASE[state.division] ?? 0;
-    return Math.round(base * (0.6 + 0.8 * (state.popularity ?? 50) / 100) / 38);
+    return Math.round(base * difficultyParams(gameState).aiDeal * (0.6 + 0.8 * (state.popularity ?? 50) / 100) / 38);
 }
 
 function updateWeeklyFinancials() {  

@@ -96,7 +96,7 @@ function copaRoundsBaseline(objectives, results) {
 //  · un equipo recién ascendido tiene como mínimo un objetivo moderado (entre el 30 % de arriba de la tabla).
 export function buildBoardObjectives(state,rank,count,ctx={}) {
     const n=Math.max(2,count),remaining=Math.max(1,(state.maxSeasonWeeks||38)-(state.seasonType==='regular'?(state.week||1)-1:0));
-    let target=Math.max(1,rank)+Math.max(1,Math.round(n/10));
+    let target=Math.max(1,rank)+Math.max(0,Math.max(1,Math.round(n/10))+(ctx.toleranceBonus||0));
     if(rank===1&&(ctx.dominance||0)>=5)target=1;
     if(ctx.promoted)target=Math.max(target,Math.ceil(n*.3));
     target=Math.min(n-1,Math.max(1,target));

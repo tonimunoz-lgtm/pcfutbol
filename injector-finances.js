@@ -393,6 +393,7 @@
         <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">💶 Premios cobrados (liga, copa y Europa)</td><td style="text-align:right;font-weight:bold;" id="fin_pTot">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla de copa, Europa y playoff</td><td style="text-align:right;font-weight:bold;" id="fin_gTot">0€</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">🤝 Ayudas (accionistas, empresas locales…)</td><td style="text-align:right;font-weight:bold;" id="fin_aTot">0€</td></tr>
         </table>
         <div id="fin_pList" style="font-size:.85em;color:#aaa;margin-bottom:22px;"></div>
 
@@ -536,13 +537,17 @@
         const prizeTot = prizes.reduce((n, p) => n + (Number(p.amount) || 0), 0);
         const gates = (state.seasonMovements || []).filter(m => m.type === 'income' && /^Taquilla/.test(m.description));
         const gateTot = gates.reduce((n, m) => n + (Number(m.amount) || 0), 0);
+        const aids = (state.seasonMovements || []).filter(m => m.type === 'income' && /^Ayuda/.test(m.description));
+        const aidTot = aids.reduce((n, m) => n + (Number(m.amount) || 0), 0);
+        setText('fin_aTot', fmt(aidTot) + '€', aidTot > 0 ? '#4CAF50' : '#777');
         setText('fin_pTot', fmt(prizeTot) + '€', prizeTot > 0 ? '#4CAF50' : '#777');
         setText('fin_gTot', fmt(gateTot) + '€', gateTot > 0 ? '#4CAF50' : '#777');
         const pListEl = document.getElementById('fin_pList');
         if (pListEl) {
             const rows = [
                 ...prizes.map(p => ({ week: p.week, label: p.label, amount: Number(p.amount) || 0 })),
-                ...gates.map(m => ({ week: m.week, label: m.description, amount: Number(m.amount) || 0 }))
+                ...gates.map(m => ({ week: m.week, label: m.description, amount: Number(m.amount) || 0 })),
+                ...aids.map(m => ({ week: m.week, label: m.description, amount: Number(m.amount) || 0 }))
             ].sort((a, b) => (b.week || 0) - (a.week || 0));
             pListEl.innerHTML = rows.length === 0
                 ? '<span style="color:#777;font-style:italic;">Todavía no has cobrado premios ni taquilla de competiciones esta temporada.</span>'
