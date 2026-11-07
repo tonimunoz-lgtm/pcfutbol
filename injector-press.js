@@ -91,7 +91,7 @@
 #pcfPress .pp-paper{font-size:1.7rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
 #pcfPress .pp-meta{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;margin-top:4px;color:#4a4437}
 #pcfPress .pp-kick{font-size:.74rem;font-weight:700;letter-spacing:.14em;color:#8b1e1e;margin:8px 0 2px}
-#pcfPress h1{font-size:2rem;line-height:1.05;margin:0 0 6px;font-weight:900;text-transform:uppercase}
+#pcfPress h1{font-size:2rem;line-height:1.05;margin:0 0 6px;font-weight:900;text-transform:uppercase;color:#1c1a16 !important;text-shadow:none !important;letter-spacing:.02em !important;-webkit-text-stroke:0 !important}
 #pcfPress .pp-sub{font-size:1rem;font-style:italic;color:#3a352a;margin:0 0 10px;border-left:4px solid #8b1e1e;padding-left:10px}
 #pcfPress .pp-img{position:relative;height:210px;border:1px solid #1c1a16;margin:8px 0 10px;overflow:hidden;
   background:linear-gradient(135deg,#2b2417,#6e5a2d 55%,#c9a64c);display:flex;align-items:center;justify-content:center}

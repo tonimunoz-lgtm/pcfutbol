@@ -173,3 +173,8 @@
     .header-info #pmRepBadge { flex: 0 0 auto; padding: 0 8px !important; }
     .header-info #pmRepBadge > span:first-child { display: none; }
 }
+
+/* Búsqueda de promesas (ojeador): si el panel es más alto que la ventana, se desplaza (antes quedaban fuera de pantalla
+   la ✕ y «Cerrar» y no se podía salir sin fichar a alguien). */
+#scoutSearchModal { overflow-y: auto !important; align-items: flex-start !important; box-sizing: border-box; padding: 12px 0; overscroll-behavior: contain; }
+#scoutSearchModal > div { margin: 0 auto !important; }

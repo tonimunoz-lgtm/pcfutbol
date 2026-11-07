@@ -184,6 +184,9 @@
                 </div>
             </div>
         </div>`;
+        // Salir siempre es posible: tocando fuera del panel o con Escape (el panel puede ser más alto que la ventana)
+        modal.addEventListener('click', e => { if (e.target === modal) window.closeScoutModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display !== 'none') window.closeScoutModal(); });
         document.body.appendChild(modal);
     }
 
