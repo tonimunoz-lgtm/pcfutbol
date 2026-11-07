@@ -3013,7 +3013,8 @@ function recordSeasonHistory(summary) {
         europa = { comp: comp.europeanComp, result: comp.europeanPhase === 'champion' ? 'champion' : 'eliminated', round: lastPhase };
     }
     hist.push({ season: gameState.currentSeason, team: gameState.team, division: summary.userDivision, position: summary.userPosition,
-        points: st.pts ?? null, gf: st.gf ?? null, gc: st.gc ?? null, move: summary.userMove?.reason || '', copa, europa });
+        points: st.pts ?? null, gf: st.gf ?? null, gc: st.gc ?? null, move: summary.userMove?.reason || '', copa, europa,
+        balance: Math.round(gameState.balance || 0), purchases: Math.round(gameState.playerPurchases || 0), difficulty: gameState.difficulty || 'normal' });
 }
 function seasonAwardsAndPress(summary) {
     if (!summary) return;

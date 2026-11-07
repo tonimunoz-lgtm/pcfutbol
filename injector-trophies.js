@@ -98,6 +98,7 @@
         const best = hist.length ? Math.min(...hist.map(h => h.position || 99)) : null;
         const tiles = [[titles, 'Títulos'], [count('liga'), 'Ligas'], [count('copa'), 'Copas'], [europe, 'Europeos'], [count('ascenso'), 'Ascensos'], [awards.length, 'Entrenador del año'], [hist.length, 'Temporadas'], [best && best < 99 ? ordinal(best) : '–', 'Mejor puesto']];
         let html = `<div class="tr-tiles">${tiles.map(([n, l]) => `<div class="tr-tile"><b>${n}</b><span>${l}</span></div>`).join('')}</div>`;
+        if (window.pcfAchievements?.htmlChallenges) html += window.pcfAchievements.htmlChallenges(s);
         html += '<h2>🏆 Vitrina</h2>';
         for (const k of SHELVES) {
             const list = trophies.filter(t => t.kind === k);
@@ -106,6 +107,7 @@
         const ups = trophies.filter(t => t.kind === 'ascenso');
         if (ups.length) html += shelf('Ascensos', KIND.ascenso.img, '⬆️', ups.length, ups.map(trophyCard).join(''));
         html += shelf('Premios del manager', '', '🎖️', awards.length, awards.map(a => `<div class="tr-item"><div class="e">🎖️</div><strong>${esc(a.season)}</strong>${esc(a.label || 'Entrenador del Año')}${a.bonus ? '<br>+' + Math.round(a.bonus).toLocaleString('es-ES') + '€' : ''}</div>`).join(''));
+        if (window.pcfAchievements?.htmlAchievements) html += window.pcfAchievements.htmlAchievements(s);
         const pm = s.promanager;
         if (s.gameMode === 'promanager' && pm && pm.sessionId) {
             const wr = pm.gamesManaged > 0 ? Math.round((pm.wins / pm.gamesManaged) * 100) : 0;
