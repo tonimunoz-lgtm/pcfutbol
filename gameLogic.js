@@ -2406,7 +2406,11 @@ async function computeBoardTarget(joining=false) {
     gameState.boardTarget = Math.min(teams.length, Math.max(1, rank));
     gameState.boardTargetSeason = gameState.currentSeason;
     gameState.boardLastPraise = -99;
-    gameState.boardObjectives=buildBoardObjectives(gameState,rank,teams.length);
+    // Contexto para un objetivo realista: ventaja sobre el segundo y si el club acaba de ascender
+    const dominance = rank === 1 && ratings.length > 1 ? ratings[0][1] - ratings[1][1] : 0;
+    const prev = gameState.lastSeasonSummary;
+    const promoted = !!(prev && /^ascenso/.test(prev.userMove?.reason || '') && prev.userDivision && prev.userDivision !== gameState.division);
+    gameState.boardObjectives=buildBoardObjectives(gameState,rank,teams.length,{dominance,promoted});
     gameState.boardTarget=gameState.boardObjectives.leagueTarget;
     if (window.negotiateBoardObjective) {
         const accepted=await window.negotiateBoardObjective(gameState,rank,teams.length,{joining});

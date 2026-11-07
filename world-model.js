@@ -89,9 +89,17 @@ function copaRoundsBaseline(objectives, results) {
     return countCopaRoundsWon(results.slice(0, end));
 }
 
-export function buildBoardObjectives(state,rank,count) {
+// Objetivo de liga de la directiva. Antes era exactamente el puesto del ranking de plantilla (1.º → «ganar la liga»),
+// sin margen y sin tener en cuenta el contexto. Ahora:
+//  · se parte del puesto por plantilla con un margen del ~10 % de la liga (2 puestos en una liga de 20);
+//  · «ganar la liga» solo se exige con una ventaja clara sobre el segundo (ctx.dominance ≥ 5 puntos de media efectiva);
+//  · un equipo recién ascendido tiene como mínimo un objetivo moderado (entre el 30 % de arriba de la tabla).
+export function buildBoardObjectives(state,rank,count,ctx={}) {
     const n=Math.max(2,count),remaining=Math.max(1,(state.maxSeasonWeeks||38)-(state.seasonType==='regular'?(state.week||1)-1:0));
-    const target=Math.min(n-1,Math.max(1,rank));
+    let target=Math.max(1,rank)+Math.max(1,Math.round(n/10));
+    if(rank===1&&(ctx.dominance||0)>=5)target=1;
+    if(ctx.promoted)target=Math.max(target,Math.ceil(n*.3));
+    target=Math.min(n-1,Math.max(1,target));
     const wages=(state.squad||[]).reduce((s,p)=>s+(Number(p.salary)||0),0)+(state.loanSalaryExpense||0);
     return {season:state.currentSeason,club:state.team,rank,count:n,leagueTarget:target,
         wageLimit:Math.round(wages*1.10),cashFloor:Math.min(0,state.balance||0),
