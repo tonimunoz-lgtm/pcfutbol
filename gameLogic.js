@@ -3086,10 +3086,23 @@ function applyFilialRules(moves, leagues, order) {
             const origin = fin[f];
             if (mvF) moves.splice(moves.indexOf(mvF), 1);
             moves.push({ team: f, from, to: dd, reason: 'descenso (filial: no puede jugar en la categoría de su primer equipo)' });
-            const used = movedSet();
-            const cand = order(dd).find(t => t !== f && !used.has(t) && conflictFree(t, origin, fin));
-            if (cand) moves.push({ team: cand, from: dd, to: origin, reason: `ascenso (plaza del filial ${f})` });
-            notes.push(`📜 Normativa de filiales: ${f} no puede coincidir con ${p} en la misma categoría y desciende a ${nameOf(dd)}.${cand ? ` ${cand} ocupa su plaza.` : ''}`);
+            // Cadena de sustituciones: la plaza que deja el filial la ocupa el mejor de la categoría inmediatamente inferior,
+            // cuya plaza la ocupa el mejor de la siguiente… hasta la categoría a la que baja el filial. Así nadie se salta categorías.
+            const used = movedSet(); used.add(f);
+            const chain = [];
+            let cur = origin;
+            for (let guard2 = 0; guard2 < 6 && cur !== dd; guard2++) {
+                const nextTier = tier(cur) + 1;
+                const nxt = tier(dd) === nextTier ? dd : Object.keys(DIVISION_TIER).find(d => tier(d) === nextTier && d !== 'rfef' && leagues[d]);
+                if (!nxt) break;
+                const cand = order(nxt).find(t => !used.has(t) && conflictFree(t, cur, fin));
+                if (!cand) break;
+                used.add(cand);
+                moves.push({ team: cand, from: nxt, to: cur, reason: `ascenso (plaza del filial ${f})` });
+                chain.push(cand);
+                cur = nxt;
+            }
+            notes.push(`📜 Normativa de filiales: ${f} no puede coincidir con ${p} en la misma categoría y desciende a ${nameOf(dd)}.${chain.length ? ` Ascienden ${chain.join(', ')} para ocupar su plaza.` : ''}`);
             changed = true; break;
         }
         if (!changed) break;

@@ -5,7 +5,8 @@
 //   · Si el primer equipo desciende a la categoría del filial (o éste ya coincide), el filial desciende un escalón más.
 // Para añadir pares: edita FILIAL_OF (filial → primer equipo, con los nombres EXACTOS del Admin), o define
 // window.PCF_FILIALES = { 'Nombre filial': 'Nombre primer equipo' } antes de cargar la partida.
-// Además se detectan solos los filiales que acaban en « B», « C» o « II» cuyo primer equipo existe en el juego.
+// Además se detectan solos los filiales cuyo nombre es el del primer equipo + « B», « C», « II», « (Promoció)», « (Filial)»,
+// « Promoción», « Atlètic»… siempre que el primer equipo exista en el juego.
 // ============================================================
 export const FILIAL_OF = {
     'Real Sociedad B': 'Real Sociedad',
@@ -27,6 +28,9 @@ export const FILIAL_OF = {
     'Valencia Mestalla': 'Valencia CF',
     'Deportivo Fabril': 'Deportivo de La Coruña',
     'RCD Espanyol B': 'RCD Espanyol',
+    'RCD Espanyol (Promoció)': 'RCD Espanyol',
+    'RCD Espanyol Promoció': 'RCD Espanyol',
+    'Espanyol B': 'RCD Espanyol',
     'Girona FC B': 'Girona FC',
     'Getafe CF B': 'Getafe CF',
     'Rayo Majadahonda': 'Rayo Vallecano',
@@ -55,10 +59,12 @@ export function detectFilialPairs(teamNames, extra) {
     const byNorm = new Map(teamNames.map(t => [norm(t), t]));
     const pairs = {};
     for (const [f, p] of Object.entries({ ...FILIAL_OF, ...custom })) if (set.has(f) && set.has(p) && f !== p) pairs[f] = p;
+    // Nombres tipo «Club B», «Club C», «Club II», «Club (Promoció)», «Club (Filial)», «Club Promoción», «Club Atlètic»…
+    const SUFFIX = /^(.*?)\s*(?:\((?:promoci[oó]n?|filial|reservas?|juvenil|b|c|ii)\)|\s(?:B|C|II|promoci[oó]n?|filial|juvenil|amateur|atl[eè]tic))$/i;
     for (const t of teamNames) {
         if (pairs[t]) continue;
-        const m = String(t).match(/^(.*?)\s+(B|C|II)$/);
-        if (!m) continue;
+        const m = String(t).match(SUFFIX);
+        if (!m || !m[1]) continue;
         const parent = byNorm.get(norm(m[1]));
         if (parent && parent !== t) pairs[t] = parent;
     }
