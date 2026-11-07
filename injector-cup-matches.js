@@ -458,6 +458,22 @@ function aggregateBefore(m) {
 // ============================================================
 // OBTENER PARTIDO PENDIENTE PARA ESTA SEMANA
 // ============================================================
+// Reparación: en la fase de liga europea los partidos van cada 2-3 semanas; uno pendiente con más de 3 semanas de retraso
+// es un resto de un calendario regenerado por error (partida guardada estropeada) y se descarta para no repetirlo.
+function repairOverdueMatches() {
+    const gs = getGS();
+    if (!gs || gs.seasonType !== 'regular') return 0;
+    const cal = getCal();
+    let n = 0;
+    for (const m of cal) {
+        if (m.played || m.eliminated || m.locked) continue;
+        if (m.type === 'copa' || m.isKnockout || m.isPlayoff) continue;
+        if (/^groups_md/.test(m.phase || '') && m.afterLigaWeek < (gs.week || 0) - 3) { m.eliminated = true; m.skipped = true; n++; }
+    }
+    if (n) { saveCal(cal); console.log('🔧 CupMatches: ' + n + ' partido(s) europeos con retraso descartados (calendario regenerado)'); }
+    return n;
+}
+
 function getPendingMatch(week) {
     const cal  = getCal();
     const comp = getCompState();
@@ -1314,6 +1330,7 @@ function boot(){
             } else {
                 console.log('📅 CupMatches: calendario existente para', gs.team, '('+existing.calendar.length+' partidos)');
             }
+            repairOverdueMatches();
             hookCupSimulateWeek();
             console.log('✅ injector-cup-matches.js v4 LISTO');
         } else if(n < 20){
@@ -1327,8 +1344,18 @@ function boot(){
                 const gs2 = getGS(); const comp2 = getCompState();
                 if (!gs2?.team || !comp2) return;
                 console.log('🏆 CupMatches: competitionsReady recibido, iniciando para', gs2.team);
-                _cupData = {}; window.gameLogic.updateGameState({ cupData: {} });
+                // Si la partida cargada ya trae el calendario de copas de esta temporada y este equipo, se CONSERVA.
+                // Antes se borraba (cupData = {}) y se regeneraba entero: los partidos europeos ya jugados volvían a
+                // quedar pendientes y cada pulsación de «Seguir» repetía uno en lugar de avanzar la liga.
+                _cupData = gs2.cupData || null;
+                const ex = getCupData();
+                if (!ex.calendar?.length || ex.calTeam !== gs2.team || ex.calSeason !== comp2.season) {
+                    _cupData = {}; window.gameLogic.updateGameState({ cupData: {} });
+                } else {
+                    console.log('🏆 CupMatches: calendario guardado conservado (' + ex.calendar.length + ' partidos)');
+                }
                 initCupCalendar();
+                repairOverdueMatches();
                 setTimeout(()=>{ hookCupSimulateWeek(); }, 800);
             });
         }

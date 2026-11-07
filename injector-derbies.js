@@ -139,6 +139,8 @@
         lastKey = k;
         try { processResults(s); announce(gs()); } catch (e) { console.warn('Derbis:', e.message); }
     }
+    // Tras cargar una partida el panel del próximo partido podía quedarse con el texto anterior («Amistoso vs Amistoso»)
+    window.addEventListener('pcf:state-replaced', () => setTimeout(() => { try { window.updateNextMatchInfo?.(); } catch (e) { /* */ } lastKey = ''; }, 600));
     window.pcfDerbies = { nextMatch, html, tick: () => { lastKey = ''; tick(); } };
     installEvent(); installAchievements();
     setInterval(tick, 1500);
