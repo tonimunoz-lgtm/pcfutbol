@@ -11,8 +11,11 @@ export function settleWeeklyFinance(before, after, result, economy, offseasonWee
     if(after.financePostings?.[key])return null;
     const home=before.seasonType==='regular' && (before.seasonCalendar||[]).some(m=>m.week===before.week && m.home===before.team);
     const attendance=home?economy.attendance(before):0, merch=home?economy.merch(before):{revenue:0,items:0};
-    const ticketInc=home?Math.floor((before.ticketPrice??0)*attendance):0;
-    const merchInc=merch.revenue,baseInc=before.weeklyIncomeBase??5000;
+    // Derbi en casa: más taquilla (+12 %/+24 %) y más merchandising (+15 %/+30 %) según el nivel del derbi
+    const hm=home?(before.seasonCalendar||[]).find(m=>m.week===before.week && m.home===before.team):null;
+    const derby=hm&&typeof economy.derby==='function'?economy.derby(before.team,hm.away):0;
+    const ticketInc=home?Math.floor((before.ticketPrice??0)*attendance*(1+.12*derby)):0;
+    const merchInc=Math.round(merch.revenue*(1+.15*derby)),baseInc=before.weeklyIncomeBase??5000;
     const expSalaries=(before.squad||[]).reduce((n,p)=>n+(Number(p.salary)||0),0)+(before.loanSalaryExpense||0);
     const expStaff=Object.values(before.staff||{}).reduce((n,p)=>n+(Number(p?.salary)||0),0);
     const expLoans=Array.isArray(before.fd_loans)?before.fd_loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0):(before.fd_loanPayment||0);
@@ -22,7 +25,7 @@ export function settleWeeklyFinance(before, after, result, economy, offseasonWee
     const net=totalInc-totalExp,loans=(before.fd_loans||[]).map(l=>({...l,weeksLeft:Math.max(0,(l.weeksLeft||0)-1)}));
     const patch={balance:(after.balance??0)+net,fd_loans:loans,
         fd_loanPayment:loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0),
-        lastWeekFinance:{week:before.week,season:before.currentSeason,phase:before.seasonType,home,att:attendance,items:merch.items,
+        lastWeekFinance:{week:before.week,season:before.currentSeason,phase:before.seasonType,home,derby,att:attendance,items:merch.items,
             ticketInc,merchInc,baseInc,totalInc,totalExp,expSalaries,expStaff,expLoans,expStructure,expBonus:0,benefits,net},
         financePostings:{...(after.financePostings||{}),[key]:true}};
     if(before.currentSeason!==after.currentSeason){

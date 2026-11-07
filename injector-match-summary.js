@@ -42,6 +42,7 @@ window.injectMatchSummary = function(matchResult) {
                 </div>
             </div>
             
+            ${(window.pcfRivalries?.of(homeTeam, awayTeam)) ? `<div style="text-align:center;color:#ffb300;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px">🔥 ${window.pcfRivalries.of(homeTeam, awayTeam).name}</div>` : ''}
             <div class="ms-compact">
                 <div class="ms-block ms-goals">
                     <h3>⚽ Goles</h3>

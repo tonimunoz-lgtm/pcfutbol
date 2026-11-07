@@ -18,6 +18,7 @@ import { getTeamData, saveTeamData } from './teamData.js';
 import { simulateFootballMatch, syntheticLineup } from './match-engine.js';
 import { detectFilialPairs, TIER as DIVISION_TIER } from './filiales.js';
 import { generateLeagueCalendar as buildLeagueCalendar } from './league-calendar.js';
+import { rivalryOf, rivalsOf } from './rivalries.js';
 import { CLUB_FIELDS, assignPlayerIds, locatePlayer, moveWorldPlayer, returnWorldLoans, assertWorldOwnership, buildBoardObjectives, evaluateBoardObjectives, retirementProbability, offseasonCashflow } from './world-model.js';
 
 // Primera temporada de una partida nueva
@@ -2116,7 +2117,8 @@ function matchParameters(home, away, homeName, awayName, state, options = {}) {
         teamInjuryRisk: home.isUser ? matchInjuryRisk(state) : matchInjuryRisk(state.world?.clubs[homeName]?.snapshot||{}),
         opponentInjuryRisk: away.isUser ? matchInjuryRisk(state) : matchInjuryRisk(state.world?.clubs[awayName]?.snapshot||{}),
         homeIsUser: home.isUser, awayIsUser: away.isUser,
-        isHome: options.isHome !== false, neutral: !!options.neutral
+        isHome: options.isHome !== false, neutral: !!options.neutral,
+        derby: rivalryOf(homeName, awayName)?.level || 0      // 0 = no es derbi · 1 = rivalidad menor · 2 = gran derbi
     };
 }
 function resolveFootballKnockout(params, first, aggregate = [0,0]) {
@@ -3498,6 +3500,7 @@ function setDifficulty(level) {
     addNews(`⚙️ Dificultad: ${DIFFICULTY[level].label}.`, 'info');
     return { success: true, level };
 }
+if (typeof window !== 'undefined') window.pcfRivalries = { of: rivalryOf, rivalsOf };
 if (typeof window !== 'undefined') window.pcfDifficulty = { LEVELS: DIFFICULTY, params: difficultyParams, set: setDifficulty };
 
 const STRUCTURE_RATE = { primera: 0.60, segunda: 0.50, rfef_grupo1: 0.35, rfef_grupo2: 0.35, promesas: 0.15 };
@@ -4339,7 +4342,7 @@ if (typeof window !== 'undefined') {
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
     window.pcfEconomy = {
-        offseasonCashflow, structure: structureCost, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
         benefits: (state, ticket = 0, merch = 0) => {
             const result = { house: 0, car: 0, tickets: 0, merch: 0 };
             for (const p of state.squad || []) {

@@ -87,11 +87,12 @@ function tactics(a,b,la,lb) {
     } else if(a.instruction==='setpieces'){attack*=1.01;control*=.97;}
     return {attack:attack*a.attackMod,defense:defense*a.defenseMod,control};
 }
-function shotModel(a,b,la,lb,ta,tb,home) {
+// k < 1 amortigua la diferencia de nivel entre los equipos (en los derbis el favorito lo tiene menos fácil)
+function shotModel(a,b,la,lb,ta,tb,home,k=1) {
     const manpower=Math.pow(Math.max(.1,la.count/11),1.25);
-    const shots=clamp(11.5*Math.exp((la.creation-lb.resistance)*.015+(la.midfield-lb.midfield)*.008)
+    const shots=clamp(11.5*Math.exp(((la.creation-lb.resistance)*.015+(la.midfield-lb.midfield)*.008)*k)
         *ta.attack/tb.defense*manpower*home,1,32);
-    const quality=clamp(.112*Math.exp((la.attack-lb.defense)*.007),.035,.25);
+    const quality=clamp(.112*Math.exp((la.attack-lb.defense)*.007*k),.035,.25);
     return {shots,quality};
 }
 function substitute(side,slot,minute,timeline,reason) {
@@ -157,7 +158,7 @@ export function simulateFootballMatch(params = {}) {
                 if(forced.type==='red')dismiss(s,p,minute,timeline);
                 if(forced.type==='injury')injury(s,p,minute,timeline,rng);
             }
-            if(!params.disableDiscipline && rng()<.14*(s.press==='high'?1.18:1)){
+            if(!params.disableDiscipline && rng()<.14*(s.press==='high'?1.18:1)*(1+.15*(params.derby||0))){   // derbi: más faltas
                 s.fouls++;
                 // Un jugador ya amonestado juega con más cuidado (calibrado: ≈0,13 rojas y ≈4,7 amarillas por partido).
                 const offender=choose(s.active.filter(Boolean),p=>(['DFC','MC'].includes(p.position)?2:1)*(p.matchYellow>=1?.18:1),rng);
@@ -185,7 +186,7 @@ export function simulateFootballMatch(params = {}) {
         for(const [i,s] of state.sides.entries()){
             const o=state.sides[1-i],t=i===0?ta:tb,ot=i===0?tb:ta;
             const home=params.neutral?1:((i===0)===(params.isHome!==false)?1.10:.90);
-            const model=shotModel(s,o,lines[i],lines[1-i],t,ot,home);
+            const model=shotModel(s,o,lines[i],lines[1-i],t,ot,home,1-.1*(params.derby||0));
             const chances=Math.floor(model.shots/90)+(rng()<(model.shots/90)%1?1:0);
             for(let c=0;c<chances;c++){
                 const shooter=choose(s.active.filter(p=>p&&p.position!=='POR'),p=>({DC:7,EXT:5,MCO:3,MC:1.5}[p.position]||.5)*(value(p,'EF')+20),rng);
