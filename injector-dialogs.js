@@ -4,7 +4,8 @@
 // - pcfConfirm(título, mensaje, opts) → Promise<boolean>
 // - pcfConfirmText(mensaje)            → igual, con título genérico
 // - pcfPrompt(mensaje, valorInicial)  → Promise<string|null>
-// - window.alert queda redirigido a la ventana del juego (en cola).
+// - pcfToast(mensaje, {type, duration}) → aviso breve NO bloqueante (success | error | warn | info)
+// - window.alert queda redirigido: mensajes cortos → toast; mensajes largos → ventana del juego (en cola).
 //   confirm()/prompt() del navegador no se pueden sustituir sin cambiar
 //   a quien los llama (esperan la respuesta); por eso se usan las
 //   versiones de arriba con await.
@@ -20,7 +21,7 @@
         const st = document.createElement('style');
         st.id = 'pcfDialogStyles';
         st.textContent = `
-        .pcf-dlg-back{position:fixed;inset:0;background:rgba(2,8,20,.72);display:flex;align-items:center;justify-content:center;z-index:300000}
+        .pcf-dlg-back{position:fixed;inset:0;background:rgba(2,8,20,.72);display:flex;align-items:center;justify-content:center;z-index:2147483000}
         .pcf-dlg{background:linear-gradient(180deg,#14305c 0%,#0b1f40 100%);border:1px solid #7aa0d4;box-shadow:0 0 0 1px #06142e,0 18px 40px rgba(0,0,0,.6);
             border-radius:4px;max-width:480px;width:calc(100% - 32px);color:#e6eefb;font-family:'Saira Condensed',sans-serif;max-height:88vh;display:flex;flex-direction:column}
         .pcf-dlg h3{margin:0;padding:12px 16px;background:linear-gradient(180deg,#1c3e74,#102a52);border-bottom:1px solid #7aa0d4;
@@ -92,10 +93,74 @@
         return new Promise(r => setTimeout(() => { back.remove(); r(); }, ms));
     };
 
-    // Todos los alert() del juego → ventana del juego
+    // ── Clasificación del mensaje (por su texto completo, en el momento de la llamada) ──
+    const EMOJI_START = /^\p{Extended_Pictographic}/u;
+    function classify(message) {
+        const t = String(message ?? '').trim();
+        const lines = (t.match(/\n/g) || []).length;
+        const long = t.length > 170 || lines >= 2;
+        const lead = t.replace(/^[\s"'`]+/, '');
+        let type = 'info';
+        if (/^(✅|✔|🎉|🏆|💾|☁️|💰|🎖️)/u.test(lead) || /\b(correctamente|guardad[oa]s?|con éxito|completad[oa]s?|actualizad[oa]s?|enviad[oa]s?|aceptad[oa]s?|contratad[oa]s?|fichad[oa]s?|renovad[oa]s?)\b/i.test(t)) type = 'success';
+        if (/^(⚠️?|⚡)/u.test(lead) || /^(introduce|selecciona|elige|escribe|por favor|indica|rellena|debes|debe ser|el (salario|precio|importe) debe)/i.test(lead)) type = 'warn';
+        if (/^(❌|⛔|🚫|🔴)/u.test(lead) || /(^error\b|\berror\b[:\s]|no se pudo|no se ha podido|no puedes|no puede|no hay |no tienes|inválid|imposible|insuficiente|rechaz|sancionad|lesionad|fallo|falló|no encontrad|ya no es |no est[aá] disponible|solo puedes|no se ha importado|no est[aá] implementad)/i.test(t)) type = 'error';
+        return { type, long };
+    }
+    const ICON = { success: '✅', error: '⛔', warn: '⚠️', info: 'ℹ️' };
+    const TITLE = { success: 'Hecho', error: 'Aviso', warn: 'Atención', info: 'Información' };
+
+    // ── Avisos breves (toast): no bloquean, se cierran solos y se pueden tocar para descartar ──
+    function ensureToastStyles() {
+        if (document.getElementById('pcfToastStyles')) return;
+        const st = document.createElement('style');
+        st.id = 'pcfToastStyles';
+        st.textContent = `
+        #pcfToasts{position:fixed;left:50%;transform:translateX(-50%);top:10px;z-index:2147483100;display:flex;flex-direction:column;gap:8px;width:min(92vw,460px);pointer-events:none}
+        .pcf-toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:4px;color:#e6eefb;font-family:'Saira Condensed',sans-serif;
+            font-size:.98rem;line-height:1.3;background:linear-gradient(180deg,#14305c,#0b1f40);border:1px solid #7aa0d4;border-left-width:5px;box-shadow:0 10px 28px rgba(0,0,0,.55);
+            cursor:pointer;animation:pcfToastIn .22s ease-out}
+        .pcf-toast.success{border-left-color:#4caf50}.pcf-toast.warn{border-left-color:#ffb300}.pcf-toast.info{border-left-color:#4aa3ff}
+        .pcf-toast.error{border-left-color:#f44336;background:linear-gradient(180deg,#3a1620,#240d14)}
+        .pcf-toast .pcf-ti{flex:0 0 auto;font-size:1.1rem;line-height:1.15}.pcf-toast .pcf-tm{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
+        @keyframes pcfToastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+        @media (prefers-reduced-motion:reduce){.pcf-toast{animation:none}}`;
+        (document.head || document.documentElement).appendChild(st);
+    }
+    let lastToast = { msg: '', at: 0 };
+    window.pcfToast = function (message, { type = 'info', duration } = {}) {
+        if (!document.body) return;
+        const text = String(message ?? '').trim();
+        if (!text) return;
+        const now = Date.now();
+        if (text === lastToast.msg && now - lastToast.at < 1500) return;      // mismo aviso repetido: se ignora
+        lastToast = { msg: text, at: now };
+        ensureToastStyles();
+        let box = document.getElementById('pcfToasts');
+        if (!box) { box = document.createElement('div'); box.id = 'pcfToasts'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+        const header = document.querySelector('.header');
+        const top = header ? Math.min(140, Math.round(header.getBoundingClientRect().bottom) + 8) : 10;
+        box.style.top = Math.max(10, top) + 'px';
+        const el = document.createElement('div');
+        el.className = 'pcf-toast ' + type;
+        el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        const icon = EMOJI_START.test(text) ? '' : `<span class="pcf-ti">${ICON[type] || ''}</span>`;
+        el.innerHTML = `${icon}<span class="pcf-tm"></span>`;
+        el.querySelector('.pcf-tm').textContent = text;
+        const remove = () => { clearTimeout(timer); el.remove(); };
+        el.addEventListener('click', remove);
+        const base = { success: 3500, info: 4500, warn: 5500, error: 6500 }[type] || 4500;
+        const timer = setTimeout(remove, duration || Math.min(12000, base + text.length * 35));
+        box.appendChild(el);
+        while (box.children.length > 3) box.firstElementChild.remove();           // como mucho 3 a la vez
+    };
+
+    // Todos los alert() del juego: cortos → aviso breve; largos → ventana del juego (en cola)
     window.alert = function (message) {
         if (!document.body) return nativeAlert(message);
-        window.pcfNotify('PC Fútbol Manager', message);
+        const { type, long } = classify(message);
+        if (long) { window.pcfNotify(`${ICON[type]} ${TITLE[type]}`, message); return; }
+        window.pcfToast(message, { type });
     };
+    window.pcfClassifyMessage = classify;
     window.__nativeAlert = nativeAlert;
 })();

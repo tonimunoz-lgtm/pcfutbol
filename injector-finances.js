@@ -333,6 +333,8 @@
                 <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_lTotI">—</td><td></td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">💸 Salarios plantilla + staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lExp">—</td><td></td></tr>
+            <tr id="fin_lGateRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla de copa/Europa <span style="color:#666;font-size:.8em;">(ingresada aparte; no entra en el neto)</span></td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_lGateInc">—</td><td></td></tr>
             <tr id="fin_lBenRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏠 Incentivos semanales (casa, coche, %)</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lBenExp">—</td><td></td></tr>
             <tr id="fin_lLoanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
@@ -380,10 +382,11 @@
 
         <!-- PREMIOS -->
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            🏆 Premios de competición <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
+            🏆 Premios y taquilla de competiciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">💶 Premios cobrados (liga, copa y Europa)</td><td style="text-align:right;font-weight:bold;" id="fin_pTot">0€</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla de copa, Europa y playoff</td><td style="text-align:right;font-weight:bold;" id="fin_gTot">0€</td></tr>
         </table>
         <div id="fin_pList" style="font-size:.85em;color:#aaa;margin-bottom:22px;"></div>
 
@@ -452,6 +455,10 @@
             const lLoanRow = document.getElementById('fin_lLoanRow');
             if (lLoanRow) lLoanRow.style.display = (lw.expLoans || 0) > 0 ? '' : 'none';
             setText('fin_lLoanExp', fmt(lw.expLoans || 0) + '€', '#f44336');
+            const gateW = (state.seasonMovements || []).filter(m => m.type === 'income' && /^Taquilla/.test(m.description) && m.week === lw.week).reduce((n, m) => n + (m.amount || 0), 0);
+            const lGateRow = document.getElementById('fin_lGateRow');
+            if (lGateRow) lGateRow.style.display = gateW > 0 ? '' : 'none';
+            setText('fin_lGateInc', '+' + fmt(gateW) + '€', '#4CAF50');
             const lBenRow = document.getElementById('fin_lBenRow');
             const benW = Math.round(lw.benefits?.total || 0);
             if (lBenRow) lBenRow.style.display = benW > 0 ? '' : 'none';
@@ -513,15 +520,24 @@
         // ── Premios de competición ───────────────────────────────
         const prizes = (Array.isArray(state.fd_prizes) ? state.fd_prizes : []).filter(p => p.season === state.currentSeason);
         const prizeTot = prizes.reduce((n, p) => n + (Number(p.amount) || 0), 0);
+        const gates = (state.seasonMovements || []).filter(m => m.type === 'income' && /^Taquilla/.test(m.description));
+        const gateTot = gates.reduce((n, m) => n + (Number(m.amount) || 0), 0);
         setText('fin_pTot', fmt(prizeTot) + '€', prizeTot > 0 ? '#4CAF50' : '#777');
+        setText('fin_gTot', fmt(gateTot) + '€', gateTot > 0 ? '#4CAF50' : '#777');
         const pListEl = document.getElementById('fin_pList');
-        if (pListEl) pListEl.innerHTML = prizes.length === 0
-            ? '<span style="color:#777;font-style:italic;">Todavía no has cobrado premios esta temporada.</span>'
-            : [...prizes].reverse().map(p =>
-                `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e1e1e;">
-                    <span>Sem ${p.week} — ${p.label}</span>
-                    <span style="color:#4CAF50;margin-left:16px;white-space:nowrap;">+${fmt(p.amount)}€</span>
-                 </div>`).join('');
+        if (pListEl) {
+            const rows = [
+                ...prizes.map(p => ({ week: p.week, label: p.label, amount: Number(p.amount) || 0 })),
+                ...gates.map(m => ({ week: m.week, label: m.description, amount: Number(m.amount) || 0 }))
+            ].sort((a, b) => (b.week || 0) - (a.week || 0));
+            pListEl.innerHTML = rows.length === 0
+                ? '<span style="color:#777;font-style:italic;">Todavía no has cobrado premios ni taquilla de competiciones esta temporada.</span>'
+                : rows.map(r =>
+                    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e1e1e;">
+                        <span>Sem ${r.week} — ${r.label}</span>
+                        <span style="color:#4CAF50;margin-left:16px;white-space:nowrap;">+${fmt(r.amount)}€</span>
+                     </div>`).join('');
+        }
 
         // ── Remodelaciones ───────────────────────────────────────
         const rens = mvs.filter(m => m.type === 'renovation');

@@ -12,23 +12,12 @@
     'use strict';
     const gl = () => window.gameLogic;
     
-    // ── Aviso discreto (no bloquea) ─────────────────────────────
+    // ── Aviso discreto (no bloquea): usa el sistema común de injector-dialogs.js ──
     function toast(msg, type = 'ok') {
-        let box = document.getElementById('pcfToastBox');
-        if (!box) {
-            box = document.createElement('div'); box.id = 'pcfToastBox';
-            box.style.cssText = 'position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:280000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none';
-            document.body.appendChild(box);
-        }
-        const t = document.createElement('div');
-        t.textContent = msg;
-        t.style.cssText = `background:${type === 'ok' ? 'linear-gradient(180deg,#1f6b2e,#134d1f)' : 'linear-gradient(180deg,#a8381f,#7a2412)'};color:#fff;border:1px solid ${type === 'ok' ? '#7be07f' : '#ff9d8a'};
-            padding:9px 18px;border-radius:4px;font:700 .92rem 'Saira Condensed',sans-serif;letter-spacing:.04em;box-shadow:0 8px 22px rgba(0,0,0,.55);opacity:0;transition:opacity .25s`;
-        box.appendChild(t);
-        requestAnimationFrame(() => { t.style.opacity = '1'; });
-        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2600);
+        const kind = type === 'ok' ? 'success' : 'error';
+        if (typeof window.pcfToast === 'function') return window.pcfToast(msg, { type: kind });
+        console.warn('pcfToast no disponible:', msg);
     }
-    window.pcfToast = toast;
 
     const LINE = { POR: 0, DFC: 1, LI: 1, LD: 1, MC: 2, MCO: 2, MD: 2, MI: 2, EXT: 3, DC: 3 };
 

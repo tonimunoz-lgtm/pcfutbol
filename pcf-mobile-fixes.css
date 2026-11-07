@@ -108,10 +108,24 @@
         position: sticky !important; left: 26px; z-index: 4; width: 92px; min-width: 92px; max-width: 92px;
         white-space: normal; line-height: 1.15; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
     #academy .pcf-player-scroll table thead th:nth-child(1), #academy .pcf-player-scroll table thead th:nth-child(2) { z-index: 9; }
+    /* Negociaciones: columnas de ancho fijo y compactas (el nombre ocupaba ~157 px y la tabla 1.000 px) */
+    #negotiations .pcf-player-scroll table { table-layout: fixed !important; width: 590px !important; min-width: 590px !important; }
+    #negotiations .pcf-player-scroll th, #negotiations .pcf-player-scroll td { padding: 6px 4px !important; font-size: .72rem !important;
+        letter-spacing: 0 !important; white-space: normal; word-break: normal; overflow-wrap: anywhere; line-height: 1.15; }
+    #negotiations .pcf-player-scroll th { overflow-wrap: normal !important; }
+    #negotiations .pcf-player-scroll td:nth-child(n+2) { overflow-wrap: normal !important; white-space: nowrap; }
+    #negotiations .pcf-player-scroll th:nth-child(1) { width: 100px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(2) { width: 48px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(3) { width: 44px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(4) { width: 74px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(5) { width: 80px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(6) { width: 70px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(7) { width: 82px !important; min-width: 0 !important; }
+    #negotiations .pcf-player-scroll th:nth-child(8) { width: 92px !important; min-width: 0 !important; }
     #negotiations .pcf-player-scroll table th:nth-child(1), #negotiations .pcf-player-scroll table td:nth-child(1) {
-        position: sticky !important; left: 0; z-index: 4; min-width: 96px; max-width: 110px; white-space: normal; line-height: 1.15;
-        box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
+        position: sticky !important; left: 0; z-index: 4; box-shadow: 2px 0 0 rgba(0, 0, 0, .28); }
     #negotiations .pcf-player-scroll table thead th:nth-child(1) { z-index: 9; }
+    #negotiations .pcf-player-scroll .btn, #negotiations .pcf-player-scroll button { min-width: 0; padding: 5px 6px !important; font-size: .66rem !important; letter-spacing: 0 !important; }
 }
 
 /* Indicación de «hay más columnas a la derecha» (móvil y tablet): el borde derecho se difumina */

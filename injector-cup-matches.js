@@ -204,7 +204,7 @@ function buildCopaCalendar(gs, comp) {
         {id:'copa_r16',p:'copa_r16',w:isPrimera?13:15,h:!isPrimera},
         {id:'copa_qf',p:'copa_qf',w:isPrimera?18:20,h:true},
         {id:'copa_sf_1',p:'copa_sf',w:isPrimera?24:25,h:false},
-        {id:'copa_sf_2',p:'copa_sf',w:isPrimera?26:27,h:true},
+        {id:'copa_sf_2',p:'copa_sf',w:27,h:true},   // antes 26 en Primera: coincidía con la vuelta del playoff europeo (3 partidos en una semana)
         {id:'copa_final',p:'copa_final',w:36,h:false,isFinal:true}
     ];
     const history = comp.copaResults || [];
@@ -711,6 +711,9 @@ function processResult(match, result) {
 // INGRESOS DE TAQUILLA EN PARTIDOS EN CASA
 // ============================================================
 function addMatchRevenue(match) {
+    // La taquilla de copa/Europa/playoff la ingresa y apunta injector-prizes.js (onGate). Esta versión antigua sumaba
+    // a una copia del estado y anunciaba un importe distinto (p. ej. +630K€ frente a +1,05M€ realmente cobrados).
+    if (window.PCFPrizes) return 0;
     if (!match.isHome || match.neutral) return 0;
     const gs=getGS();
     if (!gs) return 0;

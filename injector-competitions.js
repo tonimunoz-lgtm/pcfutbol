@@ -830,12 +830,17 @@ window.showCompTab = function(tab) {
         document.getElementById(id)?.classList.remove('on');
     });
 
+    // En móvil la tabla va envuelta en .pcf-table-scroll: hay que ocultar el envoltorio, no solo la tabla
+    // (si no, la liga seguía ocupando pantalla y el panel de Europa/Copa quedaba debajo, obligando a hacer scroll).
+    const ligaBox = ligaTbl ? (ligaTbl.closest('.pcf-table-scroll') || ligaTbl) : null;
     if (tab==='liga') {
         if(ligaTbl) ligaTbl.style.display='';
+        if(ligaBox) ligaBox.style.display='';
         if(legend)  legend.style.display='';
         updateStandingsColors();
     } else {
         if(ligaTbl) ligaTbl.style.display='none';
+        if(ligaBox) ligaBox.style.display='none';
         if(legend)  legend.style.display='none';
         if(tab==='europa')  { document.getElementById('comp-europa-panel')?.classList.add('on');  renderEuropa(); renderWorldCupResults('comp-europa-panel',['champions','europaLeague','conferenceLague']); }
         if(tab==='copa')    { document.getElementById('comp-copa-panel')?.classList.add('on');    renderCopa(); renderWorldCupResults('comp-copa-panel',['copa']); }
@@ -1439,8 +1444,10 @@ function onNewSeason(before, after) {
             // Motivo de la clasificación (antes no se explicaba: tras un ascenso parecía un error)
             const titles=summary?.cupChampions||{};
             let why='';
-            if(titles.copa===after.team) why=' como campeón de la Copa del Rey';
-            else if(titles[comp.europeanComp]===after.team) why=` como campeón de la ${compName(comp.europeanComp)}`;
+            if(titles.champions===after.team) why=' como campeón de la Champions League';
+            else if(titles.europaLeague===after.team) why=' como campeón de la Europa League';
+            else if(titles.conferenceLague===after.team) why=' como campeón de la Conference League';
+            else if(titles.copa===after.team) why=' como campeón de la Copa del Rey';
             else if(before.division==='primera'&&myPos) why=` por acabar ${myPos}º en liga`;
             window.gameLogic?.addNews(`🏆 ¡Clasificados para la ${compName(comp.europeanComp)} ${newSeason}${why}!`,'success');
         }
