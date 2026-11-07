@@ -326,8 +326,16 @@
             <tr><td style="padding:6px 4px;color:#aaa;">🛍️ Merchandising</td>
                 <td style="text-align:right;" id="fin_lMerch">—</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_lMerchD">—</td></tr>
-            <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV / patrocinios</td>
+            <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV / patrocinios / vallas</td>
                 <td style="text-align:right;color:#4CAF50;" id="fin_lBase">—</td><td></td></tr>
+            <tr><td style="padding:2px 4px 2px 22px;color:#777;font-size:.9em;">└ 📺 Derechos TV</td>
+                <td style="text-align:right;color:#8bc34a;font-size:.9em;" id="fin_lbTv">—</td><td></td></tr>
+            <tr><td style="padding:2px 4px 2px 22px;color:#777;font-size:.9em;">└ 👕 Patrocinio de camiseta</td>
+                <td style="text-align:right;color:#8bc34a;font-size:.9em;" id="fin_lbSp">—</td><td></td></tr>
+            <tr><td style="padding:2px 4px 2px 22px;color:#777;font-size:.9em;">└ 📢 Vallas publicitarias</td>
+                <td style="text-align:right;color:#8bc34a;font-size:.9em;" id="fin_lbBd">—</td><td style="padding-left:14px;color:#666;font-size:.78em;" id="fin_lbBdD"></td></tr>
+            <tr id="fin_lbOtRow"><td style="padding:2px 4px 2px 22px;color:#777;font-size:.9em;">└ 🏟️ Otros ingresos base</td>
+                <td style="text-align:right;color:#8bc34a;font-size:.9em;" id="fin_lbOt">—</td><td></td></tr>
             <tr style="border-top:1px solid #333;">
                 <td style="padding:6px 4px;font-weight:bold;">Total ingresos reales</td>
                 <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_lTotI">—</td><td></td></tr>
@@ -347,6 +355,24 @@
                 <td style="padding:8px 4px;font-weight:bold;">Resultado neto</td>
                 <td style="text-align:right;font-weight:bold;" id="fin_lNet">—</td><td></td></tr>
         </table>
+
+        <!-- INGRESOS RECURRENTES -->
+        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
+            💰 Ingresos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal, contratos en curso)</span>
+        </h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
+            <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV</td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_iTv">0€/sem</td><td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_iTvD">—</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">👕 Patrocinio de camiseta</td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_iSp">0€/sem</td><td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_iSpD">—</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">📢 Vallas publicitarias</td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_iBd">0€/sem</td><td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_iBdD">—</td></tr>
+            <tr id="fin_iOtRow"><td style="padding:6px 4px;color:#aaa;">🏟️ Otros ingresos base</td>
+                <td style="text-align:right;color:#4CAF50;" id="fin_iOt">0€/sem</td><td></td></tr>
+            <tr style="border-top:1px solid #333;"><td style="padding:6px 4px;font-weight:bold;">Total semanal (se cobra cada jornada)</td>
+                <td style="text-align:right;font-weight:bold;color:#4CAF50;" id="fin_iTot">0€/sem</td><td></td></tr>
+        </table>
+        <div id="fin_iBdList" style="font-size:.84em;color:#aaa;margin-bottom:22px;"></div>
 
         <!-- GASTOS RECURRENTES -->
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
@@ -455,6 +481,16 @@
             setText('fin_lMerch',   fmt(lw.merchInc) + '€', lw.merchInc > 0 ? '#4CAF50' : '#aaa');
             setText('fin_lMerchD',  lw.home ? `— ${fmt(lw.items)} uds vendidas` : '— Partido visitante');
             setText('fin_lBase',    fmt(lw.baseInc) + '€', '#4CAF50');
+            {
+                const bAct = (state.fd_boards || []).filter(b => b.weeksLeft > 0);
+                const bd = lw.baseDetail || (() => { const tv = Number(state.fd_tvW) || 0, sp = Number(state.fd_sponsorW) || 0, bw = bAct.reduce((n, b) => n + (Number(b.weekly) || 0), 0); return { tv, sponsor: sp, boards: bw, other: Math.max(0, (lw.baseInc || 0) - tv - sp - bw) }; })();
+                setText('fin_lbTv', fmt(bd.tv) + '€', bd.tv > 0 ? '#8bc34a' : '#666');
+                setText('fin_lbSp', fmt(bd.sponsor) + '€', bd.sponsor > 0 ? '#8bc34a' : '#666');
+                setText('fin_lbBd', fmt(bd.boards) + '€', bd.boards > 0 ? '#8bc34a' : '#666');
+                setText('fin_lbBdD', bd.boards > 0 ? `— ${bAct.length} valla${bAct.length === 1 ? '' : 's'}` : '— ninguna contratada');
+                const otRow = document.getElementById('fin_lbOtRow'); if (otRow) otRow.style.display = bd.other > 0 ? '' : 'none';
+                setText('fin_lbOt', fmt(bd.other) + '€', '#8bc34a');
+            }
             setText('fin_lTotI',    fmt(lw.totalInc) + '€', '#4CAF50');
             // Gastos desglosados
             const expSal = (lw.expSalaries || 0) + (lw.expStaff || 0);
@@ -481,6 +517,27 @@
             setText('fin_lNet',     (lw.net >= 0 ? '+' : '') + fmt(lw.net) + '€', lw.net >= 0 ? '#4CAF50' : '#f44336');
         } else {
             setText('fin_lastLabel', '(sin jornadas jugadas todavía)');
+        }
+
+        // ── Ingresos recurrentes (contratos en curso) ────────────
+        {
+            const bAct = (state.fd_boards || []).filter(b => b.weeksLeft > 0);
+            const tvW = Number(state.fd_tvW) || 0, spW = Number(state.fd_sponsorW) || 0;
+            const bW = bAct.reduce((n, b) => n + (Number(b.weekly) || 0), 0);
+            const baseNow = Number(state.weeklyIncomeBase) || 0;
+            const otW = Math.max(0, baseNow - tvW - spW - bW);
+            const dealInfo = d => d ? [d.company || d.name || '', d.yearsLeft ? `quedan ${d.yearsLeft} temp.` : ''].filter(Boolean).join(' · ') || '—' : '— sin contrato';
+            setText('fin_iTv', fmt(tvW) + '€/sem', tvW > 0 ? '#4CAF50' : '#777');
+            setText('fin_iTvD', tvW > 0 ? '— ' + dealInfo(state.fd_tv || state.tvDeal) : '— sin contrato');
+            setText('fin_iSp', fmt(spW) + '€/sem', spW > 0 ? '#4CAF50' : '#777');
+            setText('fin_iSpD', spW > 0 ? '— ' + dealInfo(state.fd_sponsor || state.sponsorDeal) : '— sin contrato');
+            setText('fin_iBd', fmt(bW) + '€/sem', bW > 0 ? '#4CAF50' : '#777');
+            setText('fin_iBdD', bAct.length ? `— ${bAct.length} valla${bAct.length === 1 ? '' : 's'} contratada${bAct.length === 1 ? '' : 's'}` : '— ninguna contratada (Gestión comercial)');
+            const otRow = document.getElementById('fin_iOtRow'); if (otRow) otRow.style.display = otW > 0 ? '' : 'none';
+            setText('fin_iOt', fmt(otW) + '€/sem', '#4CAF50');
+            setText('fin_iTot', fmt(baseNow) + '€/sem', '#4CAF50');
+            const list = document.getElementById('fin_iBdList');
+            if (list) list.innerHTML = bAct.length ? bAct.map(b => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e1e1e;"><span>📢 ${String(b.company || '').replace(/[<>&]/g, '')} <span style="color:#666">· ${String(b.sector || '').replace(/[<>&]/g, '')}</span></span><span style="margin-left:16px;white-space:nowrap;">${fmt(b.weekly)}€/sem · ${b.weeksLeft} sem.</span></div>`).join('') : '';
         }
 
         // ── Gastos recurrentes ───────────────────────────────────
