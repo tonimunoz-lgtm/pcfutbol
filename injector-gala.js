@@ -189,7 +189,6 @@
 
         // 4 Ascensos y descensos
         const moves = sum.moves || [];
-        const rfefWinners = moves.filter(m => m.to === 'segunda' && /rfef/.test(m.from));
         const cats = [['segunda', 'primera', 'Primera División'], ['rfef_grupo1', 'segunda', 'Segunda División'], ['rfef_grupo2', 'segunda', 'Segunda División'], ['promesas', 'rfef_grupo1', 'Primera RFEF Grupo 1'], ['promesas', 'rfef_grupo2', 'Primera RFEF Grupo 2']];
         const ups = {}, downs = {};
         moves.forEach(m => { (ups[m.to] = ups[m.to] || []).push(m); (downs[m.from] = downs[m.from] || []).push(m); });
@@ -201,7 +200,7 @@
                 ${up.length ? `<div class="pg-up"><h3>⬆ Suben (${up.length})</h3><ul class="pg-list">${up.map(li).join('')}</ul></div>` : ''}
                 ${dn.length ? `<div class="pg-down" style="margin-top:10px"><h3>⬇ Bajan (${dn.length})</h3><ul class="pg-list">${dn.map(li).join('')}</ul></div>` : ''}</div>`;
         };
-        out.push(`<div class="pg-slide"><h2 class="pg-h">Ascensos y descensos</h2>${rfefWinners.length ? `<div class="pg-card"><h3>Primera RFEF → Segunda (${rfefWinners.length})</h3><ul class="pg-list">${rfefWinners.map(li).join('')}</ul></div>` : ''}<div class="pg-grid">${DIVS.map(([d, n]) => upDown(d, n)).join('') || '<div class="pg-card">No ha habido movimientos esta temporada.</div>'}</div></div>`);
+        out.push(`<div class="pg-slide"><h2 class="pg-h">Ascensos y descensos</h2><div class="pg-grid">${DIVS.map(([d, n]) => upDown(d, n)).join('') || '<div class="pg-card">No ha habido movimientos esta temporada.</div>'}</div></div>`);
 
         // 5 Pichichi / 6 Zamora
         const awCard = (kind) => DIVS.map(([d, name]) => {

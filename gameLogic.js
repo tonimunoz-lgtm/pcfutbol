@@ -3985,6 +3985,7 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
         addNews(`📨 ¡Oferta de cesión! ${buyer.club} quiere a ${player.name} cedido y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`, 'info');
     }
     if (!offer) return null;
+    player.weeksSinceOffer = 0; player.hadOffers = true;      // llegó una oferta: se reinicia «semanas sin recibir ofertas»
     offers.push(offer);
     if (!silent) showOffersModal();
     return offer;
@@ -4242,15 +4243,18 @@ function checkMarketRecommendations() {
     playersForSale.forEach(player => {
         if (!player.weeksOnMarket) player.weeksOnMarket = 0;
         player.weeksOnMarket++;
+        // Semanas SIN RECIBIR ofertas (se reinicia cuando llega una, aunque luego no la aceptes)
+        if (player.weeksSinceOffer === undefined) player.weeksSinceOffer = player.weeksOnMarket - 1;
+        player.weeksSinceOffer++;
         
-        if (player.weeksOnMarket >= 3 && gameState.staff.secretario) {
+        if (player.weeksSinceOffer >= 3 && gameState.staff.secretario) {
             const recommendation = Math.random();
             
             if (player.transferListed) {
                 if (recommendation < 0.5) {
                     const newPrice = Math.round(player.askingPrice * 0.85);
                     addNews(
-                        `[Secretario Técnico] ${player.name} lleva ${player.weeksOnMarket} semanas sin ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}€`,
+                        `[Secretario Técnico] ${player.name} lleva ${player.weeksSinceOffer} semanas sin recibir ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}€`,
                         'warning'
                     );
                 } else {

@@ -186,8 +186,11 @@
         }
 
         // ── 6. Jugadores en mercado sin ofertas ──────────────────
+        // «Sin ofertas» = llevan 4+ semanas SIN RECIBIR ninguna (antes se contaban las semanas en el mercado, así que
+        // salía el aviso aunque hubieran llegado ofertas que no aceptaste) y no hay ninguna oferta pendiente.
         const stuckOnMarket = (state.squad || []).filter(p =>
-            (p.transferListed || p.loanListed) && (p.weeksOnMarket || 0) >= 4
+            (p.transferListed || p.loanListed) && (p.weeksSinceOffer ?? p.weeksOnMarket ?? 0) >= 4 &&
+            !(state.pendingOffers || []).some(o => o.player?.name === p.name)
         );
         stuckOnMarket.forEach(p => {
             alerts.push({
@@ -199,7 +202,7 @@
                     const v = window.pcfEconomy?.marketValue ? window.pcfEconomy.marketValue(p) : 0;
                     const ask = p.askingPrice || 0;
                     const f = n => Math.round(n).toLocaleString('es-ES') + '€';
-                    return `Lleva ${p.weeksOnMarket} semanas en el mercado sin interesados.` +
+                    return `Lleva ${p.weeksSinceOffer ?? p.weeksOnMarket} semanas sin recibir ofertas${p.hadOffers ? ' (antes sí recibiste alguna y no la aceptaste)' : ''}.` +
                         (v && ask ? ` Pides ${f(ask)}; su valor de mercado ronda ${f(v)}${p.releaseClause > 0 ? ` y su cláusula es ${f(p.releaseClause)}` : ''}. Bájalo hacia ese valor.` : ' Considera bajar el precio.');
                 })(),
                 color: '#607D8B',
