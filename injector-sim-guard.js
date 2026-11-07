@@ -22,6 +22,18 @@
         });
     }
 
+    // ¿Hay algún aviso/modal grande esperando al jugador? (si lo hay, la jornada no está «atascada», está esperando)
+    function blockingOverlayVisible() {
+        const ids = '#cupAnnModal,#cupResModal,#matchSummaryModal,#pcfGala,#fd-modal,.pcf-dlg-back,#pcfPress,#offersModal.active,.modal.active';
+        const named = [...document.querySelectorAll(ids)].filter(e => e.id !== 'gameSelectionModal');
+        const big = [...document.body.children].filter(e => e.id !== 'pcfToasts' && e.id !== 'pcfIntro' && e.id !== 'gameSelectionModal');
+        return named.concat(big).some(e => {
+            const st = getComputedStyle(e), r = e.getBoundingClientRect();
+            return st.position === 'fixed' && st.display !== 'none' && st.visibility !== 'hidden' &&
+                r.width >= innerWidth * 0.5 && r.height >= innerHeight * 0.3 && (Number(st.zIndex) || 0) >= 1000;
+        });
+    }
+
     document.addEventListener('click', async (e) => {
         const btn = e.target.closest && e.target.closest('[onclick*="simulateWeek"]');
         if (!btn) return;
@@ -40,7 +52,25 @@
         try {
             checkpoint=window.gameLogic?.getGameState();
             const before = window.gameLogic?.getViewState();
-            const result = await window.simulateWeek();
+            // Perro guardián: si pasa mucho tiempo sin ningún modal a la vista, la jornada se ha quedado esperando algo que
+            // no llegará; se libera el botón para no dejar al jugador bloqueado hasta recargar.
+            let stopWatch = () => {};
+            const stuck = new Promise(resolve => {
+                let lastBlocked = Date.now();
+                const iv = setInterval(() => {
+                    if (blockingOverlayVisible()) lastBlocked = Date.now();
+                    else if (Date.now() - lastBlocked > (window.__pcfGuardMs || 45000)) { clearInterval(iv); resolve('stuck'); }
+                }, 1000);
+                stopWatch = () => clearInterval(iv);
+            });
+            let result;
+            try { result = await Promise.race([window.simulateWeek(), stuck]); } finally { stopWatch(); }
+            if (result === 'stuck') {
+                console.warn('[SimGuard] La jornada no responde: se libera el bloqueo');
+                window.pcfToast?.('La jornada se quedó esperando y se ha desbloqueado. Vuelve a pulsar «Seguir»; si se repite, guarda y recarga.', { type: 'warn', duration: 9000 });
+                window.ui?.refreshUI?.(window.gameLogic?.getViewState());
+                return;
+            }
             const after = window.gameLogic?.getViewState();
             const changed = before && after && (result?.cupMatch || before.week !== after.week ||
                 before.currentSeason !== after.currentSeason || before.seasonType !== after.seasonType ||

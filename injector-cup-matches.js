@@ -928,6 +928,7 @@ function showAnnouncementModal(match) {
 
         // ── Botón jugar ────────────────────────────────────────
         document.getElementById('cuPlayBtn').onclick = () => {
+            const pb = document.getElementById('cuPlayBtn'); if (pb.disabled) return; pb.disabled = true;   // un solo toque
             document.getElementById('cu-return-btn')?.remove();
             el.style.transition = 'opacity .25s';
             el.style.opacity = '0';
@@ -1142,7 +1143,9 @@ function hookCupSimulateWeek(){
         initCupCalendar();
         const pending=getPendingMatch(gs.week);
         if(!pending) return orig.apply(this,arguments);
-        await prepareMatch(pending);
+        // Datos del rival: con límite de tiempo (si la consulta tarda, se sigue con una estimación)
+        await Promise.race([prepareMatch(pending), new Promise(res => setTimeout(res, 8000))]);
+        if (!pending.oppRating) { try { pending.oppRating = window.pcfWorld?.tournaments?.rating(pending.opponent) || foreignRating(pending.opponent); } catch (e) { pending.oppRating = 70; } }
         { const cal=getCal(); const e=cal.find(m=>m.id===pending.id); if(e){ e.opponent=pending.opponent; saveCal(cal);} }
 
         // Entre el partido de liga y el de copa/Europa hay 3-4 días de descanso: recuperación parcial.

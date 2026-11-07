@@ -80,8 +80,9 @@
             const operationType = document.getElementById('sellOperationType').value;
 
             if (operationType === 'transfer') {
-                const price = parseInt(document.getElementById('sellTransferPrice').value);
+                let price = parseInt(document.getElementById('sellTransferPrice').value);
                 if (!price || price <= 0) { alert('Introduce un precio valido'); return; }
+                price = window.pcfClampToClause ? window.pcfClampToClause(player, price) : price;
                 player.transferListed = true;
                 player.loanListed = false;
                 player.askingPrice = price;

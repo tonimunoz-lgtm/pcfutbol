@@ -335,6 +335,8 @@
                 <td style="text-align:right;color:#f44336;" id="fin_lExp">—</td><td></td></tr>
             <tr id="fin_lGateRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla de copa/Europa <span style="color:#666;font-size:.8em;">(ingresada aparte; no entra en el neto)</span></td>
                 <td style="text-align:right;color:#4CAF50;" id="fin_lGateInc">—</td><td></td></tr>
+            <tr id="fin_lStructRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏢 Gastos de estructura <span style="color:#666;font-size:.8em;">(estadio, personal, desplazamientos, administración)</span></td>
+                <td style="text-align:right;color:#f44336;" id="fin_lStructExp">—</td><td></td></tr>
             <tr id="fin_lBenRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏠 Incentivos semanales (casa, coche, %)</td>
                 <td style="text-align:right;color:#f44336;" id="fin_lBenExp">—</td><td></td></tr>
             <tr id="fin_lLoanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
@@ -357,6 +359,9 @@
             <tr><td style="padding:6px 4px;color:#aaa;">👔 Salarios staff</td>
                 <td style="text-align:right;color:#f44336;" id="fin_sSal">0€/sem</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_sCnt">—</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">🏢 Gastos de estructura</td>
+                <td style="text-align:right;color:#f44336;" id="fin_stGastos">0€/sem</td>
+                <td style="padding-left:14px;color:#666;font-size:.82em;">— estadio, personal no deportivo, desplazamientos, administración</td></tr>
             <tr id="fin_loanRow" style="display:none;"><td style="padding:6px 4px;color:#aaa;">🏦 Cuotas préstamos</td>
                 <td style="text-align:right;color:#f44336;" id="fin_loanExp">0€/sem</td>
                 <td style="padding-left:14px;color:#666;font-size:.82em;" id="fin_loanCnt">—</td></tr>
@@ -374,6 +379,7 @@
             <tr><td style="padding:6px 4px;color:#aaa;">💰 Ingresos por ventas</td><td style="text-align:right;" id="fin_mSal">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">🚪 Indemnizaciones jugadores</td><td style="text-align:right;" id="fin_mCom">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">🎁 Primas a jugadores</td><td style="text-align:right;" id="fin_mBon">0€</td></tr>
+            <tr><td style="padding:6px 4px;color:#aaa;">✍️ Primas de fichaje y renovación</td><td style="text-align:right;" id="fin_mSig">0€</td></tr>
             <tr><td style="padding:6px 4px;color:#aaa;">👔 Clausulas + indem. staff</td><td style="text-align:right;" id="fin_mStf">0€</td></tr>
             <tr style="border-top:1px solid #2a2a2a;">
                 <td style="padding:8px 4px;font-weight:bold;">Balance de mercado</td>
@@ -459,6 +465,10 @@
             const lGateRow = document.getElementById('fin_lGateRow');
             if (lGateRow) lGateRow.style.display = gateW > 0 ? '' : 'none';
             setText('fin_lGateInc', '+' + fmt(gateW) + '€', '#4CAF50');
+            const structW = Math.round(lw.expStructure || 0);
+            const lStructRow = document.getElementById('fin_lStructRow');
+            if (lStructRow) lStructRow.style.display = structW > 0 ? '' : 'none';
+            setText('fin_lStructExp', fmt(structW) + '€', '#f44336');
             const lBenRow = document.getElementById('fin_lBenRow');
             const benW = Math.round(lw.benefits?.total || 0);
             if (lBenRow) lBenRow.style.display = benW > 0 ? '' : 'none';
@@ -478,7 +488,8 @@
         const stS    = sArr.reduce((s, x) => s + (x.salary || 0), 0);
         const loanE  = state.fd_loanPayment || 0;
         const benefits = window.pcfEconomy.benefits(state, state.lastWeekFinance?.ticketInc || 0, state.lastWeekFinance?.merchInc || 0);
-        const totE = pS + stS + loanE + benefits.total;
+        const structE = window.pcfEconomy.structure ? window.pcfEconomy.structure(state) : 0;
+        const totE = pS + stS + loanE + benefits.total + structE;
         const totalRow = document.getElementById('fin_totExp')?.closest('tr');
         if (totalRow) {
             document.getElementById('fin_benefits')?.remove();
@@ -487,6 +498,7 @@
             cell.textContent = `Incentivos semanales: casa ${fmt(benefits.house)}€ · coche ${fmt(benefits.car)}€ · % entradas ${fmt(benefits.tickets)}€ · % merchandising ${fmt(benefits.merch)}€`;
             row.appendChild(cell); totalRow.before(row);
         }
+        setText('fin_stGastos', fmt(structE) + '€/sem', '#f44336');
         setText('fin_pSal',  fmt(pS)  + '€/sem', '#f44336');
         setText('fin_pCnt',  `— ${state.squad.length} jugadores`);
         setText('fin_sSal',  fmt(stS) + '€/sem', '#f44336');
@@ -508,12 +520,14 @@
         const stfC = mvs.filter(m => m.type === 'staff_hire' || m.type === 'staff_compensation')
                         .reduce((s, m) => s + Math.abs(m.amount), 0);
         const bon  = -mvs.filter(m => m.type === 'bonus').reduce((n, m) => n + m.amount, 0);
-        const mBal = sal - pur - com - stfC - bon;
+        const sig  = -mvs.filter(m => m.type === 'signing').reduce((n, m) => n + m.amount, 0);
+        const mBal = sal - pur - com - stfC - bon - sig;
 
         setText('fin_mPur', fmt(pur)  + '€', pur  > 0 ? '#f44336' : '#777');
         setText('fin_mSal', fmt(sal)  + '€', sal  > 0 ? '#4CAF50' : '#777');
         setText('fin_mCom', fmt(com)  + '€', com  > 0 ? '#f44336' : '#777');
         setText('fin_mBon', fmt(bon)  + '€', bon  > 0 ? '#f44336' : '#777');
+        setText('fin_mSig', fmt(sig)  + '€', sig  > 0 ? '#f44336' : '#777');
         setText('fin_mStf', fmt(stfC) + '€', stfC > 0 ? '#f44336' : '#777');
         setText('fin_mBal', (mBal >= 0 ? '+' : '') + fmt(mBal) + '€', mBal >= 0 ? '#4CAF50' : '#f44336');
 
@@ -568,7 +582,7 @@
         const mListEl = document.getElementById('fin_mList');
         if (mListEl) {
             const all = mvs.filter(m => m.type !== 'renovation');
-            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫', bonus: '🎁', income: '🏆' };
+            const ic  = { purchase: '💸', sale: '💰', compensation: '🚪', staff_hire: '👔', staff_compensation: '🚫', bonus: '🎁', income: '🏆', signing: '✍️' };
             mListEl.innerHTML = all.length === 0
                 ? '<span style="color:#555;">Sin movimientos registrados esta temporada.</span>'
                 : [...all].reverse().map(m => {

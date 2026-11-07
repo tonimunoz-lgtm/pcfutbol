@@ -129,7 +129,7 @@ export function retirementProbability(age,position) {
 }
 
 // Summer has no gate receipts, but wages, benefits and loan instalments continue.
-export function offseasonCashflow(state, weeks, benefits = 0) {
+export function offseasonCashflow(state, weeks, benefits = 0, structure = 0) {
     const loans = (state.fd_loans || []).map(l => ({...l}));
     const wages = (state.squad || []).reduce((n,p)=>n+(Number(p.salary)||0),0)+(state.loanSalaryExpense||0);
     const staff = Object.values(state.staff || {}).reduce((n,p)=>n+(Number(p?.salary)||0),0);
@@ -137,7 +137,7 @@ export function offseasonCashflow(state, weeks, benefits = 0) {
     for(let i=0;i<weeks;i++){
         const payment=loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0);
         loanPayments+=payment;
-        net+=(state.weeklyIncomeBase??5000)-wages-staff-benefits-payment;
+        net+=(state.weeklyIncomeBase??5000)-wages-staff-benefits-structure-payment;
         loans.forEach(l=>{l.weeksLeft=Math.max(0,(l.weeksLeft||0)-1);});
     }
     return {net,loanPayments,fd_loans:loans,fd_loanPayment:loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(Number(l.weeklyPayment)||0),0)};

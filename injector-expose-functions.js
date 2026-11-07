@@ -103,7 +103,7 @@
             if (state.negotiationStep === 1) {
                 document.getElementById('negotiationStep1').style.display = 'block';
                 document.getElementById('offeredSalary').value = player.salary;
-                document.getElementById('offeredBonus').checked = false;
+                document.getElementById('offeredBonus').value = 0;
                 document.getElementById('offeredCar').checked = false;
                 document.getElementById('offeredHouse').checked = false;
                 document.getElementById('offeredMerchPercent').checked = false;
@@ -146,7 +146,7 @@
 
         window.submitPlayerOffer = function() {
             const offeredSalary = parseInt(document.getElementById('offeredSalary').value);
-            const offeredBonus = document.getElementById('offeredBonus').checked;
+            const offeredBonus = Math.max(0, Number(document.getElementById('offeredBonus').value) || 0);
             const offeredCar = document.getElementById('offeredCar').checked;
             const offeredHouse = document.getElementById('offeredHouse').checked;
             const offeredMerchPercent = document.getElementById('offeredMerchPercent').checked;
@@ -461,14 +461,15 @@ window.openSellPlayerUI = async function(playerIndex) {
     const priceInput = await window.pcfPrompt(
         `Poner a ${player.name} en el mercado de transferencias\n\n` +
         `Valor de mercado: ${suggestedPrice.toLocaleString('es-ES')}€\n` +
-        `Precio mínimo recomendado: ${minPrice.toLocaleString('es-ES')}€\n\n` +
+        `Precio mínimo recomendado: ${minPrice.toLocaleString('es-ES')}€\n` +
+        ((Number(player.releaseClause) > 0) ? `Cláusula de rescisión (precio máximo): ${Number(player.releaseClause).toLocaleString('es-ES')}€\n` : '') + '\n' +
         `Introduce el precio de venta:`,
         suggestedPrice
     );
     
     if (!priceInput) return;
     
-    const price = parseInt(priceInput);
+    let price = parseInt(priceInput);
     
     if (isNaN(price) || price < 0) {
         alert('Precio inválido');
@@ -484,6 +485,7 @@ window.openSellPlayerUI = async function(playerIndex) {
     }
     
     // Marcar jugador como transferible
+    price = window.pcfClampToClause ? window.pcfClampToClause(player, price) : price;
     player.transferListed = true;
     player.askingPrice = price;
     
@@ -599,7 +601,7 @@ window.confirmListPlayer = function() {
     const operationType = document.getElementById('sellOperationType').value;
     
     if (operationType === 'transfer') {
-        const price = parseInt(document.getElementById('sellTransferPrice').value);
+        let price = parseInt(document.getElementById('sellTransferPrice').value);
         
         if (!price || price <= 0) {
             alert('Introduce un precio válido');
@@ -609,6 +611,7 @@ window.confirmListPlayer = function() {
         // Marcar jugador como en venta
         player.transferListed = true;
         player.loanListed = false;
+        price = window.pcfClampToClause ? window.pcfClampToClause(player, price) : price;
         player.askingPrice = price;
         player.weeksOnMarket = 0; // ✅ Inicializar contador
         

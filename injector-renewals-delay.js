@@ -60,9 +60,13 @@
         if (offer.newYears >= 4) prob += 0.1;
         else if (offer.newYears <= 2) prob -= 0.1;
 
-        if (offer.hasBonus) prob += 0.1;
-        if (offer.hasCar)   prob += 0.05;
-        if (offer.hasHouse) prob += 0.05;
+        // Prima (importe): +0,05 y hasta +0,10 más si equivale a ≥ 1 año de salario; coche, casa y porcentajes suman un poco
+        if (offer.bonus > 0) prob += 0.05 + Math.min(0.10, offer.bonus / (offer.newSalary * 52));
+        else if (offer.hasBonus) prob += 0.1;                 // ofertas antiguas en cola
+        if (offer.car > 0 || offer.hasCar)     prob += 0.05;
+        if (offer.house > 0 || offer.hasHouse) prob += 0.05;
+        if (offer.merchPercent > 0)  prob += 0.03;
+        if (offer.ticketPercent > 0) prob += 0.03;
 
         if (player.age > 30 && offer.newYears >= 3) prob += 0.1;
         if (player.contractYears <= 1) prob += 0.15;
@@ -136,10 +140,18 @@
                 player.salary = renewal.newSalary;
                 player.releaseClause = renewal.newClause;
 
-                // Coste de renovación (bono de firma si se ofreció)
-                if (renewal.hasBonus) {
-                    const signingBonus = Math.round(renewal.newSalary * 10);
+                // Coche, casa y % pasan a pagarse cada semana (los suma pcfEconomy.benefits → Caja, «incentivos semanales»)
+                if (renewal.car !== undefined) player.car = Number(renewal.car) || 0;
+                if (renewal.house !== undefined) player.house = Number(renewal.house) || 0;
+                if (renewal.merchPercent !== undefined) player.merchPercent = Number(renewal.merchPercent) || 0;
+                if (renewal.ticketPercent !== undefined) player.ticketPercent = Number(renewal.ticketPercent) || 0;
+
+                // Prima de firma (importe elegido): pago único, apuntado en la Caja
+                const signingBonus = renewal.bonus !== undefined ? Math.round(Number(renewal.bonus) || 0)
+                    : (renewal.hasBonus ? Math.round(renewal.newSalary * 10) : 0);
+                if (signingBonus > 0) {
                     state.balance -= signingBonus;
+                    (state.seasonMovements || (state.seasonMovements = [])).push({ week: state.week, type: 'signing', description: `Prima de renovación: ${renewal.playerName}`, amount: -signingBonus });
                     news(`💰 Prima de firma de ${renewal.playerName}: ${signingBonus.toLocaleString('es-ES')}€`, 'info');
                 }
 
@@ -175,6 +187,7 @@
         window.gameLogic?.updateGameState?.({
             squad: state.squad,
             balance: state.balance,
+            seasonMovements: state.seasonMovements,   // incluye las primas de renovación apuntadas arriba
             pendingRenewals: remaining
         });
         refreshUI();
@@ -261,6 +274,16 @@
     // PARCHEAR submitRenewalOffer — guardar en cola en lugar de resolver
     // ─────────────────────────────────────────────────────────────
 
+    // Mantiene sincronizadas las casillas ocultas antiguas (las usa el cálculo de probabilidad del modal)
+    window.syncRenewalExtras = function () {
+        const g = id => Number(document.getElementById(id)?.value) || 0;
+        const set = (id, v) => { const e = document.getElementById(id); if (e) e.checked = v; };
+        set('renewalBonus', g('renewalBonusAmount') > 0);
+        set('renewalCar', g('renewalCarType') > 0);
+        set('renewalHouse', g('renewalHouseType') > 0);
+        try { window.updateRenewalProbability && window.updateRenewalProbability(); } catch (e) { /* */ }
+    };
+
     function patchSubmitRenewal() {
         // submitRenewalOffer está definida en injector-expose-functions.js
         // Esperamos a que esté disponible
@@ -305,9 +328,15 @@
             const newYears  = parseInt(document.getElementById('renewalNewYears')?.value || '3');
             const newSalary = parseInt(document.getElementById('renewalNewSalary')?.value || '0');
             const newClause = parseInt(document.getElementById('renewalNewClause')?.value || '0');
-            const hasBonus  = document.getElementById('renewalBonus')?.checked || false;
-            const hasCar    = document.getElementById('renewalCar')?.checked || false;
-            const hasHouse  = document.getElementById('renewalHouse')?.checked || false;
+            const numField = id => Math.max(0, Number(document.getElementById(id)?.value) || 0);
+            const bonus = Math.round(numField('renewalBonusAmount'));
+            const car = numField('renewalCarType'), house = numField('renewalHouseType');
+            const merchPercent = Math.min(100, numField('renewalMerchPercent')), ticketPercent = Math.min(100, numField('renewalTicketPercent'));
+            const hasBonus = bonus > 0, hasCar = car > 0, hasHouse = house > 0;
+            if (bonus > (state.balance || 0)) {
+                (window.pcfNotify || alert)('Renovación', `No tienes dinero para pagar la prima de firma (${bonus.toLocaleString('es-ES')}€).`);
+                return;
+            }
 
             if (!newSalary || newSalary <= 0 || !newClause || newClause <= 0) {
                 alert('Introduce valores válidos para salario y cláusula');
@@ -327,6 +356,7 @@
                 hasBonus,
                 hasCar,
                 hasHouse,
+                bonus, car, house, merchPercent, ticketPercent,
                 responseWeek,
                 offeredWeek: state.week,
                 phase: `${state.currentSeason}|${state.seasonType}`

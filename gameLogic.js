@@ -322,7 +322,7 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
   
     Object.assign(gameState,{seasonMovements:[],playerPurchases:0,playerSalesIncome:0,playerCompensations:0,renovationExpenses:0,lastWeekFinance:null,financePostings:{}});
     gameState.week = 1;
-    (gameState.squad || []).forEach(p => { p.goals=0;p.cupGoals=0;p.assists=0;p.minutes=0;p.keeperMinutes=0;p.goalsConceded=0;p.leagueKeeperMinutes=0;p.leagueGoalsConceded=0; });      // los goles del Pichichi se cuentan por temporada  
+    (gameState.squad || []).forEach(p => { p.yellowCards=0;p.redCards=0;p._yellowCycle=0;p.goals=0;p.cupGoals=0;p.assists=0;p.minutes=0;p.keeperMinutes=0;p.goalsConceded=0;p.leagueKeeperMinutes=0;p.leagueGoalsConceded=0; });      // los goles del Pichichi se cuentan por temporada  
     gameState.matchHistory = [];  
     gameState.standings = {};  
     gameState.newsFeed = [];  
@@ -1170,7 +1170,9 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     else if (salaryFactor > 1.2) acceptanceChance += 0.15;  
     else if (salaryFactor < 0.8) acceptanceChance -= 0.2;  
   
-    if (offeredBonus) acceptanceChance += 0.05;  
+    // La prima es un importe (€, pago único al firmar). Un booleano antiguo equivale a 10 semanas de salario.
+    offeredBonus = typeof offeredBonus === 'number' ? Math.max(0, offeredBonus) : (offeredBonus ? Math.round(offeredSalary * 10) : 0);
+    if (offeredBonus > 0) acceptanceChance += 0.05 + Math.min(0.10, offeredBonus / (offeredSalary * 52));
     if (offeredCar) acceptanceChance += 0.05;  
     if (offeredHouse) acceptanceChance += 0.05;  
     if (offeredMerchPercent) acceptanceChance += 0.03;  
@@ -1204,6 +1206,14 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
         if (player.clausePaid === true) {
             // FICHAJE DIRECTO - Sin negociación con club. La cláusula se cobra ahora.
             const clause = Number(player.clauseAmount) || 0;
+            const bonusPay = Math.max(0, Number(gameState.playerOffer?.bonus) || 0);
+            if (gameState.balance < clause + bonusPay) {
+                return { success: false, message: `No tienes dinero para la cláusula (${clause.toLocaleString('es-ES')}€) y la prima de fichaje (${bonusPay.toLocaleString('es-ES')}€).`, type: 'error' };
+            }
+            if (bonusPay > 0) {
+                gameState.balance -= bonusPay;
+                logMovement('signing', `Prima de fichaje: ${player.name}`, -bonusPay);
+            }
             if (clause > 0) {
                 if (gameState.balance < clause) {
                     return { success: false, message: `El jugador acepta, pero ya no tienes ${clause.toLocaleString('es-ES')}€ para pagar su cláusula.`, type: 'error' };
@@ -1298,8 +1308,12 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
   
     } else {  
         offerAmount = Math.max(0, Number(offerAmount) || 0);
+        const bonusToPay = Math.max(0, Number(gameState.playerOffer?.bonus) || 0);
         if (gameState.balance < offerAmount) {
             return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };
+        }
+        if (gameState.balance < offerAmount + bonusToPay) {
+            return { success: false, message: `No tienes dinero para el traspaso y la prima de fichaje (${bonusToPay.toLocaleString('es-ES')}€).`, type: 'error' };
         }
         const playerAskingPrice = player.askingPrice > 0 ? player.askingPrice : roundMoney(marketValue(player) * 1.1);
 
@@ -1340,7 +1354,12 @@ playerExchange.forEach(pName => {
                 club: gameState.team  
             };  
             endNegotiation(true);  
-            return signPlayer(newPlayer);  
+            const signed = signPlayer(newPlayer);
+            if (signed && signed.success && bonusToPay > 0) {
+                gameState.balance -= bonusToPay;
+                logMovement('signing', `Prima de fichaje: ${newPlayer.name}`, -bonusToPay);
+            }
+            return signed;
             } catch (error) {
                 // Cualquier fallo a mitad de la operación devuelve el dinero.
                 gameState.balance = balanceBefore; gameState.playerPurchases = purchasesBefore;
@@ -1799,7 +1818,9 @@ function closeWorldClubFinances(week,phase) {
         const merch=home?computeMerch(s).revenue:0;
         const bank=(s.fd_loans||[]).filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(l.weeklyPayment||0),0);
         const benefits=window.pcfEconomy?.benefits?.({squad:c.squad},gate,merch)?.total||0;
-        c.balance+=(s.weeklyIncomeBase||5000)+gate+merch-wages-bank-benefits;
+        const aiBase=(s.weeklyIncomeBase||5000)+aiDealWeekly(s);
+        const structure=structureCost({...s,weeklyIncomeBase:aiBase},computeAttendance(s),computeMerch(s).revenue);
+        c.balance+=aiBase+gate+merch-wages-bank-benefits-structure;
         c.snapshot.fd_loans=(c.snapshot.fd_loans||[]).map(l=>({...l,weeksLeft:Math.max(0,l.weeksLeft-1)}));
         c.snapshot.fd_loanPayment=c.snapshot.fd_loans.filter(l=>l.weeksLeft>0).reduce((n,l)=>n+(l.weeklyPayment||0),0);
         const work=c.snapshot.fac_construction||[];
@@ -2129,7 +2150,7 @@ function applyFootballOutcome(outcome, home, away, homeName, awayName, state, co
         const played=new Set(outcome.players[i].filter(p=>p.minutes>0).map(p=>p.name));
         for(const p of side.squad){
             if(p.isSuspended && !played.has(p.name) && p.suspensionWeeks>0){
-                p.suspensionWeeks--;if(!p.suspensionWeeks)p.isSuspended=false;
+                p.suspensionWeeks--;if(!p.suspensionWeeks){p.isSuspended=false;p._suspCause=null;}   // cumplida la sanción: el contador queda a cero
             }
         }
         for(const record of outcome.players[i]){
@@ -2163,8 +2184,8 @@ function applyFootballOutcome(outcome, home, away, homeName, awayName, state, co
             if(card.type==='yellow'){
                 p.yellowCards=(p.yellowCards||0)+1;
                 p._yellowCycle=(p._yellowCycle??((p.yellowCards-1)%5))+1;
-                if(p._yellowCycle>=5){p._yellowCycle=0;p.isSuspended=true;p.suspensionWeeks=Math.max(p.suspensionWeeks||0,1);}
-            }else{p.redCards=(p.redCards||0)+1;p.isSuspended=true;p.suspensionWeeks=Math.max(p.suspensionWeeks||0,2);}
+                if(p._yellowCycle>=5){p._yellowCycle=0;p.isSuspended=true;p.suspensionWeeks=Math.max(p.suspensionWeeks||0,1);if(p._suspCause!=='red')p._suspCause='yellow';}
+            }else{p.redCards=(p.redCards||0)+1;p.isSuspended=true;p.suspensionWeeks=Math.max(p.suspensionWeeks||0,2);p._suspCause='red';}
             if(side.isUser)addNews(`${card.type==='red'?'🟥':'🟨'} ${p.name} (${card.minute}')${p.isSuspended?' — sancionado '+p.suspensionWeeks+' partido(s)':''}`,card.type==='red'?'error':'warning');
         }
         for(const injury of outcome.injuries.filter(e=>e.team===names[i])){
@@ -2968,10 +2989,30 @@ function queuePress(item) {
     const list = gameState.pendingPress || (gameState.pendingPress = []);
     list.push({ ...item, id: `${item.kind}-${gameState.currentSeason}-${list.length}-${Date.now() % 100000}`, season: item.season || gameState.currentSeason });
     if (PRESS_TROPHY[item.kind]) (gameState.trophies || (gameState.trophies = [])).push({ season: item.season || gameState.currentSeason,
-        kind: item.kind, label: PRESS_TROPHY[item.kind], division: item.division || item.to || gameState.division });
+        kind: item.kind, label: PRESS_TROPHY[item.kind], division: item.division || item.to || gameState.division, team: gameState.team });
+}
+// Resumen de la temporada para la Sala de trofeos (se guarda en gameState.seasonHistory)
+function recordSeasonHistory(summary) {
+    const hist = gameState.seasonHistory || (gameState.seasonHistory = []);
+    if (hist.some(h => h.season === gameState.currentSeason && h.team === gameState.team)) return;
+    const comp = gameState.competitions || {};
+    const st = gameState.standings?.[gameState.team] || {};
+    const copaRes = comp.copaResults || [];
+    let copa = null;
+    if (comp.copaPhase === 'champion') copa = { result: 'champion' };
+    else if (copaRes.length) copa = { result: 'eliminated', round: copaRes[copaRes.length - 1].phase };
+    let europa = null;
+    if (comp.europeanComp) {
+        let lastPhase = null;
+        try { lastPhase = (window.CupMatches?.getCalendar?.() || []).filter(m => m.type === comp.europeanComp && m.played).map(m => m.phase).pop() || null; } catch (e) { /* */ }
+        europa = { comp: comp.europeanComp, result: comp.europeanPhase === 'champion' ? 'champion' : 'eliminated', round: lastPhase };
+    }
+    hist.push({ season: gameState.currentSeason, team: gameState.team, division: summary.userDivision, position: summary.userPosition,
+        points: st.pts ?? null, gf: st.gf ?? null, gc: st.gc ?? null, move: summary.userMove?.reason || '', copa, europa });
 }
 function seasonAwardsAndPress(summary) {
     if (!summary) return;
+    try { recordSeasonHistory(summary); } catch (e) { console.warn('Historial de temporada:', e.message); }
     const div = summary.userDivision, pos = summary.userPosition;
     if (pos === 1) queuePress({ kind: 'liga', division: div, points: summary.tables?.[div]?.[0]?.pts });
     if (summary.userMove && /^ascenso/.test(summary.userMove.reason || '')) queuePress({ kind: 'ascenso', to: summary.userMove.to, reason: summary.userMove.reason });
@@ -3431,6 +3472,27 @@ function computeMerch(state, price) {
     return { revenue, items: Math.round(revenue / Math.max(1, p - MERCH_UNIT_COST)) };
 }
 
+// Gastos de estructura del club (estadio, personal no deportivo, desplazamientos, seguridad, administración).
+// Son una parte fija de lo que ingresa el club por semana (media entre semanas de casa y fuera + contratos base),
+// así crecen con el tamaño del club: sueldos + estructura rondan el 80-90 % de los ingresos (antes los sueldos
+// eran solo ≈20 % y los grandes acumulaban 100+ M€ al año).
+const STRUCTURE_RATE = { primera: 0.60, segunda: 0.50, rfef_grupo1: 0.35, rfef_grupo2: 0.35, promesas: 0.15 };
+function structureCost(state, att, merchRev) {
+    const rate = STRUCTURE_RATE[state.division] ?? 0.4;
+    const a = att !== undefined ? att : computeAttendance(state);
+    const m = merchRev !== undefined ? merchRev : computeMerch(state).revenue;
+    const perHomeMatch = (Number(state.ticketPrice ?? 12) || 0) * a + m;
+    return Math.round(rate * (0.5 * perHomeMatch + (state.weeklyIncomeBase ?? 5000)));
+}
+
+// Los clubes de IA no firman contratos como el usuario: se les da el equivalente en TV + patrocinio (anual, igual que
+// las ofertas base del usuario) escalado por popularidad. Sin esto solo ingresaban 5.000 €/semana + taquilla y merchandising.
+const AI_DEAL_BASE = { primera: 33000000, segunda: 8000000, rfef_grupo1: 1200000, rfef_grupo2: 1200000, promesas: 2000 };
+function aiDealWeekly(state) {
+    const base = AI_DEAL_BASE[state.division] ?? 0;
+    return Math.round(base * (0.6 + 0.8 * (state.popularity ?? 50) / 100) / 38);
+}
+
 function updateWeeklyFinancials() {  
     const playerSalaries = gameState.squad.reduce((sum, p) => sum + (p.salary||0), 0)+(gameState.loanSalaryExpense||0);  
     const staffSalaries = Object.values(gameState.staff).reduce((sum, s) => sum + (s?.salary || 0), 0);  
@@ -3446,6 +3508,7 @@ function updateWeeklyFinancials() {
     const sales = home ? merch.revenue : 0;
     gameState.weeklyIncome = (gameState.weeklyIncomeBase ?? 5000) + gate + sales;
     gameState.weeklyExpenses += window.pcfEconomy?.benefits?.(gameState, gate, sales)?.total || 0;  
+    gameState.weeklyExpenses += structureCost(gameState);
   
     // Projection only. Actual cash is posted once by the weekly ledger.
 }  
@@ -3789,6 +3852,10 @@ function firePlayer(playerName) {
 
 // Función que se ejecuta cada semana para generar ofertas
 function generateAIOffers() {
+    // Los jugadores en venta por encima de su cláusula se ajustan a la cláusula (como mucho se cobra esa cantidad)
+    for (const q of gameState.squad || []) {
+        if (q.transferListed && Number(q.releaseClause) > 0 && Number(q.askingPrice) > Number(q.releaseClause)) q.askingPrice = Number(q.releaseClause);
+    }
     const week = gameState.week;
     // Caducan las ofertas antiguas y las de jugadores que ya no están en venta
     gameState.pendingOffers = (gameState.pendingOffers || []).filter(o => {
@@ -4248,7 +4315,7 @@ if (typeof window !== 'undefined') {
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
     window.pcfEconomy = {
-        offseasonCashflow, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        offseasonCashflow, structure: structureCost, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
         benefits: (state, ticket = 0, merch = 0) => {
             const result = { house: 0, car: 0, tickets: 0, merch: 0 };
             for (const p of state.squad || []) {

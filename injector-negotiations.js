@@ -91,8 +91,10 @@
 
         await thinking('Oferta al jugador', `El representante de ${player.name} está estudiando la oferta…`, 1600 + Math.random() * 1200);
 
-        const result = gl().offerToPlayer(offeredSalary, !!val('offeredBonus')?.checked, !!val('offeredCar')?.checked,
-            !!val('offeredHouse')?.checked, !!val('offeredMerchPercent')?.checked, !!val('offeredTicketPercent')?.checked);
+        // Antes se leía .checked de un <select>/<input number> (siempre false): coche, casa y % se ignoraban.
+        const num = id => Math.max(0, Number(val(id)?.value) || 0);
+        const result = gl().offerToPlayer(offeredSalary, num('offeredBonus'), num('offeredCar'), num('offeredHouse'),
+            num('offeredMerchPercent'), num('offeredTicketPercent'));
 
         if (result.success) {
             const after = gs();

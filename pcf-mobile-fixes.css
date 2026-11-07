@@ -166,3 +166,10 @@
 .pcf-summary-view .ms-injuries { border-color: rgba(244, 67, 54, .6); background: linear-gradient(180deg, rgba(244, 67, 54, .12), rgba(244, 67, 54, .03)); }
 .pcf-summary-view .ms-injuries h3 { color: #ff8a80 !important; border-bottom-color: rgba(244, 67, 54, .4); }
 .pcf-summary-view .ms-none { opacity: .45; }
+
+/* Reputación del manager (modo carrera) en la cabecera: junto al nombre del equipo. En móvil solo «⭐ 42 Notable». */
+#pmRepBadge { cursor: pointer; }
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+    .header-info #pmRepBadge { flex: 0 0 auto; padding: 0 8px !important; }
+    .header-info #pmRepBadge > span:first-child { display: none; }
+}

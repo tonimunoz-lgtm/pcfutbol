@@ -161,6 +161,17 @@
         if (long) { window.pcfNotify(`${ICON[type]} ${TITLE[type]}`, message); return; }
         window.pcfToast(message, { type });
     };
+    // Precio de venta: nunca por encima de la cláusula de rescisión (cualquiera puede pagarla, así que como máximo
+    // se cobraría la cláusula). Devuelve el precio ya ajustado y avisa si se ha cambiado.
+    window.pcfClampToClause = function (player, price) {
+        const clause = Number(player?.releaseClause) || 0;
+        const p = Number(price) || 0;
+        if (clause > 0 && p > clause) {
+            window.pcfToast(`El precio no puede superar la cláusula de rescisión (${clause.toLocaleString('es-ES')}€): se ha ajustado a ese importe.`, { type: 'warn' });
+            return clause;
+        }
+        return p;
+    };
     window.pcfClassifyMessage = classify;
     window.__nativeAlert = nativeAlert;
 })();

@@ -47,7 +47,34 @@ console.log('🎯 Injector Promanager cargando...');
         return window.currentUserId || null;
     }
 
+    // ── La carrera se guarda DENTRO de la partida ──
+    // Antes pmState solo vivía en memoria (y en Firebase): al cargar una partida de carrera o recargar la página
+    // se perdía la reputación, el badge de la cabecera y los hooks de ofertas dejaban de actuar.
+    function persistToGame() {
+        try { if (pmState.active && window.gameLogic?.updateGameState) window.gameLogic.updateGameState({ promanager: { ...pmState } }); } catch (e) { /* */ }
+    }
+    function restoreFromGame() {
+        const g = window.gameLogic?.getGameState?.();
+        if (!g || !g.team) return false;
+        if (g.gameMode !== 'promanager') {
+            if (pmState.active) { pmState.active = false; updateRepBadge(); }
+            return false;
+        }
+        const saved = g.promanager;
+        if (saved && saved.sessionId) {
+            if (!pmState.active || pmState.sessionId !== saved.sessionId) { pmState = { ...pmState, ...saved, active: true }; updateRepBadge(); }
+        } else if (!pmState.active || pmState.currentTeam !== g.team) {
+            // Partida de carrera guardada antes de este arreglo: no hay datos de reputación; se estima por la división.
+            const base = { primera: 62, segunda: 32 }[g.division] ?? 5;
+            pmState = { ...pmState, active: true, sessionId: 'pm_' + Date.now(), reputation: base, currentTeam: g.team,
+                        currentDivision: g.division, unemployed: false, gamesManaged: pmState.gamesManaged || 0 };
+            persistToGame(); updateRepBadge();
+        }
+        return true;
+    }
+
     async function saveCareerToFirebase() {
+        persistToGame();
         const uid = await waitForAuth();
         if (!uid || !window.firebaseDB) return;
         try {
@@ -507,6 +534,7 @@ console.log('🎯 Injector Promanager cargando...');
         if (document.getElementById('pmRepBadge')) return;
         var header = document.querySelector('.header-info');
         if (!header) return;
+        var teamBox = header.querySelector('.info-box');
         var badge = document.createElement('div');
         badge.id = 'pmRepBadge';
         badge.className = 'info-box';
@@ -514,7 +542,7 @@ console.log('🎯 Injector Promanager cargando...');
         badge.title = 'Tu reputación — haz clic para ver detalle';
         badge.innerHTML = '<span>Reputación:</span><span id="pmRepVal" style="color:#5b3d00;font-weight:800;">0</span>';
         badge.onclick = function() { showRepSummary(); };
-        header.appendChild(badge);
+        if (teamBox) teamBox.after(badge); else header.appendChild(badge);   // junto al nombre del equipo (visible también en móvil)
     }
 
     function updateRepBadge() {
@@ -524,6 +552,7 @@ console.log('🎯 Injector Promanager cargando...');
         if (pmState.active) {
             badge.style.display = '';
             val.textContent = Math.round(pmState.reputation) + ' ' + getRepLabel(pmState.reputation).split(' ')[0];
+            persistToGame();
         } else {
             badge.style.display = 'none';
         }
@@ -574,6 +603,8 @@ console.log('🎯 Injector Promanager cargando...');
         interceptButton();
         injectRepBadge();
         installPmCallback();
+        restoreFromGame();
+        setInterval(restoreFromGame, 1200);   // detecta cargas de partida y recargas
 
         // Instalar el hook con delay de 2.5s para garantizar que somos los ÚLTIMOS
         // en hookear simulateWeek (todos los otros injectors usan delays de 200-800ms)

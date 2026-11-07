@@ -299,9 +299,13 @@ function enhanceSquadTable() {
                 estadoCell.insertAdjacentElement('afterend', tarjetasCell);
             }
             
+            // Solo cuenta lo que importa para la sanción: amarillas del ciclo actual (5 = partido de sanción) y la roja
+            // mientras se cumple la sanción. Cumplida, el contador vuelve a cero (antes salía el total acumulado: «×10», «×18»).
             const badges = [];
-            if (player.yellowCards > 0) badges.push(`🟨×${player.yellowCards}`);
-            if (player.redCards > 0) badges.push(`🟥×${player.redCards}`);
+            const cycle = Number(player._yellowCycle) || 0;
+            if (player.isSuspended && player._suspCause === 'red') badges.push('🟥 expulsado');
+            else if (player.isSuspended && player._suspCause === 'yellow') badges.push('🟨×5 sanción');
+            else if (cycle > 0) badges.push(`🟨×${cycle}`);
             
             tarjetasCell.innerHTML = badges.length > 0 ? badges.join(' ') : '-';
             
@@ -309,6 +313,19 @@ function enhanceSquadTable() {
         }
     });
 }
+
+// La columna también se crea al abrir la página de plantilla por cualquier vía (antes solo con un clic en «Plantilla»)
+(function hookOpenSquad() {
+    if (typeof window.openPage !== 'function') { setTimeout(hookOpenSquad, 400); return; }
+    if (window.openPage._pcfCards) return;
+    const orig = window.openPage;
+    window.openPage = function (id, ...rest) {
+        const r = orig.call(this, id, ...rest);
+        if (id === 'squad') setTimeout(enhanceSquadTable, 600);
+        return r;
+    };
+    window.openPage._pcfCards = true;
+})();
 
 let lastUpdate = 0;
 document.addEventListener('click', (e) => {

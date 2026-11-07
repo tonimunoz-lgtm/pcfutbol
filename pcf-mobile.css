@@ -31,7 +31,7 @@
     .header-info #adminButton, .header-info #logoutButton { flex:0 0 44px; width:44px; min-width:44px !important;
         height:44px !important; min-height:44px !important; padding:0 !important; font-size:0 !important; }
     .header-info #adminButton .pcf-ui-icon, .header-info #logoutButton .pcf-ui-icon { width:20px; height:20px; margin:0; }
-    #userIndicator, #pmRepBadge { display:none !important; }
+    #userIndicator { display:none !important; }
     #pcfMobileActions { grid-area:actions; display:flex; gap:4px; align-items:center; }
     #pcfMobileActions .center-option { width:44px !important; min-width:44px !important; height:44px !important;
         min-height:44px !important; padding:0 !important; margin:0 !important; font-size:0 !important;
