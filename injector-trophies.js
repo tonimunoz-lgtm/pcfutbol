@@ -109,7 +109,10 @@
         const pm = s.promanager;
         if (s.gameMode === 'promanager' && pm && pm.sessionId) {
             const wr = pm.gamesManaged > 0 ? Math.round((pm.wins / pm.gamesManaged) * 100) : 0;
-            html += `<h2>📊 Carrera del manager</h2><div class="tr-career">⭐ Reputación: <strong>${Math.round(pm.reputation)}</strong> · 🎮 Partidos: <strong>${pm.gamesManaged}</strong><br>
+            const repLabel = window.pcfRepLabel ? window.pcfRepLabel(pm.reputation) : '';
+            html += `<h2>📊 Carrera del manager</h2><div class="tr-career">${repLabel ? `<div style="font-size:1.15em;margin-bottom:4px">${esc(repLabel)}</div>` : ''}
+                🏟️ Equipo: <strong>${esc(s.team)}</strong> · ${esc(DIV[s.division] || s.division || '')}<br>
+                ⭐ Reputación: <strong>${Math.round(pm.reputation)}</strong> · 🎮 Partidos: <strong>${pm.gamesManaged}</strong><br>
                 ✅ ${pm.wins} V &nbsp; 🤝 ${pm.draws} E &nbsp; ❌ ${pm.losses} D &nbsp; (${wr}% victorias)</div>`;
         }
         html += '<h2>📚 Historial de temporadas</h2>';

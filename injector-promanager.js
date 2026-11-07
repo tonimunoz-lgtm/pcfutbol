@@ -541,7 +541,8 @@ console.log('🎯 Injector Promanager cargando...');
         badge.style.cssText = 'display:none;cursor:pointer;';
         badge.title = 'Tu reputación — haz clic para ver detalle';
         badge.innerHTML = '<span>Reputación:</span><span id="pmRepVal" style="color:#5b3d00;font-weight:800;">0</span>';
-        badge.onclick = function() { showRepSummary(); };
+        // Segundo acceso a la Sala de trofeos (su panel «Carrera del manager» incluye lo que mostraba el resumen)
+        badge.onclick = function() { if (typeof window.openPage === 'function') window.openPage('trophies'); else showRepSummary(); };
         if (teamBox) teamBox.after(badge); else header.appendChild(badge);   // junto al nombre del equipo (visible también en móvil)
     }
 
@@ -558,6 +559,7 @@ console.log('🎯 Injector Promanager cargando...');
         }
     }
 
+    window.pcfRepLabel = function (rep) { return getRepLabel(rep); };
     function showRepSummary() {
         removeModal('pmRepModal');
         var wr = pmState.gamesManaged > 0 ? Math.round((pmState.wins / pmState.gamesManaged) * 100) : 0;
