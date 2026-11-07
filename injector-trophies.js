@@ -127,14 +127,31 @@
             <button class="page-close-btn" onclick="closePage('trophies')">✖ CERRAR</button></div><div id="trophiesContent"></div>`;
         document.body.appendChild(page);
     }
-    function addButton() {
-        if (document.getElementById('trophiesMenuBtn')) return;
-        const q = document.querySelector('.quadrant.top-left');
-        if (!q) return;
-        const b = document.createElement('button');
-        b.id = 'trophiesMenuBtn'; b.className = 'menu-button blue-button trophy-icon';
-        b.textContent = 'Trofeos'; b.onclick = () => window.openPage('trophies');
-        q.appendChild(b);
+    // El acceso a la Sala de trofeos va en Noticias, justo debajo de «Objetivos con la directiva»
+    // (antes era un 5.º botón del menú «Información» que descuadraba la cuadrícula, sobre todo en móvil).
+    function ensureLink() {
+        const page = document.getElementById('dashboard');
+        if (!page) return;
+        document.getElementById('trophiesMenuBtn')?.remove();           // por si queda el botón antiguo
+        let box = document.getElementById('trophiesLinkBox');
+        if (!box) {
+            box = document.createElement('section');
+            box.id = 'trophiesLinkBox'; box.className = 'data-box';
+            box.style.cssText = 'text-align:center;padding:10px';
+            box.innerHTML = '<button type="button" class="btn" id="trophiesLinkBtn" style="width:100%;max-width:420px;min-height:44px;font-weight:700">🏆 Sala de trofeos</button>';
+            box.querySelector('button').onclick = () => window.openPage('trophies');
+        }
+        const panel = document.getElementById('boardObjectivesPanel');
+        if (panel) { if (box.previousElementSibling !== panel) panel.after(box); }
+        else if (box.parentNode !== page) page.appendChild(box);
+    }
+    function watchDashboard() {
+        const page = document.getElementById('dashboard');
+        if (!page) { setTimeout(watchDashboard, 400); return; }
+        let t = 0;
+        new MutationObserver(() => { if (t) return; t = setTimeout(() => { t = 0; ensureLink(); }, 60); })
+            .observe(page, { childList: true });
+        ensureLink();
     }
     function hookOpenPage() {
         if (typeof window.openPage !== 'function') { setTimeout(hookOpenPage, 300); return; }
@@ -147,7 +164,7 @@
         };
         window.openPage._pcfTrophies = true;
     }
-    function init() { createPage(); addButton(); hookOpenPage(); }
+    function init() { createPage(); watchDashboard(); hookOpenPage(); }
     window.pcfTrophies = { render };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else setTimeout(init, 200);
 })();
