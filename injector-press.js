@@ -109,7 +109,7 @@
         return a;
     }
 
-    function html(a) {
+    function html(a, imgState = 'fail') {
         return `<style>
 #pcfPress{position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,.88);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:14px;animation:pcfPressIn .35s ease}
 @keyframes pcfPressIn{from{opacity:0;transform:translateY(18px) rotate(-.6deg)}to{opacity:1;transform:none}}
@@ -139,7 +139,9 @@
   <div class="pp-kick">${esc(a.kicker)}</div>
   <h1>${esc(a.headline)}</h1>
   <p class="pp-sub">${esc(a.sub)}</p>
-  <div class="pp-img"><span class="pp-emoji">${a.emoji}</span><img src="${esc(a.img)}" alt="" onerror="this.remove()"></div>
+  <div class="pp-img">${imgState === 'ok' ? `<img src="${esc(a.img)}" alt="" decoding="sync">`
+        : imgState === 'pending' ? `<span class="pp-emoji">${a.emoji}</span><img src="${esc(a.img)}" alt="" onload="this.previousElementSibling&&this.previousElementSibling.remove()" onerror="this.remove()">`
+        : `<span class="pp-emoji">${a.emoji}</span>`}</div>
   <div class="pp-cols">${a.paragraphs.map(p => `<p>${esc(p)}</p>`).join('')}</div>
   <div class="pp-quote">${esc(a.quote)}</div>
   <div class="pp-side">${a.side.map(t => `<div>${esc(t)}</div>`).join('')}</div>
@@ -147,14 +149,31 @@
 </div>`;
     }
 
-    function show(item) {
-        const s = gs(); if (!s) return Promise.resolve();
+    // Precarga de la imagen: la portada se muestra ya con la imagen buena (antes salía un instante el degradado con el emoji
+    // y luego cambiaba). Resultado en caché: 'ok' | 'fail'. Si tarda más de 2,5 s se muestra con el emoji y se cambia al cargar.
+    const imgCache = {};
+    function preload(src) {
+        if (imgCache[src] === 'ok' || imgCache[src] === 'fail') return Promise.resolve(imgCache[src]);
+        if (imgCache[src]) return imgCache[src];
+        imgCache[src] = new Promise(resolve => {
+            const im = new Image();
+            const done = v => { imgCache[src] = v; resolve(v); };
+            im.onload = () => (im.decode ? im.decode().catch(() => {}) : Promise.resolve()).then(() => done('ok'));
+            im.onerror = () => done('fail');
+            im.src = src;
+            setTimeout(() => { if (typeof imgCache[src] !== 'string') resolve('pending'); }, 2500);
+        });
+        return imgCache[src];
+    }
+    async function show(item) {
+        const s = gs(); if (!s) return;
         const a = { ...build(item, s.team), season: item.season || s.currentSeason, team: s.team };
+        const imgState = await preload(a.img);
         return new Promise(resolve => {
             document.getElementById('pcfPress')?.remove();
             const el = document.createElement('div');
             el.id = 'pcfPress'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', a.headline);
-            el.innerHTML = html(a);
+            el.innerHTML = html(a, imgState);
             document.body.appendChild(el);
             const close = () => { el.remove(); resolve(); };
             el.querySelector('#pcfPressClose').onclick = close;
@@ -179,5 +198,7 @@
         } finally { showing = false; }
     }
     setInterval(() => { try { flush(); } catch (e) { console.warn('press:', e.message); } }, 900);
-    window.pcfPress = { show, flush, build };
+    window.pcfPress = { show, flush, build, preload };
+    // Con el juego en reposo se precargan las imágenes de las portadas (si existen)
+    setTimeout(() => Object.keys(EMOJI).forEach(k => preload(`assets/prensa/${k}.webp`)), 4000);
 })();
