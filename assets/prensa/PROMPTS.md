@@ -23,3 +23,16 @@ Estilo común (añádelo a todos los prompts):
 | `derbi.webp` | two groups of anonymous football fans in opposite-colored scarves facing each other across a packed stadium stand, flares and smoke, intense derby atmosphere, wide composition, subject centered |
 
 La misma imagen se usa para victoria, empate y derrota. Se publica una portada en cualquier resultado de un **gran derbi** (nivel 2) y solo en las victorias de los derbis menores (nivel 1).
+
+## Leyendas, dorsales y despedidas
+Misma medida (1280×640, WebP) y mismo estilo base de arriba. Se añade a cada prompt lo siguiente:
+
+| Archivo | Prompt (añade el estilo común) |
+|---|---|
+| `leyenda_club.webp` | veteran football player in a plain kit saluting a packed stadium from the center circle, face not visible, confetti falling, fans holding scarves, emotional farewell atmosphere |
+| `dorsal_retirado.webp` | a plain football shirt with a large number on the back framed and lit on a stadium wall, dramatic spotlight, empty tunnel behind |
+| `leyenda_liga.webp` | veteran footballer leaving the pitch applauded by both sets of fans, a guard of honor of players from both teams lining the field, camera flashes, face not visible |
+| `despedida.webp` | player leaving the training ground with a sports bag, fans waiting at the gate with blank banners, melancholic evening light |
+
+`leyenda_liga.webp` también se usa para los **hijos de la cantera** (jugadores formados en tu club que se retiran en otro).
+El banner del museo va en `assets/museo/banner.webp` (ver `assets/museo/LEEME.md`).
