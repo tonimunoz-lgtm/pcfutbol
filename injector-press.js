@@ -2,7 +2,7 @@
 // injector-press.js — Portadas de prensa al ganar un título o conseguir un hito.
 // Cola: gameState.pendingPress = [{ id, kind, season, ... }]. Otros módulos añaden elementos (Copa, Europa, fin de
 // temporada) y este módulo los muestra de uno en uno cuando no hay otro aviso en pantalla.
-// kinds: copa · liga · ascenso · champions · europaLeague · conferenceLague · premio · derbi
+// kinds: copa · liga · ascenso · champions · europaLeague · conferenceLague · premio · derbi · leyenda_club · dorsal_retirado · leyenda_liga · despedida
 // Imágenes opcionales en assets/prensa/<kind>.webp (si no existen se usa un degradado con un emoji).
 // ============================================================
 (function () {
@@ -13,7 +13,7 @@
         rfef_grupo2: 'Primera RFEF (Grupo 2)', promesas: 'Liga Promesas' };
     const COMP = { copa: 'Copa del Rey', champions: 'Champions League', europaLeague: 'Europa League', conferenceLague: 'Conference League' };
     const PAPERS = ['El Diario del Fútbol', 'La Voz del Balón', 'Sport Total', 'El Gol de Hoy'];
-    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥' };
+    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥', leyenda_club: '🕊️', dorsal_retirado: '👕', leyenda_liga: '🌟', despedida: '👋' };
     // «El Clásico» → «el Clásico»; «Derbi madrileño» → «el derbi madrileño»
     const withArticle = n => /^El /.test(n) ? n.replace(/^El /, 'el ') : 'el ' + n.charAt(0).toLowerCase() + n.slice(1);
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
@@ -103,6 +103,44 @@
                 a.side = ['Ambos entrenadores reclaman más de su equipo', 'La afición despide a los jugadores con una ovación'];
                 a.quote = pick(['«Un punto que sabe a poco, pero hay que sumar.»', '«El equipo lo dio todo; el fútbol hoy no quiso decantarse.»', '«Nos vamos con la sensación de que pudimos ganar.»'], seed >> 2);
             }
+        } else if (item.kind === 'leyenda_club') {
+            const nm = item.playerName || 'La leyenda', st = `${item.seasons || 0} temporadas, ${item.apps || 0} partidos${item.goals ? ` y ${item.goals} goles` : ''}`;
+            a.kicker = `HOMENAJE · ${team.toUpperCase()}`;
+            a.headline = pick([`Adiós a una leyenda: ${nm} cuelga las botas`, `${nm} dice adiós al fútbol`, `Fin de una era: se retira ${nm}`], seed);
+            a.sub = `${st} con ${team}${item.titles ? ` y ${item.titles} título${item.titles === 1 ? '' : 's'}` : ''}`;
+            a.paragraphs = [`${nm} ha anunciado su retirada tras una carrera marcada por la entrega y el compromiso con ${team}. ${st.charAt(0).toUpperCase() + st.slice(1)} dan la medida de su huella en el club.`,
+                `La afición, el vestuario y la directiva coinciden: el club despide a un referente. En los próximos días se anunciará el homenaje que merece.`];
+            a.side = ['Compañeros y rivales rinden tributo a la leyenda', 'La afición pide que su nombre quede para siempre en el club'];
+            a.quote = pick(['«Me voy con la cabeza muy alta. Este club y esta gente lo han sido todo para mí.»', '«Dejo el fútbol, pero nunca dejaré de ser uno más de la grada.»', '«Gracias por tantos años. Lo he dado todo y volvería a hacerlo.»'], seed >> 2);
+        } else if (item.kind === 'dorsal_retirado') {
+            const nm = item.playerName || 'la leyenda', n = item.number;
+            a.kicker = `HOMENAJE · ${team.toUpperCase()}`;
+            a.headline = pick([`El ${n} ya no volverá a vestirse`, `${team} retira el dorsal ${n} en honor a ${nm}`, `El ${n}, para siempre de ${nm}`], seed);
+            a.sub = `Ceremonia emocionante en el estadio: el dorsal ${n} pasa al museo del club`;
+            a.paragraphs = [`${team} ha decidido retirar el dorsal ${n} que lució ${nm}. Nadie volverá a llevarlo: la camiseta se exhibirá en el museo del club como símbolo de una época.`,
+                `El estadio se puso en pie para despedir a su leyenda en una ceremonia llena de emoción, con ofrenda de la afición y minuto de aplausos.`];
+            a.side = ['La camiseta, al museo: «Es un honor inmenso»', 'La afición corea su nombre durante todo el acto'];
+            a.quote = pick(['«Ver mi número en lo alto es lo más bonito que me podía pasar.»', '«Esta camiseta siempre será de la afición. Gracias, de corazón.»', '«No hay mayor orgullo que ver tu dorsal para siempre en tu casa.»'], seed >> 2);
+        } else if (item.kind === 'leyenda_liga') {
+            const nm = item.playerName || 'La estrella', cl = (item.clubs || []).filter(Boolean);
+            a.kicker = item.fromClub ? `HIJO DE LA CANTERA · ${String(item.fromClub).toUpperCase()}` : 'LA LIGA DICE ADIÓS';
+            a.headline = item.fromClub ? pick([`Se retira ${nm}, formado en la cantera de ${item.fromClub}`, `${nm}, de la cantera a la leyenda: cuelga las botas`], seed)
+                : pick([`Se retira ${nm}: el fútbol despide a una leyenda`, `${nm} cuelga las botas`, `Adiós a ${nm}, un icono de la liga`], seed);
+            a.sub = `${item.seasons || 0} temporadas en la élite${item.peak ? ` · media máxima ${item.peak}` : ''}`;
+            a.paragraphs = [item.fromClub ? `${nm} cuelga las botas tras una carrera brillante${cl.length ? `, pasando por ${cl.slice(0, 4).join(', ')}` : ''}. Todo empezó en la cantera de ${item.fromClub}, donde dio sus primeros pasos y donde la afición no le ha olvidado.`
+                : `${nm} ha anunciado su retirada tras una carrera en la que fue una de las grandes figuras de la competición${cl.length ? `, pasando por ${cl.slice(0, 4).join(', ')}` : ''}.`,
+                'Aficionados de todos los colores reconocen el legado de un futbolista que marcó una época. Los clubes preparan tributos en los estadios.'];
+            a.side = ['Aplausos de todos los estadios para el campeón', 'Rivales y compañeros: «Ha sido un honor enfrentarte»'];
+            a.quote = pick(['«Gracias a todos los que me habéis apoyado, también a los que me habéis silbado.»', '«Me llevo el cariño de todos los estadios. Ha sido un viaje precioso.»', '«He sido un privilegiado: viví mi sueño durante muchos años.»'], seed >> 2);
+        } else if (item.kind === 'despedida') {
+            const nm = item.playerName || 'El jugador';
+            a.kicker = `DESPEDIDA · ${team.toUpperCase()}`;
+            a.headline = pick([`${nm} dice adiós a ${team}`, `${nm} deja ${team} tras ${item.seasons} temporadas`, `Fin de ciclo: ${nm} abandona el club`], seed);
+            a.sub = `${item.seasons || 0} temporadas, ${item.apps || 0} partidos${item.goals ? ` y ${item.goals} goles` : ''} de entrega`;
+            a.paragraphs = [`${nm} se despide de ${team} después de ${item.seasons} temporadas defendiendo estos colores. Su paso por el club deja una huella imborrable.`,
+                'La afición agradece los servicios prestados con una cariñosa ovación. Las puertas del club seguirán abiertas para él.'];
+            a.side = ['Los compañeros le despiden con un emotivo vídeo', 'La grada: «Aquí siempre tendrás tu casa»'];
+            a.quote = pick(['«Me voy agradecido a todos. El club siempre estará en mi corazón.»', '«Ha sido un orgullo vestir esta camiseta. Gracias por todo.»'], seed >> 2);
         } else {
             a.headline = `${team}: gran noticia`; a.sub = ''; a.paragraphs = [''];
         }

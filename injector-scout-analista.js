@@ -386,7 +386,7 @@
             // ¡Resultados!
             const num       = numCandidates(search.scoutLevel);
             const prospects = Array.from({ length: num }, () =>
-                generateProspect(search.position || null, search.scoutLevel)
+                generateProspect(search.position || null, Math.min(5, search.scoutLevel + (gs()?.legacy?.roles?.scout ? 1 : 0)))   // leyenda del club como ojeador: +1 nivel
             );
 
             saveResults(prospects);

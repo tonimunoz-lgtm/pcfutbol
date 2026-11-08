@@ -74,11 +74,13 @@ console.log('🏫 Youth Training Injector cargando...');
         const state = gs();
         if (!state) return;
 
-        const coach = state.staff?.[YOUTH_ROLE];
-        if (!coach) return; // Sin entrenador → sin progresión
+        // Una leyenda del club como entrenador de cantera cuenta como entrenador (nivel 1 si no hay otro) y acelera un 15 %
+        const legendCoach = !!state.legacy?.roles?.youth;
+        const coach = state.staff?.[YOUTH_ROLE] || (legendCoach ? { level: 1 } : null);
+        if (!coach) return; // Sin entrenador -> sin progresión
 
         const level = coach.level || 1;
-        const weeklyRate = isSeasonChange ? YOUTH_SEASON_BONUS[level] : YOUTH_WEEKLY_PROG[level];
+        const weeklyRate = (isSeasonChange ? YOUTH_SEASON_BONUS[level] : YOUTH_WEEKLY_PROG[level]) * (legendCoach ? 1.15 : 1);
         const promotionCandidates = [];
 
         // Plazas de entrenamiento: 2 por nivel del entrenador. Entran los de más margen.

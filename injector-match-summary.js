@@ -106,13 +106,8 @@ window.injectMatchSummary = function(matchResult) {
     console.log('✅ Modal profesional añadido al DOM');
     
     // Auto-cerrar después de 15 segundos
-    setTimeout(() => {
-        const existingModal = document.getElementById('matchSummaryModal');
-        if (existingModal) {
-            existingModal.remove();
-            console.log('⏱️ Modal cerrado automáticamente');
-        }
-    }, 30000);
+    // Solo cierra ESTE modal (antes cerraba el que hubiese con ese id, p. ej. el resumen del partido siguiente)
+    setTimeout(() => { if (modal.isConnected) modal.remove(); }, 30000);
 };
 
 console.log('✅ injector-match-summary.js PROFESIONAL cargado');

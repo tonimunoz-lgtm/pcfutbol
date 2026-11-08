@@ -94,7 +94,8 @@
         // Antes se leía .checked de un <select>/<input number> (siempre false): coche, casa y % se ignoraban.
         const num = id => Math.max(0, Number(val(id)?.value) || 0);
         const result = gl().offerToPlayer(offeredSalary, num('offeredBonus'), num('offeredCar'), num('offeredHouse'),
-            num('offeredMerchPercent'), num('offeredTicketPercent'));
+            num('offeredMerchPercent'), num('offeredTicketPercent'),
+            val('offeredShirt') ? Number(val('offeredShirt').value) || 0 : undefined);   // dorsal ofrecido (solo si su agente lo pide)
 
         if (result.success) {
             const after = gs();

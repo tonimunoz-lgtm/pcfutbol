@@ -39,6 +39,7 @@
     function chooseDifficulty(current) {
         return new Promise(resolve => {
             document.getElementById('pcfDiffModal')?.remove();
+            window.pcfEnsureDialogStyles?.();
             const back = document.createElement('div');
             back.id = 'pcfDiffModal'; back.className = 'pcf-dlg-back';
             back.innerHTML = `<div class="pcf-dlg" role="dialog" aria-modal="true"><h3>⚙️ Dificultad</h3>

@@ -1123,7 +1123,9 @@ ${banner}
             timestamp: Date.now()
         };
 
+        let safeTimer=null;   // temporizador de seguridad PROPIO de este modal
         function closeModal() {
+            clearTimeout(safeTimer);
             el.style.opacity='0';el.style.transform='scale(.97)';el.style.transition='all .22s';
             setTimeout(()=>{el.remove();resolve();},220);
         }
@@ -1136,7 +1138,9 @@ ${banner}
         el.querySelector('.cr-stats')?.appendChild(record);
         if (!record.parentNode) document.getElementById('cuResClose').parentNode.insertBefore(record,document.getElementById('cuResClose'));
         document.getElementById('cuResClose').onclick = closeModal;
-        setTimeout(()=>{const e=document.getElementById('cupResModal');if(e){e.remove();resolve();}},30000);
+        // Seguridad a los 30 s: solo toca ESTE modal (antes quitaba «el» #cupResModal que hubiese en ese momento, es decir, el del
+        // resultado siguiente si se mostraba con menos de 30 s de diferencia, y dejaba su promesa sin resolver: el atasco de la jornada)
+        safeTimer=setTimeout(()=>{if(el.isConnected)el.remove();resolve();},30000);
     });
 }
 

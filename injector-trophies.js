@@ -118,6 +118,7 @@
                 ✅ ${pm.wins} V &nbsp; 🤝 ${pm.draws} E &nbsp; ❌ ${pm.losses} D &nbsp; (${wr}% victorias)</div>`;
         }
         if (window.pcfDerbies?.html) html += window.pcfDerbies.html(s);
+        if (window.pcfLegacy?.html) html += window.pcfLegacy.html(s);
         html += '<h2>📚 Historial de temporadas</h2>';
         html += hist.length ? `<div class="tr-hist">${[...hist].reverse().map(historyCard).join('')}</div>`
             : '<p class="tr-empty">El historial se irá completando al cerrar cada temporada.</p>';

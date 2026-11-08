@@ -93,6 +93,9 @@
         if (player.contractYears === 0) satisfaction -= 15; // nervioso por el contrato
         if (player.isInjured)           satisfaction -= 5;
 
+        // Ánimo por eventos del vestuario (injector-events.js): suma y se va desvaneciendo con las jornadas
+        satisfaction += Number(player.moodMod) || 0;
+
         return Math.round(Math.max(0, Math.min(100, satisfaction)));
     }
 
@@ -111,6 +114,7 @@
     function updatePlayerMood(player, state) {
         const satisfaction = calcSatisfaction(player, state);
         player.satisfaction = satisfaction;
+        if (player.moodMod) { const d = player.moodMod * 0.88; player.moodMod = Math.abs(d) < 1 ? 0 : Math.round(d * 10) / 10; }   // se desvanece
 
         const mood = getMoodInfo(satisfaction);
         player.moodIcon  = mood.icon;

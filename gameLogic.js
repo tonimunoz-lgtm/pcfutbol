@@ -432,9 +432,11 @@ function setupNewSeason(prevSeasonDivision, nextDivisionKey) {
         p.ovrSeasonStart = p.overall;
 
         // Retirada: más probable cuanto mayor (34: 10 %, 35: 25 %, 36: 45 %, 37+: 70 %)
+        p.peakOvr = Math.max(p.peakOvr || 0, p.overall || 0);
         const retireChance = retirementProbability(p.age,p.position);
         if (p.contractType !== 'loaned' && Math.random() < retireChance) {
             if(gameState.world)gameState.world.retired=(gameState.world.retired||[]).concat({id:p.id,name:p.name,club:gameState.team,season:gameState.currentSeason,career:p.career||[]}).slice(-300);
+            pushLegacyPending(legacySnapshot(p, gameState.team));
             addNews(`👋 ${p.name} se ha retirado del fútbol a los ${p.age} años.`, 'info');
             return false;
         }
@@ -1152,7 +1154,7 @@ function startNegotiation(player) {
     return { success: true, message: `Iniciando negociación con ${player.name}.` };  
 }  
   
-function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent) {  
+function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent, offeredShirt) {  
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
@@ -1188,6 +1190,17 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     }
     if (salaryFactor < 0.6) acceptanceChance = 0;
   
+    // Dorsal: su agente puede exigir uno concreto (ver injector-legacy.js). Solo cuenta si la interfaz envía el dorsal ofrecido.
+    let shirtNote = '';
+    if (offeredShirt !== undefined && window.pcfLegacy?.demandFor && acceptanceChance > 0) {
+        const dem = window.pcfLegacy.demandFor(player);
+        if (dem) {
+            const star = (player.overall || 0) >= 80;
+            if (offeredShirt === dem.number && !dem.retired) acceptanceChance += 0.03;
+            else if (offeredShirt > 0) { acceptanceChance -= dem.retired ? 0.03 : (star ? 0.10 : 0.06); shirtNote = ` Esperaba el dorsal ${dem.number}.`; }
+            else { acceptanceChance -= dem.retired ? 0.05 : (star ? 0.15 : 0.10); shirtNote = ` Esperaba el dorsal ${dem.number}.`; }
+        }
+    }
     const roll = Math.random();  
     acceptanceChance += acceptanceChance > 0 ? secretaryBonus() : 0;  
   
@@ -1200,7 +1213,8 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             car: offeredCar,  
             house: offeredHouse,  
             merchPercent: offeredMerchPercent,  
-            ticketPercent: offeredTicketPercent  
+            ticketPercent: offeredTicketPercent,  
+            ...(offeredShirt > 0 ? { shirt: offeredShirt, shirtClaim: true } : {})   // dorsal pactado: se reclama al fichar
         };  
         
         // ✅ VERIFICAR SI SE PAGÓ LA CLÁUSULA
@@ -1945,6 +1959,13 @@ function registerWorldFreeAgent(player) {
     gameState.freeAgentsPool=gameState.freeAgentsPool||[];
     if(!gameState.freeAgentsPool.some(p=>p.id&&p.id===player.id))gameState.freeAgentsPool.push(player);
 }
+// Instantánea de un jugador que se retira (la usa injector-legacy.js para leyendas, ceremonias y museo)
+function legacySnapshot(p, club) {
+    return { id: p.id, name: p.name, position: p.position, age: p.age, shirt: p.shirt || null, overall: p.overall || 0,
+        peak: Math.max(p.peakOvr || 0, p.overall || 0), joinedSeason: p.joinedSeason || null, season: gameState.currentSeason, club,
+        career: (p.career || []).map(e => ({ season: e.season, club: e.club, division: e.division, matches: e.matches || 0, goals: e.goals || 0 })) };
+}
+function pushLegacyPending(snap) { gameState.legacyPending = [...(gameState.legacyPending || []), snap].slice(-30); }
 function appendWorldCareer(player,season,club) {
     const w=gameState.world,entries=[];
     for(const [division,players] of Object.entries(w?.statistics||{})){
@@ -1977,7 +1998,12 @@ function rollWorldSeason(summary) {
         for(const p of c.squad){
             appendWorldCareer(p,summary.season,c.name);
             p.age=(p.age||25)+1;
-            if(Math.random()<retirementProbability(p.age,p.position)){w.retired=(w.retired||[]).concat({id:p.id,name:p.name,club:c.name,season:summary.season}).slice(-300);continue;}
+            p.peakOvr=Math.max(p.peakOvr||0,p.overall||0);
+            if(Math.random()<retirementProbability(p.age,p.position)){
+                w.retired=(w.retired||[]).concat({id:p.id,name:p.name,club:c.name,season:summary.season}).slice(-300);
+                if((p.peakOvr||0)>=85||(p.career||[]).length>=10)pushLegacyPending(legacySnapshot(p,c.name));   // candidato a leyenda de la liga
+                continue;
+            }
             seasonalDevelopment(p,previousGames,{division:c.division,staff:c.snapshot.staff||{}});
             p.contractYears=Math.max(0,(p.contractYears||1)-1);
             if(p.contractYears===0){

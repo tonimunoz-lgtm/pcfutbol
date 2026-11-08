@@ -34,6 +34,9 @@
         (document.head || document.documentElement).appendChild(st);
     }
 
+    // Los módulos que crean sus propias ventanas con estas clases deben llamar antes a esto (si no, salen sin estilo)
+    window.pcfEnsureDialogStyles = ensureStyles;
+
     // Una ventana detrás de otra
     let chain = Promise.resolve();
     function dialog({ title, message, buttons, input }) {
