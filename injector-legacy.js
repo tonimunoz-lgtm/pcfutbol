@@ -397,19 +397,23 @@
     function injectStyles() {
         if (document.getElementById('pcfLegacyStyles')) return;
         const st = document.createElement('style'); st.id = 'pcfLegacyStyles';
-        st.textContent = `#trophies .mu-banner{height:130px;border:1px solid #3d6aa8;border-radius:4px;margin:6px 0 10px;overflow:hidden;background:linear-gradient(135deg,#1b2a46,#3a3322 60%,#7b6a3c);display:flex;align-items:center;justify-content:center;font-size:2.6rem;position:relative}
-        #trophies .mu-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:sepia(.25)}
-        #trophies .mu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-        #trophies .mu-card{background:#0e2549;border:1px solid #2a4a7c;border-radius:4px;padding:8px;text-align:center;font-size:.8rem;line-height:1.25;color:#cfe0fb}
-        #trophies .mu-card b{display:block;color:#fff;font-size:.9rem;margin-top:2px}
-        #trophies .mu-card.gold{border-color:#ffd24a;background:linear-gradient(180deg,rgba(255,210,74,.12),#0e2549)}
-        #trophies .mu-chip{display:inline-block;margin:3px 2px 0;padding:1px 7px;border-radius:10px;background:#1a3763;font-size:.72rem}`;
+        st.textContent = `#museum .ac-cat{margin:14px 0 6px;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#a9c0e6}
+        #museum .tr-empty{color:#6f86ad;font-style:italic;font-size:.85rem}
+        #museum .tr-career{background:#0e2549;border:1px solid #2a4a7c;border-radius:4px;padding:10px 12px;font-size:.9rem;line-height:1.7;color:#e6eefb}
+        #museumContent{padding:4px 6px 20px}
+        #museum .mu-banner{height:130px;border:1px solid #3d6aa8;border-radius:4px;margin:6px 0 10px;overflow:hidden;background:linear-gradient(135deg,#1b2a46,#3a3322 60%,#7b6a3c);display:flex;align-items:center;justify-content:center;font-size:2.6rem;position:relative}
+        #museum .mu-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:sepia(.25)}
+        #museum .mu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+        #museum .mu-card{background:#0e2549;border:1px solid #2a4a7c;border-radius:4px;padding:8px;text-align:center;font-size:.8rem;line-height:1.25;color:#cfe0fb}
+        #museum .mu-card b{display:block;color:#fff;font-size:.9rem;margin-top:2px}
+        #museum .mu-card.gold{border-color:#ffd24a;background:linear-gradient(180deg,rgba(255,210,74,.12),#0e2549)}
+        #museum .mu-chip{display:inline-block;margin:3px 2px 0;padding:1px 7px;border-radius:10px;background:#1a3763;font-size:.72rem}`;
         document.head.appendChild(st);
     }
     function html(s) {
         injectStyles();
         const lg = L(s);
-        let out = '<h2>🏛️ Museo del club</h2><div class="mu-banner"><span>🏛️</span><img src="assets/museo/banner.webp" alt="" onerror="this.remove()"></div>';
+        let out = '<div class="mu-banner"><span>🏛️</span><img src="assets/museo/banner.webp" alt="" onerror="this.remove()"></div>';
         out += '<div class="ac-cat">Dorsales retirados</div>';
         out += lg.retired.length ? `<div class="mu-grid">${lg.retired.map(r => `<div class="mu-card gold">${shirtSvg(r.number)}<b>${esc(r.name)}</b>${esc(r.seasons)} temp. · ${esc(r.apps)} partidos${r.goals ? ` · ${esc(r.goals)} goles` : ''}<br><small>Retirado en ${esc(r.retiredSeason)}</small></div>`).join('')}</div>`
             : '<p class="tr-empty">Todavía no hay dorsales retirados. Cuando una leyenda se retire, podrás homenajearla aquí.</p>';
@@ -428,6 +432,33 @@
         if (hitos.length) out += '<div class="ac-cat">Hitos del club</div><div class="tr-career">' + hitos.map(esc).join('<br>') + '</div>';
         return out;
     }
+
+    // ── Página «Museo del club» (pantalla aparte; se abre desde Noticias) ──
+    function createMuseumPage() {
+        if (document.getElementById('museum')) return;
+        injectStyles();
+        const page = document.createElement('div');
+        page.id = 'museum'; page.className = 'page';
+        page.innerHTML = `<div class="page-header"><h1>🏛️ Museo del club</h1>
+            <button class="page-close-btn" onclick="closePage('museum')">✖ CERRAR</button></div><div id="museumContent"></div>`;
+        document.body.appendChild(page);
+    }
+    function renderMuseum() { const s = gs(), root = document.getElementById('museumContent'); if (s && root) root.innerHTML = html(s); }
+    (function hookMuseumOpen() {
+        if (typeof window.openPage !== 'function') { setTimeout(hookMuseumOpen, 300); return; }
+        createMuseumPage();
+        const orig = window.openPage;
+        if (orig._pcfMuseum) return;
+        const wrapped = function (id, ...rest) {
+            const r = orig.call(this, id, ...rest);
+            if (id === 'museum') { try { renderMuseum(); } catch (e) { console.warn('Museo:', e.message); } }
+            return r;
+        };
+        // conservar las marcas de otros ganchos (p. ej. el de trofeos)
+        Object.keys(orig).forEach(k => { wrapped[k] = orig[k]; });
+        wrapped._pcfMuseum = true;
+        window.openPage = wrapped;
+    })();
 
     // ── Eventos de dorsal y tributo ─────────────────────────
     function wantedNumber(s, p) {
@@ -527,7 +558,7 @@
         } catch (e) { console.warn('Leyendas:', e.message); }
         finally { running = false; }
     }
-    Object.assign(api, { demandFor, negotiationUI, analyze, isClubLegend, isLeagueLegend, ensureShirts, changeShirt, openShirtDialog, html, tick: () => { lastKey = ''; return tick(); }, processPending, runCeremony, ROLES });
+    Object.assign(api, { renderMuseum, demandFor, negotiationUI, analyze, isClubLegend, isLeagueLegend, ensureShirts, changeShirt, openShirtDialog, html, tick: () => { lastKey = ''; return tick(); }, processPending, runCeremony, ROLES });
     window.pcfLegacy = api;
     installEvents();
     setInterval(() => { tick(); }, 2000);

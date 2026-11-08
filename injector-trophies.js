@@ -118,7 +118,6 @@
                 ✅ ${pm.wins} V &nbsp; 🤝 ${pm.draws} E &nbsp; ❌ ${pm.losses} D &nbsp; (${wr}% victorias)</div>`;
         }
         if (window.pcfDerbies?.html) html += window.pcfDerbies.html(s);
-        if (window.pcfLegacy?.html) html += window.pcfLegacy.html(s);
         html += '<h2>📚 Historial de temporadas</h2>';
         html += hist.length ? `<div class="tr-hist">${[...hist].reverse().map(historyCard).join('')}</div>`
             : '<p class="tr-empty">El historial se irá completando al cerrar cada temporada.</p>';
@@ -134,8 +133,8 @@
             <button class="page-close-btn" onclick="closePage('trophies')">✖ CERRAR</button></div><div id="trophiesContent"></div>`;
         document.body.appendChild(page);
     }
-    // El acceso a la Sala de trofeos va en Noticias, justo debajo de «Objetivos con la directiva»
-    // (antes era un 5.º botón del menú «Información» que descuadraba la cuadrícula, sobre todo en móvil).
+    // En Noticias, «Objetivos con la directiva» ocupa la mitad izquierda y a su derecha van los accesos a la Sala de trofeos
+    // y al Museo del club (dos columnas; en móvil se apilan).
     function ensureLink() {
         const page = document.getElementById('dashboard');
         if (!page) return;
@@ -144,13 +143,18 @@
         if (!box) {
             box = document.createElement('section');
             box.id = 'trophiesLinkBox'; box.className = 'data-box';
-            box.style.cssText = 'text-align:center;padding:10px';
-            box.innerHTML = '<button type="button" class="btn" id="trophiesLinkBtn" style="width:100%;max-width:420px;min-height:44px;font-weight:700">🏆 Sala de trofeos</button>';
-            box.querySelector('button').onclick = () => window.openPage('trophies');
+            box.innerHTML = '<button type="button" class="pcf-hbtn pcf-hbtn-gold pcf-hbtn-lg" id="trophiesLinkBtn">🏆 Sala de trofeos</button>' +
+                '<button type="button" class="pcf-hbtn pcf-hbtn-teal pcf-hbtn-lg" id="museumLinkBtn">🏛️ Museo del club</button>';
+            box.querySelector('#trophiesLinkBtn').onclick = () => window.openPage('trophies');
+            box.querySelector('#museumLinkBtn').onclick = () => window.openPage('museum');
         }
         const panel = document.getElementById('boardObjectivesPanel');
-        if (panel) { if (box.previousElementSibling !== panel) panel.after(box); }
-        else if (box.parentNode !== page) page.appendChild(box);
+        let row = document.getElementById('pcfBoardRow');
+        if (panel) {
+            if (!row) { row = document.createElement('div'); row.id = 'pcfBoardRow'; panel.parentNode.insertBefore(row, panel); }
+            if (panel.parentElement !== row) row.appendChild(panel);
+            if (box.parentElement !== row) row.appendChild(box);
+        } else if (box.parentNode !== page) page.appendChild(box);
     }
     function watchDashboard() {
         const page = document.getElementById('dashboard');

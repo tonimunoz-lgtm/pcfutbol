@@ -178,3 +178,25 @@
    la ✕ y «Cerrar» y no se podía salir sin fichar a alguien). */
 #scoutSearchModal { overflow-y: auto !important; align-items: flex-start !important; box-sizing: border-box; padding: 12px 0; overscroll-behavior: contain; }
 #scoutSearchModal > div { margin: 0 auto !important; }
+
+/* ── Botones de colores en cabeceras y accesos (Noticias, Decisiones, museo) ── */
+/* Controles en la cabecera de la página: botones de colores que destacan sobre el fondo azul */
+.pcf-hdr-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-left:auto; margin-right:12px; }
+.pcf-hbtn { display:inline-flex; align-items:center; gap:7px; min-height:38px; padding:6px 14px; border-radius:6px; font-family:'Saira Condensed',sans-serif;
+    font-weight:800; font-size:.92rem; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; border:2px solid; box-shadow:0 2px 6px rgba(0,0,0,.45); white-space:nowrap; user-select:none; }
+.pcf-hbtn input[type=checkbox] { width:18px !important; height:18px !important; min-height:0 !important; padding:0 !important; margin:0 !important; accent-color:#7a4a00; }
+.pcf-hbtn-amber { background:linear-gradient(180deg,#ffd24a,#f0a500); border-color:#fff3c4; color:#2a1a00; }
+.pcf-hbtn-green { background:linear-gradient(180deg,#43c76a,#1f8f43); border-color:#c8f5d5; color:#fff; }
+.pcf-hbtn-green:disabled { background:#3a4d44; border-color:#5b6f65; color:#8fa59a; box-shadow:none; cursor:not-allowed; }
+.pcf-hbtn-violet { background:linear-gradient(180deg,#a56bff,#6a35c9); border-color:#e1ccff; color:#fff; }
+.pcf-hbtn:hover:not(:disabled) { filter:brightness(1.08); }
+@media (max-width: 760px) { #dashboard .page-header, #commercial .page-header { flex-wrap:wrap !important; } .pcf-hdr-tools { order:3; flex:1 1 100%; margin:4px 0 0; flex-wrap:nowrap; gap:8px; }
+    .pcf-hdr-tools .pcf-hbtn { flex:1 1 0; min-width:0; white-space:normal; text-align:center; justify-content:center; line-height:1.1; font-size:.76rem; min-height:42px; padding:6px 8px; } }
+.pcf-hbtn-gold { background:linear-gradient(180deg,#f4c542,#c9921a); border-color:#ffe9a8; color:#2a1a00; }
+.pcf-hbtn-teal { background:linear-gradient(180deg,#34c3d9,#1b86a3); border-color:#c6f1f9; color:#04222b; }
+.pcf-hbtn-lg { width:100%; min-height:54px; justify-content:center; font-size:1.08rem; }
+/* Noticias: fila «Objetivos con la directiva» + accesos a Sala de trofeos y Museo del club */
+#pcfBoardRow { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; align-items:stretch; }
+#pcfBoardRow > * { margin:0 !important; }
+#pcfBoardRow #trophiesLinkBox { display:flex; flex-direction:column; justify-content:center; gap:12px; padding:14px !important; text-align:center; }
+@media (max-width: 760px) { #pcfBoardRow { grid-template-columns:1fr; } }

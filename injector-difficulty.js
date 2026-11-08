@@ -66,17 +66,20 @@
         return lv;
     }
 
-    // Botón en Noticias, junto a «Sala de trofeos»
+    // Botón en la cabecera de Decisiones (junto a «Gestión comercial» y «Cerrar»): es donde se toman las decisiones
     function refreshButton() {
-        const box = document.getElementById('trophiesLinkBox');
-        if (!box) return;
+        const header = document.querySelector('#commercial .page-header');
+        if (!header) return;
         let b = document.getElementById('difficultyBtn');
         if (!b) {
+            const tools = document.createElement('div');
+            tools.id = 'pcfDiffTools'; tools.className = 'pcf-hdr-tools';
             b = document.createElement('button');
-            b.id = 'difficultyBtn'; b.type = 'button'; b.className = 'btn';
-            b.style.cssText = 'width:100%;max-width:420px;min-height:44px;font-weight:700;margin-top:8px';
+            b.id = 'difficultyBtn'; b.type = 'button'; b.className = 'pcf-hbtn pcf-hbtn-violet';
             b.onclick = () => applyChoice(level(gs()));
-            box.appendChild(b);
+            tools.appendChild(b);
+            const close = header.querySelector('.page-close-btn');
+            header.insertBefore(tools, close || null);
         }
         b.textContent = `⚙️ Dificultad: ${window.pcfDifficulty?.LEVELS?.[level(gs())]?.label || 'Normal'}`;
     }

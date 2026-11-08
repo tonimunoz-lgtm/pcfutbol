@@ -25,6 +25,7 @@
         st.id = 'pcfNewsStyles';
         st.textContent = `
         .pcf-news-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 10px; }
+        #pcfNewsRightCol > #newsFeed { margin-top:0 !important; }   /* las dos columnas arrancan a la misma altura */
         .pcf-news-group { color: var(--pcf-gold,#ffd24a); font-family:'Saira Condensed',sans-serif; font-weight:700;
             letter-spacing:.08em; text-transform:uppercase; font-size:.85rem; margin:10px 0 6px; }
         .pcf-news-item { position:relative; font-size:.9em; margin-bottom:5px; }
@@ -74,6 +75,24 @@
         </div>`;
     }
 
+    // «Solo nuevas» y «Marcar todo como leído» van en la cabecera, entre el título y «Cerrar» (así las dos columnas arrancan a la misma altura)
+    function ensureHeaderTools() {
+        const header = document.querySelector('#dashboard .page-header');
+        if (!header) return null;
+        let tools = document.getElementById('pcfNewsTools');
+        if (!tools) {
+            tools = document.createElement('div');
+            tools.id = 'pcfNewsTools'; tools.className = 'pcf-hdr-tools';
+            tools.innerHTML = `<label class="pcf-hbtn pcf-hbtn-amber"><input type="checkbox" id="pcfNewsOnlyNew"> Solo nuevas</label>
+                <button type="button" class="pcf-hbtn pcf-hbtn-green" id="pcfNewsMarkAll">✓ Marcar todo como leído</button>`;
+            tools.querySelector('#pcfNewsOnlyNew').onchange = e => { onlyNew = e.target.checked; render(); };
+            tools.querySelector('#pcfNewsMarkAll').onclick = () => { highlight = new Set(); markAllRead(); render(); };
+            const close = header.querySelector('.page-close-btn');
+            if (close) header.insertBefore(tools, close); else header.appendChild(tools);
+        }
+        return tools;
+    }
+
     function layoutDashboard() {
         const page = document.getElementById('dashboard');
         const feed = document.getElementById('newsFeed');
@@ -115,12 +134,6 @@
         const old = items.filter(n => !highlight.has(keyOf(n)));
         feed.dataset.pcfNews = '1';
         feed.innerHTML = `
-            <div class="pcf-news-bar">
-                <label style="display:flex;gap:6px;align-items:center;cursor:pointer;">
-                    <input type="checkbox" id="pcfNewsOnlyNew" ${onlyNew ? 'checked' : ''}> Solo nuevas
-                </label>
-                <button class="btn btn-sm" id="pcfNewsMarkAll" ${fresh.length ? '' : 'disabled'}>✓ Marcar todo como leído</button>
-            </div>
             <div class="pcf-news-col fresh">
                 <div class="pcf-news-head" style="color:var(--pcf-gold,#ffd24a)">🆕 Nuevas <span class="news-badge" style="background:#c98a00">${fresh.length}</span></div>
                 <div class="pcf-news-hint">Lo que ha pasado desde tu última visita.</div>
@@ -130,8 +143,12 @@
                 <div class="pcf-news-head" style="color:#9fc4f2">🗂️ Anteriores <span class="news-badge" style="background:#455a64">${old.length}</span></div>
                 <div style="max-height:46vh;overflow-y:auto;padding-right:4px">${old.map(n => itemHtml(n, false)).join('')}</div>
             </div>`}`;
-        feed.querySelector('#pcfNewsOnlyNew').onchange = e => { onlyNew = e.target.checked; render(); };
-        feed.querySelector('#pcfNewsMarkAll').onclick = () => { highlight = new Set(); markAllRead(); render(); };
+        // Controles de la cabecera (se crean una vez; aquí solo se sincroniza su estado)
+        const tools = ensureHeaderTools();
+        if (tools) {
+            tools.querySelector('#pcfNewsOnlyNew').checked = onlyNew;
+            tools.querySelector('#pcfNewsMarkAll').disabled = !fresh.length;
+        }
         rendering = false;
         updateBadge();
     }
@@ -189,7 +206,7 @@
         if (feed && !feed._pcfObs) {
             feed._pcfObs = new MutationObserver(() => {
                 if (rendering) return;
-                if (!feed.querySelector('.pcf-news-bar')) render();
+                if (!feed.querySelector('.pcf-news-col.fresh')) render();
             });
             feed._pcfObs.observe(feed, { childList: true });
         }
