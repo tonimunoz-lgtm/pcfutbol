@@ -241,7 +241,7 @@ function renderSquadList(squad, currentTeam) {
         return `  
             <tr style="${p.club === currentTeam ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
-                <td>${escapeHTML(p.name)}</td>  
+                <td class="pcf-sq-name" data-k="${escapeHTML(String(p.id ?? p.name))}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Ver ficha del jugador">${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong>${(p.ovrSeasonStart !== undefined && p.overall > p.ovrSeasonStart) ? `<small style="color:#1b5e20;font-weight:800;margin-left:4px" title="Ha mejorado ${p.overall - p.ovrSeasonStart} esta temporada">▲${p.overall - p.ovrSeasonStart}</small>` : ''}</td>  
                 <td>${p.potential}</td>  
                 <td>${p.age}</td>  
@@ -318,6 +318,19 @@ function renderSquadList(squad, currentTeam) {
     }).join('');  
   
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
+    // Pulsar el nombre de un jugador de la plantilla abre su ficha (la misma que se abre desde la alineación)
+    if (!list._pcfCardBound) {
+        list._pcfCardBound = true;
+        list.addEventListener('click', e => {
+            const td = e.target.closest && e.target.closest('td.pcf-sq-name');
+            if (!td) return;
+            const gs = window.gameLogic && window.gameLogic.getGameState && window.gameLogic.getGameState();
+            const p = ((gs && gs.squad) || []).find(x => String(x.id ?? x.name) === td.dataset.k);
+            if (!p) return;
+            if (typeof window.pcfOpenPlayerCard === 'function') window.pcfOpenPlayerCard(p);
+            else if (typeof window.openPlayerModal === 'function') window.openPlayerModal(p);
+        });
+    }
 } 
   
 function renderAcademyList(academy) {  
