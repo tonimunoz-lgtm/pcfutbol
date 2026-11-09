@@ -57,29 +57,78 @@ window.cacheTeamData = (name, data) => teamCache.set(name, structuredClone(data)
 // Acceso síncrono a lo ya leído (la interfaz lo usa para los escudos si localStorage no los tiene)
 window.getCachedTeamData = name => teamCache.get(name);
 let catalogTask;
+// ── Copia persistente del catálogo en este dispositivo (IndexedDB) ───────────────────────────────────────────────
+// localStorage no sirve para esto: con 5 MB no caben ni la mitad de los equipos con su escudo. Con la copia, si la red va
+// lenta o falla se usa el catálogo de la última vez en vez de generar plantillas locales sin escudos.
+const IDB_NAME = 'pcf_catalog', IDB_STORE = 'kv';
+function idbOpen() {
+    return new Promise((resolve, reject) => {
+        const r = indexedDB.open(IDB_NAME, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+    });
+}
+async function idbLoad() {
+    try {
+        const db = await idbOpen();
+        try { return await new Promise((resolve, reject) => { const q = db.transaction(IDB_STORE).objectStore(IDB_STORE).get('catalog'); q.onsuccess = () => resolve(q.result || null); q.onerror = () => reject(q.error); }); }
+        finally { db.close(); }
+    } catch (e) { return null; }
+}
+async function idbSave(data) {
+    try {
+        const db = await idbOpen();
+        try { await new Promise((resolve, reject) => { const tx = db.transaction(IDB_STORE, 'readwrite'); tx.objectStore(IDB_STORE).put(data, 'catalog'); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
+        finally { db.close(); }
+    } catch (e) { /* sin IndexedDB: se sigue sin copia */ }
+}
+window.__pcfCatalogIDB = { load: idbLoad, save: idbSave };
+// Tiempo máximo de espera al catálogo: corto si hay copia guardada (se usa esa), largo si no hay nada con lo que seguir.
+const catalogLimits = () => window.pcfCatalogLimits || { withCache: 6000, noCache: 25000 };
 // One catalog read per session; no default writes from ordinary players.
-window.preloadTeamCatalog = function({retry=false}={}) {
+window.preloadTeamCatalog = function({retry=false, quiet=false}={}) {
     if (catalogTask && !retry) return catalogTask;
-    let timeout;
-    const request=(async()=>{
-        // Firebase habilitado pero aún sin inicializar (arranque): se espera un poco en vez de dar el catálogo por perdido,
-        // porque el resultado «sin conexión» se queda guardado para toda la sesión.
-        if(window.firebaseConfig?.enabled && !window.firebaseDB){ for(let i=0;i<20 && !window.firebaseDB;i++) await new Promise(r=>setTimeout(r,250)); }
-        if(!window.firebaseConfig?.enabled || !window.firebaseDB) return false;
-        await window.authReadyPromise;
-        const result=await window.getAllTeamsDataFromFirebase();
-        if(!result.success) throw new Error(result.error||'Catálogo no disponible');
-        return result.data;
-    })();
-    // Si el catálogo llega después del límite de 6 s, la memoria se rellena igualmente (los escudos aparecerán al repintar)
-    request.then(data=>{ if(data) for(const [name,value] of Object.entries(data)) if(!teamCache.has(name)) teamCache.set(name,value); }).catch(()=>{});
-    catalogTask=Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('El catálogo ha tardado más de 6 segundos')),6000);})])
-        .then(data=>{
-            window.pcfCatalogOffline=!data;
-            if(data)for(const [name,value] of Object.entries(data))teamCache.set(name,value);
+    catalogTask = (async () => {
+        const cached = await idbLoad();
+        const limit = cached ? catalogLimits().withCache : catalogLimits().noCache;
+        const request = (async () => {
+            // Firebase habilitado pero aún sin inicializar (arranque): se espera un poco en vez de dar el catálogo por perdido,
+            // porque el resultado «sin conexión» se queda guardado para toda la sesión.
+            if (window.firebaseConfig?.enabled && !window.firebaseDB) { for (let i = 0; i < 20 && !window.firebaseDB; i++) await new Promise(r => setTimeout(r, 250)); }
+            if (!window.firebaseConfig?.enabled || !window.firebaseDB) return false;
+            await window.authReadyPromise;
+            const result = await window.getAllTeamsDataFromFirebase();
+            if (!result.success) throw new Error(result.error || 'Catálogo no disponible');
+            return result.data;
+        })();
+        // Llegue cuando llegue (aunque sea después del límite): memoria y copia del dispositivo se actualizan y la sesión deja de estar «sin catálogo»
+        request.then(data => {
+            if (!data) return;
+            for (const [name, value] of Object.entries(data)) teamCache.set(name, value);
+            window.pcfCatalogOffline = false; window.pcfCatalogFromCache = false;
+            catalogTask = Promise.resolve(true);
+            idbSave(data);
+        }).catch(() => {});
+        let timer, slowNotice;
+        if (!quiet) slowNotice = setTimeout(() => window.pcfToast?.('Cargando el catálogo de equipos… la conexión va lenta', { type: 'info', duration: 7000 }), 1500);
+        try {
+            const data = await Promise.race([request, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`El catálogo ha tardado más de ${Math.round(limit / 1000)} segundos`)), limit); })]);
+            window.pcfCatalogOffline = !data;
+            if (data) for (const [name, value] of Object.entries(data)) teamCache.set(name, value);
             return !!data;
-        }).catch(error=>{window.pcfCatalogOffline=true;console.warn('Catálogo: se usan datos locales',error);return false;})
-        .finally(()=>clearTimeout(timeout));
+        } catch (error) {
+            if (cached) {                                    // red lenta o caída: se usa la copia guardada en este dispositivo
+                for (const [name, value] of Object.entries(cached)) if (!teamCache.has(name)) teamCache.set(name, value);
+                window.pcfCatalogOffline = false; window.pcfCatalogFromCache = true;
+                console.warn('Catálogo: la red va lenta, se usa la copia guardada en este dispositivo', error.message);
+                return true;
+            }
+            window.pcfCatalogOffline = true;
+            console.warn('Catálogo: se usan datos locales', error);
+            return false;
+        } finally { clearTimeout(timer); clearTimeout(slowNotice); }
+    })();
     return catalogTask;
 };
 // Al CARGAR una partida guardada no se pasa por la selección de equipo, que es lo que traía el catálogo (con los escudos):
@@ -89,7 +138,7 @@ function preloadAfterLoad(tries = 0) {
     const st = window.gameLogic?.getGameState?.();
     if (!st || !st.team) return;                    // sin partida activa (arranque, pantalla de inicio): no se toca el catálogo
     if (!window.firebaseConfig?.enabled || !window.firebaseDB) { if (tries < 40) setTimeout(() => preloadAfterLoad(tries + 1), 500); return; }
-    Promise.resolve(window.preloadTeamCatalog?.({ retry: !!window.pcfCatalogOffline }))
+    Promise.resolve(window.preloadTeamCatalog?.({ retry: !!window.pcfCatalogOffline, quiet: true }))
         .then(() => setTimeout(() => { try { window.ui?.refreshUI?.(window.gameLogic?.getViewState?.()); } catch (e) { /* */ } }, 300))
         .catch(() => {});
 }
