@@ -750,15 +750,13 @@
             <!-- PASO 1: Oferta al Jugador -->
             <div id="negotiationStep1" class="negotiation-step">
                 <h2>Paso 1: Ofrecer Contrato Personal a <span id="negotiationPlayerNameStep1"></span></h2>
-                <label for="offeredSalary">Salario Semanal:</label>
-                <input type="number" id="offeredSalary" value="0" min="0" step="100">€
-                
                 <div class="negotiation-incentives">
-                    <div><label for="offeredBonus">Prima por fichaje (€, pago único)</label><input type="number" id="offeredBonus" min="0" step="1000" value="0"></div>
-                    <div><label for="offeredCar">Coche (coste semanal)</label><select id="offeredCar"><option value="0">Sin coche</option><option value="100">Básico · 100 €/sem</option><option value="300">Superior · 300 €/sem</option><option value="700">Lujo · 700 €/sem</option></select></div>
-                    <div><label for="offeredHouse">Casa (coste semanal)</label><select id="offeredHouse"><option value="0">Sin casa</option><option value="250">Piso · 250 €/sem</option><option value="600">Casa · 600 €/sem</option><option value="1500">Lujo · 1.500 €/sem</option></select></div>
-                    <div><label for="offeredMerchPercent">% Merchandising de la semana</label><input type="number" id="offeredMerchPercent" min="0" max="100" step="0.1" value="0"></div>
-                    <div><label for="offeredTicketPercent">% Entradas de la semana</label><input type="number" id="offeredTicketPercent" min="0" max="100" step="0.1" value="0"></div>
+                    <div><label for="offeredSalary">Salario (€/sem)</label><input type="number" id="offeredSalary" value="0" min="0" step="100"></div>
+                    <div><label for="offeredBonus">Prima de fichaje (€)</label><input type="number" id="offeredBonus" min="0" step="1000" value="0"></div>
+                    <div><label for="offeredCar">Coche (€/sem)</label><select id="offeredCar"><option value="0">Sin coche</option><option value="100">Básico · 100 €/sem</option><option value="300">Superior · 300 €/sem</option><option value="700">Lujo · 700 €/sem</option></select></div>
+                    <div><label for="offeredHouse">Casa (€/sem)</label><select id="offeredHouse"><option value="0">Sin casa</option><option value="250">Piso · 250 €/sem</option><option value="600">Casa · 600 €/sem</option><option value="1500">Lujo · 1.500 €/sem</option></select></div>
+                    <div><label for="offeredMerchPercent">% Merchandising sem.</label><input type="number" id="offeredMerchPercent" min="0" max="100" step="0.1" value="0"></div>
+                    <div><label for="offeredTicketPercent">% Entradas sem.</label><input type="number" id="offeredTicketPercent" min="0" max="100" step="0.1" value="0"></div>
                 </div>
                 <button class="btn" onclick="window.submitPlayerOffer()">Hacer Oferta al Jugador</button>
                 <button class="btn" style="background: #c73446;" onclick="window.endNegotiationUI(false)">Cancelar Negociación</button>
@@ -771,20 +769,22 @@
                 
                 <!-- Si es cesión -->
                 <div id="negotiationLoanOffer" style="display: none;">
-                    <label for="loanWageContribution">¿Qué porcentaje de su salario semanal pagarías? (Actual: <span id="loanPlayerSalaryExample"></span>€)</label>
-                    <input type="range" id="loanWageContribution" min="0" max="100" value="50" oninput="document.getElementById('loanWageContributionValue').textContent=this.value+'%'">
-                    <span id="loanWageContributionValue" style="font-weight:800;color:var(--pcf-gold,#ffd24a)">50%</span>
-                    <p class="alert alert-info" id="loanWageSummary"><span id="loanClubContributionInfo" style="display:none"></span></p>
-                    <button class="btn" onclick="window.submitLoanOffer()">Hacer Oferta de Cesión</button>
+                    <div class="neg-grid">
+                        <div><label for="loanWageContribution">% del salario que pagarías <small>(actual: <span id="loanPlayerSalaryExample"></span> €/sem)</small></label>
+                            <div class="neg-range"><input type="range" id="loanWageContribution" min="0" max="100" value="50" oninput="document.getElementById('loanWageContributionValue').textContent=this.value+'%'">
+                            <span id="loanWageContributionValue" style="font-weight:800;color:var(--pcf-gold,#ffd24a)">50%</span></div></div>
+                        <div><p class="alert alert-info" id="loanWageSummary"><span id="loanClubContributionInfo" style="display:none"></span></p></div>
+                    </div>
+                    <button class="btn" onclick="window.submitLoanOffer()">Hacer oferta de cesión</button>
                 </div>
                 
                 <!-- Si es traspaso -->
                 <div id="negotiationTransferOffer" style="display: none;">
-                    <label for="offerAmount">Cantidad de Traspaso:</label>
-                    <input type="number" id="offerAmount" value="0" min="0" step="1000">€
-                    <label style="margin-top: 15px;">Jugadores a incluir en el intercambio (opcional):</label>
-                    <select id="playerExchangeSelect" multiple style="min-height: 100px;"></select>
-                    <button class="btn" onclick="window.submitTransferOffer()">Hacer Oferta de Traspaso</button>
+                    <div class="neg-grid">
+                        <div><label for="offerAmount">Cantidad de traspaso (€)</label><input type="number" id="offerAmount" value="0" min="0" step="1000"></div>
+                        <div><label>Jugadores a incluir (opcional)</label><select id="playerExchangeSelect" multiple style="min-height: 100px;"></select></div>
+                    </div>
+                    <button class="btn" onclick="window.submitTransferOffer()">Hacer oferta de traspaso</button>
                 </div>
                 <button class="btn" style="background: #c73446; margin-top: 10px;" onclick="window.endNegotiationUI(false)">Cancelar Negociación</button>
             </div>

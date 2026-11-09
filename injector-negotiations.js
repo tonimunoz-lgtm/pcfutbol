@@ -383,17 +383,18 @@
     (function () {
         const css = document.createElement('style');
         css.textContent = `
-        #negotiationModal .negotiation-incentives{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
-        #negotiationModal .negotiation-incentives > div{margin:0;padding:0;position:relative}
-        #negotiationModal .negotiation-incentives input[type=checkbox]{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
-        #negotiationModal .negotiation-incentives label{display:inline-flex;align-items:center;gap:7px;margin:0;padding:6px 13px;border-radius:16px;cursor:pointer;
-            background:rgba(255,255,255,.06);border:1px solid rgba(122,160,212,.45);color:#cfe0ff;font-size:.84rem;font-weight:700;user-select:none;transition:all .15s}
-        #negotiationModal .negotiation-incentives label::before{content:'+';display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
-            background:rgba(255,255,255,.15);font-size:.8rem;line-height:1}
-        #negotiationModal .negotiation-incentives label:hover{border-color:var(--pcf-gold,#ffd24a)}
-        #negotiationModal .negotiation-incentives input:checked + label{background:rgba(255,210,74,.18);border-color:var(--pcf-gold,#ffd24a);color:#fff}
-        #negotiationModal .negotiation-incentives input:checked + label::before{content:'✓';background:var(--pcf-gold,#ffd24a);color:#06142e}
-        #negotiationModal .negotiation-incentives input:focus-visible + label{outline:2px solid #fff}
+        /* Formulario de oferta en cuadrícula de dos columnas (etiqueta arriba, campo debajo) */
+        #negotiationModal .negotiation-incentives, #negotiationModal .neg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin:12px 0 16px;align-items:start}
+        #negotiationModal .negotiation-incentives > div, #negotiationModal .neg-grid > div{margin:0;padding:0;min-width:0}
+        #negotiationModal .negotiation-incentives label, #negotiationModal .neg-grid label{display:block;margin:0 0 4px;padding:0;background:none;border:0;border-radius:0;
+            font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a9c0e6;cursor:default}
+        #negotiationModal .negotiation-incentives label small, #negotiationModal .neg-grid label small{text-transform:none;letter-spacing:0;font-weight:500;opacity:.85}
+        #negotiationModal .negotiation-incentives input, #negotiationModal .negotiation-incentives select,
+        #negotiationModal .neg-grid input:not([type=range]), #negotiationModal .neg-grid select{width:100% !important;max-width:100% !important;box-sizing:border-box !important;min-width:0}
+        #negotiationModal .neg-range{display:flex;align-items:center;gap:12px}
+        #negotiationModal .neg-range input[type=range]{flex:1 1 auto;width:auto !important;min-width:0}
+        #negotiationModal .neg-range span{flex:0 0 auto;min-width:3.2em;text-align:right}
+        #negotiationModal #pcfShirtOffer{grid-column:1 / -1}
         #pcfExchange{margin:6px 0 12px}
         #pcfExchange .pcf-ex-grid{display:flex;flex-wrap:wrap;gap:7px;max-height:200px;overflow-y:auto;padding:2px}
         .pcf-chip-btn{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 12px;border-radius:6px;cursor:pointer;text-align:left;
