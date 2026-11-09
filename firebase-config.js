@@ -215,7 +215,6 @@ async function getAllTeamsDataFromFirebase() {
         const allData = {};  
         querySnapshot.forEach((d) => {  
             allData[d.id] = d.data();  
-            try { window.cacheTeamData?.(d.id, d.data()); } catch (_) {}
             try { localStorage.setItem(`team_data_${d.id}`, JSON.stringify(d.data())); } catch (_) {}  
         });  
         return { success: true, data: allData };  

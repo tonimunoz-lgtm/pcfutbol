@@ -62,12 +62,17 @@ window.preloadTeamCatalog = function({retry=false}={}) {
     if (catalogTask && !retry) return catalogTask;
     let timeout;
     const request=(async()=>{
+        // Firebase habilitado pero aún sin inicializar (arranque): se espera un poco en vez de dar el catálogo por perdido,
+        // porque el resultado «sin conexión» se queda guardado para toda la sesión.
+        if(window.firebaseConfig?.enabled && !window.firebaseDB){ for(let i=0;i<20 && !window.firebaseDB;i++) await new Promise(r=>setTimeout(r,250)); }
         if(!window.firebaseConfig?.enabled || !window.firebaseDB) return false;
         await window.authReadyPromise;
         const result=await window.getAllTeamsDataFromFirebase();
         if(!result.success) throw new Error(result.error||'Catálogo no disponible');
         return result.data;
     })();
+    // Si el catálogo llega después del límite de 6 s, la memoria se rellena igualmente (los escudos aparecerán al repintar)
+    request.then(data=>{ if(data) for(const [name,value] of Object.entries(data)) if(!teamCache.has(name)) teamCache.set(name,value); }).catch(()=>{});
     catalogTask=Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('El catálogo ha tardado más de 6 segundos')),6000);})])
         .then(data=>{
             window.pcfCatalogOffline=!data;
@@ -80,11 +85,15 @@ window.preloadTeamCatalog = function({retry=false}={}) {
 // Al CARGAR una partida guardada no se pasa por la selección de equipo, que es lo que traía el catálogo (con los escudos):
 // en una partida cargada los escudos dependían de lo que hubiera quedado en localStorage de sesiones anteriores, y la
 // protección de almacenamiento lo vacía si la copia local de la partida no cabe. Se trae aquí, en segundo plano, y se repinta.
-window.addEventListener('pcf:state-replaced', () => {
+function preloadAfterLoad(tries = 0) {
+    const st = window.gameLogic?.getGameState?.();
+    if (!st || !st.team) return;                    // sin partida activa (arranque, pantalla de inicio): no se toca el catálogo
+    if (!window.firebaseConfig?.enabled || !window.firebaseDB) { if (tries < 40) setTimeout(() => preloadAfterLoad(tries + 1), 500); return; }
     Promise.resolve(window.preloadTeamCatalog?.({ retry: !!window.pcfCatalogOffline }))
         .then(() => setTimeout(() => { try { window.ui?.refreshUI?.(window.gameLogic?.getViewState?.()); } catch (e) { /* */ } }, 300))
         .catch(() => {});
-});
+}
+window.addEventListener('pcf:state-replaced', () => setTimeout(() => preloadAfterLoad(0), 300));
 window.getTeamData = function(teamName) {
     if (teamCache.has(teamName)) return Promise.resolve(structuredClone(teamCache.get(teamName)));
     if (teamPending.has(teamName)) return teamPending.get(teamName).then(structuredClone);
