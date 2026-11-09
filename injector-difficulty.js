@@ -36,22 +36,44 @@
         normal: 'Equilibrado. Si el club entra en apuros recibirás ayudas del entorno, con condiciones.',
         hard:   'Ayudas a la mitad y más espaciadas, gastos de estructura +12 %, rivales con más ingresos, objetivos más ajustados y una directiva más exigente.'
     };
+    function ensureDiffStyles() {
+        if (document.getElementById('pcfDiffStyles')) return;
+        const st = document.createElement('style'); st.id = 'pcfDiffStyles';
+        st.textContent = `#pcfDiffModal .pcf-dlg{width:100%;max-width:min(560px,94vw);box-sizing:border-box}
+        #pcfDiffModal .pcf-dlg-body{overflow-x:hidden;max-height:82vh;overflow-y:auto}
+        #pcfDiffModal .pcf-diff-opt{display:block !important;width:100% !important;box-sizing:border-box;text-align:left !important;margin:0 0 8px !important;padding:10px 12px !important;white-space:normal !important;text-transform:none !important;letter-spacing:normal !important;line-height:1.35 !important;height:auto !important;min-height:0 !important}
+        #pcfDiffModal .pcf-diff-opt strong{display:block;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+        #pcfDiffModal .pcf-diff-opt span{display:block;font-size:.85em;font-weight:400;opacity:.92}
+        #pcfDiffModal .pcf-diff-opt.sel{box-shadow:0 0 0 3px #ffd24a, 0 0 12px rgba(255,210,74,.45) !important;filter:brightness(1.12)}
+        #pcfDiffModal .pcf-diff-foot{display:flex;gap:10px;margin-top:12px;position:sticky;bottom:0;padding-top:6px}
+        #pcfDiffModal .pcf-diff-foot .btn{flex:1;min-height:46px}`;
+        document.head.appendChild(st);
+    }
+    // Se elige una opción (se marca) y se confirma con «Aceptar». En la primera elección de una partida no se puede cancelar.
     function chooseDifficulty(current) {
         return new Promise(resolve => {
             document.getElementById('pcfDiffModal')?.remove();
-            window.pcfEnsureDialogStyles?.();
+            window.pcfEnsureDialogStyles?.(); ensureDiffStyles();
+            const first = gs()?.difficultyChosen === undefined;
+            let sel = current || 'normal';
             const back = document.createElement('div');
             back.id = 'pcfDiffModal'; back.className = 'pcf-dlg-back';
             back.innerHTML = `<div class="pcf-dlg" role="dialog" aria-modal="true"><h3>⚙️ Dificultad</h3>
                 <div class="pcf-dlg-body" style="white-space:normal">
-                    <p style="margin:0 0 10px">Elige cómo quieres jugar. Puedes cambiarla después desde Noticias.</p>
-                    ${['easy', 'normal', 'hard'].map(k => `<button type="button" class="btn" data-lv="${k}" style="display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px;${current === k ? 'box-shadow:0 0 0 2px #ffd24a inset;' : ''}">
-                        <strong>${window.pcfDifficulty.LEVELS[k].label}${current === k ? ' (actual)' : ''}</strong><br><span style="font-size:.85em;opacity:.85">${DESC[k]}</span></button>`).join('')}
+                    <p style="margin:0 0 10px">Elige cómo quieres jugar. Puedes cambiarla después desde Decisiones.</p>
+                    ${['easy', 'normal', 'hard'].map(k => `<button type="button" class="btn pcf-diff-opt${sel === k ? ' sel' : ''}" data-lv="${k}" aria-pressed="${sel === k}">
+                        <strong>${window.pcfDifficulty.LEVELS[k].label}${current === k ? ' (actual)' : ''}</strong><span>${DESC[k]}</span></button>`).join('')}
+                    <div class="pcf-diff-foot">${first ? '' : '<button type="button" class="btn" id="pcfDiffCancel">Cancelar</button>'}<button type="button" class="btn" id="pcfDiffOk">Aceptar</button></div>
                 </div></div>`;
             const done = k => { back.remove(); document.removeEventListener('keydown', onKey, true); resolve(k); };
-            const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(current || 'normal'); } };
+            const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(first ? sel : (current || 'normal')); } else if (e.key === 'Enter') { e.stopPropagation(); done(sel); } };
             document.addEventListener('keydown', onKey, true);
-            back.querySelectorAll('[data-lv]').forEach(b => { b.onclick = () => done(b.dataset.lv); });
+            back.querySelectorAll('[data-lv]').forEach(b => {
+                b.onclick = () => { sel = b.dataset.lv; back.querySelectorAll('[data-lv]').forEach(x => { const on = x.dataset.lv === sel; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); }); };
+                b.ondblclick = () => done(b.dataset.lv);          // doble clic = elegir y aceptar
+            });
+            back.querySelector('#pcfDiffOk').onclick = () => done(sel);
+            back.querySelector('#pcfDiffCancel')?.addEventListener('click', () => done(current || 'normal'));
             document.body.appendChild(back);
         });
     }
