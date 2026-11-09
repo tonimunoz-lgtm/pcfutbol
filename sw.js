@@ -1,6 +1,6 @@
 // Service worker mínimo: red primero y copia de respaldo (solo mismo origen).
 // Firebase y otros dominios externos NO se tocan. Sube CACHE al publicar una versión nueva.
-const CACHE = 'pcf-static-2026-11-08-r28';
+const CACHE = 'pcf-static-2026-11-08-r29';
 const CORE = ['./', './index.html', './style.css', './pcf6-theme.css', './pcf-mobile.css', './pcf-pwa.css', './pcf-mobile-fixes.css', './manifest.webmanifest'];
 self.addEventListener('install', e => e.waitUntil(
     caches.open(CACHE)

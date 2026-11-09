@@ -6,8 +6,16 @@ import { ATTRIBUTES, POSITIONS, STAFF_ROLES, FORMATIONS, PRESEASON_WEEKS } from 
   
 // ui.js - Añadir al principio del archivo
 
+// Escudos: la copia en localStorage puede haber sido liberada por la protección de almacenamiento (o no caber); si es así
+// se usa el catálogo en memoria. Devuelve texto JSON (solo con el logo en ese caso) o null.
+function readStoredTeam(teamName) {
+    try { const raw = localStorage.getItem(`team_data_${teamName}`); if (raw) return raw; } catch (e) { /* */ }
+    const mem = window.getCachedTeamData && window.getCachedTeamData(teamName);
+    return mem && mem.logo ? JSON.stringify({ logo: mem.logo }) : null;
+}
+
 function getTeamLogo(teamName, size = '25px') {
-    const storedData = localStorage.getItem(`team_data_${teamName}`);
+    const storedData = readStoredTeam(teamName);
     if (storedData) {
         const teamData = JSON.parse(storedData);
         if (teamData.logo) {
@@ -81,7 +89,7 @@ function getTeamLogo(teamName, size = '25px') {
 
         // Obtener logo del equipo
         let teamLogo = '';
-        const storedData = localStorage.getItem(`team_data_${team}`);
+        const storedData = readStoredTeam(team);
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
@@ -160,7 +168,7 @@ function renderStandingsTable(state) {
         const rowClass = isMyTeam ? 'my-team-row' : '';
 
         let teamLogo = '';
-        const storedData = localStorage.getItem(`team_data_${team}`);
+        const storedData = readStoredTeam(team);
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
@@ -738,7 +746,7 @@ function refreshUI(state) {
     // Actualizar header con logo
     const teamNameElement = document.getElementById('teamName');
     if (teamNameElement && state.team) {
-        const storedData = localStorage.getItem(`team_data_${state.team}`);
+        const storedData = readStoredTeam(state.team);
         if (storedData) {
             const teamData = JSON.parse(storedData);
             if (teamData.logo) {
@@ -848,7 +856,7 @@ function renderNegotiationsList(state) {
 
 // Función para renderizar logo del equipo
 function renderTeamLogo(teamName, size = '30px') {
-    const storedData = localStorage.getItem(`team_data_${teamName}`);
+    const storedData = readStoredTeam(teamName);
     if (storedData) {
         const teamData = JSON.parse(storedData);
         if (teamData.logo) {

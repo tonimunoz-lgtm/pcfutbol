@@ -54,6 +54,8 @@ import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta d
 const teamCache = new Map();
 const teamPending = new Map();
 window.cacheTeamData = (name, data) => teamCache.set(name, structuredClone(data));
+// Acceso síncrono a lo ya leído (la interfaz lo usa para los escudos si localStorage no los tiene)
+window.getCachedTeamData = name => teamCache.get(name);
 let catalogTask;
 // One catalog read per session; no default writes from ordinary players.
 window.preloadTeamCatalog = function({retry=false}={}) {
@@ -75,6 +77,14 @@ window.preloadTeamCatalog = function({retry=false}={}) {
         .finally(()=>clearTimeout(timeout));
     return catalogTask;
 };
+// Al CARGAR una partida guardada no se pasa por la selección de equipo, que es lo que traía el catálogo (con los escudos):
+// en una partida cargada los escudos dependían de lo que hubiera quedado en localStorage de sesiones anteriores, y la
+// protección de almacenamiento lo vacía si la copia local de la partida no cabe. Se trae aquí, en segundo plano, y se repinta.
+window.addEventListener('pcf:state-replaced', () => {
+    Promise.resolve(window.preloadTeamCatalog?.({ retry: !!window.pcfCatalogOffline }))
+        .then(() => setTimeout(() => { try { window.ui?.refreshUI?.(window.gameLogic?.getViewState?.()); } catch (e) { /* */ } }, 300))
+        .catch(() => {});
+});
 window.getTeamData = function(teamName) {
     if (teamCache.has(teamName)) return Promise.resolve(structuredClone(teamCache.get(teamName)));
     if (teamPending.has(teamName)) return teamPending.get(teamName).then(structuredClone);
