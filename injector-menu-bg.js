@@ -7,7 +7,7 @@
 (function () {
     'use strict';
     if (window.PCF_MENU_BG === false) return;
-    const IMG = { src: 'assets/imagenes/fondo-menu.webp', w: 1818, h: 865, cx: 907, cy: 410 };   // cx, cy: centro del círculo en la imagen
+    const IMG = { src: 'assets/imagenes/fondo-menu.webp', w: 1818, h: 865, cx: 907, cy: 410, lens: 246 };   // cx, cy: centro de la lente en la imagen; lens: diámetro de su cristal interior
     const css = document.createElement('style');
     css.id = 'pcfMenuBgStyles';
     css.textContent = `
@@ -28,20 +28,28 @@
         document.body.classList.add('pcf-menu-bg');
         const L = layout.getBoundingClientRect(), C = circle.getBoundingClientRect();
         if (!L.width || !L.height) return;                                   // menú oculto (hay una página abierta)
-        if (window.innerWidth <= 760 || C.width > 400 || C.width < 100) { layout.style.backgroundSize = ''; layout.style.backgroundPosition = ''; return; }
+        if (window.innerWidth <= 760 || C.width > 400 || C.width < 100) { layout.style.backgroundSize = ''; layout.style.backgroundPosition = ''; layout.style.removeProperty('--pcf-circle-d'); return; }
         const S = Math.max(L.width / IMG.w, L.height / IMG.h) * 1.04;          // escala «cover» con un poco de margen
         const dw = IMG.w * S, dh = IMG.h * S;
         const ccx = C.left + C.width / 2 - L.left, ccy = C.top + C.height / 2 - L.top;
         // el punto (cx, cy) de la imagen debe caer en el centro del círculo real; sin dejar huecos en los bordes
         const x = Math.min(0, Math.max(L.width - dw, ccx - IMG.cx * S));
         const y = Math.min(0, Math.max(L.height - dh, ccy - IMG.cy * S));
+        // el círculo real tapa justo el cristal de la lente de la imagen: se ve su aro metálico alrededor
+        layout.style.setProperty('--pcf-circle-d', Math.round(Math.min(Math.max(IMG.lens * S, 190), L.height * 0.46)) + 'px');
         layout.style.backgroundSize = `${dw}px ${dh}px`;
         layout.style.backgroundPosition = `${x}px ${y}px`;
     }
-    const kick = () => requestAnimationFrame(align);
+    // Identidad por secciones: cada pantalla toma el color de su cuadrante del menú (ver pcf-menu-theme.css)
+    const SECTION = { info: ['dashboard', 'standings', 'calendar', 'last-result', 'trophies', 'museum'], team: ['lineup', 'tactics', 'rival-analysis'],
+        market: ['transfers', 'negotiations', 'squad', 'academy'], mgmt: ['staff', 'finance', 'commercial', 'facilities'] };
+    function tagPages() {
+        for (const [sec, ids] of Object.entries(SECTION)) for (const id of ids) { const el = document.getElementById(id); if (el && el.dataset.section !== sec) el.dataset.section = sec; }
+    }
+    const kick = () => { tagPages(); requestAnimationFrame(align); };
     window.addEventListener('resize', kick);
     window.addEventListener('load', kick);
     document.fonts?.ready?.then(kick);
     if (window.ResizeObserver) { const t = setInterval(() => { const l = document.querySelector('.main-layout'); if (l) { new ResizeObserver(kick).observe(l); clearInterval(t); kick(); } }, 300); }
-    setInterval(align, 2000);                                               // por si el menú vuelve a mostrarse tras cerrar una página
+    setInterval(() => { tagPages(); align(); }, 2000);                                               // por si el menú vuelve a mostrarse tras cerrar una página
 })();
