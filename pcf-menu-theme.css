@@ -42,7 +42,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     /* Cuadrante: título arriba, botones, lema abajo (también en los inferiores) */
     body .main-layout .quadrant {
         display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
-        gap: clamp(5px, .9vh, 10px); padding: clamp(6px, 1.2vh, 14px) 7% clamp(5px, .8vh, 10px);
+        gap: clamp(4px, .7vh, 8px); padding: clamp(6px, 1.2vh, 14px) 7% clamp(3px, .5vh, 8px);
         background: transparent; border: 0; box-shadow: none;     /* la cruz de líneas es la de la imagen de fondo */
     }
     body .main-layout .main-center-row { background: none !important; border: 0 !important; box-shadow: none !important; }
@@ -60,30 +60,40 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     /* Botones de la fila central: junto al círculo, no pegados a los bordes */
     body .main-layout .main-center-row .center-buttons.left  { justify-content: flex-end;  margin-right: clamp(14px, 4vw, 70px); }
     body .main-layout .main-center-row .center-buttons.right { justify-content: flex-start; margin-left:  clamp(14px, 4vw, 70px); }
-    /* Placa de título (trapecio con borde de color) */
+    /* Placa de título: la forma (trapecio con borde) se dibuja en ::before; así el icono grande puede sobresalir de ella */
     body .main-layout .quadrant .section-title {
-        order: -1; flex: 0 0 auto; margin: 0 0 2px; padding: clamp(3px, .7vh, 8px) 26px;
-        display: flex; align-items: center; justify-content: center; gap: 12px;
+        order: -1; flex: 0 0 auto; margin: 0 0 2px; position: relative; isolation: isolate; overflow: visible;
+        padding: clamp(2px, .5vh, 6px) 26px clamp(2px, .5vh, 6px) calc(var(--icon) * 1.15);
+        display: flex; align-items: center; justify-content: center; min-height: clamp(30px, 4.8vh, 46px);
         font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.2rem, 2.6vh, 1.8rem); letter-spacing: .07em; color: #fff;
-        text-shadow: 0 2px 6px rgba(0,0,0,.7);
+        text-shadow: 0 2px 6px rgba(0,0,0,.7); background: none; border: 0; clip-path: none; box-shadow: none;
+    }
+    body .main-layout .quadrant .section-title::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box;
         background: linear-gradient(180deg, color-mix(in srgb, var(--c-mid) 38%, #0a2a5a) 0%, #061530 100%);
-        border: 2px solid var(--c-edge); border-radius: 0; clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%);
+        border: 2px solid var(--c-edge); clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%);
         box-shadow: inset 0 0 18px var(--c-glow), inset 0 1px 0 rgba(255,255,255,.35);
     }
-    body .main-layout .quadrant .section-title img.pcf-ui-icon { width: clamp(30px, 4.6vh, 46px); height: clamp(30px, 4.6vh, 46px); flex: 0 0 auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
-    /* Botones: icono a un lado según el cuadrante */
+    body .main-layout .quadrant .section-title img.pcf-ui-icon {
+        position: absolute; left: 3%; top: 50%; transform: translateY(-58%); width: calc(var(--icon) * 1.2); height: calc(var(--icon) * 1.2);
+        flex: none; z-index: 2; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0,0,0,.65));
+    }
+    /* Botones: icono grande que sobresale del botón (lado izquierdo, o derecho en Equipo y Gestión) */
+    body .main-layout .quadrant { --icon: clamp(40px, 5.8vh, 60px); overflow: visible; padding-top: clamp(16px, 2.6vh, 28px); }
     body .main-layout .quadrant .menu-button {
         position: relative; width: var(--colw); max-width: var(--colw); margin: 0; flex: 1 1 0; min-height: 30px; max-height: clamp(40px, 6.4vh, 58px);
-        display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; padding: 0 16px;
-        font-size: clamp(.95rem, 2.3vh, 1.3rem); text-align: left;
+        display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; overflow: visible;
+        padding: 0 16px 0 calc(var(--icon) * .98); font-size: clamp(.95rem, 2.3vh, 1.3rem); text-align: left;
     }
-    body .main-layout .quadrant.top-right .menu-button, body .main-layout .quadrant.bottom-right .menu-button { flex-direction: row-reverse; text-align: right; }
+    body .main-layout .quadrant.top-right .menu-button, body .main-layout .quadrant.bottom-right .menu-button { flex-direction: row; justify-content: flex-end; text-align: right; padding: 0 calc(var(--icon) * .98) 0 16px; }
     body .main-layout .quadrant .menu-button::before {
-        position: static !important; transform: none !important; left: auto !important; right: auto !important; top: auto !important;
-        width: clamp(26px, 4.2vh, 40px) !important; height: clamp(26px, 4.2vh, 40px) !important; flex: 0 0 auto; margin: 0; background-position: center;
+        content: '' !important; position: absolute !important; top: 50% !important; left: calc(var(--icon) * -.18) !important; right: auto !important;
+        transform: translateY(-50%) !important; width: var(--icon) !important; height: var(--icon) !important; margin: 0 !important;
+        background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; pointer-events: none; z-index: 2;
     }
+    body .main-layout .quadrant.top-right .menu-button::before, body .main-layout .quadrant.bottom-right .menu-button::before { left: auto !important; right: calc(var(--icon) * -.18) !important; }
     body .main-layout .quadrant .menu-button > span, body .main-layout .quadrant .menu-button > .pcf-badge { margin-left: auto; }
-    body .main-layout .quadrant.top-right .menu-button > span, body .main-layout .quadrant.bottom-right .menu-button > span { margin-left: 0; margin-right: auto; }
+    body .main-layout .quadrant.top-right .menu-button > span, body .main-layout .quadrant.bottom-right .menu-button > span { margin-left: 0; margin-right: 8px; }
     /* Orden de los botones (arriba → abajo) */
     .quadrant.bottom-left .transfer-icon   { order: 1; } .quadrant.bottom-left .squad-icon     { order: 2; }
     .quadrant.bottom-left .renovation-icon { order: 3; } .quadrant.bottom-left .cantera-icon   { order: 4; }
@@ -91,7 +101,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     .quadrant.bottom-right .cash-icon      { order: 3; } .quadrant.bottom-right .staff-icon     { order: 4; }
     /* Lema inferior de cada cuadrante */
     body .main-layout .quadrant::after {
-        order: 99; margin-top: auto; flex: 0 0 auto; text-align: center; padding: 4px 0;
+        order: 99; margin-top: auto; flex: 0 0 auto; text-align: center; padding: 3px 0;
         font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: clamp(.6rem, 1.4vh, .8rem); letter-spacing: .34em; color: #a8caff;
         background: linear-gradient(180deg, rgba(10,35,80,.78), rgba(4,14,34,.88)); border-top: 1px solid var(--c-edge);
         clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); text-shadow: 0 1px 2px #000;
