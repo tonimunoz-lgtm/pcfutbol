@@ -1095,8 +1095,54 @@
                 });
             } catch (err) {
                 console.error('Error cargando usuarios:', err);
+                if (err && (err.code === 'permission-denied' || /insufficient permissions/i.test(err.message || ''))) { this.renderAdminDenied(tbody); return; }
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#f66;">❌ Error: ${err.message}</td></tr>`;
             }
+        },
+
+        // Firestore deniega el acceso de administrador: las reglas (firestore.rules) exigen que el correo del administrador esté VERIFICADO
+        // (o que la cuenta tenga la marca pcfAdmin). Se explica la causa y se ofrece arreglarlo desde aquí.
+        renderAdminDenied: function(tbody) {
+            const user = window.firebaseAuth && window.firebaseAuth.currentUser;
+            const verified = !!(user && user.emailVerified);
+            const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const cause = verified
+                ? 'Tu correo ya figura como verificado, así que lo más probable es que esta sesión conserve un permiso antiguo (pulsa «Actualizar permisos»), o que las reglas publicadas en Firebase no sean las de <code style="color:#9fd8ff;">firestore.rules</code>.'
+                : `Las reglas de Firestore exigen que el correo del administrador (<b style="color:#fff;">${esc(user && user.email)}</b>) esté <b style="color:#ffd24a;">verificado</b>, y esta cuenta todavía no lo está. Envíate el correo de verificación, abre el enlace que recibirás y vuelve aquí a pulsar «Actualizar permisos».`;
+            tbody.innerHTML = `<tr><td colspan="5" style="padding:18px 22px;text-align:left;color:#e6f0ff;line-height:1.5;">
+                <div style="color:#ffd24a;font-weight:800;font-size:1.05em;margin-bottom:6px;">⚠️ Firestore ha denegado el acceso de administrador</div>
+                <div>${cause}</div>
+                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                    ${verified ? '' : '<button class="btn admin-btn-blue" onclick="window.adminBackend.sendVerification()">✉️ Enviar correo de verificación</button>'}
+                    <button class="btn admin-btn-blue" onclick="window.adminBackend.refreshAccess()">🔄 Actualizar permisos</button>
+                </div>
+                <div id="adminVerifyMsg" style="margin-top:10px;color:#9db8e8;font-size:.9em;"></div>
+            </td></tr>`;
+        },
+        sendVerification: async function() {
+            const msg = document.getElementById('adminVerifyMsg');
+            const say = (t, bad) => { if (msg) { msg.textContent = t; msg.style.color = bad ? '#ff8a8a' : '#7dffa0'; } };
+            try {
+                const user = window.firebaseAuth && window.firebaseAuth.currentUser;
+                if (!user) return say('No hay sesión iniciada.', true);
+                const { sendEmailVerification } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                if (typeof sendEmailVerification !== 'function') return say('Esta versión de Firebase no permite enviar el correo desde aquí.', true);
+                await sendEmailVerification(user);
+                say(`Correo enviado a ${user.email}. Ábrelo, pulsa el enlace y vuelve a esta ventana para actualizar los permisos (revisa también la carpeta de spam).`);
+            } catch (e) {
+                say(e && e.code === 'auth/too-many-requests' ? 'Demasiados intentos: espera unos minutos y vuelve a probar.' : 'No se ha podido enviar el correo: ' + (e && e.message || e), true);
+            }
+        },
+        refreshAccess: async function() {
+            const msg = document.getElementById('adminVerifyMsg');
+            try {
+                const user = window.firebaseAuth && window.firebaseAuth.currentUser;
+                if (!user) throw new Error('No hay sesión iniciada.');
+                await user.reload();                       // lee de nuevo si el correo ya está verificado
+                await user.getIdToken(true);               // renueva el token: es el que Firestore usa para comprobar los permisos
+                if (msg) { msg.style.color = '#9db8e8'; msg.textContent = 'Permisos actualizados, volviendo a cargar…'; }
+            } catch (e) { if (msg) { msg.style.color = '#ff8a8a'; msg.textContent = 'No se han podido actualizar los permisos: ' + (e && e.message || e); } return; }
+            this.loadUsers();
         },
 
         toggleSuspend: async function(uid, currentlySuspended) {
