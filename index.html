@@ -1106,13 +1106,19 @@ function renderTeamSelectors() {
         // Crear botones para cada equipo  
         listElement.innerHTML = teamsToRender.map(team => {  
             const safeTeam = team.replace(/'/g, "\\'"); // Escapar comillas simples  
+            // Insignia con iniciales (injector-team-picker.js la sustituye por el escudo cuando el catálogo lo trae) + nombre
+            const words = team.replace(/\b(CF|FC|UD|CD|RCD|SD|CA|AD|SAD|Real|Club|de|del|la|el|RC)\b/gi, '').trim().split(/\s+/).filter(Boolean);
+            const initials = (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || team).slice(0, 2)).toUpperCase();
             return `  
                 <button class="btn" style="width: 100%; margin: 5px 0; background: rgba(233, 69, 96, 0.1); border-color: #e94560; color: #fff;"  
                         onclick="window.selectTeamAndStart('${safeTeam}', '${divisionKey}')">  
-                    ${team}  
+                    <span class="tp-crest" data-team="${encodeURIComponent(team)}">${initials}</span><span class="tp-name">${team}</span>  
                 </button>  
             `;  
         }).join('');  
+        // contador «N equipos» en la cabecera de la categoría (lo pinta el CSS)  
+        const heading = listElement.previousElementSibling;  
+        if (heading && heading.tagName === 'H2') heading.dataset.count = teamsToRender.length;  
     });  
 }  
   
@@ -2342,6 +2348,7 @@ window.onclick = function(event) {
     <script src="./injector-derbies.js"></script>
     <script src="./injector-legacy.js"></script>
     <script src="./injector-menu-bg.js"></script>
+    <script src="./injector-team-picker.js"></script>
 
   
 

@@ -377,3 +377,87 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #gameModeModal .pcf-mode-banner { height: 150px; }
     #gameModeModal .pcf-mode-title { font-size: 1.4rem; white-space: normal; }
 }
+
+/* ============================================================
+   Ventana «Selecciona tu equipo» en el estilo del mockup
+   Mismo fondo y panel que las demás ventanas de inicio · categorías con placa de color · equipos en cuadrícula con insignia o escudo.
+   ============================================================ */
+#selectTeamModal {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(3,10,28,.10) 0%, rgba(3,10,28,.65) 100%),
+        linear-gradient(rgba(3,10,26,.45), rgba(3,10,26,.55)),
+        url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat !important;
+    overflow-y: auto; align-items: flex-start !important; padding: 28px 0 40px;
+}
+#selectTeamModal .modal-content {
+    position: relative; isolation: isolate; overflow: visible; width: min(1060px, 94vw) !important; max-width: none !important; max-height: none !important; height: auto !important; margin: 0 auto !important; padding: 40px 46px 40px !important;
+    background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
+    filter: drop-shadow(0 0 22px rgba(70,150,255,.55)) drop-shadow(0 10px 26px rgba(0,0,0,.7));
+}
+#selectTeamModal .modal-content::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    clip-path: polygon(26px 0, calc(100% - 26px) 0, 100% 26px, 100% calc(100% - 26px), calc(100% - 26px) 100%, 26px 100%, 0 calc(100% - 26px), 0 26px);
+    background: linear-gradient(180deg, rgba(14,44,96,.93) 0%, rgba(8,28,66,.95) 48%, rgba(4,16,40,.97) 100%);
+    box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 38px rgba(70,150,255,.40), inset 0 2px 0 rgba(255,255,255,.35);
+}
+#selectTeamModal .modal-content > h1 {
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.6rem, 3.6vw, 2.3rem); letter-spacing: .05em; text-transform: uppercase;
+    color: #ffd24a; text-align: center; margin: 0 0 6px; text-shadow: 0 0 16px rgba(255,210,74,.5), 0 3px 4px #000;
+}
+#selectTeamModal .modal-content > h1::after { content: ''; display: block; width: 40%; height: 3px; margin: 12px auto 0; background: linear-gradient(90deg, transparent, #ffd24a, transparent); }
+#selectTeamModal .modal-close {
+    position: absolute; top: 18px; right: 22px; width: 38px; height: 38px; border-radius: 4px; font-size: 1.5rem; color: #ffd24a; cursor: pointer; z-index: 3;
+    background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%); border: 1px solid #2a050b;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.6); text-shadow: 0 1px 2px #000;
+}
+/* colores por categoría: Primera = dorado · Segunda = azul · RFEF = verde · Promesas = violeta */
+#selectTeamModal h2:has(+ #primeraList), #primeraList        { --c-hi:#ffe786; --c-mid:#e3ab1e; --c-lo:#b07a00; --c-dk:#5f3d00; --c-edge:#fff2b4; --c-glow:rgba(255,204,70,.60); }
+#selectTeamModal h2:has(+ #segundaList), #segundaList        { --c-hi:#8bbcff; --c-mid:#2f72d9; --c-lo:#1a4cae; --c-dk:#0a2a70; --c-edge:#b3d8ff; --c-glow:rgba(70,150,255,.65); }
+#selectTeamModal h2:has(+ #rfef_grupo1List), #rfef_grupo1List,
+#selectTeamModal h2:has(+ #rfef_grupo2List), #rfef_grupo2List { --c-hi:#7fe597; --c-mid:#22a84f; --c-lo:#137a35; --c-dk:#08461d; --c-edge:#b4f7c4; --c-glow:rgba(70,230,120,.60); }
+#selectTeamModal h2:has(+ #promasasList), #promasasList      { --c-hi:#cdb0ff; --c-mid:#8a55e0; --c-lo:#5a2fa5; --c-dk:#2a1259; --c-edge:#e1ccff; --c-glow:rgba(160,110,255,.60); }
+/* cabecera de cada categoría: placa con degradado y contador «N equipos» (data-count lo pone index.html) */
+#selectTeamModal .modal-content > h2 {
+    display: flex; align-items: center; justify-content: space-between; margin: 30px 0 14px; padding: 7px 26px 7px 22px; position: relative; isolation: isolate;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.45rem; letter-spacing: .06em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.75);
+    background: none; border: 0;
+}
+#selectTeamModal .modal-content > h2::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, var(--c-hi) 0%, var(--c-mid) 46%, var(--c-lo) 54%, var(--c-dk) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4);
+}
+#selectTeamModal .modal-content > h2::after { content: attr(data-count) ' equipos'; font-style: normal; font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.9); }
+/* listas: sin scroll propio, en cuadrícula (solo se desplaza la ventana) */
+#selectTeamModal .team-selection-list {
+    display: grid !important; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px 14px; max-height: none !important; height: auto !important; overflow: visible !important;
+    background: none !important; border: 0 !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important;
+}
+/* botón de equipo: cristal oscuro con borde metálico de la categoría; al pasar el ratón se rellena con su color */
+#selectTeamModal .team-selection-list button.btn {
+    position: relative; display: flex !important; align-items: center; gap: 10px; width: 100% !important; margin: 0 !important; min-height: 46px; padding: 6px 12px !important; text-align: left; cursor: pointer;
+    border: 2px solid transparent !important; border-radius: 10px !important; color: #eaf2ff !important;
+    font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: .98rem; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+    background:
+        linear-gradient(180deg, rgba(18,52,110,.95) 0%, rgba(8,28,66,.97) 100%) padding-box,
+        linear-gradient(180deg, var(--c-edge) 0%, var(--c-lo) 60%, var(--c-dk) 100%) border-box !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 3px 6px rgba(0,0,0,.5) !important; transition: filter .12s ease, transform .1s ease, box-shadow .15s ease;
+}
+#selectTeamModal .team-selection-list button.btn:hover {
+    background: linear-gradient(180deg, var(--c-hi) 0%, var(--c-mid) 40%, var(--c-lo) 54%, var(--c-dk) 100%) padding-box, linear-gradient(180deg, var(--c-edge), var(--c-dk)) border-box !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 6px rgba(0,0,0,.4), 0 0 16px var(--c-glow), 0 4px 8px rgba(0,0,0,.55) !important; transform: translateY(-2px); color: #fff !important;
+}
+#selectTeamModal .team-selection-list button.btn:active { transform: translateY(1px) scale(.99); filter: brightness(.92); }
+.tp-crest { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .68rem; font-weight: 800; letter-spacing: 0; color: #fff;
+    background: radial-gradient(circle at 35% 30%, #5b8be0, #1f4aa6 60%, #0c2563); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 1px 3px rgba(0,0,0,.6); }
+.tp-crest.has-logo { background: none; box-shadow: none; }
+.tp-crest img { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.tp-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 700px) {
+    #selectTeamModal { padding: 12px 0 28px; }
+    #selectTeamModal .modal-content { padding: 30px 14px 26px !important; }
+    #selectTeamModal .modal-close { top: 10px; right: 12px; width: 34px; height: 34px; }
+    #selectTeamModal .team-selection-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    #selectTeamModal .team-selection-list button.btn { font-size: .82rem; padding: 6px 8px !important; gap: 7px; }
+    .tp-crest { width: 26px; height: 26px; font-size: .6rem; }
+}
