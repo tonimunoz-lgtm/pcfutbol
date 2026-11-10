@@ -135,13 +135,13 @@
         feed.dataset.pcfNews = '1';
         feed.innerHTML = `
             <div class="pcf-news-col fresh">
-                <div class="pcf-news-head" style="color:var(--pcf-gold,#ffd24a)">🆕 Nuevas <span class="news-badge" style="background:#c98a00">${fresh.length}</span></div>
+                <div class="pcf-news-head" style="color:var(--pcf-gold,#ffd24a)"><img class="pcf-head-ico" src="assets/iconos/noticias.webp" alt="" aria-hidden="true"> Nuevas <span class="news-badge" style="background:#c98a00">${fresh.length}</span></div>
                 <div class="pcf-news-hint">Lo que ha pasado desde tu última visita.</div>
-                ${fresh.length ? fresh.map(n => itemHtml(n, true)).join('') : '<div class="alert alert-info" style="opacity:.8">No hay noticias nuevas desde tu última visita.</div>'}
+                <div class="pcf-news-scroll fresh-list">${fresh.length ? fresh.map(n => itemHtml(n, true)).join('') : '<div class="alert alert-info" style="opacity:.8">No hay noticias nuevas desde tu última visita.</div>'}</div>
             </div>
             ${onlyNew ? '' : `<div class="pcf-news-col older">
-                <div class="pcf-news-head" style="color:#9fc4f2">🗂️ Anteriores <span class="news-badge" style="background:#455a64">${old.length}</span></div>
-                <div style="max-height:46vh;overflow-y:auto;padding-right:4px">${old.map(n => itemHtml(n, false)).join('')}</div>
+                <div class="pcf-news-head" style="color:#9fc4f2"><img class="pcf-head-ico" src="assets/iconos/calendario.webp" alt="" aria-hidden="true"> Anteriores <span class="news-badge" style="background:#455a64">${old.length}</span></div>
+                <div class="pcf-news-scroll old-list" style="max-height:46vh;overflow-y:auto;padding-right:4px">${old.map(n => itemHtml(n, false)).join('')}</div>
             </div>`}`;
         // Controles de la cabecera (se crean una vez; aquí solo se sincroniza su estado)
         const tools = ensureHeaderTools();

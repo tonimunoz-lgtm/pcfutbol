@@ -143,8 +143,8 @@
         if (!box) {
             box = document.createElement('section');
             box.id = 'trophiesLinkBox'; box.className = 'data-box';
-            box.innerHTML = '<button type="button" class="pcf-hbtn pcf-hbtn-gold pcf-hbtn-lg" id="trophiesLinkBtn">🏆 Sala de trofeos</button>' +
-                '<button type="button" class="pcf-hbtn pcf-hbtn-teal pcf-hbtn-lg" id="museumLinkBtn">🏛️ Museo del club</button>';
+            box.innerHTML = '<button type="button" class="pcf-hbtn pcf-hbtn-gold pcf-hbtn-lg" id="trophiesLinkBtn"><span class="pcf-btn-ico"><img src="assets/iconos/podio.webp" alt="" aria-hidden="true"></span><span class="pcf-btn-txt">Sala de trofeos</span></button>' +
+                '<button type="button" class="pcf-hbtn pcf-hbtn-teal pcf-hbtn-lg" id="museumLinkBtn"><span class="pcf-btn-ico">\u{1F3DB}\uFE0F</span><span class="pcf-btn-txt">Museo del club</span></button>';
             box.querySelector('#trophiesLinkBtn').onclick = () => window.openPage('trophies');
             box.querySelector('#museumLinkBtn').onclick = () => window.openPage('museum');
         }

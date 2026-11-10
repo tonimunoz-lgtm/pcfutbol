@@ -461,3 +461,133 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #selectTeamModal .team-selection-list button.btn { font-size: .82rem; padding: 6px 8px !important; gap: 7px; }
     .tp-crest { width: 26px; height: 26px; font-size: .6rem; }
 }
+
+/* ============================================================
+   Centro de noticias en el estilo del mockup
+   Cabecera en placa + barra · paneles de cristal con placas de título (Urgentes = rojo, Nuevas/Anteriores = azul) · filas con borde dorado
+   · objetivos con marcas · accesos Sala de trofeos / Museo con icono. Solo escritorio (≥ 761 px); el móvil conserva su diseño.
+   ============================================================ */
+/* El dinero de la cabecera (solo escritorio: las fichas son oscuras; en móvil siguen claras): el tema antiguo lo pintaba en verde/rojo oscuro */
+@media (min-width: 761px) {
+    body .header .pcf-header-stats #balanceDisplay[style*="4CAF50"], body .header .pcf-header-stats #balanceDisplay[style*="76, 175, 80"], body .header .pcf-header-stats #balanceDisplay[style*="4caf50"],
+    body .header .pcf-header-stats #balanceDisplay[style*="10, 77, 28"], body .header .pcf-header-stats #balanceDisplay[style*="0a4d1c"] { color: #5dff8c !important; }
+    body .header .pcf-header-stats #balanceDisplay[style*="f44336"], body .header .pcf-header-stats #balanceDisplay[style*="244, 67, 54"],
+    body .header .pcf-header-stats #balanceDisplay[style*="183, 28, 28"], body .header .pcf-header-stats #balanceDisplay[style*="b71c1c"] { color: #ff7b7b !important; }
+}
+
+@media (min-width: 761px) {
+    #dashboard.page { background: #030a1a; padding-bottom: 28px; }
+    #dashboard.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    /* — Cabecera: placa con el título + barra con los botones — */
+    #dashboard .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #dashboard .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #dashboard .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #dashboard .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #dashboard .page-header .page-close-btn {
+        height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #dashboard .page-header .pcf-hbtn { height: 38px; font-style: italic; font-size: .95rem; }
+    /* — Paneles — */
+    #dashboard #pcfNewsGrid { margin: 0 30px; gap: 28px; align-items: start; }
+    /* el scroll vive dentro de cada panel (no en el contenedor), así conservan su borde y su placa */
+    #dashboard #pcfNewsRightCol, #dashboard #newsFeed { height: auto !important; max-height: none !important; overflow: visible !important; }
+    #dashboard .pcf-news-scroll { max-height: clamp(220px, 33vh, 380px); overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: #3f7fe0 rgba(5,18,44,.6); }
+    #dashboard #urgent-panel { max-height: clamp(260px, 42vh, 430px); overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: #3f7fe0 rgba(5,18,44,.6); }
+    #dashboard .pcf-news-scroll.old-list { max-height: clamp(130px, 17vh, 190px) !important; }
+    #dashboard .pcf-news-col {
+        position: relative; margin-top: 34px !important; padding: 56px 20px 18px !important; min-width: 0;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; border: 2px solid #3f7fe0 !important; border-radius: 14px !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 26px rgba(70,150,255,.16) !important;
+    }
+    #dashboard #pcfNewsRightCol > #newsFeed { margin-top: 0 !important; }
+    #dashboard #newsFeed .pcf-news-col + .pcf-news-col { margin-top: 44px !important; }
+    /* placas de título (esquina superior izquierda, sobresaliendo del panel) */
+    #dashboard #pcfNewsUrgentCol h2, #dashboard .pcf-news-col .pcf-news-head {
+        position: absolute; top: -30px; left: -14px; z-index: 3; margin: 0 !important; min-height: 58px; padding: 6px 70px 6px 20px; display: flex; align-items: center; gap: 12px; isolation: isolate;
+        font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; font-size: 1.8rem !important; letter-spacing: .04em; text-transform: uppercase; color: #fff !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,.75); white-space: nowrap;
+    }
+    #dashboard #pcfNewsUrgentCol h2::before, #dashboard .pcf-news-col .pcf-news-head::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 20px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.3);
+    }
+    #dashboard #pcfNewsUrgentCol h2::before { background: linear-gradient(180deg, #ff8a8a 0%, #c9283a 46%, #8e1020 54%, #4d0610 100%); box-shadow: inset 0 0 0 2px #ffb0b0, inset 0 0 20px rgba(255,90,90,.45), inset 0 2px 0 rgba(255,255,255,.4); }
+    #dashboard .pcf-news-col.older .pcf-news-head::before { background: linear-gradient(180deg, #355a92 0%, #1b3868 48%, #0d2147 100%); }
+    #dashboard #pcfNewsUrgentCol h2 img.pcf-st-icon { width: 46px; height: 46px; flex: none; margin: -4px 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    #dashboard .pcf-news-col .pcf-news-head img.pcf-head-ico { width: 52px; height: 52px; flex: none; margin: -6px 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    #dashboard #urgent-count, #dashboard .pcf-news-head .news-badge {
+        display: inline-flex !important; align-items: center; justify-content: center; min-width: 34px; padding: 1px 12px !important; border-radius: 16px !important; font-style: normal; font-weight: 800; font-size: 1.05rem !important; color: #3a2400 !important;
+        background: linear-gradient(180deg, #ffe08a 0%, #e7a321 50%, #a86a00 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 3px rgba(0,0,0,.6); text-shadow: none;
+    }
+    #dashboard #urgent-count:empty { display: none !important; }
+    #dashboard .pcf-news-hint { color: #d3e3ff; font-size: .98rem; margin: 0 0 14px; line-height: 1.4; }
+    /* — Filas de acciones urgentes — */
+    #dashboard #urgent-panel > div[style*="display: flex"] {
+        align-items: center !important; padding: 12px 14px !important; margin-bottom: 10px !important; border-radius: 10px !important; border: 1px solid rgba(76,143,255,.35) !important; border-left: 5px solid #ffc107 !important;
+        background: linear-gradient(180deg, rgba(14,38,86,.92), rgba(5,18,44,.96)) !important; box-shadow: inset 0 0 14px rgba(70,150,255,.12), 0 2px 5px rgba(0,0,0,.45);
+    }
+    #dashboard #urgent-panel > div[style*="607D8B"] { border-left-color: #6fa0d8 !important; }
+    #dashboard #urgent-panel div[style*="font-weight: bold"] { color: #ffd24a !important; font-size: 1.05rem !important; }
+    #dashboard #urgent-panel div[style*="color: #bbb"] { color: #c3d7f7 !important; font-size: .9rem !important; }
+    #dashboard #urgent-panel div[style*="607D8B"] div[style*="font-weight: bold"] { color: #9cc5f5 !important; }
+    #dashboard #urgent-panel img.pcf-st-icon { width: 38px; height: 38px; }
+    #dashboard #urgent-panel > div[style*="text-transform: uppercase"] {
+        display: flex; align-items: center; gap: 12px; margin: 12px 0 10px !important; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important;
+        color: #ffd24a !important; font-style: italic; font-weight: 800 !important; font-size: 1.02rem !important; letter-spacing: .06em !important;
+    }
+    #dashboard #urgent-panel > div[style*="text-transform: uppercase"]::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,210,74,.7), transparent); }
+    #dashboard #urgent-panel button[data-alert-id] {
+        flex: none; min-width: 112px; height: 38px; border: 1px solid #06142e !important; border-radius: 6px !important; padding: 0 16px !important; cursor: pointer; color: #fff !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .92rem; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #8bbcff 0%, #2f72d9 40%, #1a4cae 54%, #0a2a70 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.5) !important;
+    }
+    #dashboard #urgent-panel button[data-alert-id]:hover { filter: brightness(1.18); }
+    #dashboard #urgent-panel button[data-alert-id]:active { transform: translateY(1px); filter: brightness(.92); }
+    /* — Filas de noticias — */
+    #dashboard .pcf-news-item {
+        margin: 0 0 10px !important; padding: 12px 16px !important; border-radius: 10px !important; border: 1px solid rgba(76,143,255,.35) !important; border-left: 5px solid #4c8fff !important;
+        background: linear-gradient(180deg, rgba(14,38,86,.92), rgba(5,18,44,.96)) !important; color: #e6f0ff !important; font-weight: 600; font-size: 1.02rem; box-shadow: inset 0 0 14px rgba(70,150,255,.12), 0 2px 5px rgba(0,0,0,.45);
+    }
+    #dashboard .pcf-news-item.is-new { border-left-color: #ffc107 !important; }
+    #dashboard .pcf-news-item.is-new .pcf-news-new { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; color: #ffc107 !important; font-style: italic; font-weight: 800; letter-spacing: .08em; }
+    #dashboard .pcf-news-col.older .pcf-news-item { color: #a9c0e6 !important; font-weight: 500; }
+    /* — Objetivos con la directiva + accesos — */
+    #dashboard #pcfBoardRow { margin: 8px 30px 0; grid-template-columns: 1.25fr 1fr; gap: 28px; align-items: stretch; }
+    #dashboard #boardObjectivesPanel, #dashboard #trophiesLinkBox {
+        position: relative; margin: 34px 0 0 !important; padding: 56px 24px 20px !important; border: 2px solid #3f7fe0 !important; border-radius: 14px !important; text-align: left;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 26px rgba(70,150,255,.16) !important;
+    }
+    #dashboard #pcfBoardRow > * { margin-top: 34px !important; }
+    #dashboard #boardObjectivesPanel h3 {
+        position: absolute; top: -30px; left: -14px; z-index: 3; margin: 0; min-height: 58px; padding: 6px 70px 6px 22px; display: flex; align-items: center; isolation: isolate;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.7rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.75); white-space: nowrap;
+    }
+    #dashboard #boardObjectivesPanel h3::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 20px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.3);
+    }
+    #dashboard #boardObjectivesPanel p { display: flex; align-items: center; gap: 12px; margin: 0 0 9px; color: #e6f0ff; font-size: 1.05rem; font-weight: 600; text-align: left; }
+    #dashboard #boardObjectivesPanel .obj-mark { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.25rem; font-weight: 900; }
+    #dashboard #boardObjectivesPanel .obj-mark.ok { color: #5dff8c; text-shadow: 0 0 8px rgba(93,255,140,.7); }
+    #dashboard #boardObjectivesPanel .obj-mark.pending { border: 2px solid #8fb4f0; background: rgba(5,18,44,.8); }
+    #dashboard #trophiesLinkBox { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 22px 24px !important; }
+    #dashboard #trophiesLinkBox .pcf-hbtn { position: relative; min-height: 62px; justify-content: center; padding: 0 20px 0 76px; font-style: italic; font-size: 1.5rem; overflow: visible; }
+    #dashboard #trophiesLinkBox .pcf-btn-ico { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 2.6rem; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    #dashboard #trophiesLinkBox .pcf-btn-ico img { width: 56px; height: 56px; object-fit: contain; }
+}

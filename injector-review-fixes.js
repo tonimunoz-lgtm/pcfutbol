@@ -43,7 +43,7 @@
         let panel=document.getElementById('boardObjectivesPanel');
         if(!panel){panel=document.createElement('section');panel.id='boardObjectivesPanel';panel.className='data-box';page.appendChild(panel);}
         panel.replaceChildren();const title=document.createElement('h3');title.textContent='Objetivos con la directiva';panel.appendChild(title);
-        for(const g of goals){const row=document.createElement('p');row.textContent=`${g.met?'✓':'○'} ${g.label} · Actual: ${Math.round(g.value).toLocaleString('es-ES')}`;panel.appendChild(row);}
+        for(const g of goals){const row=document.createElement('p');const mark=document.createElement('span');mark.className='obj-mark '+(g.met?'ok':'pending');mark.textContent=g.met?'\u2713':'';row.appendChild(mark);row.appendChild(document.createTextNode(`${g.label} \u00b7 Actual: ${Math.round(g.value).toLocaleString('es-ES')}`));panel.appendChild(row);}
     }
     function install(){
         if(!window.ui?.refreshUI){setTimeout(install,300);return;}
