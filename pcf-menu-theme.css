@@ -1019,3 +1019,226 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #transfers input#marketMinOverall, #transfers input#marketMaxAge { width: 130px !important; }
     #transfers select#marketPosition { width: 140px !important; }
 }
+
+/* ============================================================
+   Modales del juego en el estilo del mockup (ventana «Guardar partida»)
+   Panel redondeado con borde cian y resplandor · título en placa inclinada azul · botones con bisel (el principal, en azul brillante)
+   · campos blancos · tablas oscuras. Cubre .modal-content (modales fijos y de módulos), .pcf-dlg (diálogos y eventos) y #pcfCommModal.
+   Los modales de inicio con diseño propio (bienvenida, modo de juego, selección de equipo) lo conservan por tener reglas más específicas.
+   ============================================================ */
+.modal.active, .pcf-dlg-back, #pcfCommModal { background: radial-gradient(ellipse at 50% 45%, rgba(3,10,28,.50) 0%, rgba(3,10,28,.84) 100%) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+:is(.modal-content, .pcf-dlg, #pcfCommModal > .box) {
+    border: 2px solid #19c3ff !important; border-radius: 18px !important; color: #e6f0ff;
+    background: linear-gradient(180deg, rgba(10,34,78,.97) 0%, rgba(3,12,34,.98) 100%) !important;
+    box-shadow: 0 0 0 1px #04122e, 0 0 28px rgba(25,195,255,.60), 0 14px 40px rgba(0,0,0,.65), inset 0 0 26px rgba(25,195,255,.16) !important;
+}
+.pcf-dlg { overflow: hidden; padding: 18px 20px 6px; }
+/* título en placa */
+:is(.modal-content > h1:first-of-type, .modal-content > h2:first-of-type, .pcf-dlg > h3:first-child, #pcfCommModal > .box > h2:first-child) {
+    position: relative; isolation: isolate; display: flex !important; align-items: center; gap: 12px; margin: 0 0 14px !important; padding: 9px 30px !important; min-height: 48px;
+    font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; font-size: clamp(1.2rem, 2vw, 1.75rem) !important; letter-spacing: .04em; text-transform: uppercase; color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,.7);
+    background: none !important; border: 0 !important; box-shadow: none !important; text-align: left;
+}
+:is(.modal-content > h1:first-of-type, .modal-content > h2:first-of-type, .pcf-dlg > h3:first-child, #pcfCommModal > .box > h2:first-child)::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+    background: linear-gradient(180deg, var(--pl1, #3f8cff) 0%, var(--pl2, #1a56c0) 46%, var(--pl3, #0a2f7a) 54%, var(--pl4, #061a48) 100%);
+    box-shadow: inset 0 0 0 2px var(--ple, #cfe6ff), inset 0 2px 0 rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.35);
+}
+/* texto, secciones y campos */
+.modal-content h3, .pcf-dlg-body h3 { color: #ffd24a; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+:is(.modal-content, .pcf-dlg) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) { background: #f3f6fc !important; color: #0a1a35 !important; border: 1px solid #9fb6dc !important; border-radius: 8px !important; font-weight: 700; }
+:is(.modal-content, .pcf-dlg) label { color: #e6f0ff; }
+.modal-content table, .modal-content tbody, .modal-content tr { background: transparent !important; }
+.modal-content td, .modal-content th { background: rgba(8,28,66,.82) !important; color: #e6f0ff !important; border-color: rgba(76,143,255,.25) !important; }
+.modal-content th { color: #ffd24a !important; font-style: italic; text-transform: uppercase; }
+/* cerrar */
+.modal-content .modal-close {
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #2a050b; cursor: pointer; z-index: 3; line-height: 1; font-size: 1.3rem; color: #ffd24a;
+    background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.6);
+}
+/* botones */
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button) {
+    min-height: 40px; padding: 8px 18px !important; border: 1px solid #0a1f4a !important; border-radius: 10px !important; cursor: pointer; color: #fff !important;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+    background: linear-gradient(180deg, #c3d6f2 0%, #6d93cc 40%, #34568f 54%, #172f5c 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 3px 6px rgba(0,0,0,.55) !important; transition: filter .12s ease, transform .1s ease;
+}
+.pcf-dlg .pcf-dlg-actions > button:last-child { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.65), 0 3px 6px rgba(0,0,0,.55) !important; }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button):is(.admin-btn-red, [style*="c73446"], [style*="e94560"], [style*="f44336"], [style*="244, 67, 54"], [style*="233, 69, 96"], [style*="d32f2f"]) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm):is([style*="4CAF50"], [style*="76, 175, 80"], [style*="4caf50"], [style*="388e3c"]) { background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; border-color: #06301a !important; }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm):is([style*="e65100"], [style*="230, 81, 0"], [style*="ff9800"], [style*="255, 152, 0"]) { background: linear-gradient(180deg, #ffc27a 0%, #ee7a1c 40%, #b04f08 54%, #5e2a02 100%) !important; border-color: #3a1800 !important; }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button):hover { filter: brightness(1.15); }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button):active { transform: translateY(1px); filter: brightness(.92); }
+:is(.modal-content, .pcf-dlg, #pcfCommModal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button):disabled { filter: grayscale(.8) brightness(.7); cursor: default; }
+
+/* ============================================================
+   Modales con marcado propio: contratos (fd-modal), ficha de jugador, ofertas de empleo (promanager), scout, entrenador de juveniles
+   y acuerdo con la directiva. Mismo molde que el resto (panel cian, botones con bisel); sobrescriben sus estilos en línea.
+   Los modales de partido de copa (#cupAnnModal, #cupResModal) conservan el color propio de cada competición.
+   ============================================================ */
+#fd-modal,
+#pmFiredModal,
+#pmInitialModal,
+#pmOfferModal,
+#pmRepModal,
+#pmWaitingModal,
+#scoutSearchModal,
+#youthCoachModal,
+div[style*="z-index:290000"] { background: radial-gradient(ellipse at 50% 45%, rgba(3,10,28,.55) 0%, rgba(3,10,28,.88) 100%) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+#fd-modal > div,
+#pmFiredModal > div,
+#pmInitialModal > div,
+#pmOfferModal > div,
+#pmRepModal > div,
+#pmWaitingModal > div,
+#scoutSearchModal > div,
+#youthCoachModal > div,
+div[style*="z-index:290000"] > section,
+.player-modal-content {
+    border: 2px solid #19c3ff !important; border-radius: 18px !important; color: #e6f0ff;
+    background: linear-gradient(180deg, rgba(10,34,78,.97) 0%, rgba(3,12,34,.98) 100%) !important;
+    box-shadow: 0 0 0 1px #04122e, 0 0 28px rgba(25,195,255,.60), 0 14px 40px rgba(0,0,0,.65), inset 0 0 26px rgba(25,195,255,.16) !important;
+}
+#fd-modal h2,
+#pmFiredModal h2,
+#pmInitialModal h2,
+#pmOfferModal h2,
+#pmRepModal h2,
+#pmWaitingModal h2,
+#scoutSearchModal h2,
+#youthCoachModal h2,
+div[style*="z-index:290000"] h2 {
+    color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,.7);
+}
+#fd-modal button,
+#pmFiredModal button,
+#pmInitialModal button,
+#pmOfferModal button,
+#pmRepModal button,
+#pmWaitingModal button,
+#scoutSearchModal button,
+#youthCoachModal button,
+div[style*="z-index:290000"] button {
+    min-height: 38px; padding: 7px 16px !important; border: 1px solid #0a1f4a !important; border-radius: 10px !important; cursor: pointer; color: #fff !important;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1rem; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+    background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 3px 6px rgba(0,0,0,.55) !important; transition: filter .12s ease, transform .1s ease;
+}
+#fd-modal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#pmFiredModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#pmInitialModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#pmOfferModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#pmRepModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#pmWaitingModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#scoutSearchModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+#youthCoachModal button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]),
+div[style*="z-index:290000"] button:is([style*="4CAF50"], [style*="4caf50"], [style*="76, 175, 80"]) { background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; border-color: #06301a !important; }
+#fd-modal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#pmFiredModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#pmInitialModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#pmOfferModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#pmRepModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#pmWaitingModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#scoutSearchModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+#youthCoachModal button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]),
+div[style*="z-index:290000"] button:is([style*="e94560"], [style*="f44336"], [style*="c0392b"], [style*="c73446"], [style*="d32f2f"], [style*="233, 69, 96"], [style*="244, 67, 54"]) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }
+#fd-modal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#pmFiredModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#pmInitialModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#pmOfferModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#pmRepModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#pmWaitingModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#scoutSearchModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+#youthCoachModal button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]),
+div[style*="z-index:290000"] button:is([style*="e65100"], [style*="ff9800"], [style*="230, 81, 0"], [style*="255, 152, 0"]) { background: linear-gradient(180deg, #ffc27a 0%, #ee7a1c 40%, #b04f08 54%, #5e2a02 100%) !important; border-color: #3a1800 !important; }
+#fd-modal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#pmFiredModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#pmInitialModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#pmOfferModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#pmRepModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#pmWaitingModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#scoutSearchModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+#youthCoachModal button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]),
+div[style*="z-index:290000"] button:is([style*="#333"], [style*="51, 51, 51"], [style*="transparent"]) { background: linear-gradient(180deg, #c3d6f2 0%, #6d93cc 40%, #34568f 54%, #172f5c 100%) !important; }
+#fd-modal button:hover,
+#pmFiredModal button:hover,
+#pmInitialModal button:hover,
+#pmOfferModal button:hover,
+#pmRepModal button:hover,
+#pmWaitingModal button:hover,
+#scoutSearchModal button:hover,
+#youthCoachModal button:hover,
+div[style*="z-index:290000"] button:hover { filter: brightness(1.15); }
+#fd-modal button:active,
+#pmFiredModal button:active,
+#pmInitialModal button:active,
+#pmOfferModal button:active,
+#pmRepModal button:active,
+#pmWaitingModal button:active,
+#scoutSearchModal button:active,
+#youthCoachModal button:active,
+div[style*="z-index:290000"] button:active { transform: translateY(1px); filter: brightness(.92); }
+/* ficha de jugador: cerrar */
+.player-modal-close { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #2a050b; cursor: pointer; line-height: 1; font-size: 1.4rem; color: #ffd24a; background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.6); }
+/* Ventana «Guardar partida»: los tres botones caben en una fila */
+#pcfSaveActionsModal .modal-content { width: min(760px, 92vw) !important; max-width: 760px !important; }
+#pcfSaveActionsModal .modal-content > div { flex-wrap: nowrap !important; gap: 14px !important; }
+#pcfSaveActionsModal .modal-content > div > button { flex: 1 1 0; }
+/* el botón enfocado (el principal al abrir) se ve en azul brillante con resplandor cian */
+.modal-content button.btn:focus, .modal-content button.btn-sm:focus { outline: none; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.65), 0 3px 6px rgba(0,0,0,.55) !important; }
+
+/* Resumen de partido (solo el modal; la página «Resultados» comparte clases y no se toca) */
+#matchSummaryModal { background: radial-gradient(ellipse at 50% 45%, rgba(3,10,28,.55) 0%, rgba(3,10,28,.90) 100%) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+#matchSummaryModal .match-container {
+    border: 2px solid #19c3ff; border-radius: 18px; background: linear-gradient(180deg, rgba(10,34,78,.97) 0%, rgba(3,12,34,.98) 100%) !important;
+    box-shadow: 0 0 0 1px #04122e, 0 0 28px rgba(25,195,255,.60), 0 14px 40px rgba(0,0,0,.65), inset 0 0 26px rgba(25,195,255,.16) !important;
+}
+#matchSummaryModal .match-close { width: 36px; height: 36px; border-radius: 6px !important; border: 1px solid #2a050b !important; color: #ffd24a !important; background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.6); }
+#matchSummaryModal .ms-block { border: 1px solid rgba(76,143,255,.45) !important; border-radius: 12px !important; background: rgba(5,18,44,.62) !important; box-shadow: inset 0 0 14px rgba(70,150,255,.12); }
+#matchSummaryModal .btn-continue {
+    border: 1px solid #06301a !important; border-radius: 12px !important; color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+    background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 5px rgba(0,0,0,.4), 0 3px 8px rgba(0,0,0,.55) !important;
+}
+#matchSummaryModal .btn-continue:hover { filter: brightness(1.15); }
+/* «Guardar partida»: el primer botón es el principal */
+#pcfSaveActionsModal .modal-content > div > button:first-child { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.65), 0 3px 6px rgba(0,0,0,.55) !important; }
+
+/* ============================================================
+   Iconos en las placas de título + «Cargar partida» (mockup)
+   ============================================================ */
+#pcfSaveActionsModal .modal-content > h2::after, #savedGamesModal .modal-content > h1::after, #trainingModal .modal-content > h2::after {
+    content: ''; order: -1; flex: none; width: 46px; height: 46px; margin: -6px 0; background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+}
+#pcfSaveActionsModal .modal-content > h2::after { background-image: url('assets/iconos/ui/boton-guardar.webp'); }
+#savedGamesModal .modal-content > h1::after { background-image: url('assets/iconos/ui/boton-cargar.webp'); }
+#trainingModal .modal-content > h2::after { background-image: url('assets/iconos/entrenamiento.webp'); }
+/* avisos dentro de modales */
+.modal-content .alert { padding: 11px 16px; border: 1px solid rgba(76,143,255,.45); border-left: 5px solid #4c8fff; border-radius: 10px; background: linear-gradient(180deg, rgba(14,38,86,.92), rgba(5,18,44,.96)) !important; color: #e6f0ff !important; font-weight: 600; }
+.modal-content .alert.alert-warning { border-left-color: #ffc107; }
+/* Cargar partida: placa roja, «Importar copia» y la × en la cabecera, lista con scroll y tarjetas con tres botones */
+#savedGamesModal .modal-content {
+    --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
+    width: min(1000px, 94vw) !important; max-width: 1000px !important; padding: 22px 26px 24px !important;
+    display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tit imp cls" "lst lst lst"; align-items: center; gap: 0 14px;
+}
+#savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 16px !important; }
+#savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 16px !important; }
+#savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 46px; height: 46px; margin: 0 0 16px; font-size: 1.6rem; }
+#savedGamesModal .modal-content > button.btn { display: none; }
+#savedGamesModal #pcfImportBackupButton { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; min-height: 46px; padding: 8px 22px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.5), 0 3px 6px rgba(0,0,0,.55) !important; }
+#savedGamesModal #savedGamesListContainer {
+    grid-area: lst; margin: 0 !important; padding: 14px 14px 4px; max-height: min(520px, 62vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f8cff rgba(5,18,44,.6);
+    border: 2px solid rgba(25,195,255,.55); border-radius: 14px; background: rgba(4,16,40,.70); box-shadow: inset 0 0 22px rgba(25,195,255,.12);
+}
+#savedGamesModal .player-card {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; margin: 0 0 12px !important; padding: 12px 16px !important;
+    border: 2px solid rgba(76,143,255,.65) !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important; box-shadow: inset 0 0 14px rgba(70,150,255,.14);
+}
+#savedGamesModal .player-card > div { min-width: 0; padding-right: 16px; border-right: 1px solid rgba(76,143,255,.5); }
+#savedGamesModal .player-card strong { display: block; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+#savedGamesModal .player-card p { margin: 3px 0 0; color: #cfe0ff; font-size: .95rem; font-weight: 500; }
+#savedGamesModal .player-card.pcf-local { border-color: #ffc107 !important; box-shadow: 0 0 14px rgba(255,193,7,.55), inset 0 0 14px rgba(255,193,7,.12) !important; }
+#savedGamesModal .pcf-local-badge { display: inline-block; margin-top: 8px; padding: 3px 12px; border: 1px solid #6a4400; border-radius: 6px; background: linear-gradient(180deg, #ffe086 0%, #e3a21c 50%, #a56b00 100%); color: #2e1c00; font-weight: 800; font-size: .86rem; }
+#savedGamesModal .player-card button.btn-sm { min-width: 104px; }
+#savedGamesModal .player-card button.btn-sm:nth-of-type(1) { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; }
+#savedGamesModal .player-card button.btn-sm:nth-of-type(2)::before { content: ''; display: inline-block; width: 26px; height: 20px; margin-right: 6px; vertical-align: middle; background: url('assets/iconos/ui/boton-cargar.webp') center / contain no-repeat; }
+#savedGamesModal .player-card button.btn-sm:nth-of-type(3) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }

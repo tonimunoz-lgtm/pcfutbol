@@ -17,7 +17,7 @@
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 700px;">
                     <span class="modal-close" onclick="document.getElementById('savedGamesModal').classList.remove('active')">&times;</span>
-                    <h1>📂 Cargar partida</h1>
+                    <h1>Cargar partida</h1>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
                         <button type="button" class="btn btn-sm" id="pcfImportBackupButton">Importar copia</button>
                     </div>
@@ -60,10 +60,11 @@
             for(const game of games){
                 const card=document.createElement('div');card.className='player-card';
                 const info=document.createElement('div'),title=document.createElement('strong');
-                title.textContent=(game.name||'Partida sin nombre')+(game.localOnly?' · Copia local pendiente de sincronizar':'');info.appendChild(title);
+                title.textContent=(game.name||'Partida sin nombre');info.appendChild(title);
                 for(const text of [`Equipo: ${game.team||'?'} | Jornada: ${game.week||'?'} | División: ${game.division||'?'}`,new Date(game.lastSaved||0).toLocaleString('es-ES')]){
                     const row=document.createElement('p');row.textContent=text;info.appendChild(row);
                 }
+                if(game.localOnly){card.classList.add('pcf-local');const badge=document.createElement('span');badge.className='pcf-local-badge';badge.textContent='Copia local pendiente de sincronizar';info.appendChild(badge);}
                 card.appendChild(info);
                 const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],['Cargar nube',()=>window.loadGameFromCloudUI(game.id,true)],['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
                 for(const [label,action] of actions){const button=document.createElement('button');button.type='button';button.className='btn btn-sm';button.textContent=label;button.onclick=action;card.appendChild(button);}
