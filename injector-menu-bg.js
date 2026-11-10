@@ -7,12 +7,15 @@
 (function () {
     'use strict';
     if (window.PCF_MENU_BG === false) return;
-    const IMG = { src: 'assets/imagenes/fondo-menu.webp', w: 1818, h: 865, cx: 907, cy: 410, lens: 246 };   // cx, cy: centro de la lente en la imagen; lens: diámetro de su cristal interior
+    // Imagen de fondo y posición de su «lente» central EN PROPORCIÓN (cx, cy: centro; lens: diámetro del cristal, respecto al ancho).
+    // Para usar otra imagen, define antes de cargar este fichero:  window.PCF_MENU_BG_IMAGE = { src: 'assets/imagenes/otra.webp', cx: .5006, cy: .507, lens: .1495 }
+    const CFG = Object.assign({ src: 'assets/imagenes/fondo-menu.webp', cx: 0.4989, cy: 0.4740, lens: 0.1353, w: 1818, h: 865 }, window.PCF_MENU_BG_IMAGE || {});
+    const IMG = { src: CFG.src, w: CFG.w, h: CFG.h, cx: CFG.cx * CFG.w, cy: CFG.cy * CFG.h, lens: CFG.lens * CFG.w };
     const css = document.createElement('style');
     css.id = 'pcfMenuBgStyles';
     css.textContent = `
     body.pcf-menu-bg .main-layout { background-color:#030a1a; background-repeat:no-repeat;
-        background-image:linear-gradient(rgba(3,10,26,.04), rgba(3,10,26,.16)), url(${IMG.src}); background-size:cover; background-position:50% 50%; }
+        background-image:linear-gradient(rgba(3,10,26,0), rgba(3,10,26,.06)), url(${IMG.src}); background-size:cover; background-position:50% 50%; }
     body.pcf-menu-bg .quadrant { background-color:transparent; border:1px solid rgba(85,136,255,.22);
         box-shadow:inset 0 0 40px rgba(0,0,0,.22); }
     @media (max-width: 760px) {
@@ -20,6 +23,10 @@
         body.pcf-menu-bg .quadrant { background-color:rgba(3,12,30,.22); }
     }`;
     document.head.appendChild(css);
+    // Si se sustituye la imagen por otra de distinto tamaño, se toma su tamaño real (la posición de la lente se da en proporción: cx/w, cy/h)
+    const probe = new Image();
+    probe.onload = () => { if (probe.naturalWidth > 0) { const kx = probe.naturalWidth / IMG.w, ky = probe.naturalHeight / IMG.h; IMG.cx *= kx; IMG.lens *= kx; IMG.cy *= ky; IMG.w = probe.naturalWidth; IMG.h = probe.naturalHeight; } };
+    probe.src = IMG.src;
 
     function align() {
         const layout = document.querySelector('.main-layout');

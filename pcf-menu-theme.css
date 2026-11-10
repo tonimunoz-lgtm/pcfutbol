@@ -37,6 +37,8 @@ body .main-layout .quadrant .menu-button:active {
 body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px rgba(0,0,0,.65)); }
 
 @media (min-width: 761px) {
+    /* El menú ocupa TODO el ancho de la pantalla (antes, un bloque central de 1200 px): la imagen de fondo llena la ventana */
+    body .main-layout { max-width: none !important; width: 100% !important; }
     /* Cuadrante: título arriba, botones, lema abajo (también en los inferiores) */
     body .main-layout .quadrant {
         display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
@@ -44,9 +46,22 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
         background: transparent; border: 1px solid rgba(85,136,255,.22); box-shadow: inset 0 0 50px rgba(0,0,0,.22);
     }
     body .main-layout .quadrant.bottom-left, body .main-layout .quadrant.bottom-right { flex-direction: column; }
+    /* Columna de botones pegada al eje central de la pantalla (como en el mockup), dejando libre el exterior para ver la imagen */
+    body .main-layout .quadrant { --colw: clamp(250px, 44%, 500px); --titlew: clamp(300px, 58%, 600px); }
+    body .main-layout .quadrant.top-left, body .main-layout .quadrant.bottom-left   { align-items: flex-end;   padding-left: 4%; padding-right: 16%; }
+    body .main-layout .quadrant.top-right, body .main-layout .quadrant.bottom-right { align-items: flex-start; padding-right: 4%; padding-left: 20%; }
+    body .main-layout .quadrant .menu-button, body .main-layout .quadrant::after { width: var(--colw); }
+    body .main-layout .quadrant .section-title { width: var(--titlew); }
+    body .main-layout .quadrant.top-left .section-title, body .main-layout .quadrant.bottom-left .section-title   { margin-right: calc((var(--colw) - var(--titlew)) / 2); }
+    body .main-layout .quadrant.top-right .section-title, body .main-layout .quadrant.bottom-right .section-title { margin-left: calc((var(--colw) - var(--titlew)) / 2); }
+    body .main-layout .quadrant.top-left::after, body .main-layout .quadrant.bottom-left::after   { align-self: flex-end; }
+    body .main-layout .quadrant.top-right::after, body .main-layout .quadrant.bottom-right::after { align-self: flex-start; }
+    /* Botones de la fila central: junto al círculo, no pegados a los bordes */
+    body .main-layout .main-center-row .center-buttons.left  { justify-content: flex-end;  margin-right: clamp(14px, 4vw, 70px); }
+    body .main-layout .main-center-row .center-buttons.right { justify-content: flex-start; margin-left:  clamp(14px, 4vw, 70px); }
     /* Placa de título (trapecio con borde de color) */
     body .main-layout .quadrant .section-title {
-        order: -1; align-self: center; flex: 0 0 auto; width: min(90%, 440px); margin: 0 0 2px; padding: clamp(3px, .7vh, 8px) 26px;
+        order: -1; flex: 0 0 auto; margin: 0 0 2px; padding: clamp(3px, .7vh, 8px) 26px;
         display: flex; align-items: center; justify-content: center; gap: 12px;
         font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.2rem, 2.6vh, 1.8rem); letter-spacing: .07em; color: #fff;
         text-shadow: 0 2px 6px rgba(0,0,0,.7);
@@ -57,17 +72,17 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     body .main-layout .quadrant .section-title img.pcf-ui-icon { width: clamp(30px, 4.6vh, 46px); height: clamp(30px, 4.6vh, 46px); flex: 0 0 auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
     /* Botones: icono a un lado según el cuadrante */
     body .main-layout .quadrant .menu-button {
-        position: relative; width: 100%; max-width: none; margin: 0; flex: 1 1 0; min-height: 30px; max-height: clamp(40px, 6.4vh, 58px);
+        position: relative; width: var(--colw); max-width: var(--colw); margin: 0; flex: 1 1 0; min-height: 30px; max-height: clamp(40px, 6.4vh, 58px);
         display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; padding: 0 16px;
         font-size: clamp(.95rem, 2.3vh, 1.3rem); text-align: left;
     }
-    body .main-layout .quadrant.top-right .menu-button { flex-direction: row-reverse; text-align: right; }
+    body .main-layout .quadrant.top-right .menu-button, body .main-layout .quadrant.bottom-right .menu-button { flex-direction: row-reverse; text-align: right; }
     body .main-layout .quadrant .menu-button::before {
         position: static !important; transform: none !important; left: auto !important; right: auto !important; top: auto !important;
         width: clamp(26px, 4.2vh, 40px) !important; height: clamp(26px, 4.2vh, 40px) !important; flex: 0 0 auto; margin: 0; background-position: center;
     }
     body .main-layout .quadrant .menu-button > span, body .main-layout .quadrant .menu-button > .pcf-badge { margin-left: auto; }
-    body .main-layout .quadrant.top-right .menu-button > span { margin-left: 0; margin-right: auto; }
+    body .main-layout .quadrant.top-right .menu-button > span, body .main-layout .quadrant.bottom-right .menu-button > span { margin-left: 0; margin-right: auto; }
     /* Orden de los botones (arriba → abajo) */
     .quadrant.bottom-left .transfer-icon   { order: 1; } .quadrant.bottom-left .squad-icon     { order: 2; }
     .quadrant.bottom-left .renovation-icon { order: 3; } .quadrant.bottom-left .cantera-icon   { order: 4; }
@@ -75,7 +90,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     .quadrant.bottom-right .cash-icon      { order: 3; } .quadrant.bottom-right .staff-icon     { order: 4; }
     /* Lema inferior de cada cuadrante */
     body .main-layout .quadrant::after {
-        order: 99; margin-top: auto; flex: 0 0 auto; align-self: center; width: min(86%, 430px); text-align: center; padding: 4px 0;
+        order: 99; margin-top: auto; flex: 0 0 auto; text-align: center; padding: 4px 0;
         font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: clamp(.6rem, 1.4vh, .8rem); letter-spacing: .34em; color: #a8caff;
         background: linear-gradient(180deg, rgba(10,35,80,.78), rgba(4,14,34,.88)); border-top: 1px solid var(--c-edge);
         clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); text-shadow: 0 1px 2px #000;
@@ -87,7 +102,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     /* Círculo central: «lente» sobre la lente de la imagen (el diámetro lo ajusta injector-menu-bg.js) */
     body .main-layout .main-center-circle {
         width: var(--pcf-circle-d, clamp(200px, 28vh, 270px)); height: var(--pcf-circle-d, clamp(200px, 28vh, 270px));
-        background: radial-gradient(circle at 50% 46%, rgba(3,10,28,.38) 0%, rgba(3,10,28,.18) 45%, rgba(3,10,28,.40) 100%);
+        background: radial-gradient(circle at 50% 50%, rgba(3,10,28,.06) 0%, rgba(3,10,28,.02) 55%, rgba(3,10,28,.22) 100%);
         border: 3px solid var(--q-info-edge);
         box-shadow: 0 0 0 4px rgba(8,24,60,.92), 0 0 30px rgba(90,170,255,.8), inset 0 0 26px rgba(0,0,0,.45);
     }
