@@ -887,3 +887,135 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #finance .pcf-fin-card div[id^="fin_"] span { color: #9db8e8 !important; }
     #finance #fin_mList { background: rgba(5,18,44,.65) !important; border: 1px solid rgba(76,143,255,.45); border-radius: 10px !important; color: #e6f0ff; max-height: 260px; }
 }
+
+/* ============================================================
+   Listas de jugadores en el estilo del mockup: Plantilla, Negociaciones, Fichar y Cantera
+   Cabecera dorada (identidad de Fichajes) · paneles de cristal · tabla oscura con barra de color por posición, MEDIA dorada y cifras de atributos
+   rojo → verde · filtros y botones con el acabado del menú. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #squad.page,
+    #negotiations.page,
+    #transfers.page,
+    #academy.page { background: #030a1a; padding-bottom: 28px; }
+    #squad.page::before,
+    #negotiations.page::before,
+    #transfers.page::before,
+    #academy.page::before {      
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06); }
+    #squad .page-header,
+    #negotiations .page-header,
+    #transfers .page-header,
+    #academy .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important; }
+    #squad .page-header h1,
+    #negotiations .page-header h1,
+    #transfers .page-header h1,
+    #academy .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important; }
+    #squad .page-header h1::before,
+    #negotiations .page-header h1::before,
+    #transfers .page-header h1::before,
+    #academy .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35); }
+    #squad .page-header h1 img.pcf-page-icon,
+    #negotiations .page-header h1 img.pcf-page-icon,
+    #transfers .page-header h1 img.pcf-page-icon,
+    #academy .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #squad .page-header .page-close-btn,
+    #negotiations .page-header .page-close-btn,
+    #transfers .page-header .page-close-btn,
+    #academy .page-header .page-close-btn {
+        height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important; }
+    #squad .page-header .pcf-hbtn,
+    #negotiations .page-header .pcf-hbtn,
+    #transfers .page-header .pcf-hbtn,
+    #academy .page-header .pcf-hbtn { height: 38px; font-style: italic; font-size: .95rem; }
+
+    :is(#squad, #negotiations, #transfers, #academy) .page-header { border-color: #ffe08a !important; background: linear-gradient(180deg, rgba(122,86,10,.92), rgba(48,32,2,.95)) !important; box-shadow: 0 0 18px rgba(255,204,70,.55), inset 0 0 22px rgba(255,204,70,.22), inset 0 1px 0 rgba(255,255,255,.3) !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .page-header h1::before { background: linear-gradient(180deg, #f6cf5a 0%, #b07a00 48%, #5f3d00 100%); box-shadow: inset 0 0 0 2px #fff2b4, inset 0 0 24px rgba(255,204,70,.5), inset 0 2px 0 rgba(255,255,255,.4); }
+
+    /* — Avisos, títulos y paneles auxiliares — */
+    :is(#squad, #negotiations, #transfers, #academy) .alert { margin: 12px 30px !important; padding: 11px 16px !important; border: 1px solid rgba(76,143,255,.45) !important; border-left: 5px solid #4c8fff !important; border-radius: 10px !important; background: linear-gradient(180deg, rgba(14,38,86,.92), rgba(5,18,44,.96)) !important; color: #e6f0ff !important; font-weight: 600; box-shadow: inset 0 0 14px rgba(70,150,255,.12), 0 2px 5px rgba(0,0,0,.45); }
+    :is(#squad, #negotiations, #transfers, #academy) .alert.alert-warning { border-left-color: #ffc107 !important; }
+    :is(#squad, #negotiations, #transfers, #academy) > h2 { margin: 18px 30px 8px !important; padding-bottom: 6px; border-bottom: 1px solid rgba(255,210,74,.55) !important; color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.5rem; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #squad #pcfPosLegend { margin: 12px 30px 0; padding: 9px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); color: #e6f0ff; font-weight: 600; box-shadow: 0 0 16px rgba(70,150,255,.40); }
+    #squad #pcfPosLegend i { border-radius: 3px; margin-right: 6px; }
+    #squad #moral-panel { margin: 12px 30px 0 !important; }
+    #squad #moral-panel > div { border: 2px solid #3f7fe0 !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; box-shadow: 0 0 16px rgba(70,150,255,.40), inset 0 0 20px rgba(70,150,255,.12) !important; color: #e6f0ff !important; }
+    #negotiations #pcfOngoing { margin: 12px 30px 0 !important; padding: 12px 18px !important; border: 2px solid #3f7fe0 !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; color: #e6f0ff !important; box-shadow: 0 0 16px rgba(70,150,255,.40); }
+    #negotiations #pcfOngoing h3 { color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem !important; letter-spacing: .05em; text-transform: uppercase; }
+    /* — Filtros del mercado — */
+    #transfers > div[style*="display: flex"] { margin: 8px 30px 0; padding: 12px 16px; align-items: center; gap: 10px 12px !important; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); color: #e6f0ff; font-weight: 600; box-shadow: 0 0 16px rgba(70,150,255,.40); }
+    :is(#squad, #negotiations, #transfers, #academy) input[type=text], :is(#squad, #negotiations, #transfers, #academy) input[type=number], :is(#squad, #negotiations, #transfers, #academy) input:not([type]), :is(#squad, #negotiations, #transfers, #academy) select { height: 40px; padding: 4px 12px; border: 1px solid #9fb6dc !important; border-radius: 8px !important; background: #f3f6fc !important; color: #0a1a35 !important; font-weight: 700; font-size: .98rem; }
+    :is(#squad, #negotiations, #transfers, #academy) label { color: #e6f0ff; font-weight: 600; }
+    /* — Botones — */
+    :is(#squad, #negotiations, #transfers, #academy) button.btn {
+        min-height: 38px; padding: 6px 16px !important; border: 1px solid #06142e !important; border-radius: 8px !important; cursor: pointer; color: #fff !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: .98rem; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #8bbcff 0%, #2f72d9 40%, #1a4cae 54%, #0a2a70 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.55) !important; transition: filter .12s ease, transform .1s ease;
+    }
+    :is(#squad, #negotiations, #transfers, #academy) button.btn[style*="c73446"], :is(#squad, #negotiations, #transfers, #academy) button.btn.youth-dismiss { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; }
+    :is(#squad, #negotiations, #transfers, #academy) button.btn:hover { filter: brightness(1.18); }
+    :is(#squad, #negotiations, #transfers, #academy) button.btn:active { transform: translateY(1px); filter: brightness(.92); }
+    #academy > button.btn { margin: 16px 30px 0; background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; }
+    /* — Tabla de jugadores — */
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll { margin: 12px 30px 0; border: 2px solid #3f7fe0; border-radius: 14px; background: rgba(4,16,40,.92); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.10); }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll table { width: 100%; margin: 0 !important; border-collapse: separate; border-spacing: 0; background: transparent !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll thead th {
+        position: sticky; top: 0; z-index: 3; padding: 8px 4px; text-align: center; white-space: normal; line-height: 1.1; border: 0 !important; border-bottom: 2px solid rgba(255,210,74,.55) !important;
+        background: linear-gradient(180deg, rgba(22,62,128,.98), rgba(6,24,58,.98)) !important; color: #fff !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: .82rem; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,.7);
+    }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll thead th:nth-child(2) { text-align: left; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll thead th.pcf-col-media { background: linear-gradient(180deg, #f6cf5a 0%, #c78a10 48%, #7a4f00 100%) !important; color: #fff !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tbody td {
+        padding: 5px 4px; text-align: center; background: rgba(8,28,66,.82) !important; color: #e6f0ff !important; border: 0 !important; border-bottom: 1px solid rgba(76,143,255,.18) !important;
+        font-weight: 700; font-size: .9rem; text-shadow: 0 1px 2px rgba(0,0,0,.6); vertical-align: middle;
+    }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tbody tr:nth-child(even) td { background: rgba(14,42,96,.82) !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tbody tr:hover td { background: rgba(40,92,190,.85) !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tbody tr.pcf-sep td { padding: 8px; background: linear-gradient(180deg, #24569e 0%, #0b2d63 100%) !important; color: #fff !important; font-style: italic; font-weight: 800; font-size: 1.05rem; letter-spacing: .14em; text-transform: uppercase; }
+    /* barra de color por posición */
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tr.pcf-pos-por td:first-child { box-shadow: inset 5px 0 0 #ffb020; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tr.pcf-pos-def td:first-child { box-shadow: inset 5px 0 0 #3fd35a; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tr.pcf-pos-med td:first-child { box-shadow: inset 5px 0 0 #3d8bff; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tr.pcf-pos-del td:first-child { box-shadow: inset 5px 0 0 #ff4d4d; }
+    /* nombre y media */
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-sq-name, #transfers .pcf-player-scroll td:first-child, #negotiations .pcf-player-scroll td:first-child, #academy .pcf-player-scroll td:nth-child(2) { text-align: left; color: #fff !important; font-size: .95rem; white-space: nowrap; padding-left: 8px; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-sq-name { text-decoration-color: rgba(255,255,255,.45) !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-col-media strong { color: #ffd24a; font-style: italic; font-weight: 800; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255,210,74,.45), 0 2px 3px rgba(0,0,0,.8); }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-col-media { background: rgba(46,34,6,.6) !important; }
+    /* cifras de atributos: rojo → naranja → blanco → azul → verde */
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr { font-size: .95rem; font-variant-numeric: tabular-nums; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.t1 { color: #ff6b6b !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.t2 { color: #ffb24a !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.t3 { color: #e6f0ff !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.t4 { color: #6fc0ff !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.t5 { color: #5dff8c !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-attr.key { box-shadow: inset 0 -3px 0 rgba(255,210,74,.75); }
+    /* estados con color inline (apto, contratado, lesión…) */
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td[style*="4CAF50"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td[style*="76, 175, 80"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td[style*="4caf50"] { color: #5dff8c !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td[style*="f44336"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td[style*="244, 67, 54"] { color: #ff6b6b !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="color:#666"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="color:#888"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="#777"] { color: #9db8e8 !important; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td small { color: #9db8e8; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell, :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-pos { color: #fff !important; font-weight: 800; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-pos { display: inline-flex; align-items: center; gap: 5px; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-mini { flex: none; width: 22px; height: 32px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td .btn.btn-sm { padding: 4px 10px !important; min-height: 32px; font-size: .85rem; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell b { color: #fff !important; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll tbody tr:nth-child(n) td.pcf-col-media { background: rgba(46,34,6,.6) !important; }
+    #transfers .pcf-player-scroll thead th:first-child, #negotiations .pcf-player-scroll thead th:first-child, #academy .pcf-player-scroll thead th:nth-child(2) { text-align: left; padding-left: 10px; }
+    #negotiations .pcf-player-scroll td:nth-child(2) { color: #ffd24a !important; font-style: italic; font-weight: 800; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255,210,74,.45), 0 2px 3px rgba(0,0,0,.8); }
+    #transfers input#marketSearchName { width: 210px !important; }
+    #transfers input#marketMinOverall, #transfers input#marketMaxAge { width: 130px !important; }
+    #transfers select#marketPosition { width: 140px !important; }
+}
