@@ -276,16 +276,45 @@
             'Real Sociedad', 'Valencia CF', 'Celta de Vigo', 'Sevilla FC', 'CA Osasuna', 'Getafe CF', 'Rayo Vallecano',
             'RCD Espanyol', 'Deportivo Alavés', 'Elche CF', 'Levante UD', 'Racing de Santander', 'Deportivo de La Coruña', 'Málaga CF'];
         const file = { 'FC Barcelona': 'escudobarcelona', 'Athletic Club': 'escudoatletic', 'Atlético de Madrid': 'escudoatletico', 'Deportivo Alavés': 'escudoalaves' };
+        // Solo se aceptan escudos con URL segura (los mismos criterios que safeImageURL)
+        const okLogo = l => (typeof l === 'string' && /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif|svg\+xml);base64,|\.?\/?assets\/)/i.test(l.trim())) ? l.trim().replace(/"/g, '&quot;') : null;
         const logoOf = t => {
-            try { const d = JSON.parse(localStorage.getItem('team_data_' + t) || 'null'); if (d && d.logo) return d.logo; } catch (e) { /* */ }
+            // 1) memoria de la sesión · 2) localStorage (solo caben unos ~75 equipos) · 3) escudos incluidos en el proyecto
+            try { const m = window.getCachedTeamData && window.getCachedTeamData(t); if (m && okLogo(m.logo)) return okLogo(m.logo); } catch (e) { /* */ }
+            try { const d = JSON.parse(localStorage.getItem('team_data_' + t) || 'null'); if (d && okLogo(d.logo)) return okLogo(d.logo); } catch (e) { /* */ }
             return file[t] ? `assets/escudos/${file[t]}.png` : null;
         };
         const initials = t => t.replace(/^(FC|CF|CA|RCD|UD|SD|CD|RC|Real|Club)\s+/i, '').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
         const one = teams.map(t => {
             const l = logoOf(t);
-            return `<span class="pcfi-team">${l ? `<img src="${l}" alt="">` : `<i>${initials(t)}</i>`}${t}</span>`;
+            return `<span class="pcfi-team" data-team="${encodeURIComponent(t)}">${l ? `<img src="${l}" alt="">` : `<i>${initials(t)}</i>`}${t}</span>`;
         }).join('');
         track.innerHTML = `<span class="pcfi-tag">⚽ PRIMERA DIVISIÓN 2026/27</span>${one}<span class="pcfi-tag">⚽ ¡QUE EMPIECE LA TEMPORADA!</span>${one}`;
+        // Los equipos que siguen sin escudo lo toman de la copia del catálogo guardada en este dispositivo (IndexedDB), sin tocar la red
+        Promise.race([loadDeviceCatalog(), new Promise(r => setTimeout(() => r(null), 2500))]).then(cat => {
+            if (!cat) return;
+            track.querySelectorAll('.pcfi-team[data-team]').forEach(el => {
+                const i = el.querySelector('i'); if (!i) return;
+                const d = cat[decodeURIComponent(el.dataset.team)]; const l = d && okLogo(d.logo); if (!l) return;
+                const img = new Image(); img.alt = ''; img.src = l.replace(/&quot;/g, '"'); i.replaceWith(img);
+            });
+        }).catch(() => {});
+    }
+    // Copia persistente del catálogo (la crea injector-firebase-sync.js); si su API no está, se lee la base directamente
+    async function loadDeviceCatalog() {
+        try {
+            if (window.__pcfCatalogIDB && window.__pcfCatalogIDB.load) return await window.__pcfCatalogIDB.load();
+            return await new Promise(res => {
+                const r = indexedDB.open('pcf_catalog', 1);
+                r.onupgradeneeded = () => r.result.createObjectStore('kv');
+                r.onerror = () => res(null);
+                r.onsuccess = () => {
+                    const db = r.result;
+                    try { const q = db.transaction('kv').objectStore('kv').get('catalog'); q.onsuccess = () => { db.close(); res(q.result || null); }; q.onerror = () => { db.close(); res(null); }; }
+                    catch (e) { db.close(); res(null); }
+                };
+            });
+        } catch (e) { return null; }
     }
 
     // ── Escena ───────────────────────────────────────────────────
