@@ -797,3 +797,93 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #commercial #pcfPrizeHelp summary { color: #fff !important; font-size: 1.05rem; font-weight: 700; }
     #commercial #pcfPrizeHelp table td { color: #e6f0ff !important; }
 }
+
+/* ============================================================
+   Caja y finanzas en el estilo del mockup
+   Cabecera roja · panel de balance con cifra grande · rejilla de tarjetas (Última jornada a la izquierda, Ingresos y Gastos recurrentes a la derecha,
+   Mercado / Premios / Remodelaciones debajo, Historial a todo el ancho) · cifras en verde y rojo. Solo escritorio (≥ 761 px).
+   Las tarjetas (section.pcf-fin-card) las crea injector-finances.js en su plantilla; todos los ids se conservan.
+   ============================================================ */
+@media (min-width: 761px) {
+    #finance.page { background: #030a1a; padding-bottom: 28px; }
+    #finance.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    /* — Cabecera: placa con el título + barra con los botones — */
+    #finance .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #finance .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #finance .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #finance .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #finance .page-header .page-close-btn {
+        height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #finance .page-header .pcf-hbtn { height: 38px; font-style: italic; font-size: .95rem; }
+
+    #finance .page-header { border-color: #ff9a9a !important; background: linear-gradient(180deg, rgba(120,24,36,.92), rgba(46,6,12,.95)) !important; box-shadow: 0 0 18px rgba(255,90,90,.55), inset 0 0 22px rgba(255,90,90,.22), inset 0 1px 0 rgba(255,255,255,.3) !important; }
+    #finance .page-header h1::before { background: linear-gradient(180deg, #ea5c68 0%, #a31524 48%, #560914 100%); box-shadow: inset 0 0 0 2px #ffb0b0, inset 0 0 24px rgba(255,90,90,.5), inset 0 2px 0 rgba(255,255,255,.35); }
+
+    /* — Balance en caja — */
+    #finance > .data-box {
+        margin: 14px 30px 0 !important; padding: 10px 20px 14px !important; text-align: center; border: 2px solid #3f7fe0; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 26px rgba(70,150,255,.16);
+    }
+    #finance > .data-box .data-label { display: flex; align-items: center; justify-content: center; gap: 10px; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #finance > .data-box .pcf-head-ico { width: 36px; height: 36px; margin: 0; }
+    #finance #fin_balance { font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; font-size: 3.6rem !important; line-height: 1.05; text-shadow: 0 0 20px currentColor, 0 3px 4px rgba(0,0,0,.7); }
+    #finance #fin_balance[style*="76, 175, 80"], #finance #fin_balance[style*="4CAF50"], #finance #fin_balance[style*="4caf50"] { color: #5dff8c !important; }
+    #finance #fin_balance[style*="244, 67, 54"], #finance #fin_balance[style*="f44336"] { color: #ff6b6b !important; }
+    /* — Rejilla de tarjetas — */
+    #finance .pcf-fin-grid { margin: 18px 30px 16px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+    #finance .pcf-fin-card[data-fin="ultima"]   { grid-column: 1 / 8;  grid-row: 1 / 3; }
+    #finance .pcf-fin-card[data-fin="ingresos"] { grid-column: 8 / 13; grid-row: 1; }
+    #finance .pcf-fin-card[data-fin="gastos"]   { grid-column: 8 / 13; grid-row: 2; }
+    #finance .pcf-fin-card[data-fin="mercado"]  { grid-column: 1 / 5;  grid-row: 3; }
+    #finance .pcf-fin-card[data-fin="premios"]  { grid-column: 5 / 9;  grid-row: 3; }
+    #finance .pcf-fin-card[data-fin="remodel"]  { grid-column: 9 / 13; grid-row: 3; }
+    #finance .pcf-fin-card[data-fin="historial"] { margin: 0 30px 30px; }
+    #finance .pcf-fin-card {
+        min-width: 0; padding: 12px 18px 14px; border: 2px solid #3f7fe0; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 26px rgba(70,150,255,.16);
+    }
+    #finance .pcf-fin-card h2 {
+        display: flex !important; align-items: center; gap: 12px; margin: 0 0 8px !important; padding: 0 0 8px !important; border-bottom: 1px solid rgba(76,143,255,.5) !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.15rem, 1.5vw, 1.55rem) !important; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; text-shadow: 0 2px 3px rgba(0,0,0,.7);
+    }
+    #finance .pcf-fin-card h2 .pcf-head-ico { width: 42px; height: 42px; margin: -6px 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+    #finance .pcf-fin-card[data-fin="ingresos"] h2 span, #finance .pcf-fin-card[data-fin="gastos"] h2 span { display: none; }
+    #finance .pcf-fin-card h2 { white-space: nowrap; }
+    #finance .pcf-fin-card h2 span { margin-left: auto; font-style: normal !important; font-weight: 600 !important; font-size: .78rem !important; letter-spacing: .08em; color: #a9c3ee !important; text-shadow: none; white-space: nowrap; }
+    #finance .pcf-fin-card table, #finance .pcf-fin-card thead, #finance .pcf-fin-card tbody, #finance .pcf-fin-card tr, #finance .pcf-fin-card td { background: transparent !important; box-shadow: none !important; }
+    #finance .pcf-fin-card table { width: 100%; margin: 0 0 4px !important; border-collapse: collapse; font-size: 1rem !important; }
+    #finance .pcf-fin-card td { padding: 5px 9px !important; color: #e6f0ff !important; border: 0 !important; font-weight: 600; }
+    #finance .pcf-fin-card tr:nth-child(even) td { background: rgba(30,74,150,.30) !important; }
+    #finance .pcf-fin-card td:nth-child(2) { font-weight: 800; font-variant-numeric: tabular-nums; }
+    #finance .pcf-fin-card td:first-child { white-space: nowrap; }
+    #finance .pcf-fin-card td[colspan] { white-space: normal !important; font-size: .9rem !important; font-weight: 600; line-height: 1.35; }
+    #finance .pcf-fin-card[data-fin="premios"] h2 { white-space: normal; line-height: 1.05; }
+    #finance .pcf-fin-card[data-fin="ultima"] { display: flex; flex-direction: column; }
+    #finance .pcf-fin-card[data-fin="ultima"] table { flex: 1 1 auto; height: 100%; }
+    #finance .pcf-fin-card td[style*="76, 175, 80"], #finance .pcf-fin-card td[style*="4CAF50"], #finance .pcf-fin-card td[style*="4caf50"] { color: #5dff8c !important; }
+    #finance .pcf-fin-card td[style*="244, 67, 54"], #finance .pcf-fin-card td[style*="f44336"] { color: #ff6b6b !important; }
+    #finance .pcf-fin-card td[style*="padding-left:14px"], #finance .pcf-fin-card td[style*="padding-left: 14px"] { color: #9db8e8 !important; font-size: .88rem !important; font-weight: 500; }
+    #finance .pcf-fin-card td[style*="padding:2px 4px 2px 22px"] { color: #cfe0ff !important; font-size: .92rem !important; font-weight: 500; }
+    #finance .pcf-fin-card tr[style*="border-top"] td { border-top: 1px solid rgba(255,255,255,.35) !important; font-size: 1.06rem; }
+    #finance .pcf-fin-card td small, #finance .pcf-fin-card td span[style*="font-size"], #finance .pcf-fin-card td [style*="#666"], #finance .pcf-fin-card td [style*="#555"], #finance .pcf-fin-card td [style*="102, 102, 102"] { color: #9db8e8 !important; }
+    #finance .pcf-fin-card div[id^="fin_"] { color: #b9cff5 !important; }
+    #finance .pcf-fin-card div[id^="fin_"] span { color: #9db8e8 !important; }
+    #finance #fin_mList { background: rgba(5,18,44,.65) !important; border: 1px solid rgba(76,143,255,.45); border-radius: 10px !important; color: #e6f0ff; max-height: 260px; }
+}

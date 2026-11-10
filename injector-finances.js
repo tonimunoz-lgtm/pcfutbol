@@ -311,13 +311,15 @@
 
         <!-- Balance -->
         <div class="data-box" style="text-align:center;padding:18px;margin-bottom:16px;">
-            <div class="data-label">💰 Balance en Caja</div>
+            <div class="data-label"><img class="pcf-head-ico" src="assets/iconos/caja.webp" alt="" aria-hidden="true"> Balance en Caja</div>
             <div id="fin_balance" style="font-size:2em;font-weight:bold;color:#fff;">0€</div>
         </div>
 
+        <div class="pcf-fin-grid">
         <!-- ÚLTIMA JORNADA — datos reales ya aplicados al balance -->
+        <section class="pcf-fin-card" data-fin="ultima">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            📅 Última jornada jugada <span id="fin_lastLabel" style="font-weight:normal;font-size:.85em;color:#555;"></span>
+            <img class="pcf-head-ico" src="assets/iconos/calendario.webp" alt="" aria-hidden="true"> Última jornada jugada <span id="fin_lastLabel" style="font-weight:normal;font-size:.85em;color:#555;"></span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:22px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">🎟️ Taquilla</td>
@@ -356,9 +358,11 @@
                 <td style="text-align:right;font-weight:bold;" id="fin_lNet">—</td><td></td></tr>
         </table>
 
+        </section>
         <!-- INGRESOS RECURRENTES -->
+        <section class="pcf-fin-card" data-fin="ingresos">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            💰 Ingresos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal, contratos en curso)</span>
+            <img class="pcf-head-ico" src="assets/iconos/marcador.webp" alt="" aria-hidden="true"> Ingresos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal, contratos en curso)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">📺 Derechos TV</td>
@@ -374,9 +378,11 @@
         </table>
         <div id="fin_iBdList" style="font-size:.84em;color:#aaa;margin-bottom:22px;"></div>
 
+        </section>
         <!-- GASTOS RECURRENTES -->
+        <section class="pcf-fin-card" data-fin="gastos">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            💸 Gastos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal)</span>
+            <img class="pcf-head-ico" src="assets/iconos/caja.webp" alt="" aria-hidden="true"> Gastos recurrentes <span style="font-weight:normal;font-size:.85em;color:#555;">(semanal)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:22px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">⚽ Salarios plantilla</td>
@@ -396,9 +402,11 @@
                 <td style="text-align:right;font-weight:bold;color:#f44336;" id="fin_totExp">0€/sem</td><td></td></tr>
         </table>
 
+        </section>
         <!-- MERCADO -->
+        <section class="pcf-fin-card" data-fin="mercado">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            🔄 Mercado <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
+            <img class="pcf-head-ico" src="assets/iconos/negociaciones.webp" alt="" aria-hidden="true"> Mercado <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:22px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">💸 Inversion en fichajes</td><td style="text-align:right;" id="fin_mPur">0€</td></tr>
@@ -412,9 +420,11 @@
                 <td style="text-align:right;font-weight:bold;" id="fin_mBal">0€</td></tr>
         </table>
 
+        </section>
         <!-- PREMIOS -->
+        <section class="pcf-fin-card" data-fin="premios">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            🏆 Premios y taquilla de competiciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
+            <img class="pcf-head-ico" src="assets/iconos/podio.webp" alt="" aria-hidden="true"> Premios y taquilla de competiciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">💶 Premios cobrados (liga, copa y Europa)</td><td style="text-align:right;font-weight:bold;" id="fin_pTot">0€</td></tr>
@@ -423,9 +433,11 @@
         </table>
         <div id="fin_pList" style="font-size:.85em;color:#aaa;margin-bottom:22px;"></div>
 
+        </section>
         <!-- REMODELACIONES -->
+        <section class="pcf-fin-card" data-fin="remodel">
         <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">
-            🏗️ Remodelaciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
+            <img class="pcf-head-ico" src="assets/iconos/estadio.webp" alt="" aria-hidden="true"> Remodelaciones <span style="font-weight:normal;font-size:.85em;color:#555;">(temporada actual)</span>
         </h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.92em;">
             <tr><td style="padding:6px 4px;color:#aaa;">🏟️ Estadio</td>
@@ -440,11 +452,15 @@
         </table>
         <div id="fin_rList" style="margin-bottom:22px;font-size:.85em;color:#555;font-style:italic;min-height:20px;">Sin remodelaciones esta temporada.</div>
 
+        </section>
+        </div>
         <!-- HISTORIAL -->
-        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;">📋 Historial de movimientos</h2>
+        <section class="pcf-fin-card" data-fin="historial">
+        <h2 style="border-bottom:1px solid #2a2a2a;padding-bottom:6px;margin-bottom:10px;font-size:1em;color:#ccc;text-transform:uppercase;letter-spacing:1px;"><img class="pcf-head-ico" src="assets/iconos/noticias.webp" alt="" aria-hidden="true"> Historial de movimientos</h2>
         <div id="fin_mList" style="max-height:260px;overflow-y:auto;background:rgba(0,0,0,.25);border-radius:8px;padding:10px;font-size:.84em;">
             <span style="color:#555;">Sin movimientos registrados esta temporada.</span>
-        </div>`;
+        </div>
+        </section>`;
         console.log('[Finances] Panel construido ✓');
     }
 
