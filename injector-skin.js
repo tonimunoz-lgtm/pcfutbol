@@ -120,7 +120,17 @@
                 card.style.setProperty('--sec', COM_COLORS[grid.children.length % COM_COLORS.length]);
                 const label = document.createElement('div');
                 label.className = 'pcf-com-label';
-                label.textContent = el.textContent.trim();
+                // icono de la tarjeta (en lugar del emoji que traía el título)
+                const rawTitle = el.textContent.trim();
+                const cleanTitle = rawTitle.replace(/^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation})(?:\uFE0F|\u200D\p{Extended_Pictographic})*\s*/u, '');
+                const COM_ICONS = [[/ajustes/i, 'entradas'], [/contratos/i, 'negociaciones'], [/prima/i, 'empleados'], [/pr[eé]stamos/i, 'caja'], [/premios/i, 'podio']];
+                const iconFile = (COM_ICONS.find(([re]) => re.test(cleanTitle)) || [])[1];
+                if (iconFile) {
+                    const img = document.createElement('img');
+                    img.className = 'pcf-head-ico'; img.alt = ''; img.setAttribute('aria-hidden', 'true'); img.src = `assets/iconos/${iconFile}.webp`;
+                    label.appendChild(img);
+                }
+                label.appendChild(document.createTextNode(cleanTitle));
                 card.appendChild(label);
                 grid.appendChild(card);
                 el.remove();

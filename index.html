@@ -638,13 +638,13 @@
         <div style="margin-top: 20px;">
             <label style="display: block; margin-bottom: 5px;">Precio de la Entrada (actual: <span id="currentTicketPrice">0</span>€):</label>
             <input type="range" id="ticketPriceSlider" min="1" max="100" value="20" oninput="window.updateTicketPriceDisplay(this.value)" onchange="window.setTicketPriceFromSlider(this.value)">
-            <span id="ticketPriceSliderValue">20</span>€
+            <span class="pcf-sl-box"><span id="ticketPriceSliderValue">20</span> €</span>
         </div>
         
         <div style="margin-top: 15px;">
             <label style="display: block; margin-bottom: 5px;">Precio del Merchandising (actual: <span id="currentMerchandisingPrice">0</span>€):</label>
             <input type="range" id="merchandisingPriceSlider" min="1" max="50" value="10" oninput="window.updateMerchandisingPriceDisplay(this.value)" onchange="window.setMerchandisingPriceFromSlider(this.value)">
-            <span id="merchandisingPriceSliderValue">10</span>€
+            <span class="pcf-sl-box"><span id="merchandisingPriceSliderValue">10</span> €</span>
         </div>
     </div>
 

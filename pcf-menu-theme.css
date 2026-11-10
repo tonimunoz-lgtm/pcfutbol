@@ -15,6 +15,12 @@
 .quadrant.bottom-left  { --c-hi:var(--q-mkt-hi);  --c-mid:var(--q-mkt-mid);  --c-lo:var(--q-mkt-lo);  --c-dk:var(--q-mkt-dk);  --c-edge:var(--q-mkt-edge);  --c-glow:var(--q-mkt-glow); }
 .quadrant.bottom-right { --c-hi:var(--q-mgt-hi);  --c-mid:var(--q-mgt-mid);  --c-lo:var(--q-mgt-lo);  --c-dk:var(--q-mgt-dk);  --c-edge:var(--q-mgt-edge);  --c-glow:var(--q-mgt-glow); }
 
+/* Tamaño base de los iconos de cabecera y de los accesos con icono (válido también en móvil; el escritorio lo agranda en sus secciones) */
+.pcf-head-ico { width: 1.5em; height: 1.5em; flex: none; object-fit: contain; vertical-align: middle; margin-right: .35em; }
+.pcf-btn-ico { display: inline-flex; align-items: center; justify-content: center; flex: none; margin-right: .5em; font-size: 1.3em; line-height: 1; }
+.pcf-btn-ico img { width: 1.5em; height: 1.5em; object-fit: contain; }
+.pcf-btn-txt { vertical-align: middle; }
+
 /* ── Botones del menú: volumen 3D, borde metálico iluminado, brillo al pasar el ratón y hundimiento al pulsar ── */
 body .main-layout .quadrant .menu-button {
     background:
@@ -683,4 +689,111 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     /* — Leyenda de zonas — */
     #standings #comp-legend { margin: 8px 30px 22px !important; }
     #standings #comp-legend span { border-radius: 6px !important; font-size: .88rem; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+}
+
+/* ============================================================
+   Gestión comercial en el estilo del mockup
+   Cabecera roja (identidad de Gestión) · 4 tarjetas de datos · rejilla 3 + 2 de paneles con placas de color (cada tarjeta ya traía su color --sec)
+   · deslizadores, selectores y botones con el acabado de los botones del menú. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #commercial.page { background: #030a1a; padding-bottom: 28px; }
+    #commercial.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    /* — Cabecera: placa con el título + barra con los botones — */
+    #commercial .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #commercial .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #commercial .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #commercial .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #commercial .page-header .page-close-btn {
+        height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #commercial .page-header .pcf-hbtn { height: 38px; font-style: italic; font-size: .95rem; }
+
+    #commercial .page-header { border-color: #ff9a9a !important; background: linear-gradient(180deg, rgba(120,24,36,.92), rgba(46,6,12,.95)) !important; box-shadow: 0 0 18px rgba(255,90,90,.55), inset 0 0 22px rgba(255,90,90,.22), inset 0 1px 0 rgba(255,255,255,.3) !important; }
+    #commercial .page-header h1::before { background: linear-gradient(180deg, #ea5c68 0%, #a31524 48%, #560914 100%); box-shadow: inset 0 0 0 2px #ffb0b0, inset 0 0 24px rgba(255,90,90,.5), inset 0 2px 0 rgba(255,255,255,.35); }
+    /* — Tarjetas de datos — */
+    #commercial .data-grid { margin: 14px 30px 0; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    #commercial .data-grid .data-box {
+        padding: 12px 16px 10px; text-align: center; border: 2px solid #3f7fe0; border-radius: 12px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 16px rgba(70,150,255,.40), inset 0 0 20px rgba(70,150,255,.14);
+    }
+    #commercial .data-grid .data-label { color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(.85rem, .95vw, 1.05rem); letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #commercial .data-grid .data-value { color: #ffd24a; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.4rem; line-height: 1.1; text-shadow: 0 0 12px rgba(255,210,74,.45), 0 2px 3px rgba(0,0,0,.8); }
+    /* — Rejilla 3 + 2 — */
+    #commercial .pcf-com-grid { margin: 52px 30px 28px; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 40px 22px; align-items: stretch; }
+    #commercial .pcf-com-grid > :nth-child(1) { grid-column: span 3; }
+    #commercial .pcf-com-grid > :nth-child(2) { grid-column: span 5; }
+    #commercial .pcf-com-grid > :nth-child(3) { grid-column: span 4; }
+    #commercial .pcf-com-grid > :nth-child(4) { grid-column: span 6; }
+    #commercial .pcf-com-grid > :nth-child(5) { grid-column: span 6; }
+    #commercial .pcf-com-card {
+        position: relative; padding: 52px 20px 18px; border: 2px solid #3f7fe0 !important; border-top: 2px solid #3f7fe0 !important; border-radius: 14px !important; min-width: 0;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 26px rgba(70,150,255,.16) !important;
+    }
+    /* placas de título con el color de cada tarjeta */
+    #commercial .pcf-com-card[style*="4fc3f7"] { --p1:#8be8ff; --p2:#1fb0dc; --p3:#0b7aa6; --p4:#053f5c; --pe:#c4f3ff; }
+    #commercial .pcf-com-card[style*="ffd24a"] { --p1:#ffe786; --p2:#e3ab1e; --p3:#b07a00; --p4:#5f3d00; --pe:#fff2b4; }
+    #commercial .pcf-com-card[style*="aed581"] { --p1:#9ff0a8; --p2:#2fbf55; --p3:#178a38; --p4:#0a4a1e; --pe:#c8ffd0; }
+    #commercial .pcf-com-card[style*="ff8a65"] { --p1:#ffc27a; --p2:#ee7a1c; --p3:#b04f08; --p4:#5e2a02; --pe:#ffdcb0; }
+    #commercial .pcf-com-card[style*="ba68c8"] { --p1:#d8c0ff; --p2:#9a5fe8; --p3:#6130b0; --p4:#2d1260; --pe:#eadcff; }
+    #commercial .pcf-com-label {
+        position: absolute; top: -28px; left: -14px; z-index: 3; margin: 0; min-height: 54px; padding: 4px 56px 4px 16px; display: flex; align-items: center; gap: 10px; isolation: isolate; border-radius: 0; background: none; box-shadow: none; max-width: calc(100% + 14px); overflow: hidden; text-overflow: ellipsis;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.05rem, 1.25vw, 1.5rem); letter-spacing: .03em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.75); white-space: nowrap;
+    }
+    #commercial .pcf-com-label::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, var(--p1, #8bbcff) 0%, var(--p2, #2f72d9) 46%, var(--p3, #1a4cae) 54%, var(--p4, #0a2a70) 100%);
+        box-shadow: inset 0 0 0 2px var(--pe, #b3d8ff), inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 6px rgba(0,0,0,.35);
+    }
+    #commercial .pcf-com-label img.pcf-head-ico { width: 46px; height: 46px; flex: none; margin: -4px 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    /* — Contenido de las tarjetas — */
+    #commercial .pcf-com-card p, #commercial .pcf-com-card .pcf-skin-muted { color: #d3e3ff !important; font-size: .98rem !important; line-height: 1.45; }
+    #commercial .pcf-com-card label { color: #fff; font-weight: 700; font-size: 1.05rem; }
+    #commercial .pcf-com-card .pcf-skin-box, #commercial .pcf-com-card #pcfBoardsCard > div {
+        background: rgba(5,18,44,.62) !important; border: 1px solid rgba(76,143,255,.50) !important; border-radius: 10px !important; box-shadow: inset 0 0 14px rgba(70,150,255,.12) !important;
+    }
+    #commercial #pcfBoardsCard > div { border-left: 1px solid rgba(76,143,255,.50) !important; }
+    #commercial #fd-contracts > div { background: rgba(5,18,44,.75) !important; border: 1px solid rgba(76,143,255,.45) !important; border-radius: 10px !important; padding: 10px 14px !important; }
+    #commercial #fd-contracts [style*="#4CAF50"], #commercial #fd-contracts [style*="76, 175, 80"] { color: #5dff8c !important; }
+    #commercial #fd-contracts [style*="#2196F3"], #commercial #fd-contracts [style*="33, 150, 243"] { color: #6fc0ff !important; }
+    #commercial #fd-contracts [style*="#777"], #commercial #fd-contracts [style*="#666"], #commercial #fd-contracts [style*="119, 119, 119"], #commercial #fd-contracts [style*="102, 102, 102"] { color: #b9cff5 !important; }
+    /* deslizadores: pista a todo lo ancho y valor en caja */
+    #commercial .pcf-com-card > div:has(> input[type=range]) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 16px !important; }
+    #commercial .pcf-com-card > div:has(> input[type=range]) > label { flex: 0 0 100%; margin: 0 !important; }
+    #commercial .pcf-com-card input[type=range] { flex: 1 1 0; width: auto; min-width: 0; max-width: none !important; height: 8px; accent-color: #3f8cff; cursor: pointer; }
+    #commercial .pcf-com-card .pcf-sl-box {
+        min-width: 74px; padding: 8px 12px; text-align: center; border: 1px solid rgba(76,143,255,.7); border-radius: 8px; background: rgba(5,18,44,.85); color: #fff; font-weight: 800; font-size: 1.05rem; box-shadow: inset 0 0 10px rgba(70,150,255,.2);
+    }
+    /* selectores y botones */
+    #commercial .pcf-com-card select { width: 100%; max-width: none !important; min-height: 42px; padding: 6px 12px; border: 1px solid #9fb6dc !important; border-radius: 6px !important; background: #f3f6fc !important; color: #0a1a35 !important; font-weight: 700; font-size: 1rem; cursor: pointer; }
+    #commercial .pcf-com-card button.btn, #commercial .pcf-com-card button#fd-btn-offers {
+        min-height: 40px; border: 1px solid #06142e !important; border-radius: 8px !important; cursor: pointer; color: #fff !important; padding: 8px 16px !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #8bbcff 0%, #2f72d9 40%, #1a4cae 54%, #0a2a70 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.55) !important;
+        transition: filter .12s ease, transform .1s ease;
+    }
+    #commercial .pcf-com-card .pcf-com-card-green button.btn, #commercial .pcf-com-card[style*="aed581"] button.btn { background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; }
+    #commercial .pcf-com-card button#fd-btn-offers[style*="230, 81, 0"], #commercial .pcf-com-card button#fd-btn-offers[style*="e65100"] { background: linear-gradient(180deg, #ffc27a 0%, #ee7a1c 40%, #b04f08 54%, #5e2a02 100%) !important; }
+    #commercial .pcf-com-card button.btn:hover, #commercial .pcf-com-card button#fd-btn-offers:hover { filter: brightness(1.18); }
+    #commercial .pcf-com-card button.btn:active, #commercial .pcf-com-card button#fd-btn-offers:active { transform: translateY(1px); filter: brightness(.92); }
+    /* ayuda de premios */
+    #commercial #pcfPrizeHelp { margin-top: 12px !important; padding: 10px 14px; border: 1px solid rgba(76,143,255,.5); border-radius: 8px; background: rgba(5,18,44,.7); }
+    #commercial #pcfPrizeHelp summary { color: #fff !important; font-size: 1.05rem; font-weight: 700; }
+    #commercial #pcfPrizeHelp table td { color: #e6f0ff !important; }
 }
