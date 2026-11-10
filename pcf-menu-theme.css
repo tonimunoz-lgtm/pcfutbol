@@ -591,3 +591,96 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #dashboard #trophiesLinkBox .pcf-btn-ico { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 2.6rem; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
     #dashboard #trophiesLinkBox .pcf-btn-ico img { width: 56px; height: 56px; object-fit: contain; }
 }
+
+/* ============================================================
+   Clasificación en el estilo del mockup
+   Misma cabecera que Noticias · pestañas en barra de cristal (activa dorada) · tabla de cristal con cabecera dorada, barra de zona,
+   fila propia dorada · cuadros Pichichi / Zamora con trofeo. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #standings.page { background: #030a1a; padding-bottom: 28px; }
+    #standings.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    /* — Cabecera: placa con el título + barra con los botones — */
+    #standings .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #standings .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #standings .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #standings .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #standings .page-header .page-close-btn {
+        height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #standings .page-header .pcf-hbtn { height: 38px; font-style: italic; font-size: .95rem; }
+
+    /* — Pestañas — */
+    #standings #comp-tabs {
+        margin: 12px 30px 14px !important; padding: 9px 12px; gap: 10px !important; flex-wrap: nowrap !important; overflow-x: auto;
+        border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.16);
+    }
+    #standings .ctab {
+        flex: none; height: 40px; padding: 0 24px; display: inline-flex; align-items: center; gap: 9px; border: 1px solid #06142e; border-radius: 8px; cursor: pointer; color: #fff;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.08rem; letter-spacing: .05em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #8bbcff 0%, #2f72d9 40%, #1a4cae 54%, #0a2a70 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.55);
+        transition: filter .12s ease, transform .1s ease;
+    }
+    #standings .ctab.active { background: linear-gradient(180deg, #ffe786 0%, #e3ab1e 40%, #b07a00 54%, #5f3d00 100%); border-color: #3a2400; }
+    #standings .ctab:hover { filter: brightness(1.18); }
+    #standings .ctab:active { transform: translateY(1px); filter: brightness(.92); }
+    #standings .ctab img.pcf-comp-icon { width: 28px; height: 28px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+    /* — Tabla — */
+    #standings #comp-liga-tbl {
+        width: calc(100% - 60px); margin: 0 30px; border-collapse: separate; border-spacing: 0; overflow: hidden;
+        border: 2px solid #3f7fe0; border-radius: 14px; background: rgba(4,16,40,.92); box-shadow: 0 0 18px rgba(70,150,255,.45);
+    }
+    #standings #comp-liga-tbl thead th {
+        padding: 10px 8px; text-align: center; background: linear-gradient(180deg, rgba(20,58,120,.98), rgba(6,24,58,.98)); border-bottom: 2px solid rgba(255,210,74,.6);
+        color: #ffd24a; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem; letter-spacing: .06em; text-transform: uppercase;
+    }
+    #standings #comp-liga-tbl thead th:nth-child(2) { text-align: left; }
+    #standings #comp-liga-tbl td {
+        padding: 6px 10px; text-align: center; background: rgba(8,28,66,.82) !important; color: #fff !important; font-weight: 700; font-size: 1.02rem; font-variant-numeric: tabular-nums;
+        border-bottom: 1px solid rgba(76,143,255,.20) !important; border-right: 1px solid rgba(76,143,255,.10) !important; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    }
+    #standings #comp-liga-tbl tbody tr:nth-child(even) td { background: rgba(14,42,96,.82) !important; }
+    #standings #comp-liga-tbl td:last-child { border-right: 0 !important; }
+    #standings #comp-liga-tbl td:first-child { box-shadow: inset 6px 0 0 var(--zone, transparent); }
+    #standings #comp-liga-tbl td.team-name { text-align: left; white-space: nowrap; }
+    #standings #comp-liga-tbl td.team-name img { width: 26px !important; height: 26px !important; margin-right: 12px !important; vertical-align: middle; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+    #standings #comp-liga-tbl tbody tr:hover td { background: rgba(40,92,190,.82) !important; }
+    #standings #comp-liga-tbl td strong { color: inherit !important; }
+    #standings #comp-liga-tbl tr.my-team-row td, #standings #comp-liga-tbl tr.my-team-row:hover td {
+        background: linear-gradient(180deg, #e0a625 0%, #9c6308 100%) !important; color: #fff !important; border-bottom-color: #5e3a00 !important; text-shadow: 0 1px 3px rgba(0,0,0,.95); font-weight: 800;
+    }
+    /* — Pichichi y Zamora — */
+    #standings #pcfLiveAwards { margin: 18px 30px 8px; gap: 28px; grid-template-columns: 1fr 1fr; }
+    #standings #pcfLiveAwards .box {
+        padding: 14px 24px 16px; border: 2px solid #3f7fe0; border-top: 2px solid #3f7fe0; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.14);
+    }
+    #standings #pcfLiveAwards h4 {
+        display: flex; align-items: center; gap: 12px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 2px solid #ffc107;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.4rem; letter-spacing: .04em; color: #ffd24a; text-shadow: 0 2px 4px rgba(0,0,0,.7);
+    }
+    #standings #pcfLiveAwards h4 img.pcf-head-ico { width: 42px; height: 42px; flex: none; margin: -6px 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    #standings #pcfLiveAwards ol { font-size: 1.05rem; line-height: 1.55; font-weight: 700; color: #fff; }
+    #standings #pcfLiveAwards li.me { color: #ffd24a; }
+    #standings #pcfLiveAwards small { color: #a9c3ee; opacity: 1 !important; font-weight: 600; }
+    #standings #pcfLiveAwards .box > small { display: block; margin-top: 6px; font-size: .78rem; font-weight: 500; opacity: .75 !important; }
+    /* — Leyenda de zonas — */
+    #standings #comp-legend { margin: 8px 30px 22px !important; }
+    #standings #comp-legend span { border-radius: 6px !important; font-size: .88rem; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+}

@@ -675,10 +675,11 @@ function updateStandingsColors() {
     const rows = document.querySelectorAll('#standingsTable tr, .standings-table tbody tr');
     rows.forEach((row, idx) => {
         const pos = idx+1;
-        row.style.background = ''; row.style.borderLeft = '';
+        row.style.background = ''; row.style.borderLeft = ''; row.style.removeProperty('--zone');
         const apply = zone => {
             row.style.background  = ZONE_COLORS[zone].bg;
             row.style.borderLeft  = `4px solid ${ZONE_COLORS[zone].border}`;
+            row.style.setProperty('--zone', ZONE_COLORS[zone].border);   // color de zona para el diseño (pcf-menu-theme.css)
         };
         if (division==='primera') {
             if (cfg.champions?.includes(pos))        apply('champions');

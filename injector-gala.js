@@ -281,8 +281,8 @@
             css();
             const a = await awards(s.division, rows);
             if (!box) { box = document.createElement('div'); box.id = 'pcfLiveAwards'; const host = table.closest('table') || table; host.parentNode.insertBefore(box, host.nextSibling); }
-            box.innerHTML = `<div class="box"><h4>⚽ Pichichi · máximos goleadores</h4><ol>${a.pichichi.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.goals}</span></li>`).join('')}</ol><small>Estadísticas registradas por el motor; se conservan las aportaciones del jugador aunque cambie de club.</small></div>
-                <div class="box"><h4>🧤 Trofeo Zamora · portero menos goleado</h4><ol>${a.zamora.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.ratio.toFixed(2)}</span></li>`).join('')}</ol><small>Goles encajados por 90 minutos realmente disputados; clasificación provisional.</small></div>`;
+            box.innerHTML = `<div class="box"><h4><img class="pcf-head-ico" src="assets/iconos/podio.webp" alt="" aria-hidden="true">Pichichi · máximos goleadores</h4><ol>${a.pichichi.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.goals}</span></li>`).join('')}</ol><small>Estadísticas registradas por el motor; se conservan las aportaciones del jugador aunque cambie de club.</small></div>
+                <div class="box"><h4><img class="pcf-head-ico" src="assets/iconos/podio.webp" alt="" aria-hidden="true">Trofeo Zamora · portero menos goleado</h4><ol>${a.zamora.map(x => `<li class="${x.mine ? 'me' : ''}">${x.name} <small style="display:inline;opacity:.65">(${x.team})</small><span>${x.ratio.toFixed(2)}</span></li>`).join('')}</ol><small>Goles encajados por 90 minutos realmente disputados; clasificación provisional.</small></div>`;
         } catch (e) { console.warn('Premios en vivo:', e); } finally { liveBusy = false; }
     }
     function hook() {
