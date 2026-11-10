@@ -141,3 +141,86 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     background: linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 48%, var(--s-lo) 52%, var(--s-dk) 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 rgba(0,0,0,.35), 0 0 18px var(--s-glow);
 }
+
+/* ============================================================
+   Cabecera (escritorio): fichas inclinadas, Admin dorado, Salir rojo, título en cursiva y datos con icono
+   La forma de cada ficha se dibuja en ::before (paralelogramo); el texto no se inclina.
+   ============================================================ */
+@media (min-width: 761px) {
+    body .header {
+        height: 62px; padding: 0 12px; gap: 6px;
+        background: linear-gradient(180deg, #123a73 0%, #0a2650 48%, #06173a 52%, #030c22 100%);
+        border-bottom: 2px solid #3f86f0; box-shadow: 0 2px 16px rgba(60,140,255,.55), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    body .header .header-info { gap: 0; align-items: center; }
+    /* — ficha base — */
+    body .header .info-box, body .header #adminButton, body .header #logoutButton {
+        position: relative; isolation: isolate; box-sizing: border-box; height: 42px; min-height: 42px; min-width: 0; margin: 0 0 0 -10px;
+        display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 28px;
+        background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible;
+        font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: .82rem; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap;
+        color: #e6f0ff; text-shadow: 0 1px 2px rgba(0,0,0,.8); filter: drop-shadow(0 3px 4px rgba(0,0,0,.55));
+    }
+    body .header .header-info > :first-child { margin-left: 0; }
+    body .header .info-box::before, body .header #adminButton::before, body .header #logoutButton::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+        background: linear-gradient(180deg, #14407f 0%, #0b2b5c 48%, #071d42 52%, #040f26 100%);
+        box-shadow: inset 0 0 0 1px #4c8fff, inset 0 0 14px rgba(70,150,255,.55), inset 0 1px 0 rgba(255,255,255,.35);
+    }
+    /* orden: usuario · equipo · Admin · Salir */
+    body .header #userIndicator { order: 1; } body .header #teamLogoHeader { order: 2; }
+    body .header .header-info > .info-box:has(#teamName) { order: 3; }
+    body .header #pmRepBadge { order: 4; } body .header #adminButton { order: 5; } body .header #logoutButton { order: 6; }
+    body .header #userIndicator { padding-left: 52px; }
+    body .header #userIndicator::after {
+        content: ''; position: absolute; left: 26px; top: 50%; width: 24px; height: 24px; transform: translateY(-50%); z-index: 1;
+        background: url('assets/iconos/empleados.webp') center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6));
+    }
+    body .header #teamName { display: inline-flex; align-items: center; gap: 8px; font-size: .84rem; }
+    body .header #teamName img { width: 26px; height: 26px; border: 0; border-radius: 0; background: none; object-fit: contain; }
+    /* — Admin dorado / Salir rojo — */
+    body .header #adminButton::before { background: linear-gradient(180deg, #ffe49a 0%, #e6a61f 46%, #a56b00 54%, #4f3000 100%); box-shadow: inset 0 0 0 1px #3a2400, inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4); }
+    body .header #logoutButton::before { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%); box-shadow: inset 0 0 0 1px #2a050b, inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 5px rgba(0,0,0,.4); }
+    body .header #adminButton, body .header #logoutButton { color: #fff; cursor: pointer; transition: filter .12s ease, transform .1s ease; min-width: 118px; }
+    body .header #adminButton:hover, body .header #logoutButton:hover { filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)) brightness(1.18); }
+    body .header #adminButton:active, body .header #logoutButton:active { transform: translateY(1px); }
+    body .header #adminButton img.pcf-ui-icon, body .header #logoutButton img.pcf-ui-icon { width: 24px; height: 24px; flex: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+    /* — Título — */
+    body .header .header-title {
+        font-family: 'Saira Condensed', 'Arial Narrow', sans-serif; font-style: italic; font-weight: 800; font-size: 1.95rem; letter-spacing: .06em; color: #fff;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000;
+    }
+    /* — Jornada y Dinero: etiqueta arriba, valor abajo, icono a la izquierda — */
+    body .header .pcf-header-stats { gap: 0; }
+    body .header .pcf-header-stats .info-box { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 0 30px 0 62px; text-align: left; }
+    body .header .pcf-header-stats .info-box > span:first-child { font-size: .62rem; letter-spacing: .12em; color: #8fb4f0; line-height: 1.1; }
+    body .header .pcf-header-stats .info-box > span:last-child { font-size: 1.02rem; letter-spacing: .03em; color: #fff; line-height: 1.15; }
+    body .header .pcf-header-stats .info-box::after {
+        content: ''; position: absolute; left: 28px; top: 50%; width: 30px; height: 30px; transform: translateY(-50%); z-index: 1;
+        background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+    }
+    body .header .pcf-header-stats .info-box:nth-child(1)::after { background-image: url('assets/iconos/calendario.webp'); }
+    body .header .pcf-header-stats .info-box:nth-child(2)::after { background-image: url('assets/iconos/caja.webp'); }
+    body .header .pcf-header-stats #balanceDisplay { color: #5dff8c; }
+}
+
+/* El nombre del equipo heredaba el color oscuro de las fichas antiguas */
+@media (min-width: 761px) {
+    body .header .info-box, body .header .info-box span, body .header #teamName { color: #e6f0ff; }
+    body .header .pcf-header-stats .info-box > span:first-child { color: #8fb4f0; }
+    body .header .pcf-header-stats .info-box > span:last-child { color: #fff; }
+    body .header .pcf-header-stats #balanceDisplay { color: #5dff8c; }
+}
+/* Pantallas de escritorio estrechas: fichas más compactas para que quepa todo */
+@media (min-width: 761px) and (max-width: 1500px) {
+    body .header { padding: 0 6px; }
+    body .header .info-box, body .header #adminButton, body .header #logoutButton { padding: 0 18px; font-size: .74rem; min-width: 0; margin-left: -8px; }
+    body .header #adminButton, body .header #logoutButton { min-width: 96px; }
+    body .header #userIndicator { padding-left: 40px; }
+    body .header #userIndicator::after { left: 18px; width: 20px; height: 20px; }
+    body .header .pcf-header-stats .info-box { padding: 0 18px 0 46px; }
+    body .header .pcf-header-stats .info-box::after { left: 16px; width: 24px; height: 24px; }
+    body .header .pcf-header-stats .info-box > span:last-child { font-size: .9rem; }
+    body .header .header-title { font-size: clamp(1rem, 1.7vw, 1.5rem); }
+}
+@media (min-width: 761px) and (max-width: 1100px) { body .header .header-title { display: none; } }
