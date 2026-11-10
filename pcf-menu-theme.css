@@ -43,8 +43,9 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     body .main-layout .quadrant {
         display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
         gap: clamp(5px, .9vh, 10px); padding: clamp(6px, 1.2vh, 14px) 7% clamp(5px, .8vh, 10px);
-        background: transparent; border: 1px solid rgba(85,136,255,.22); box-shadow: inset 0 0 50px rgba(0,0,0,.22);
+        background: transparent; border: 0; box-shadow: none;     /* la cruz de líneas es la de la imagen de fondo */
     }
+    body .main-layout .main-center-row { background: none !important; border: 0 !important; box-shadow: none !important; }
     body .main-layout .quadrant.bottom-left, body .main-layout .quadrant.bottom-right { flex-direction: column; }
     /* Columna de botones pegada al eje central de la pantalla (como en el mockup), dejando libre el exterior para ver la imagen */
     body .main-layout .quadrant { --colw: clamp(250px, 44%, 500px); --titlew: clamp(300px, 58%, 600px); }

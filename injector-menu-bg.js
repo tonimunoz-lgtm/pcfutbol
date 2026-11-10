@@ -9,7 +9,7 @@
     if (window.PCF_MENU_BG === false) return;
     // Imagen de fondo y posición de su «lente» central EN PROPORCIÓN (cx, cy: centro; lens: diámetro del cristal, respecto al ancho).
     // Para usar otra imagen, define antes de cargar este fichero:  window.PCF_MENU_BG_IMAGE = { src: 'assets/imagenes/otra.webp', cx: .5006, cy: .507, lens: .1495 }
-    const CFG = Object.assign({ src: 'assets/imagenes/fondo-menu.webp', cx: 0.4989, cy: 0.4740, lens: 0.1353, w: 1818, h: 865 }, window.PCF_MENU_BG_IMAGE || {});
+    const CFG = Object.assign({ src: 'assets/imagenes/fondo-menu-2.webp', cx: 0.4994, cy: 0.5037, lens: 0.1507, w: 1672, h: 941 }, window.PCF_MENU_BG_IMAGE || {});
     const IMG = { src: CFG.src, w: CFG.w, h: CFG.h, cx: CFG.cx * CFG.w, cy: CFG.cy * CFG.h, lens: CFG.lens * CFG.w };
     const css = document.createElement('style');
     css.id = 'pcfMenuBgStyles';
