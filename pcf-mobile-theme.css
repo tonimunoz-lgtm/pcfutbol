@@ -20,6 +20,9 @@
         font-family: 'Saira Condensed', sans-serif !important; font-weight: 800 !important; font-style: italic !important; letter-spacing: .03em; text-transform: uppercase;
     }
     .header #balanceDisplay { color: #5dff8c !important; }
+    /* El nombre del equipo y los demás textos de las fichas heredaban la tinta oscura de las fichas claras antiguas (pcf-modern.css: .header #teamName { color: var(--pcf-ink) !important }) */
+    body .header .info-box, body .header .info-box span, body .header #teamName, body .header #weekNo { color: #e6f0ff !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+    body .header .pcf-header-stats #balanceDisplay { color: #5dff8c !important; }
     #pcfMobileActions .center-option {
         background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; border: 1px solid #072a66 !important; border-radius: 8px !important;
         box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important;
@@ -81,6 +84,7 @@
     #dashboard #pcfNewsTools { order: 3; flex: 1 1 100%; display: flex; gap: 6px; }
     #dashboard #pcfNewsTools > * { flex: 1; min-height: 36px !important; height: 36px; padding: 0 8px !important; font-size: .78rem !important; }
     #dashboard .data-box, #dashboard #trophiesLinkBox { border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.86), rgba(4,16,40,.92)) !important; box-shadow: 0 0 12px rgba(70,150,255,.4) !important; }
+    #dashboard .news-badge { color: #2b1a00 !important; font-weight: 800; text-shadow: none; }
     #dashboard h2 { color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
 
     /* ── Calendario ────────────────────────────────────────────── */
@@ -138,12 +142,13 @@
     #tactics .tc-match-stats > div > div:first-child { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; color: #fff !important; }
     #tactics .tc-match-stats > div > div:first-child[style*="FFD700"] { color: #ffd24a !important; }
     #tactics .tc-match-stats > div > div:first-child[style*="4CAF50"] { color: #5dff8c !important; }
+    #tactics .tc-match-stats > div > div:last-child { color: #cfe0ff !important; }
     #tactics .tc-auto { width: 100%; height: 46px; border: 1px solid #072a66; border-radius: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important; }
     #tactics .tc-xi-title { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem !important; }
     #tactics .tc-xi-avg { background: none !important; color: #ffe14a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem !important; }
-    #tactics .tc-sec-label { display: inline-flex !important; align-items: center; margin: 0 0 8px !important; padding: 5px 24px 5px 12px !important; border-radius: 0 !important; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: linear-gradient(180deg, var(--sh, #6fe58b), var(--sm, #25a847) 52%, var(--sl, #0f7a30)) !important; color: #fff !important; font: italic 800 1.05rem 'Saira Condensed', sans-serif !important; text-transform: none !important; }
-    #tactics .tc-sec-mentality { --sh: #e59cff; --sm: #b94fe0; --sl: #7a1fa8; }
-    #tactics .tc-sec-press { --sh: #ffbd7a; --sm: #f0802a; --sl: #b84f0a; }
+    #tactics .tc-sec-label { display: inline-flex !important; align-items: center; margin: 0 0 8px !important; padding: 5px 24px 5px 12px !important; border-radius: 0 !important; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); text-shadow: 0 1px 2px rgba(0,0,0,.8); background: linear-gradient(180deg, var(--sh, #35c25a), var(--sm, #1b8f3a) 52%, var(--sl, #0b5a20)) !important; color: #fff !important; font: italic 800 1.05rem 'Saira Condensed', sans-serif !important; text-transform: none !important; }
+    #tactics .tc-sec-mentality { --sh: #c46ae8; --sm: #9a35c8; --sl: #6a1590; }
+    #tactics .tc-sec-press { --sh: #e8832a; --sm: #c9600e; --sl: #8f3d04; }
     #tactics .tc-sec-instr { --sh: #d6f28f; --sm: #9bd44a; --sl: #5f9a1c; }
     #tactics .tc-sec-instr .tc-sec-label { color: #16300a !important; }
     #tactics .tc-card { position: relative; border: 2px solid rgba(76,143,255,.6) !important; border-radius: 10px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important; }
@@ -167,12 +172,13 @@
     #rival-analysis .rv-stat > div:last-child { color: #cfe0ff !important; font-size: .8rem !important; }
     #rival-analysis .rv-ovr { background: rgba(2,10,28,.72) !important; border: 1px solid rgba(76,143,255,.45); border-radius: 10px !important; }
     #rival-analysis .rv-ovr > div:last-child { color: #e6f0ff !important; }
+    #rival-analysis .rv-ovr > div:first-child > div:not(:nth-child(2)) > div:last-child { color: #cfe0ff !important; }
     #rival-analysis .rv-card { padding: 10px 12px; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)); box-shadow: 0 0 12px rgba(70,150,255,.4); }
     #rival-analysis .rv-preview { display: grid !important; grid-template-columns: 1fr !important; gap: 10px !important; padding: 0 !important; border: 0 !important; background: none !important; }
     #rival-analysis .rv-ct { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem !important; text-transform: uppercase; }
     #rival-analysis .rv-bar { height: 30px !important; border: 1px solid rgba(255,255,255,.3); border-radius: 8px !important; font-size: 1rem !important; font-weight: 800 !important; color: #fff; text-shadow: 0 1px 2px #000; }
     #rival-analysis .rv-w { background: linear-gradient(180deg, #5fe07a, #1d9a3b 55%, #0f6a26) !important; }
-    #rival-analysis .rv-d { background: linear-gradient(180deg, #f2c13a, #c78a0a 55%, #8a5a00) !important; }
+    #rival-analysis .rv-d { background: linear-gradient(180deg, #d9a21a, #a76f00 55%, #6f4800) !important; }
     #rival-analysis .rv-l { background: linear-gradient(180deg, #ff6a6a, #d62828 55%, #8f1010) !important; }
     #rival-analysis .rv-track { height: 10px !important; border-radius: 8px !important; }
     #rival-analysis .rv-fill { border-radius: 8px; filter: brightness(1.15) saturate(1.25); }
@@ -188,9 +194,9 @@
     #rival-analysis .rv-row { padding: 6px 4px !important; border-bottom: 1px solid rgba(76,143,255,.28) !important; gap: 10px !important; }
     #rival-analysis .rv-pos { min-width: 44px !important; padding: 5px 4px !important; border-radius: 6px !important; font-size: .9rem !important; font-weight: 800 !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
     #rival-analysis .rv-pos.grp-POR { background: linear-gradient(180deg, #ffe38a, #e3a21c 55%, #a56b00) !important; color: #3a2400 !important; text-shadow: none; }
-    #rival-analysis .rv-pos.grp-DEF { background: linear-gradient(180deg, #6fc3ff, #1f8cf0 55%, #1450c0) !important; }
-    #rival-analysis .rv-pos.grp-MED { background: linear-gradient(180deg, #6fe58b, #25a847 55%, #0f7a30) !important; }
-    #rival-analysis .rv-pos.grp-DEL { background: linear-gradient(180deg, #ff8a8a, #d6323d 55%, #8f1010) !important; }
+    #rival-analysis .rv-pos.grp-DEF { background: linear-gradient(180deg, #4aa8f5, #1768c8 55%, #0e3f94) !important; }
+    #rival-analysis .rv-pos.grp-MED { background: linear-gradient(180deg, #3fd166, #1c8f3c 55%, #0b5a20) !important; }
+    #rival-analysis .rv-pos.grp-DEL { background: linear-gradient(180deg, #f2646a, #c42430 55%, #7a0c12) !important; }
     #rival-analysis .rv-pname { color: #fff !important; font-size: 1rem !important; font-weight: 700; }
     #rival-analysis .rv-page { color: #b8c9ea !important; }
     #rival-analysis .rv-n { color: #d4ff3a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-size: 1.4rem !important; font-weight: 800 !important; }
