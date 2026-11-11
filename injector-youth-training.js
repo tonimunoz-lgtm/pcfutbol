@@ -468,25 +468,25 @@ console.log('🏫 Youth Training Injector cargando...');
             background:rgba(0,0,0,0.85); z-index:9998; overflow-y:auto;
         `;
         panel.innerHTML = `
-            <div style="background:#0d0d1a; min-height:100vh; padding:20px; color:#e0e0e0; max-width:800px; margin:0 auto;">
-                
-                <!-- HEADER -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #1565C0; padding-bottom:12px;">
-                    <h1 style="margin:0; color:#42A5F5;">🎯 Centro de Entrenamiento</h1>
-                    <button onclick="document.getElementById('trainingPanel').style.display='none'"
+            <div class="tp-box" style="background:#0d0d1a; min-height:100vh; padding:20px; color:#e0e0e0; max-width:800px; margin:0 auto;">
+
+                <!-- CABECERA -->
+                <div class="tp-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #1565C0; padding-bottom:12px;">
+                    <h1 class="tp-title" style="margin:0; color:#42A5F5;">🎯 Centro de Entrenamiento</h1>
+                    <button class="tp-close" onclick="document.getElementById('trainingPanel').style.display='none'"
                         style="background:#c62828; border:none; color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">
                         ✖ CERRAR
                     </button>
                 </div>
 
-                <!-- TOGGLE AUTOMÁTICO -->
-                <div style="background:#0a1628; border:1px solid #1565C0; border-radius:10px; padding:16px; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <h3 style="margin:0 0 4px; color:#42A5F5;">⚙️ Modo Automático</h3>
-                            <p style="margin:0; color:#aaa; font-size:0.85em;">Los entrenadores gestionan el entrenamiento cada semana automáticamente. Compatible con el modo manual de Plantilla.</p>
+                <!-- MODO AUTOMÁTICO -->
+                <div class="tp-auto" style="background:#0a1628; border:1px solid #1565C0; border-radius:10px; padding:16px; margin-bottom:20px;">
+                    <div class="tp-auto-in" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="tp-auto-txt">
+                            <h3 class="tp-auto-t" style="margin:0 0 4px; color:#42A5F5;">⚙️ Modo Automático</h3>
+                            <p class="tp-auto-d" style="margin:0; color:#aaa; font-size:0.85em;">Cada semana se entrena a un jugador en un atributo. En automático lo elige tu cuerpo técnico: el entrenador de porteros y el segundo entrenador se alternan. Si eliges tú en Plantilla, el entrenamiento pasa a manual.</p>
                         </div>
-                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <label class="tp-auto-sw" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
                             <input type="checkbox" id="autoTrainingToggle" onchange="window.toggleAutoTraining(this.checked)"
                                 style="width:20px; height:20px; cursor:pointer; accent-color:#42A5F5;">
                             <span id="autoTrainingLabel" style="color:#aaa; font-size:0.9em;">Desactivado</span>
@@ -494,12 +494,12 @@ console.log('🏫 Youth Training Injector cargando...');
                     </div>
                 </div>
 
-                <!-- STAFF ENTRENADORES -->
+                <!-- CUERPO TÉCNICO -->
                 <div id="trainingStaffCards" style="margin-bottom:20px;"></div>
 
                 <!-- CANTERA - PROGRESIÓN -->
-                <div style="background:#0a1628; border:1px solid #388E3C; border-radius:10px; padding:16px;">
-                    <h3 style="margin:0 0 12px; color:#66BB6A;">🏫 Cantera - Estado actual</h3>
+                <div class="tp-cantera" style="background:#0a1628; border:1px solid #388E3C; border-radius:10px; padding:16px;">
+                    <h3 class="tp-cant-t" style="margin:0 0 12px; color:#66BB6A;"><img class="tp-cant-ic" src="assets/iconos/cantera.webp" alt=""><span class="tp-emo">🏫 </span>Cantera · Estado actual</h3>
                     <div id="trainingAcademyList"></div>
                 </div>
 
@@ -631,9 +631,9 @@ console.log('🏫 Youth Training Injector cargando...');
         if (!container) return;
 
         const coaches = [
-            { role: 'entrenadorJuveniles', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-juveniles.webp" alt="">', label: 'Entrenador de Juveniles', color: '#66BB6A', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
-            { role: 'entrenadorPorteros', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-porteros.webp" alt="">', label: 'Entrenador de Porteros', color: '#42A5F5', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
-            { role: 'segundoEntrenador', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/segundo-entrenador.webp" alt="">', label: 'Segundo Entrenador', color: '#FFA726', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
+            { role: 'entrenadorJuveniles', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-juveniles.webp" alt="">', label: 'Entrenador de Juveniles', color: '#9be23a', desc: 'Gestiona la progresión de toda la cantera automáticamente.' },
+            { role: 'entrenadorPorteros', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/entrenador-porteros.webp" alt="">', label: 'Entrenador de Porteros', color: '#6fc3ff', desc: 'Selecciona y entrena al portero con mayor potencial sin explotar.' },
+            { role: 'segundoEntrenador', icon: '<img class="pcf-staff-icon" src="assets/iconos/personal/segundo-entrenador.webp" alt="">', label: 'Segundo Entrenador', color: '#ffb13d', desc: 'Selecciona y entrena al jugador de campo con más margen de mejora.' }
         ];
 
         container.innerHTML = `<h3 style="margin:0 0 12px;">Cuerpo técnico</h3>` +
