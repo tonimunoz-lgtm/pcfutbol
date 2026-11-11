@@ -251,7 +251,7 @@ function renderSquadList(squad, currentTeam) {
                 <td>${idx + 1}</td>  
                 <td class="pcf-sq-name" data-k="${escapeHTML(String(p.id ?? p.name))}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Ver ficha del jugador">${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong>${(p.ovrSeasonStart !== undefined && p.overall > p.ovrSeasonStart) ? `<small style="color:#1b5e20;font-weight:800;margin-left:4px" title="Ha mejorado ${p.overall - p.ovrSeasonStart} esta temporada">▲${p.overall - p.ovrSeasonStart}</small>` : ''}</td>  
-                <td>${p.potential}</td>  
+                <td>${p.potential ?? '-'}</td>  
                 <td>${p.age}</td>  
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
@@ -390,7 +390,7 @@ function renderAcademyList(academy) {
                 <td>${idx + 1}</td>  
                 <td>${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
-                <td>${p.potential}</td>  
+                <td>${p.potential ?? '-'}</td>  
                 <td style="white-space:nowrap">${(() => { const st = p.ovrStart ?? p.overall; const d = p.overall - st;
                     return `${st} → ${p.overall} <span style="color:${d > 0 ? '#1b5e20' : '#666'};font-weight:800">${d > 0 ? '▲ +' + d : '='}</span>`; })()}</td>  
                 <td style="white-space:nowrap">${state.staff && state.staff.entrenadorJuveniles
@@ -462,7 +462,7 @@ function renderPlayerMarketList(players) {
             <tr>  
                 <td>${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
-                <td>${p.potential}</td>  
+                <td>${p.potential ?? '-'}</td>  
                 <td>${p.age}</td>  
                 <td>${p.position || 'N/A'}</td>  
                 <td>${p.foot || 'N/A'}</td>  
@@ -529,7 +529,7 @@ function renderAvailableYoungstersMarket(youngsters) {
         <tr>  
             <td>${escapeHTML(y.name)}</td>  
             <td><strong>${y.overall}</strong></td>  
-            <td>${y.potential}</td>  
+            <td>${y.potential ?? '-'}</td>  
             <td>${y.age}</td>  
             <td>${y.position || 'N/A'}</td>  
             <td>${y.foot || 'N/A'}</td>  

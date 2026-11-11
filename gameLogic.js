@@ -1477,9 +1477,11 @@ function applyWeeklyTraining() {
 }  
   
 function getPlayerMarket(filters = {}) {
-    const live=marketFromWorld(filters);if(live)return live;
-    const scoutLevel = gameState.staff.scout?.level || 0;  
-    return getPlayerMarketData(filters, scoutLevel).map(normalizeMarketPlayer);  
+    const live=marketFromWorld(filters);
+    const list=live||getPlayerMarketData(filters, gameState.staff.scout?.level || 0).map(normalizeMarketPlayer);
+    // Los jugadores de otros clubes de partidas antiguas no traen potencial (los libres sí): se estima, siempre igual para el mismo jugador
+    list.forEach(ensurePotential);
+    return list;
 }  
   
 function getYoungsterMarket(filters = {}) {  
@@ -4298,6 +4300,7 @@ export {
     getGameState, getViewState, subscribeGameEvent,  
     updateGameState, replaceGameState,  
     selectTeamWithInitialSquad,  
+    estimatePotential, ensurePotential,
     simulateFullWeek,  
     playMatchImproved, 
     processMatch,

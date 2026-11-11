@@ -190,6 +190,7 @@
 
             const limit = 30 + scoutLevel * 10;
             all = [...listed.slice(0, limit), ...free].sort((a, b) => (b.overall || 0) - (a.overall || 0));
+            all.forEach(p => window.gameLogic.ensurePotential?.(p));      // el mercado de Firestore tampoco trae potencial
             window.ui.renderPlayerMarketList(all);
         };
         console.log('searchPlayersMarket interceptado');

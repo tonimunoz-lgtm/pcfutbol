@@ -1008,7 +1008,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="color:#666"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="color:#888"], :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td [style*="#777"] { color: #9db8e8 !important; }
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td small { color: #9db8e8; }
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell, :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-pos { color: #fff !important; font-weight: 800; }
-    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-pos { display: inline-flex; align-items: center; gap: 5px; }
+    :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-pos { display: inline-grid; grid-template-columns: 22px 2.9em; column-gap: 6px; align-items: center; justify-items: start; }
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell .pcf-mini { flex: none; width: 22px; height: 32px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td .btn.btn-sm { padding: 4px 10px !important; min-height: 32px; font-size: .85rem; }
     :is(#squad, #negotiations, #transfers, #academy) .pcf-player-scroll td.pcf-pos-cell b { color: #fff !important; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.7); }

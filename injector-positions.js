@@ -64,7 +64,8 @@
         tr.pcf-sep > td{background:linear-gradient(180deg,#14305c,#0b1f40) !important;color:#ffd24a !important;text-align:center;letter-spacing:.22em;text-transform:uppercase;font-weight:800;font-size:.86em;padding:7px 4px !important;border-top:2px solid #06142e;border-bottom:2px solid #06142e}
         tr.pcf-sep > td small{display:block;letter-spacing:.06em;font-weight:500;opacity:.75;text-transform:none;font-size:.82em;margin-top:2px}
         tr.pcf-noconv > td:not(.pcf-col-media){opacity:.78}
-        td.pcf-pos-cell .pcf-pos{display:inline-flex;align-items:center;gap:6px;font-weight:800}
+        /* columnas fijas: el mini campo siempre en el mismo sitio y el código de posición alineado a su lado, sea cual sea su anchura («LI», «POR», «MCO») */
+        td.pcf-pos-cell .pcf-pos{display:inline-grid;grid-template-columns:26px 3.1em;column-gap:7px;align-items:center;justify-items:start;font-weight:800}
         .pcf-mini{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
         .pcf-mini-wrap{display:inline-flex;align-items:center;margin-right:7px;flex:0 0 auto}
         #pcfPosLegend{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 8px;font-size:.8rem;color:#cfe0ff}
