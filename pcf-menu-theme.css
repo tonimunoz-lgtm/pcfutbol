@@ -1221,12 +1221,15 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
     #savedGamesModal .modal-content {
         --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
         width: min(1000px, 94vw) !important; max-width: 1000px !important; padding: 22px 26px 24px !important;
-        display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tit imp cls" "lst lst lst"; align-items: center; gap: 0 14px;
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tit imp cls" "syn syn syn" "lst lst lst"; align-items: center; gap: 0 14px;
     }
     #savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 16px !important; }
     #savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 16px !important; }
     #savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 46px; height: 46px; margin: 0 0 16px; font-size: 1.6rem; }
     #savedGamesModal .modal-content > button.btn { display: none; }
+    #savedGamesModal #pcfSyncBar { grid-area: syn; margin: 0 0 14px !important; padding: 10px 14px; border: 1px solid rgba(76,143,255,.45); border-radius: 12px; background: rgba(4,16,40,.55); }
+    #savedGamesModal #pcfSyncButton { background: linear-gradient(180deg, #6fe58b 0%, #25a847 46%, #0f7a30 54%, #064a1b 100%) !important; border-color: #b6ffc7 !important; min-height: 46px; padding: 8px 22px !important; }
+    #savedGamesModal #pcfSyncMsg { font-weight: 600; }
     #savedGamesModal #pcfImportBackupButton { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; min-height: 46px; padding: 8px 22px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.5), 0 3px 6px rgba(0,0,0,.55) !important; }
     #savedGamesModal #savedGamesListContainer {
         grid-area: lst; margin: 0 !important; padding: 14px 14px 4px; max-height: min(520px, 62vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f8cff rgba(5,18,44,.6);
@@ -1252,12 +1255,15 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
     #savedGamesModal .modal-content {
         --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
         width: 94vw !important; max-width: 94vw !important; padding: 14px 12px 16px !important; max-height: 92vh; overflow-y: auto; box-sizing: border-box;
-        display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tit cls" "imp imp" "lst lst"; align-items: center; gap: 0 10px;
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tit cls" "imp imp" "syn syn" "lst lst"; align-items: center; gap: 0 10px;
     }
     #savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 10px !important; padding: 6px 14px 6px 20px !important; min-height: 40px; font-size: 1.15rem !important; }
     #savedGamesModal .modal-content > h1::after { content: ''; order: -1; flex: none; width: 30px; height: 30px; margin: -4px 0; background: url('assets/iconos/ui/boton-cargar.webp') center / contain no-repeat; }
     #savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 38px; height: 38px; margin: 0 0 10px; font-size: 1.3rem; }
     #savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 10px !important; display: block !important; }
+    #savedGamesModal #pcfSyncBar { grid-area: syn; margin: 0 0 10px !important; padding: 8px 10px; border: 1px solid rgba(76,143,255,.45); border-radius: 12px; background: rgba(4,16,40,.55); }
+    #savedGamesModal #pcfSyncButton { width: 100%; min-height: 42px; background: linear-gradient(180deg, #6fe58b 0%, #25a847 46%, #0f7a30 54%, #064a1b 100%) !important; border-color: #b6ffc7 !important; }
+    #savedGamesModal #pcfSyncMsg { flex-basis: 100%; font-size: .88rem; }
     #savedGamesModal #pcfImportBackupButton { width: 100%; min-height: 42px; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; }
     #savedGamesModal .modal-content > button.btn { display: none; }
     #savedGamesModal #savedGamesListContainer { grid-area: lst; margin: 0 !important; padding: 10px 10px 2px; max-height: 58vh; overflow-y: auto; border: 2px solid rgba(25,195,255,.55); border-radius: 12px; background: rgba(4,16,40,.70); min-width: 0; }

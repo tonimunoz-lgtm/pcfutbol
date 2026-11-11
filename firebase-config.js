@@ -297,7 +297,7 @@ async function loadUserSavedGames(userId) {
         query.forEach(d=>{const cloud=d.data(),cached=games[d.id];
             games[d.id]=cached && cached.lastSaved>cloud.lastSaved?cached:cloud;});
         return Object.values(games);
-    } catch(_){return local.map(g=>({...g,localOnly:true}));}
+    } catch(e){const r=local.map(g=>({...g,localOnly:true}));r.cloudError={code:e&&e.code,message:e&&e.message};return r;}   // la lista lleva el motivo para poder explicarlo
 }
 async function loadGameFromCloud(userId, gameId, preferLocal=false) {
     const forceCloud=preferLocal==='cloud';

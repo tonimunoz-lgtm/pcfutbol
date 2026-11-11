@@ -6,6 +6,45 @@
     // FUNCIONES DE CARGA DESDE LA NUBE
     // ========================================
 
+    // Motivo de un fallo con la nube, en palabras entendibles
+    function explainCloud(code, msg) {
+        const m = String(msg || '');
+        if (code === 'permission-denied' || /insufficient permissions/i.test(m)) return 'Firestore ha rechazado el acceso (permission-denied). Si eres administrador, comprueba que tu correo está verificado (Admin → Usuarios); si eres jugador, tu perfil puede no existir o estar suspendido.';
+        if (code === 'unavailable' || /network|offline|failed to fetch/i.test(m)) return 'No hay conexión con la nube ahora mismo. Inténtalo de nuevo con conexión.';
+        return (code ? code + ': ' : '') + (m || 'error desconocido');
+    }
+    function syncMsg(text, kind) {
+        const el = document.getElementById('pcfSyncMsg'); if (!el) return;
+        el.textContent = text || ''; el.style.display = text ? 'block' : 'none';
+        el.style.color = kind === 'bad' ? '#ff9a9a' : kind === 'ok' ? '#7dffa0' : kind === 'warn' ? '#ffd24a' : '#cfe0ff';
+        const bar = document.getElementById('pcfSyncBar'), btn = document.getElementById('pcfSyncButton');
+        if (bar) bar.style.display = (text || (btn && btn.style.display !== 'none')) ? 'flex' : 'none';
+    }
+
+    // Sube a la nube las copias que solo están en este dispositivo (las guardadas cuando la nube no estaba disponible o la rechazó)
+    window.pcfSyncPendingGames = async function() {
+        const uid = window.currentUserId, pending = (window._pcfPendingGames || []).slice(), btn = document.getElementById('pcfSyncButton');
+        if (!uid || !pending.length) return;
+        if (window.isSimulatingWeek?.()) return syncMsg('Espera a que termine la jornada antes de sincronizar.', 'bad');
+        if (btn) btn.disabled = true;
+        let ok = 0; const fails = [];
+        for (let i = 0; i < pending.length; i++) {
+            const g = pending[i];
+            syncMsg(`Subiendo ${i + 1} de ${pending.length}: ${g.name}…`);
+            try {
+                const loaded = await window.loadGameFromCloud(uid, g.id, true);          // copia de este dispositivo
+                if (!loaded || !loaded.success || !loaded.data || !loaded.data.gameState) throw new Error((loaded && (loaded.message || loaded.error)) || 'No se pudo leer la copia local');
+                const r = await window.saveGameToCloud(uid, g.id, g.name, loaded.data.gameState);
+                if (r && r.success) ok++; else fails.push({ g, code: r && r.code, message: r && r.error });
+            } catch (e) { fails.push({ g, code: e && e.code, message: e && e.message }); }
+        }
+        await window.openSavedGamesModal();                                               // repinta: las subidas pierden la etiqueta
+        const f = fails[0];
+        if (!fails.length) syncMsg(`✅ ${ok} partida${ok === 1 ? '' : 's'} subida${ok === 1 ? '' : 's'} a la nube. Ya aparecerán en tus otros dispositivos.`, 'ok');
+        else syncMsg(`${ok ? `✅ ${ok} subida${ok === 1 ? '' : 's'}. ` : ''}No se ha podido subir ${fails.length} partida${fails.length === 1 ? '' : 's'} («${f.g.name}»): ${explainCloud(f.code, f.message)}`, 'bad');
+        try { window.pcfToast?.(fails.length ? 'No se han podido sincronizar todas las partidas' : 'Partidas sincronizadas con la nube', { type: fails.length ? 'error' : 'success', duration: 6000 }); } catch (e) { /* */ }
+    };
+
     // Función para abrir el modal de partidas guardadas
     window.openSavedGamesModal = async function() {
 
@@ -20,6 +59,10 @@
                     <h1>Cargar partida</h1>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
                         <button type="button" class="btn btn-sm" id="pcfImportBackupButton">Importar copia</button>
+                    </div>
+                    <div id="pcfSyncBar" style="display:none;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 12px;">
+                        <button type="button" class="btn btn-sm" id="pcfSyncButton" style="display:none;">☁️ Sincronizar con la nube</button>
+                        <div id="pcfSyncMsg" style="display:none;flex:1 1 260px;font-size:.9em;line-height:1.35;"></div>
                     </div>
                     <div id="savedGamesListContainer" style="margin-top: 20px;">
                         <div class="alert alert-info">Cargando partidas...</div>
@@ -44,6 +87,15 @@
             const games = await window.loadUserSavedGames(window.currentUserId);
             const container = document.getElementById('savedGamesListContainer');
             
+            // Copias que solo existen en este dispositivo → botón para subirlas; y aviso si la nube no se ha podido leer
+            const pending = (games || []).filter(g => g.localOnly);
+            window._pcfPendingGames = pending.map(g => ({ id: g.id, name: g.name || 'Partida sin nombre' }));
+            const syncBtn = document.getElementById('pcfSyncButton');
+            if (syncBtn) { syncBtn.style.display = pending.length ? '' : 'none'; syncBtn.disabled = false; syncBtn.onclick = () => window.pcfSyncPendingGames(); }
+            if (games && games.cloudError) syncMsg('No se ha podido leer la nube: ' + explainCloud(games.cloudError.code, games.cloudError.message) + ' Lo que ves son las copias de este dispositivo.', 'warn');
+            else if (pending.length) syncMsg('Las partidas marcadas como «copia local pendiente» solo están en este dispositivo. Pulsa «Sincronizar con la nube» para que aparezcan en todos.', 'info');
+            else syncMsg('');
+
             if (!games || games.length === 0) {
                 container.innerHTML = `<div class="alert alert-warning">Todavía no tienes partidas guardadas en la nube.</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
