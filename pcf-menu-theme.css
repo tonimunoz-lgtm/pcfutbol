@@ -690,7 +690,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #standings #comp-liga-tbl td.team-name img { width: 26px !important; height: 26px !important; margin-right: 12px !important; vertical-align: middle; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
     #standings #comp-liga-tbl tbody tr:hover td { background: rgba(40,92,190,.82) !important; }
     #standings #comp-liga-tbl td strong { color: inherit !important; }
-    #standings #comp-liga-tbl tr.my-team-row td, #standings #comp-liga-tbl tr.my-team-row:hover td {
+    #standings #comp-liga-tbl tbody tr.my-team-row:nth-child(n) td, #standings #comp-liga-tbl tbody tr.my-team-row:nth-child(n):hover td {
         background: linear-gradient(180deg, #e0a625 0%, #9c6308 100%) !important; color: #fff !important; border-bottom-color: #5e3a00 !important; text-shadow: 0 1px 3px rgba(0,0,0,.95); font-weight: 800;
     }
     /* — Pichichi y Zamora — */
@@ -1702,4 +1702,77 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
     #tactics .tc-profile p { margin: 0; color: #fff; font-size: 1.12rem; font-weight: 500; }
     #tactics .tc-profile p + p:not(:empty)::before { content: '· '; color: #9db8e8; }
     #tactics .tc-profile small { display: none; }
+}
+
+/* ============================================================
+   Calendario de partidos en el estilo del mockup
+   Cabecera azul (identidad de Información) · barra de filtros · tarjetas de cristal por jornada con tabla oscura ·
+   TU partido en fila dorada con la estrella · la próxima jornada con borde verde. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #calendar.page { background: #030a1a; padding-bottom: 28px; }
+    #calendar.page::before {
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    #calendar .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #4c8fff !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,44,96,.92), rgba(4,16,40,.95)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.55), inset 0 0 22px rgba(70,150,255,.25), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #calendar .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,170,255,.85), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #calendar .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 24px rgba(70,150,255,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #calendar .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #calendar .page-header .page-close-btn {
+        margin-left: auto; height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    /* barra de filtros */
+    #calendar .pcf-cal-toolbar {
+        margin: 0 30px 14px; padding: 10px 18px; gap: 22px; border: 2px solid #3f7fe0; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.12);
+    }
+    #calendar .pcf-cal-toolbar label { gap: 14px; color: #fff; font-size: 1.3rem; font-weight: 600; }
+    #calendar .pcf-cal-toolbar input[type="checkbox"] { width: 28px; height: 28px; accent-color: #1f8cf0; cursor: pointer; }
+    #calendar .pcf-cal-toolbar .btn {
+        height: 44px; padding: 0 22px !important; border: 1px solid #072a66; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.2rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    /* rejilla de jornadas */
+    #calendar .pcf-cal-grid { margin: 0 30px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-items: start; }
+    #calendar .pcf-cal-card {
+        min-width: 0; padding: 8px 8px 10px; border: 2px solid #3f7fe0; border-radius: 14px; overflow: hidden;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 16px rgba(70,150,255,.40), inset 0 0 20px rgba(70,150,255,.12);
+    }
+    #calendar .pcf-cal-card.current { border-color: #3dff6e; box-shadow: 0 0 18px rgba(60,255,110,.65), inset 0 0 20px rgba(60,255,110,.14); }
+    #calendar .pcf-cal-card .pcf-cal-week {
+        margin: 0 0 8px !important; color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.4rem !important; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); padding-left: 4px;
+    }
+    #calendar .pcf-cal-card .pcf-cal-week.current { color: #b6ff3a !important; }
+    #calendar .pcf-cal-card .pcf-cal-mine { display: none; }
+    #calendar .pcf-cal-card table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: .88rem; background: none; }
+    #calendar .pcf-cal-card th {
+        padding: 3px 4px; background: none !important; border: 0 !important; border-bottom: 1px solid rgba(255,210,74,.55) !important; text-align: left; overflow: hidden; white-space: nowrap;
+        color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: .85rem; letter-spacing: 0; text-transform: uppercase;
+    }
+    #calendar .pcf-cal-card th:last-child { text-align: right; width: 58px; padding-right: 4px; font-size: .68rem; letter-spacing: -.01em; }
+    #calendar .pcf-cal-card td {
+        padding: 3px 4px; max-width: none; background: rgba(8,28,66,.82) !important; color: #fff !important; border: 0 !important; border-bottom: 1px solid rgba(76,143,255,.18) !important;
+        font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #calendar .pcf-cal-card tbody tr:nth-child(even) td { background: rgba(14,42,96,.82) !important; }
+    #calendar .pcf-cal-card td:last-child { width: 58px; text-align: right; font-weight: 800; padding-right: 8px; }
+    #calendar .pcf-cal-card td .pcf-st-icon { width: 15px; height: 15px; margin: 0 3px 0 0; vertical-align: -3px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+    /* tu partido: fila dorada */
+    #calendar .pcf-cal-card tbody tr.pcf-my-match:nth-child(n) td {
+        background: linear-gradient(180deg, #ffd24a 0%, #e8a812 100%) !important; color: #2b1a00 !important; font-weight: 800; text-shadow: none; border-bottom-color: #a56b00 !important;
+    }
 }
