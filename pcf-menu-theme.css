@@ -233,80 +233,102 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
 
 /* ============================================================
    Modal de bienvenida (Nueva partida / Cargar partida) en el estilo del mockup
-   Fondo: la imagen del menú oscurecida · panel de cristal con borde luminoso · tarjetas 3D con icono grande que sobresale.
-   Nueva partida = verde (Equipo) · Cargar partida = azul (Información) · Cerrar sesión = ficha roja inclinada.
+   Panel de cristal con borde cian luminoso y esquinas en chaflán · título dorado · dos tarjetas con FOTO arriba y banda de color abajo
+   (Nueva partida = verde, con el balón en el círculo central; Cargar partida = azul, con la nube metálica) · «Cerrar sesión» rojo inclinado.
    ============================================================ */
 #gameSelectionModal {
     background:
-        radial-gradient(ellipse at 50% 45%, rgba(3,10,28,.10) 0%, rgba(3,10,28,.65) 100%),
-        linear-gradient(rgba(3,10,26,.45), rgba(3,10,26,.55)),
-        url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat !important;
+        radial-gradient(ellipse at 50% 45%, rgba(2,8,22,.12) 0%, rgba(2,8,22,.68) 100%),
+        linear-gradient(rgba(2,8,22,.32), rgba(2,8,22,.48)),
+        url(assets/imagenes/intro-estadio-encendido.webp) center / cover no-repeat !important;
 }
 #gameSelectionModal .modal-content {
-    position: relative; isolation: isolate; overflow: visible; width: min(840px, 94vw) !important; max-width: none !important; padding: 44px 52px 36px;
+    position: relative; isolation: isolate; overflow: visible; width: min(1210px, 94vw, calc((100vh - 13vh - 36px) * 1.72)) !important; max-width: none !important; padding: 44px 56px 40px;
     background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
-    filter: drop-shadow(0 0 22px rgba(70,150,255,.55)) drop-shadow(0 10px 26px rgba(0,0,0,.7));
+    filter: drop-shadow(0 0 22px rgba(53,182,255,.55)) drop-shadow(0 10px 26px rgba(0,0,0,.7));
 }
 #gameSelectionModal .modal-content::before {
     content: ''; position: absolute; inset: 0; z-index: -1;
-    clip-path: polygon(26px 0, calc(100% - 26px) 0, 100% 26px, 100% calc(100% - 26px), calc(100% - 26px) 100%, 26px 100%, 0 calc(100% - 26px), 0 26px);
-    background: linear-gradient(180deg, rgba(14,44,96,.93) 0%, rgba(8,28,66,.95) 48%, rgba(4,16,40,.97) 100%);
-    box-shadow: inset 0 0 0 2px #4c8fff, inset 0 0 38px rgba(70,150,255,.40), inset 0 2px 0 rgba(255,255,255,.35);
+    clip-path: polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px);
+    background: linear-gradient(180deg, rgba(12,40,92,.95) 0%, rgba(7,24,60,.96) 50%, rgba(3,13,34,.98) 100%);
+    box-shadow: inset 0 0 0 2px #35b6ff, inset 0 0 44px rgba(53,182,255,.32), inset 0 2px 0 rgba(255,255,255,.35);
 }
 #gameSelectionModal .modal-content h2 {
-    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.7rem, 4.2vw, 2.7rem); letter-spacing: .05em; color: #fff;
-    text-transform: uppercase; text-align: center; margin: 0 0 6px; text-shadow: 0 0 16px rgba(90,170,255,.9), 0 3px 4px #000;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.75rem) !important; letter-spacing: .03em; line-height: 1.05;
+    text-transform: uppercase; text-align: center; margin: 0 0 6px; color: transparent !important; text-shadow: none !important;
+    background: linear-gradient(180deg, #ffe58a 0%, #ffc21a 52%, #e08a00 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 3px 2px rgba(0,0,0,.75));
 }
-#gameSelectionModal .modal-content h2::after { content: ''; display: block; width: 46%; height: 3px; margin: 12px auto 0; background: linear-gradient(90deg, transparent, #ffd24a, transparent); }
-#gameSelectionModal .modal-content > p { text-align: center; color: #9cc0f5; letter-spacing: .16em; text-transform: uppercase; font-size: .85rem; margin: 10px 0 0; }
-/* contenedor de las dos tarjetas: deja sitio arriba para que el icono sobresalga */
-#gameSelectionModal .modal-content > div:nth-of-type(1) { margin-top: 74px !important; gap: 28px !important; align-items: stretch; grid-template-columns: 1fr 1fr; }
+#gameSelectionModal .modal-content h2::after { content: ''; display: block; width: 56%; height: 2px; margin: 14px auto 0; background: linear-gradient(90deg, transparent, #ffd24a, transparent); }
+#gameSelectionModal .modal-content > p { text-align: center; color: #cfd9ea !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(.85rem, 1.35vw, 1.3rem) !important; margin: 16px 0 0 !important; }
+/* las dos tarjetas */
+#gameSelectionModal .modal-content > div:nth-of-type(1) { display: grid !important; grid-template-columns: 1fr 1fr; gap: 34px !important; align-items: stretch; margin: 32px 0 0 !important; }
 #gameSelectionModal .game-selection-btn {
-    position: relative; overflow: visible; flex: 1 1 0; min-height: 190px; padding: 74px 18px 22px !important; border-radius: 14px !important; cursor: pointer;
-    border: 2px solid transparent !important; color: #fff; text-align: center; transition: filter .15s ease, transform .1s ease, box-shadow .15s ease;
-    background:
-        linear-gradient(180deg, var(--c-hi) 0%, var(--c-mid) 40%, var(--c-lo) 54%, var(--c-dk) 100%) padding-box,
-        linear-gradient(180deg, var(--c-edge) 0%, var(--c-lo) 55%, var(--c-dk) 100%) border-box !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.65), inset 0 -4px 8px rgba(0,0,0,.45), 0 0 18px var(--c-glow), 0 6px 10px rgba(0,0,0,.55) !important;
+    display: flex !important; flex-direction: column; align-items: stretch; padding: 0 !important; overflow: hidden; border-radius: 18px !important; cursor: pointer; text-align: center; color: #fff;
+    border: 2px solid var(--c-edge) !important; transition: filter .15s ease, transform .1s ease, box-shadow .15s ease;
+    background: linear-gradient(180deg, var(--c-mid) 0%, var(--c-lo) 55%, var(--c-dk) 100%) !important;
+    box-shadow: 0 0 20px var(--c-glow), inset 0 0 0 1px rgba(255,255,255,.12), 0 8px 14px rgba(0,0,0,.55) !important;
 }
-#btnNewGameSelection  { --c-hi:#7fe597; --c-mid:#22a84f; --c-lo:#137a35; --c-dk:#08461d; --c-edge:#b4f7c4; --c-glow:rgba(70,230,120,.65); }
-#btnLoadGameSelection { --c-hi:#8bbcff; --c-mid:#2f72d9; --c-lo:#1a4cae; --c-dk:#0a2a70; --c-edge:#b3d8ff; --c-glow:rgba(70,150,255,.70); }
-#gameSelectionModal .game-selection-btn:hover  { filter: brightness(1.18) saturate(1.1); transform: translateY(-2px); }
-#gameSelectionModal .game-selection-btn:active { filter: brightness(.92); transform: translateY(2px) scale(.99); box-shadow: inset 0 4px 10px rgba(0,0,0,.55), 0 0 10px var(--c-glow) !important; }
-/* icono grande que sobresale por arriba de la tarjeta */
+#btnNewGameSelection  { --c-mid:#27b550; --c-lo:#148a37; --c-dk:#074a1d; --c-edge:#5fe97f; --c-glow:rgba(80,240,130,.55); }
+#btnLoadGameSelection { --c-mid:#1f66d8; --c-lo:#1450b6; --c-dk:#0a2a78; --c-edge:#3f9bff; --c-glow:rgba(60,150,255,.60); }
+#gameSelectionModal .game-selection-btn:hover  { filter: brightness(1.12) saturate(1.1); transform: translateY(-3px); }
+#gameSelectionModal .game-selection-btn:active { filter: brightness(.92); transform: translateY(1px) scale(.995); box-shadow: inset 0 4px 10px rgba(0,0,0,.55), 0 0 10px var(--c-glow) !important; }
+/* foto de la tarjeta (sustituye al emoji del marcado) */
 #gameSelectionModal .game-selection-btn > div:nth-child(1) {
-    position: absolute; left: 50%; top: -62px; transform: translateX(-50%); width: 150px; height: 150px; font-size: 0 !important; margin: 0 !important;
-    background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; filter: drop-shadow(0 8px 8px rgba(0,0,0,.6)); pointer-events: none;
+    position: static !important; transform: none !important; flex: none; width: 100% !important; height: auto !important; aspect-ratio: 2.1 / 1; margin: 0 !important; font-size: 0 !important;
+    background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important; border-bottom: 2px solid var(--c-edge); filter: none; pointer-events: none;
 }
-#gameSelectionModal #btnNewGameSelection  > div:nth-child(1) { background-image: url('assets/iconos/ui/boton-nuevo.webp') !important; }
-#gameSelectionModal #btnLoadGameSelection > div:nth-child(1) { background-image: url('assets/iconos/ui/boton-cargar.webp') !important; }
+#gameSelectionModal #btnNewGameSelection  > div:nth-child(1) { background-image: url('assets/imagenes/inicio-nueva-partida.webp') !important; }
+#gameSelectionModal #btnLoadGameSelection > div:nth-child(1) { background-image: url('assets/imagenes/inicio-cargar-partida.webp') !important; }
 #gameSelectionModal .game-selection-btn > div:nth-child(2) {
-    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.7rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
-    text-shadow: 0 2px 4px rgba(0,0,0,.75); margin: 0 0 6px !important;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: clamp(1.5rem, 2.6vw, 2.5rem); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0,0,0,.75); margin: 16px 0 8px !important;
 }
 #gameSelectionModal .game-selection-btn > div:nth-child(3) {
-    font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: .78rem; letter-spacing: .3em; text-transform: uppercase; color: rgba(255,255,255,.88) !important;
-    padding-top: 8px; border-top: 1px solid var(--c-edge); text-shadow: 0 1px 2px #000; display: inline-block; margin: 0 auto;
+    align-self: center; min-width: 52%; margin: 0 auto 20px !important; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.5); opacity: 1 !important;
+    font-family: 'Saira Condensed', sans-serif !important; font-weight: 700; font-size: clamp(.78rem, 1.15vw, 1.05rem) !important; letter-spacing: .32em; text-transform: uppercase; color: rgba(255,255,255,.92) !important; text-shadow: 0 1px 2px #000;
 }
-/* Cerrar sesión: ficha inclinada roja, como «Salir» de la cabecera */
+/* Cerrar sesión: ficha inclinada roja */
 #btnLogoutSelection {
-    position: relative; isolation: isolate; height: 42px; min-width: 190px; padding: 0 34px !important; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important;
-    font-family: 'Saira Condensed', sans-serif; font-weight: 700; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+    position: relative; isolation: isolate; height: 58px; min-width: 320px; padding: 0 44px !important; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important;
+    font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem !important; letter-spacing: .1em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
     filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)); cursor: pointer; transition: filter .12s ease;
 }
 #btnLogoutSelection::before {
-    content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+    content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
     background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%);
     box-shadow: inset 0 0 0 1px #2a050b, inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 5px rgba(0,0,0,.4);
 }
 #btnLogoutSelection:hover { filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)) brightness(1.18); }
-#gameSelectionModal .modal-content > div:nth-of-type(2) { margin-top: 30px !important; display: flex; justify-content: center; }
-@media (max-width: 600px) {
-    #gameSelectionModal .modal-content { padding: 32px 18px 26px; }
-    #gameSelectionModal .modal-content > div:nth-of-type(1) { margin-top: 62px !important; gap: 72px !important; grid-template-columns: 1fr !important; }
-    #gameSelectionModal .game-selection-btn { width: 100% !important; min-height: 150px; padding-top: 58px !important; }
-    #gameSelectionModal .game-selection-btn > div:nth-child(1) { width: 112px; height: 112px; top: -50px; }
-    #gameSelectionModal .game-selection-btn > div:nth-child(2) { font-size: 1.45rem; }
+#gameSelectionModal .modal-content > div:nth-of-type(2) { margin-top: 32px !important; display: flex; justify-content: center; }
+/* móvil: tarjetas apiladas, cada una con su foto */
+@media (max-width: 760px) {
+    #gameSelectionModal { overflow-y: auto; }
+    #gameSelectionModal .modal-content { width: 94vw !important; padding: 28px 16px 24px; }
+    #gameSelectionModal .modal-content > div:nth-of-type(1) { grid-template-columns: 1fr !important; gap: 18px !important; margin-top: 22px !important; }
+    #gameSelectionModal .game-selection-btn > div:nth-child(2) { font-size: 1.55rem; margin: 12px 0 6px !important; }
+    #gameSelectionModal .game-selection-btn > div:nth-child(3) { font-size: .78rem !important; letter-spacing: .24em; margin-bottom: 14px !important; }
+    #btnLogoutSelection { min-width: 0; width: 100%; max-width: 300px; height: 52px; padding: 0 22px !important; font-size: 1.1rem !important; white-space: nowrap; }
+    #gameSelectionModal .modal-content > div:nth-of-type(2) { margin-top: 20px !important; }
+}
+/* pantallas bajas (móvil en horizontal): panel compacto, fotos más panorámicas y scroll si aun así no cabe */
+@media (max-height: 560px) {
+    #gameSelectionModal { overflow-y: auto; }
+    body.pcfi-has-backdrop #gameSelectionModal > * { margin-top: 0 !important; }
+    #gameSelectionModal .modal-content { width: min(94vw, 760px) !important; padding: 16px 26px 14px; margin: 8px auto; }
+    #gameSelectionModal .modal-content h2 { font-size: 1.45rem !important; }
+    #gameSelectionModal .modal-content h2::after { margin-top: 8px; }
+    #gameSelectionModal .modal-content > p { font-size: .78rem !important; margin-top: 8px !important; letter-spacing: .22em; }
+    #gameSelectionModal .modal-content > div:nth-of-type(1) { gap: 18px !important; margin-top: 12px !important; }
+    #gameSelectionModal .game-selection-btn > div:nth-child(1) { aspect-ratio: 3.1 / 1; }
+    /* la nube entera, sobre el color del borde de su foto y con los lados fundidos para que no se note el corte */
+    #gameSelectionModal #btnLoadGameSelection > div:nth-child(1) {
+        background-image: linear-gradient(90deg, #011238 0, #011238 15%, rgba(1,18,56,0) 32%, rgba(1,18,56,0) 68%, #011238 85%, #011238 100%), url('assets/imagenes/inicio-cargar-partida.webp') !important;
+        background-size: 100% 100%, contain !important; background-position: center, center !important; background-color: #011238;
+    }
+    #gameSelectionModal .game-selection-btn > div:nth-child(2) { font-size: 1.25rem; margin: 8px 0 4px !important; }
+    #gameSelectionModal .game-selection-btn > div:nth-child(3) { font-size: .68rem !important; margin-bottom: 10px !important; padding-top: 6px; }
+    #btnLogoutSelection { height: 38px; min-width: 200px; padding: 0 28px !important; font-size: .95rem !important; }
+    #gameSelectionModal .modal-content > div:nth-of-type(2) { margin-top: 12px !important; }
 }
 
 /* ============================================================
