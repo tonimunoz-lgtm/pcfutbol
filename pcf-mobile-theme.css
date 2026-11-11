@@ -1,0 +1,198 @@
+/* ============================================================
+   pcf-mobile-theme.css — Diseño nuevo (mockups) adaptado a móvil
+   Se carga la última. Misma consulta que pcf-mobile.css: móvil en vertical y horizontal de poca altura.
+   Colores por sección: Información azul · Equipo verde · Fichajes dorado · Gestión rojo.
+   Ronda 1: base global (cabecera, menú, placas de página) + Información (Noticias, Clasificación, Calendario) + Equipo (Alineación, Tácticas).
+   ============================================================ */
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+
+    /* ── Base ──────────────────────────────────────────────────── */
+    body { background: #030a1a; }
+    .page {
+        background: linear-gradient(rgba(3,10,26,.86), rgba(3,10,26,.93)), url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat !important;   /* sin desenfoque: más ligero en móvil */
+    }
+
+    /* ── Cabecera ──────────────────────────────────────────────── */
+    .header { background: linear-gradient(180deg, #0d3270 0%, #061a40 60%, #030f26 100%) !important; border-bottom: 2px solid #19c3ff !important; box-shadow: 0 3px 14px rgba(25,195,255,.4) !important; }
+    .header .info-box {
+        background: linear-gradient(180deg, #1b4b94 0%, #0b2d63 48%, #071d42 52%, #040f26 100%) !important; border: 1px solid #4c8fff !important; border-radius: 6px !important; color: #fff !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 3px rgba(0,0,0,.5) !important;
+        font-family: 'Saira Condensed', sans-serif !important; font-weight: 800 !important; font-style: italic !important; letter-spacing: .03em; text-transform: uppercase;
+    }
+    .header #balanceDisplay { color: #5dff8c !important; }
+    #pcfMobileActions .center-option {
+        background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; border: 1px solid #072a66 !important; border-radius: 8px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important;
+    }
+    .header-info #logoutButton { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border: 1px solid #2a050b !important; border-radius: 8px !important; }
+    .header-info #adminButton { background: linear-gradient(180deg, #ffe38a 0%, #f2b928 46%, #d99a10 54%, #a56b00 100%) !important; border: 1px solid #5e3a00 !important; border-radius: 8px !important; }
+
+    /* ── Menú: paneles de cristal con el color de cada sección ─── */
+    .main-layout > .quadrant { border: 2px solid var(--qc, #3f7fe0) !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(10,34,78,.78), rgba(4,16,40,.86)) !important; box-shadow: 0 0 14px var(--qg, rgba(70,150,255,.4)) !important; }
+    .main-layout > .top-left { --qc: #4c8fff; --qg: rgba(70,150,255,.5); }
+    .main-layout > .top-right { --qc: #5fe97f; --qg: rgba(80,240,130,.5); }
+    .main-layout > .bottom-left { --qc: #ffc928; --qg: rgba(255,190,40,.5); }
+    .main-layout > .bottom-right { --qc: #ff6b6b; --qg: rgba(255,80,80,.5); }
+    .main-layout > .quadrant .section-title {
+        background: linear-gradient(180deg, var(--qc), rgba(0,0,0,.55)) !important; border: 0 !important; border-radius: 8px !important; color: #fff !important;
+        font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; font-size: 1rem !important; letter-spacing: .06em !important; text-shadow: 0 2px 3px rgba(0,0,0,.8);
+    }
+    .main-layout > .main-center-row { border: 2px solid #3f7fe0 !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(10,34,78,.86), rgba(4,16,40,.92)) !important; box-shadow: 0 0 14px rgba(70,150,255,.4) !important; }
+
+    /* ── Placas de página, con la identidad de cada sección ───── */
+    #dashboard, #standings, #calendar, #last-result { --hb: #4c8fff; --h1: #1f55a8; --h2: #061a3e; --hg: rgba(70,150,255,.55); }
+    #lineup, #tactics, #rival-analysis, #training { --hb: #8dffa8; --h1: #1f9a45; --h2: #043d18; --hg: rgba(80,255,130,.55); }
+    #transfers, #negotiations, #squad, #academy { --hb: #ffd98a; --h1: #c8860a; --h2: #4f3000; --hg: rgba(255,190,40,.55); }
+    #staff, #finance, #commercial, #facilities, #decisions { --hb: #ff9a9a; --h1: #c4283a; --h2: #4a0810; --hg: rgba(255,80,80,.55); }
+    .page .page-header {
+        margin: 0 0 10px !important; padding: 6px 8px 6px 12px !important; border: 2px solid var(--hb, #4c8fff) !important; border-radius: 10px !important;
+        background: linear-gradient(180deg, var(--h1, #1f55a8), var(--h2, #061a3e)) !important; box-shadow: 0 0 12px var(--hg, rgba(70,150,255,.5)), inset 0 1px 0 rgba(255,255,255,.35) !important;
+    }
+    .page .page-header h1 { font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; font-size: 1.25rem !important; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.8); }
+    .page .page-close-btn {
+        height: 36px !important; border: 1px solid #2a050b !important; border-radius: 6px !important; font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; letter-spacing: .05em;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important;
+    }
+
+    /* ── Clasificación ─────────────────────────────────────────── */
+    #standings table.cg-table, #standings #comp-liga-tbl {
+        width: 100%; border: 2px solid #3f7fe0 !important; border-radius: 12px; overflow: hidden; background: rgba(4,16,40,.92) !important; box-shadow: 0 0 14px rgba(70,150,255,.45);
+        border-collapse: separate !important; border-spacing: 0 !important;
+    }
+    #standings table.cg-table thead th, #standings #comp-liga-tbl thead th { background: linear-gradient(180deg, #143a78, #06183a) !important; color: #ffd24a !important; font-style: italic; border: 0 !important; border-bottom: 2px solid rgba(255,210,74,.6) !important; }
+    #standings table.cg-table tbody td, #standings #comp-liga-tbl tbody td { background: rgba(8,28,66,.86) !important; color: #fff !important; border: 0 !important; border-bottom: 1px solid rgba(76,143,255,.2) !important; font-weight: 700; }
+    #standings table.cg-table tbody tr:nth-child(even) td, #standings #comp-liga-tbl tbody tr:nth-child(even) td { background: rgba(14,42,96,.86) !important; }
+    #standings #comp-liga-tbl tbody td:nth-child(2), #standings table.cg-table tbody td:nth-child(2) { text-align: left; }
+    #standings #comp-liga-tbl tbody tr.my-team-row:nth-child(n) td,
+    #standings table.cg-table tbody :is(tr.cg-me, tr[style*="233,69,96"], tr[style*="233, 69, 96"]):nth-child(n) td { background: linear-gradient(180deg, #e0a625, #9c6308) !important; color: #fff !important; text-shadow: 0 1px 3px #000; }
+    #standings #comp-liga-tbl tbody td:last-child, #standings #comp-liga-tbl tbody td:last-child * { color: #fff !important; }
+    #standings table.cg-table tbody td * { color: inherit !important; }
+
+    /* ── Pestañas de Clasificación (Liga / Europa / Copa) ──────── */
+    #standings #comp-tabs button, #standings .comp-tab-btn {
+        border: 1px solid #072a66 !important; border-radius: 8px !important; font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; letter-spacing: .04em;
+        background: linear-gradient(180deg, #4c8fe0 0%, #1f55a8 46%, #123a82 54%, #0a2460 100%) !important; color: #fff !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 2px 4px rgba(0,0,0,.5) !important;
+    }
+
+    /* ── Noticias ──────────────────────────────────────────────── */
+    #dashboard .page-header { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+    #dashboard .page-header h1 { flex: 1 1 0; min-width: 0; font-size: 1.05rem !important; }
+    #dashboard .page-header .page-close-btn { order: 2; flex: none; }
+    #dashboard #pcfNewsTools { order: 3; flex: 1 1 100%; display: flex; gap: 6px; }
+    #dashboard #pcfNewsTools > * { flex: 1; min-height: 36px !important; height: 36px; padding: 0 8px !important; font-size: .78rem !important; }
+    #dashboard .data-box, #dashboard #trophiesLinkBox { border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.86), rgba(4,16,40,.92)) !important; box-shadow: 0 0 12px rgba(70,150,255,.4) !important; }
+    #dashboard h2 { color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif !important; font-style: italic; font-weight: 800 !important; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+
+    /* ── Calendario ────────────────────────────────────────────── */
+    #calendar .pcf-cal-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px !important; padding: 10px 12px; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.88), rgba(4,16,40,.94)); box-shadow: 0 0 12px rgba(70,150,255,.4); }
+    #calendar .pcf-cal-toolbar label { display: inline-flex; align-items: center; gap: 10px; color: #fff; font-size: 1.05rem; font-weight: 600; }
+    #calendar .pcf-cal-toolbar input[type="checkbox"] { width: 24px; height: 24px; accent-color: #1f8cf0; }
+    #calendar .pcf-cal-toolbar .btn { flex: 1 1 100%; height: 44px; border: 1px solid #072a66; border-radius: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important; }
+    #calendar .pcf-cal-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+    #calendar .pcf-cal-card { padding: 8px 10px 10px; border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.88), rgba(4,16,40,.94)) !important; box-shadow: 0 0 12px rgba(70,150,255,.4) !important; }
+    #calendar .pcf-cal-card.current { border-color: #3dff6e !important; box-shadow: 0 0 14px rgba(60,255,110,.6) !important; }
+    #calendar .pcf-cal-card .pcf-cal-week { color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem !important; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #calendar .pcf-cal-card .pcf-cal-week.current { color: #b6ff3a !important; }
+    #calendar .pcf-cal-card .pcf-cal-mine { background: rgba(255,210,74,.14) !important; border: 1px solid #ffd24a !important; color: #ffd24a !important; font-size: .72rem; }
+    #calendar .pcf-cal-card table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; background: none; font-size: .88rem; }
+    #calendar .pcf-cal-card th { padding: 4px 6px; background: none !important; border: 0 !important; border-bottom: 1px solid rgba(255,210,74,.55) !important; color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; text-transform: uppercase; text-align: left; }
+    #calendar .pcf-cal-card th:last-child { width: 78px; text-align: right; font-size: .72rem; letter-spacing: -.01em; padding-right: 8px; }
+    #calendar .pcf-cal-card td { padding: 5px 6px; max-width: none; background: rgba(8,28,66,.84) !important; color: #fff !important; border: 0 !important; border-bottom: 1px solid rgba(76,143,255,.18) !important; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #calendar .pcf-cal-card tbody tr:nth-child(even) td { background: rgba(14,42,96,.84) !important; }
+    #calendar .pcf-cal-card td:last-child { width: 78px; text-align: right; font-weight: 800; }
+    #calendar .pcf-cal-card td .pcf-st-icon { width: 15px; height: 15px; margin: 0 3px 0 0; vertical-align: -3px; }
+    #calendar .pcf-cal-card tbody tr.pcf-my-match:nth-child(n) td { background: linear-gradient(180deg, #ffd24a 0%, #e8a812 100%) !important; color: #2b1a00 !important; font-weight: 800; border-bottom-color: #a56b00 !important; }
+
+    /* ── Alineación ────────────────────────────────────────────── */
+    #lineup #lineupMessage { margin: 0 0 8px !important; padding: 8px 12px !important; border: 2px solid #3f7fe0 !important; border-radius: 10px !important; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)) !important; color: #e6f0ff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 700; font-size: .95rem !important; }
+    #lineup #lineupMessage.alert-warning { border-color: #e0a625 !important; background: linear-gradient(180deg, rgba(86,58,6,.94), rgba(44,28,2,.96)) !important; color: #ffd24a !important; }
+    #lineup #pcfXiHead { display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 2px solid #3f7fe0; border-bottom: 0; border-radius: 12px 12px 0 0; background: linear-gradient(180deg, rgba(10,34,78,.92), rgba(5,20,48,.95)); }
+    #lineup #pcfXiHead .xi-tab { padding: 4px 18px 4px 12px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); background: linear-gradient(180deg, #8fe8ff, #3fb6f0 52%, #1f8cd0); color: #06223e; font: italic 800 1.05rem 'Saira Condensed', sans-serif; text-transform: uppercase; }
+    #lineup #pcfXiHead .xi-form { color: #fff; font: italic 800 1.3rem 'Saira Condensed', sans-serif; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #lineup #pitchContainer { border: 2px solid #3f7fe0 !important; border-top: 0 !important; border-radius: 0 0 12px 12px !important; box-shadow: 0 0 14px rgba(70,150,255,.45) !important; }
+    #lineup #pitchContainer .pitch-position-placeholder:has(.pitch-player) { font-size: 0; color: transparent; background: none; border-color: transparent; }
+    #lineup #pitchContainer .pitch-player { position: relative; border: 2px solid #7fc0ff !important; border-radius: 8px !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; background: linear-gradient(180deg, #3f7fe6 0%, #1c4fb8 46%, #123a92 54%, #0a2468 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 5px rgba(0,0,0,.6) !important; color: #fff; }
+    #lineup #pitchContainer .pitch-player.suspended { background: linear-gradient(180deg, #f7c04a 0%, #e08a10 46%, #b86a00 54%, #7a4300 100%) !important; border-color: #ffd98a !important; opacity: 1 !important; }
+    #lineup #pitchContainer .pitch-player.injured { background: linear-gradient(180deg, #e05a5a 0%, #b02020 46%, #7c1010 54%, #460808 100%) !important; border-color: #ff9a9a !important; opacity: 1 !important; }
+    #lineup #pitchContainer .pitch-player .pcf-st-lineup { position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; margin: 0; }
+    #lineup .reserves-container { border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.88), rgba(4,16,40,.94)) !important; padding: 8px 10px 10px !important; margin-top: 10px; }
+    #lineup .reserves-container h2 { color: #ffd24a !important; font: italic 800 1.2rem 'Saira Condensed', sans-serif !important; text-transform: uppercase; }
+    #lineup #reservesList { background: none !important; border: 0 !important; padding: 0 !important; }
+    #lineup #reservesList .pcf-res-group { color: #ffd24a !important; font: italic 800 1.05rem 'Saira Condensed', sans-serif !important; border: 0 !important; }
+    #lineup #reservesList .draggable-player { display: flex !important; align-items: center; gap: 8px; min-height: 38px; padding: 2px 10px 2px 8px !important; border: 1px solid rgba(76,143,255,.65) !important; border-left-width: 5px !important; border-radius: 7px !important; background: linear-gradient(180deg, rgba(14,40,92,.96), rgba(5,18,44,.98)) !important; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 700; font-size: .98rem !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-por { border-left-color: #ffd54f !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-def { border-left-color: #5fe97f !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-med { border-left-color: #4c9bff !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-del { border-left-color: #ff6b5e !important; }
+    #lineup #reservesList .draggable-player .lr-n { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    #lineup #reservesList .draggable-player .lr-p { flex: none; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.5); font-weight: 800; }
+    #lineup .lr-p::before { content: none; }
+    #lineup > .btn { margin-top: 10px !important; border-radius: 8px !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; color: #fff !important; }
+
+    /* ── Tácticas ──────────────────────────────────────────────── */
+    #tactics .tc-top, #tactics .tc-xibox, #tactics .tc-profile, #tactics .tc-sec { margin: 0 0 10px !important; padding: 10px 12px !important; border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)) !important; box-shadow: 0 0 12px rgba(70,150,255,.4) !important; }
+    #tactics .tc-top > div { margin: 0 0 8px !important; padding: 0 !important; border: 0 !important; background: none !important; }
+    #tactics .tc-top > div:last-child { margin-bottom: 0 !important; }
+    #tactics .tc-teams { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.25rem !important; text-transform: uppercase; }
+    #tactics .tc-jor { color: #9db8e8 !important; text-transform: uppercase; letter-spacing: .06em; }
+    #tactics .tc-match-stats > div > div:first-child { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; color: #fff !important; }
+    #tactics .tc-match-stats > div > div:first-child[style*="FFD700"] { color: #ffd24a !important; }
+    #tactics .tc-match-stats > div > div:first-child[style*="4CAF50"] { color: #5dff8c !important; }
+    #tactics .tc-auto { width: 100%; height: 46px; border: 1px solid #072a66; border-radius: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important; }
+    #tactics .tc-xi-title { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem !important; }
+    #tactics .tc-xi-avg { background: none !important; color: #ffe14a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem !important; }
+    #tactics .tc-sec-label { display: inline-flex !important; align-items: center; margin: 0 0 8px !important; padding: 5px 24px 5px 12px !important; border-radius: 0 !important; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: linear-gradient(180deg, var(--sh, #6fe58b), var(--sm, #25a847) 52%, var(--sl, #0f7a30)) !important; color: #fff !important; font: italic 800 1.05rem 'Saira Condensed', sans-serif !important; text-transform: none !important; }
+    #tactics .tc-sec-mentality { --sh: #e59cff; --sm: #b94fe0; --sl: #7a1fa8; }
+    #tactics .tc-sec-press { --sh: #ffbd7a; --sm: #f0802a; --sl: #b84f0a; }
+    #tactics .tc-sec-instr { --sh: #d6f28f; --sm: #9bd44a; --sl: #5f9a1c; }
+    #tactics .tc-sec-instr .tc-sec-label { color: #16300a !important; }
+    #tactics .tc-card { position: relative; border: 2px solid rgba(76,143,255,.6) !important; border-radius: 10px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important; }
+    #tactics .tc-card.active { border-color: #5fe97f !important; background: linear-gradient(180deg, rgba(16,120,56,.96), rgba(4,62,26,.98)) !important; box-shadow: 0 0 10px rgba(80,240,130,.55); }
+    #tactics .tc-check { display: block; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d6ffe0; background: radial-gradient(circle at 35% 30%, #8dffa8, #1fbf4a 60%, #0d7a2a); box-shadow: 0 1px 3px rgba(0,0,0,.6); }
+    #tactics .tc-check::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    #tactics .tc-name { color: #fff !important; font: italic 800 1.15rem 'Saira Condensed', sans-serif !important; text-transform: uppercase; }
+    #tactics .tc-desc, #tactics .tc-stat { color: #e6f0ff !important; }
+    #tactics .tc-stat.best { color: #ffe14a !important; font-weight: 800; }
+    #tactics .tc-profile-t { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; }
+    #tactics .tc-profile p { color: #e6f0ff; }
+
+    /* ── Ver rival ─────────────────────────────────────────────── */
+    #rival-analysis .page-header h1 span { color: #5dff8c !important; }
+    #rival-analysis .rv-head { padding: 10px 12px !important; border: 2px solid #3f7fe0; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)) !important; box-shadow: 0 0 12px rgba(70,150,255,.4); }
+    #rival-analysis .rv-name { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.6rem !important; text-transform: uppercase; color: #fff !important; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #rival-analysis .rv-sub { color: #cfe0ff !important; font-size: .85rem !important; }
+    #rival-analysis .rv-stat > div:first-child { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.5rem !important; color: #fff !important; }
+    #rival-analysis .rv-stat > div:first-child[style*="FFD700"] { color: #ffd24a !important; }
+    #rival-analysis .rv-stat > div:first-child[style*="4CAF50"] { color: #5dff8c !important; }
+    #rival-analysis .rv-stat > div:last-child { color: #cfe0ff !important; font-size: .8rem !important; }
+    #rival-analysis .rv-ovr { background: rgba(2,10,28,.72) !important; border: 1px solid rgba(76,143,255,.45); border-radius: 10px !important; }
+    #rival-analysis .rv-ovr > div:last-child { color: #e6f0ff !important; }
+    #rival-analysis .rv-card { padding: 10px 12px; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)); box-shadow: 0 0 12px rgba(70,150,255,.4); }
+    #rival-analysis .rv-preview { display: grid !important; grid-template-columns: 1fr !important; gap: 10px !important; padding: 0 !important; border: 0 !important; background: none !important; }
+    #rival-analysis .rv-ct { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem !important; text-transform: uppercase; }
+    #rival-analysis .rv-bar { height: 30px !important; border: 1px solid rgba(255,255,255,.3); border-radius: 8px !important; font-size: 1rem !important; font-weight: 800 !important; color: #fff; text-shadow: 0 1px 2px #000; }
+    #rival-analysis .rv-w { background: linear-gradient(180deg, #5fe07a, #1d9a3b 55%, #0f6a26) !important; }
+    #rival-analysis .rv-d { background: linear-gradient(180deg, #f2c13a, #c78a0a 55%, #8a5a00) !important; }
+    #rival-analysis .rv-l { background: linear-gradient(180deg, #ff6a6a, #d62828 55%, #8f1010) !important; }
+    #rival-analysis .rv-track { height: 10px !important; border-radius: 8px !important; }
+    #rival-analysis .rv-fill { border-radius: 8px; filter: brightness(1.15) saturate(1.25); }
+    #rival-analysis .rv-auto-btn { width: 100%; height: 48px; border: 1px solid #072a66; border-radius: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem; text-transform: uppercase; color: #fff !important; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.5) !important; }
+    #rival-analysis #rival-tabs { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px !important; }
+    #rival-analysis .rv-tab { height: 42px; border: 1px solid #072a66 !important; border-radius: 8px !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem !important; color: #fff !important; background: linear-gradient(180deg, #4c8fe0 0%, #1f55a8 46%, #123a82 54%, #0a2460 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.45) !important; }
+    #rival-analysis .rv-tab.active { background: linear-gradient(180deg, #6fe58b 0%, #25a847 46%, #0f7a30 54%, #064a1b 100%) !important; border-color: #064a1b !important; }
+    #rival-analysis #rival-tab-content { margin-top: 8px !important; padding: 10px !important; border: 2px solid #3f7fe0 !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(10,34,78,.9), rgba(4,16,40,.94)) !important; }
+    #rival-analysis .rv-sec { display: flex; align-items: center; gap: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem !important; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #rival-analysis .rv-sec-gold { color: #ffe14a !important; }
+    #rival-analysis .rv-sec-bench { color: #fff !important; }
+    #rival-analysis .rv-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+    #rival-analysis .rv-row { padding: 6px 4px !important; border-bottom: 1px solid rgba(76,143,255,.28) !important; gap: 10px !important; }
+    #rival-analysis .rv-pos { min-width: 44px !important; padding: 5px 4px !important; border-radius: 6px !important; font-size: .9rem !important; font-weight: 800 !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+    #rival-analysis .rv-pos.grp-POR { background: linear-gradient(180deg, #ffe38a, #e3a21c 55%, #a56b00) !important; color: #3a2400 !important; text-shadow: none; }
+    #rival-analysis .rv-pos.grp-DEF { background: linear-gradient(180deg, #6fc3ff, #1f8cf0 55%, #1450c0) !important; }
+    #rival-analysis .rv-pos.grp-MED { background: linear-gradient(180deg, #6fe58b, #25a847 55%, #0f7a30) !important; }
+    #rival-analysis .rv-pos.grp-DEL { background: linear-gradient(180deg, #ff8a8a, #d6323d 55%, #8f1010) !important; }
+    #rival-analysis .rv-pname { color: #fff !important; font-size: 1rem !important; font-weight: 700; }
+    #rival-analysis .rv-page { color: #b8c9ea !important; }
+    #rival-analysis .rv-n { color: #d4ff3a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-size: 1.4rem !important; font-weight: 800 !important; }
+    #rival-analysis .rv-fn { display: none; }
+}

@@ -42,7 +42,8 @@ body .main-layout .quadrant .menu-button:active {
 }
 body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px rgba(0,0,0,.65)); }
 
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     /* El menú ocupa TODO el ancho de la pantalla (antes, un bloque central de 1200 px): la imagen de fondo llena la ventana */
     body .main-layout { max-width: none !important; width: 100% !important; }
     /* Cuadrante: título arriba, botones, lema abajo (también en los inferiores) */
@@ -152,7 +153,8 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    Cabecera (escritorio): fichas inclinadas, Admin dorado, Salir rojo, título en cursiva y datos con icono
    La forma de cada ficha se dibuja en ::before (paralelogramo); el texto no se inclina.
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     body .header {
         height: 62px; padding: 0 12px; gap: 6px;
         background: linear-gradient(180deg, #123a73 0%, #0a2650 48%, #06173a 52%, #030c22 100%);
@@ -211,14 +213,15 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
 }
 
 /* El nombre del equipo heredaba el color oscuro de las fichas antiguas */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     body .header .info-box, body .header .info-box span, body .header #teamName { color: #e6f0ff; }
     body .header .pcf-header-stats .info-box > span:first-child { color: #8fb4f0; }
     body .header .pcf-header-stats .info-box > span:last-child { color: #fff; }
     body .header .pcf-header-stats #balanceDisplay { color: #5dff8c; }
 }
 /* Pantallas de escritorio estrechas: fichas más compactas para que quepa todo */
-@media (min-width: 761px) and (max-width: 1500px) {
+@media (min-width: 768px) and (min-height: 501px) and (max-width: 1500px), (min-width: 1101px) and (max-width: 1500px) {
     body .header { padding: 0 6px; }
     body .header .info-box, body .header #adminButton, body .header #logoutButton { padding: 0 18px; font-size: .74rem; min-width: 0; margin-left: -8px; }
     body .header #adminButton, body .header #logoutButton { min-width: 96px; }
@@ -229,7 +232,7 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     body .header .pcf-header-stats .info-box > span:last-child { font-size: .9rem; }
     body .header .header-title { font-size: clamp(1rem, 1.7vw, 1.5rem); }
 }
-@media (min-width: 761px) and (max-width: 1100px) { body .header .header-title { display: none; } }
+@media (min-width: 768px) and (min-height: 501px) and (max-width: 1100px) { body .header .header-title { display: none; } }
 
 /* ============================================================
    Modal de bienvenida (Nueva partida / Cargar partida) en el estilo del mockup
@@ -496,14 +499,16 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    · objetivos con marcas · accesos Sala de trofeos / Museo con icono. Solo escritorio (≥ 761 px); el móvil conserva su diseño.
    ============================================================ */
 /* El dinero de la cabecera (solo escritorio: las fichas son oscuras; en móvil siguen claras): el tema antiguo lo pintaba en verde/rojo oscuro */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     body .header .pcf-header-stats #balanceDisplay[style*="4CAF50"], body .header .pcf-header-stats #balanceDisplay[style*="76, 175, 80"], body .header .pcf-header-stats #balanceDisplay[style*="4caf50"],
     body .header .pcf-header-stats #balanceDisplay[style*="10, 77, 28"], body .header .pcf-header-stats #balanceDisplay[style*="0a4d1c"] { color: #5dff8c !important; }
     body .header .pcf-header-stats #balanceDisplay[style*="f44336"], body .header .pcf-header-stats #balanceDisplay[style*="244, 67, 54"],
     body .header .pcf-header-stats #balanceDisplay[style*="183, 28, 28"], body .header .pcf-header-stats #balanceDisplay[style*="b71c1c"] { color: #ff7b7b !important; }
 }
 
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #dashboard.page { background: #030a1a; padding-bottom: 28px; }
     #dashboard.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -625,7 +630,8 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    Misma cabecera que Noticias · pestañas en barra de cristal (activa dorada) · tabla de cristal con cabecera dorada, barra de zona,
    fila propia dorada · cuadros Pichichi / Zamora con trofeo. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #standings.page { background: #030a1a; padding-bottom: 28px; }
     #standings.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -718,7 +724,8 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    Cabecera roja (identidad de Gestión) · 4 tarjetas de datos · rejilla 3 + 2 de paneles con placas de color (cada tarjeta ya traía su color --sec)
    · deslizadores, selectores y botones con el acabado de los botones del menú. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #commercial.page { background: #030a1a; padding-bottom: 28px; }
     #commercial.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -826,7 +833,8 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    Mercado / Premios / Remodelaciones debajo, Historial a todo el ancho) · cifras en verde y rojo. Solo escritorio (≥ 761 px).
    Las tarjetas (section.pcf-fin-card) las crea injector-finances.js en su plantilla; todos los ids se conservan.
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #finance.page { background: #030a1a; padding-bottom: 28px; }
     #finance.page::before {      /* la misma imagen del menú, desenfocada y oscurecida (así no se ve la lente central) */
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -915,7 +923,8 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
    Cabecera dorada (identidad de Fichajes) · paneles de cristal · tabla oscura con barra de color por posición, MEDIA dorada y cifras de atributos
    rojo → verde · filtros y botones con el acabado del menú. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #squad.page,
     #negotiations.page,
     #transfers.page,
@@ -1314,7 +1323,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    Personal del club (Empleados) en el estilo del mockup
    Cabecera roja (identidad de Gestión) · tabla de cristal con rótulos amarillos, filas oscuras, retratos grandes y botones con bisel. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #staff.page { background: #030a1a; padding-bottom: 28px; }
     #staff.page::before {      
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -1379,7 +1389,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    Título dorado con línea · tabla de fase liga/playoff en panel de cristal (tu equipo en dorado) · próximos partidos y rondas de Copa en tarjetas de cristal
    · «Cuadros de la temporada» en panel. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #standings #comp-europa-panel, #standings #comp-copa-panel, #standings #comp-playoff-panel { margin: 14px 30px 28px; }
     #standings :is(#comp-europa-panel, #comp-copa-panel, #comp-playoff-panel) > h3 {
         display: flex; align-items: center; gap: 12px; margin: 4px 0 10px !important; padding-bottom: 8px; border-bottom: 1px solid rgba(255,210,74,.55);
@@ -1434,7 +1445,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    Cabecera verde (identidad de Equipo) con la lupa · ficha del rival con escudo · tres tarjetas (pronóstico, líneas, alineación automática)
    · pestañas inclinadas · plantilla en 6 columnas con etiquetas de posición de color. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #rival-analysis.page { background: #030a1a; padding-bottom: 28px; }
     #rival-analysis.page::before {
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -1581,7 +1593,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    · filas con pestaña de color (Formación verde, Mentalidad violeta, Presión naranja, Instrucción verde claro) y tarjetas con marca de seleccionado verde.
    Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #tactics.page { background: #030a1a; padding-bottom: 28px; }
     #tactics.page::before {
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -1709,7 +1722,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    Cabecera azul (identidad de Información) · barra de filtros · tarjetas de cristal por jornada con tabla oscura ·
    TU partido en fila dorada con la estrella · la próxima jornada con borde verde. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #calendar.page { background: #030a1a; padding-bottom: 28px; }
     #calendar.page::before {
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
@@ -1787,7 +1801,8 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
    · campo con la pestaña «XI TITULAR · formación» y fichas azules (naranja con tarjeta roja si está sancionado)
    · panel «Suplentes y no convocados» con filas por líneas. Solo escritorio (≥ 761 px).
    ============================================================ */
-@media (min-width: 761px) {
+/* escritorio y tabletas: lo contrario de la consulta de pcf-mobile.css (los móviles, también apaisados, usan pcf-mobile-theme.css) */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
     #lineup.page { background: #030a1a; padding-bottom: 28px; }
     #lineup.page::before {
         content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;

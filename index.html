@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="pcf-pwa.css">
 <link rel="stylesheet" href="pcf-mobile-fixes.css">
 <link rel="stylesheet" href="pcf-menu-theme.css">
+<link rel="stylesheet" href="pcf-mobile-theme.css">
 <script src="./injector-storage-guard.js"></script>
 <script src="./injector-crest-cleaner.js"></script>
 
@@ -1824,7 +1825,10 @@ window.selectTeamAndStart = async function(teamName, division) {
                     if (playerInSlot.isInjured) playerDiv.classList.add('injured');
                     playerDiv.draggable = true;
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>${playerInSlot.position}, ${playerInSlot.overall}</span>`;
+                    // En móvil en vertical las fichas son estrechas: «Nombre Apellido I.» → «N. Apellido I.» (el nombre completo sigue en dataset y en el título)
+                    const _w = String(playerInSlot.name).trim().split(/\s+/);
+                    const _shown = (window.matchMedia('(max-width: 767px)').matches && _w.length >= 3) ? `${_w[0][0]}. ${_w.slice(1).join(' ')}` : playerInSlot.name;
+                    playerDiv.innerHTML = `<span>${_shown}</span><span>${playerInSlot.position}, ${playerInSlot.overall}</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
                     // ✅ Aquí añadimos el onclick para abrir modal
                     playerDiv.onclick = () => openPlayerModal(playerInSlot);
