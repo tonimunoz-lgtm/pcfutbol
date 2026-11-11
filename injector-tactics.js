@@ -68,7 +68,7 @@
     const MENTALITY_DATA = {
         'defensive': {
             label: 'Defensiva',
-            emoji: '🔒',
+            emoji: '🛡️',
             desc: 'Prioridad absoluta en no encajar. Líneas bajas.',
             attackMult: 0.85, defenseMult: 1.15,
             color: '#2196F3'
@@ -121,7 +121,7 @@
         },
         'setpieces': {
             label: 'Balón parado',
-            emoji: '🎯',
+            emoji: '⚽',
             desc: 'Entrenar jugadas de córner y falta. +goles a balón parado.',
             attackBonus: 1.05, defenseBonus: 1.0
         },
@@ -181,6 +181,38 @@
     // ── Render tarjetas de selección ─────────────────────────────
     const pctTxt = v => v === undefined ? '' : Math.abs(v - 1) < 0.005 ? '=' : `${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`;
     function effectLine(d) { return ''; }
+    // Escudo junto al nombre del equipo (memoria → catálogo con tope de 1,5 s; solo URL seguras). Sin escudo: iniciales.
+    const okImg = u => (typeof u === 'string' && /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif|svg\+xml);base64,|\.?\/?assets\/)/i.test(u.trim())) ? u.trim() : null;
+    const initialsOf = t => String(t || '').replace(/^(FC|CF|CA|RCD|UD|SD|CD|RC|Real|Club)\s+/i, '').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    function crestHTML(team) {
+        let logo = null;
+        try { const m = window.getCachedTeamData && window.getCachedTeamData(team); if (m && okImg(m.logo)) logo = okImg(m.logo); } catch (e) { /* */ }
+        return logo ? `<img class="tc-crest" src="${logo.replace(/"/g, '&quot;')}" alt="">`
+            : `<span class="tc-crest tc-crest-i" data-crest-team="${encodeURIComponent(team)}">${initialsOf(team)}</span>`;
+    }
+    function fillCrests() {
+        document.querySelectorAll('#tactics-extras [data-crest-team]').forEach(async el => {
+            try {
+                const t = decodeURIComponent(el.dataset.crestTeam);
+                const d = window.getTeamData && await Promise.race([window.getTeamData(t), new Promise(r => setTimeout(() => r(null), 1500))]);
+                const l = d && okImg(d.logo);
+                if (l && el.isConnected) { const img = new Image(); img.className = 'tc-crest'; img.alt = ''; img.src = l; el.replaceWith(img); }
+            } catch (e) { /* sin escudo */ }
+        });
+    }
+    // Icono de cada formación: un punto por jugador de campo, por líneas (delanteros arriba, defensas abajo)
+    function formationDots(key) {
+        const lines = String(FORMATION_DATA[key]?.label || '').split('-').map(Number).filter(Boolean).reverse();   // delanteros → defensas
+        if (!lines.length) return FORMATION_DATA[key]?.emoji || '';
+        const col = ['#ff7a6b', '#b58cff', '#5aa9ff'], H = 8 + (lines.length - 1) * 13 + 8;
+        const dots = lines.map((n, r) => Array.from({ length: n }, (_, i) => {
+            const x = 32 + (i - (n - 1) / 2) * (n > 4 ? 10.5 : 12.5), y = 8 + r * 13;
+            return `<circle cx="${x.toFixed(1)}" cy="${y}" r="3.7" fill="${col[Math.min(r, 2)]}" stroke="#06142e" stroke-width="1"/>`;
+        }).join('')).join('');
+        return `<svg class="tc-dots" viewBox="0 0 64 ${H}" width="48" height="${Math.round(H * .75)}" aria-hidden="true">${dots}</svg>`;
+    }
+    const FORMATION_ORDER = ['352', '433', '442', '451', '541'];   // del centro del campo a lo más defensivo, como en el mockup
+
     function ensureSectionStyles() {
         if (document.getElementById('tcSecStyles')) return;
         const st = document.createElement('style');
@@ -194,21 +226,22 @@
         .tc-sec-press { --sec:#ff8a65; } .tc-sec-instr { --sec:#aed581; }`;
         document.head.appendChild(st);
     }
-    function renderCards(dataObj, currentVal, onClickFn, cols, extraFn) {
+    function renderCards(dataObj, currentVal, onClickFn, cols, extraFn, iconFn) {
         const entries = Object.entries(dataObj);
         const gridClass = cols === 3 ? 'tc-grid-3' : 'tc-grid-5';
         return `<div class="${gridClass}">
             ${entries.map(([key, d]) => {
                 const active = key === currentVal;
                 const color = d.color || '#4CAF50';
-                return `<div onclick="${onClickFn}('${key}')"
+                return `<div class="tc-card${active ? ' active' : ''}" onclick="${onClickFn}('${key}')"
                     style="cursor:pointer;border-radius:10px;padding:10px 8px;text-align:center;
                            border:2px solid ${active ? color : 'rgba(255,255,255,.1)'};
                            background:${active ? `${color}20` : 'rgba(255,255,255,.04)'};
                            transition:all .2s;user-select:none;">
-                    <div style="font-size:1.3em;margin-bottom:4px;">${d.emoji}</div>
-                    <div style="font-size:.78em;font-weight:bold;color:${active ? color : '#ccc'};">${d.label}</div>
-                    <div style="font-size:.68em;color:rgba(230,238,251,.78);margin-top:3px;line-height:1.3;">${d.desc}</div>
+                    ${active ? '<span class="tc-check" aria-hidden="true"></span>' : ''}
+                    <div class="tc-ico" style="font-size:1.3em;margin-bottom:4px;">${iconFn ? iconFn(key, d) : d.emoji}</div>
+                    <div class="tc-name" style="font-size:.78em;font-weight:bold;color:${active ? color : '#ccc'};">${d.label}</div>
+                    <div class="tc-desc" style="font-size:.68em;color:rgba(230,238,251,.78);margin-top:3px;line-height:1.3;">${d.desc}</div>
                     ${effectLine(d)}
                     ${extraFn ? extraFn(key, d) : ''}
                 </div>`;
@@ -258,24 +291,23 @@
             posGroups[g].push(p);
         });
         const posColor = { POR:'#FFD700', DEF:'#2196F3', MED:'#4CAF50', DEL:'#f44336' };
-        return `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-            <span style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;">XI Titular actual</span>
-            <span title="Media del once teniendo en cuenta la posición de cada jugador; los no disponibles cuentan como hueco" style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:.8em;color:#FFD700;font-weight:bold;cursor:help;">Media efectiva: ${avg}</span>
-        </div>
-        ${bajas.length ? `<div style="color:#ffb3b3;font-size:.78em;margin-bottom:6px;">⚠️ No pueden jugar: ${bajas.map(p => p.name).join(', ')}. Cámbialos en Alineación o pulsa el botón de arriba.</div>` : ''}
-        <div class="tc-xi-chips">
-            ${['POR','DEF','MED','DEL'].map(g =>
-                posGroups[g].map(p => `
-                <div class="tc-xi-chip" style="border-left:3px solid ${posColor[g]};">
-                    <span style="color:${posColor[g]};font-size:.7em;font-weight:bold;">${p.position}</span>
-                    <span style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
-                    <span style="color:#888;font-size:.68em;">${p.overall || 70}</span>
+        const chips = ['POR','DEF','MED','DEL'].map(g =>
+            posGroups[g].map(p => `
+                <div class="tc-xi-chip tc-g-${g}" style="border-left:3px solid ${posColor[g]};">
+                    <span class="tc-xi-pos" style="color:${posColor[g]};font-size:.7em;font-weight:bold;">${p.position}</span>
+                    <span class="tc-xi-name" style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
+                    <span class="tc-xi-ovr" style="color:#888;font-size:.68em;">${p.overall || 70}</span>
                     ${p.isInjured ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/lesionado.webp" alt="" title="Lesionado" aria-hidden="true">` : ''}
                     ${p.isSuspended ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/sancionado.webp" alt="" title="Sancionado" aria-hidden="true">` : ''}
                 </div>`).join('')
-            ).join('')}
-        </div>`;
+        ).join('');
+        return `
+        <div class="tc-xi" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+            <span class="tc-xi-title" style="color:#888;font-size:.75em;text-transform:uppercase;letter-spacing:1px;">XI Titular actual</span>
+            <span class="tc-xi-avg" title="Media del once teniendo en cuenta la posición de cada jugador; los no disponibles cuentan como hueco" style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:.8em;color:#FFD700;font-weight:bold;cursor:help;">Media efectiva: ${avg}</span>
+        </div>
+        ${bajas.length ? `<div class="tc-xi-warn" style="color:#ffb3b3;font-size:.78em;margin-bottom:6px;">⚠️ No pueden jugar: ${bajas.map(p => p.name).join(', ')}. Cámbialos en Alineación o pulsa el botón de arriba.</div>` : ''}
+        <div class="tc-xi-chips">${chips}</div>`;
     }
 
     // ── Render contexto del próximo partido ───────────────────────
@@ -297,9 +329,9 @@
 
         return `
         <div class="tc-match-header">
-            <div>
-                <div style="color:#666;font-size:.72em;margin-bottom:2px;">Jornada ${match.week} · ${isHome ? '🏟️ LOCAL' : '✈️ VISITANTE'}</div>
-                <div style="font-size:1em;font-weight:bold;color:#fff;">${s.team} <span style="color:#666;">vs</span> ${rival}</div>
+            <div class="tc-mid">
+                <div class="tc-jor" style="color:#666;font-size:.72em;margin-bottom:2px;">Jornada ${match.week} · <span class="tc-loc">${isHome ? '🏟️ LOCAL' : '✈️ VISITANTE'}</span></div>
+                <div class="tc-teams" style="font-size:1em;font-weight:bold;color:#fff;"><span class="tc-team">${crestHTML(s.team)}<b>${s.team}</b></span> <span class="tc-vs" style="color:#666;">vs</span> <span class="tc-team">${crestHTML(rival)}<b>${rival}</b></span></div>
             </div>
             ${st ? `
             <div class="tc-match-stats">
@@ -360,22 +392,24 @@
         const specialInstr = s.specialInstruction || 'none';
 
         extras.innerHTML = `
+        <div class="tc-top">
         <!-- CONTEXTO PARTIDO -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+        <div class="tc-matchbox" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
                     border-radius:10px;padding:12px 14px;margin-bottom:14px;">
             ${renderMatchContext()}
         </div>
 
         <!-- PLAN DEL PARTIDO -->
-        <div id="tc-plan" style="background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
-            <div style="font-size:.85em;line-height:1.45;color:#e6eefb;" id="tc-plan-text">${s.staff?.segundoEntrenador
+        <div id="tc-plan" class="tc-plan" style="background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+            <div style="font-size:.85em;line-height:1.45;color:#e6eefb;" id="tc-plan-text" title="${s.staff?.segundoEntrenador ? '' : 'Contrata un segundo entrenador para que también adapte la mentalidad (y desde nivel 3, la formación) al rival.'}"><i class="tc-info" aria-hidden="true"></i>${s.staff?.segundoEntrenador
                 ? `🧠 <strong>Segundo entrenador (nivel ${s.staff.segundoEntrenador.level})</strong>: puede preparar el once${s.staff.segundoEntrenador.level >= 3 ? ', la formación' : ''} y la mentalidad para el próximo partido según el rival.`
-                : '🧠 Sin segundo entrenador: el botón elige el mejor once en tu formación actual. Contrata uno para que también adapte la mentalidad (y desde nivel 3, la formación) al rival.'}</div>
-            <button class="btn" onclick="window.pcfAutoLineup && window.pcfAutoLineup().then(()=>window._tacticsRefresh && window._tacticsRefresh())">⚡ ${s.staff?.segundoEntrenador ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
+                : '<span class="tc-emo">🧠 </span>Sin segundo entrenador: elige el mejor once en tu formación actual.'}</div>
+            <button class="btn tc-auto" onclick="window.pcfAutoLineup && window.pcfAutoLineup().then(()=>window._tacticsRefresh && window._tacticsRefresh())">⚡ ${s.staff?.segundoEntrenador ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
+        </div>
         </div>
 
         <!-- XI TITULAR -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+        <div class="tc-xibox" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
                     border-radius:10px;padding:12px 14px;margin-bottom:16px;">
             ${renderXISummary()}
         </div>
@@ -393,8 +427,9 @@
                         ? window.calculateTeamEffectiveOverallImproved(window.pickBestXI(squad, f), f) : null;
                 });
                 const best = Object.entries(media).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0]?.[0];
-                return renderCards(FORMATION_DATA, formation, 'window._tacticsSetFormation', 5,
-                    key => media[key] == null ? '' : `<div style="font-size:.68em;margin-top:4px;color:${key === best ? '#FFD700' : '#bcd'};font-weight:${key === best ? 'bold' : 'normal'}" title="Media del mejor once posible con tu plantilla en esta formación">${key === best ? '⭐ ' : ''}Tu plantilla: ${media[key].toFixed(1)}</div>`);
+                const ordered = Object.fromEntries(FORMATION_ORDER.filter(k => FORMATION_DATA[k]).map(k => [k, FORMATION_DATA[k]]));
+                return renderCards(ordered, formation, 'window._tacticsSetFormation', 5,
+                    key => media[key] == null ? '' : `<div class="tc-stat${key === best ? ' best' : ''}" style="font-size:.68em;margin-top:4px;color:${key === best ? '#FFD700' : '#bcd'};font-weight:${key === best ? 'bold' : 'normal'}" title="Media del mejor once posible con tu plantilla en esta formación">Tu plantilla: ${media[key].toFixed(1)}</div>`, key => formationDots(key));
             })()}
         </div>
 
@@ -422,7 +457,7 @@
             ${renderCards(INSTRUCTION_DATA, specialInstr, 'window._tacticsSetInstruction', 5)}
         </div>
 
-        <div class="tc-sec"><div class="tc-sec-label">Plan durante el partido</div>
+        <div class="tc-sec tc-sec-plan"><div class="tc-sec-label">Plan durante el partido</div>
             <label>Reacción automática <select onchange="window._setFootballPlan(this.value)">
                 <option value="hold" ${s.matchPlan==='hold'||!s.matchPlan?'selected':''}>Mantener el planteamiento</option>
                 <option value="react" ${s.matchPlan==='react'?'selected':''}>Atacar desde el 60 si vamos perdiendo</option>
@@ -433,14 +468,15 @@
             <p>La presión alta desgasta más. El plan y los cambios se aplican durante el encuentro.</p>
         </div>
         <!-- BALANCE RESULTANTE -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+        <div class="tc-profile" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
                     border-radius:10px;padding:12px 14px;margin-bottom:8px;">
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
-                📊 Perfil táctico orientativo
+            <div class="tc-profile-t" style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:bold;">
+                <span class="tc-emo">📊 </span>Perfil táctico orientativo
             </div>
             <p>${PRESS_DATA[pressStyle]?.desc || ''}</p><p>${INSTRUCTION_DATA[specialInstr]?.desc || ''}</p>
             <small>El efecto depende de los atributos, la condición física y el planteamiento rival.</small>
         </div>`;
+        fillCrests();
     }
 
     // ── Invocar renderTactic sin dispatchEvent ────────────────────
