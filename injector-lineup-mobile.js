@@ -42,10 +42,13 @@
 
             // Transformar coordenadas para campo vertical
             var newTop  = leftOrig;
-            var newLeft = 100 - topOrig - 18; // 18 = slotHeight original en %
+            // El CENTRO del hueco original (en vertical) es topOrig + 5 (la mitad de su alto, 10 %); al girar el campo pasa a ser
+            // 100 - (topOrig + 5) en horizontal, y el hueco nuevo mide 18 % de ancho, así que su borde izquierdo es ese centro - 9.
+            // (Antes se restaba 18 en vez de 5 + 9 = 14: todo salía corrido ~4 % a la izquierda y la columna extrema se aplastaba contra el borde.)
+            var newLeft = 100 - topOrig - 5 - 9;
 
-            // Ajuste fino para que queden centrados y no se salgan
-            newLeft = Math.max(1, Math.min(newLeft, 82));
+            // Que no se salgan del campo
+            newLeft = Math.max(1, Math.min(newLeft, 81));
             newTop  = Math.max(1, Math.min(newTop,  88));
 
             slot.style.left   = newLeft + '%';
