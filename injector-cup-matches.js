@@ -134,6 +134,7 @@ function flushCupData() {
 }
 window.addEventListener('pcf:state-replaced', () => {
     _cupData = null;
+    window._cupRepeat = null;
     window._lastCupResult = null;
     window._lastMatchResult = null;
     window._lastMatchResultHTML = null;
@@ -569,7 +570,10 @@ async function simMatch(match) {
 function processResult(match, result) {
     const cal=getCal();
     const comp=getCompState();
-    const entry=cal.find(m=>m.id===match.id);
+    // Si por algún motivo hay dos entradas con el mismo id (una ya jugada y otra pendiente), se marca la pendiente:
+    // antes se tomaba la primera, que ya estaba jugada, se ignoraba el resultado y el partido volvía a tocar en cada «Seguir».
+    const same=cal.filter(m=>m.id===match.id);
+    const entry=same.find(m=>!m.played)||same[0];
     if(entry?.played)return {ignored:true};
     window.pcfWorld?.tournaments?.record(match,result);
     if(entry){entry.played=true;entry.result=JSON.parse(JSON.stringify(result));saveCal(cal);}
@@ -1163,6 +1167,16 @@ function hookCupSimulateWeek(){
         initCupCalendar();
         const pending=getPendingMatch(gs.week);
         if(!pending) return orig.apply(this,arguments);
+        // Cortafuegos: si este mismo partido ya se jugó en esta misma jornada y vuelve a tocar, algo no lo está marcando como jugado.
+        // Se descarta (todas las entradas con ese id) y avanza la liga, en vez de repetirlo con otro resultado para siempre.
+        { const comp0=getCompState(); const r=window._cupRepeat;
+          if(r && r.id===pending.id && r.week===gs.week && r.season===comp0?.season){
+              const cal0=getCal(); cal0.forEach(m=>{ if(m.id===pending.id){ m.played=true; m.skipped=true; } }); saveCal(cal0);
+              window._cupRepeat=null;
+              console.warn('🏆 CupMatches: el partido '+pending.id+' se repetía en la jornada '+gs.week+'; se descarta y avanza la liga');
+              window.gameLogic?.addNews('🏆 Se ha detectado un partido de copa/Europa repetido ('+pending.id+') y se ha descartado para que la jornada avance.','warning');
+              return orig.apply(this,arguments);
+          } }
         // Datos del rival: con límite de tiempo (si la consulta tarda, se sigue con una estimación)
         await Promise.race([prepareMatch(pending), new Promise(res => setTimeout(res, 8000))]);
         if (!pending.oppRating) { try { pending.oppRating = window.pcfWorld?.tournaments?.rating(pending.opponent) || foreignRating(pending.opponent); } catch (e) { pending.oppRating = 70; } }
@@ -1190,6 +1204,7 @@ function hookCupSimulateWeek(){
 
         // 4. Procesar
         const processed=processResult(pending,result);
+        window._cupRepeat={id:pending.id,week:gs.week,season:getCompState()?.season};
         window.gameLogic.updateGameState({fd_bonus:0}); // Prima pagada, consumida por este partido.
         try { if (window.PCFPrizes) window.PCFPrizes.onCupResult(pending, result, processed); } catch (e) { console.error('Premios:', e); }
 

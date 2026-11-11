@@ -86,6 +86,8 @@
                 window.ui?.refreshUI?.(window.gameLogic.getViewState());
             }
             console.error('[SimGuard] Error simulando la jornada:', err);
+            // Aviso visible (antes solo quedaba una noticia): si la jornada se repite con otro resultado es porque el avance falló y se deshizo
+            try { window.pcfToast?.('La jornada no se ha podido completar y se ha deshecho (' + String((err && err.message) || err).slice(0, 140) + '). Si se repite, anota este mensaje.', { type: 'error', duration: 14000 }); } catch (e) { /* */ }
         } finally {
             busy = false;
             setButtonsBusy(false);

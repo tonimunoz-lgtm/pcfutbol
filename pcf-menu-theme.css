@@ -1179,10 +1179,12 @@ div[style*="z-index:290000"] button:hover { filter: brightness(1.15); }
 div[style*="z-index:290000"] button:active { transform: translateY(1px); filter: brightness(.92); }
 /* ficha de jugador: cerrar */
 .player-modal-close { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #2a050b; cursor: pointer; line-height: 1; font-size: 1.4rem; color: #ffd24a; background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.6); }
-/* Ventana «Guardar partida»: los tres botones caben en una fila */
-#pcfSaveActionsModal .modal-content { width: min(760px, 92vw) !important; max-width: 760px !important; }
-#pcfSaveActionsModal .modal-content > div { flex-wrap: nowrap !important; gap: 14px !important; }
-#pcfSaveActionsModal .modal-content > div > button { flex: 1 1 0; }
+@media (min-width: 761px) {
+    /* Ventana «Guardar partida»: los tres botones caben en una fila */
+    #pcfSaveActionsModal .modal-content { width: min(760px, 92vw) !important; max-width: 760px !important; }
+    #pcfSaveActionsModal .modal-content > div { flex-wrap: nowrap !important; gap: 14px !important; }
+    #pcfSaveActionsModal .modal-content > div > button { flex: 1 1 0; }
+}
 /* el botón enfocado (el principal al abrir) se ve en azul brillante con resplandor cian */
 .modal-content button.btn:focus, .modal-content button.btn-sm:focus { outline: none; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.65), 0 3px 6px rgba(0,0,0,.55) !important; }
 
@@ -1214,34 +1216,71 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
 /* avisos dentro de modales */
 .modal-content .alert { padding: 11px 16px; border: 1px solid rgba(76,143,255,.45); border-left: 5px solid #4c8fff; border-radius: 10px; background: linear-gradient(180deg, rgba(14,38,86,.92), rgba(5,18,44,.96)) !important; color: #e6f0ff !important; font-weight: 600; }
 .modal-content .alert.alert-warning { border-left-color: #ffc107; }
-/* Cargar partida: placa roja, «Importar copia» y la × en la cabecera, lista con scroll y tarjetas con tres botones */
-#savedGamesModal .modal-content {
-    --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
-    width: min(1000px, 94vw) !important; max-width: 1000px !important; padding: 22px 26px 24px !important;
-    display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tit imp cls" "lst lst lst"; align-items: center; gap: 0 14px;
+@media (min-width: 761px) {
+    /* Cargar partida: placa roja, «Importar copia» y la × en la cabecera, lista con scroll y tarjetas con tres botones */
+    #savedGamesModal .modal-content {
+        --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
+        width: min(1000px, 94vw) !important; max-width: 1000px !important; padding: 22px 26px 24px !important;
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tit imp cls" "lst lst lst"; align-items: center; gap: 0 14px;
+    }
+    #savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 16px !important; }
+    #savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 16px !important; }
+    #savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 46px; height: 46px; margin: 0 0 16px; font-size: 1.6rem; }
+    #savedGamesModal .modal-content > button.btn { display: none; }
+    #savedGamesModal #pcfImportBackupButton { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; min-height: 46px; padding: 8px 22px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.5), 0 3px 6px rgba(0,0,0,.55) !important; }
+    #savedGamesModal #savedGamesListContainer {
+        grid-area: lst; margin: 0 !important; padding: 14px 14px 4px; max-height: min(520px, 62vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f8cff rgba(5,18,44,.6);
+        border: 2px solid rgba(25,195,255,.55); border-radius: 14px; background: rgba(4,16,40,.70); box-shadow: inset 0 0 22px rgba(25,195,255,.12);
+    }
+    #savedGamesModal .player-card {
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; margin: 0 0 12px !important; padding: 12px 16px !important;
+        border: 2px solid rgba(76,143,255,.65) !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important; box-shadow: inset 0 0 14px rgba(70,150,255,.14);
+    }
+    #savedGamesModal .player-card > div { min-width: 0; padding-right: 16px; border-right: 1px solid rgba(76,143,255,.5); }
+    #savedGamesModal .player-card strong { display: block; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #savedGamesModal .player-card p { margin: 3px 0 0; color: #cfe0ff; font-size: .95rem; font-weight: 500; }
+    #savedGamesModal .player-card.pcf-local { border-color: #ffc107 !important; box-shadow: 0 0 14px rgba(255,193,7,.55), inset 0 0 14px rgba(255,193,7,.12) !important; }
+    #savedGamesModal .pcf-local-badge { display: inline-block; margin-top: 8px; padding: 3px 12px; border: 1px solid #6a4400; border-radius: 6px; background: linear-gradient(180deg, #ffe086 0%, #e3a21c 50%, #a56b00 100%); color: #2e1c00; font-weight: 800; font-size: .86rem; }
+    #savedGamesModal .player-card button.btn-sm { min-width: 104px; }
+    #savedGamesModal .player-card button.btn-sm:nth-of-type(1) { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; }
+    #savedGamesModal .player-card button.btn-sm:nth-of-type(2)::before { content: ''; display: inline-block; width: 26px; height: 20px; margin-right: 6px; vertical-align: middle; background: url('assets/iconos/ui/boton-cargar.webp') center / contain no-repeat; }
+    #savedGamesModal .player-card button.btn-sm:nth-of-type(3) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }
 }
-#savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 16px !important; }
-#savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 16px !important; }
-#savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 46px; height: 46px; margin: 0 0 16px; font-size: 1.6rem; }
-#savedGamesModal .modal-content > button.btn { display: none; }
-#savedGamesModal #pcfImportBackupButton { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; min-height: 46px; padding: 8px 22px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.4), 0 0 14px rgba(25,195,255,.5), 0 3px 6px rgba(0,0,0,.55) !important; }
-#savedGamesModal #savedGamesListContainer {
-    grid-area: lst; margin: 0 !important; padding: 14px 14px 4px; max-height: min(520px, 62vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f8cff rgba(5,18,44,.6);
-    border: 2px solid rgba(25,195,255,.55); border-radius: 14px; background: rgba(4,16,40,.70); box-shadow: inset 0 0 22px rgba(25,195,255,.12);
+
+/* Cargar partida en móvil: cabecera con título y ×, «Importar copia» a todo el ancho y cada partida con su texto arriba y los tres botones en una fila debajo */
+@media (max-width: 760px) {
+    #savedGamesModal .modal-content {
+        --pl1: #ff8a8a; --pl2: #d6323d; --pl3: #a31524; --pl4: #560914; --ple: #ffd0d0;
+        width: 94vw !important; max-width: 94vw !important; padding: 14px 12px 16px !important; max-height: 92vh; overflow-y: auto; box-sizing: border-box;
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tit cls" "imp imp" "lst lst"; align-items: center; gap: 0 10px;
+    }
+    #savedGamesModal .modal-content > h1 { grid-area: tit; margin: 0 0 10px !important; padding: 6px 14px 6px 20px !important; min-height: 40px; font-size: 1.15rem !important; }
+    #savedGamesModal .modal-content > h1::after { content: ''; order: -1; flex: none; width: 30px; height: 30px; margin: -4px 0; background: url('assets/iconos/ui/boton-cargar.webp') center / contain no-repeat; }
+    #savedGamesModal .modal-content > .modal-close { grid-area: cls; position: static !important; width: 38px; height: 38px; margin: 0 0 10px; font-size: 1.3rem; }
+    #savedGamesModal .modal-content > div:nth-of-type(1) { grid-area: imp; margin: 0 0 10px !important; display: block !important; }
+    #savedGamesModal #pcfImportBackupButton { width: 100%; min-height: 42px; background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; border-color: #8fe8ff !important; }
+    #savedGamesModal .modal-content > button.btn { display: none; }
+    #savedGamesModal #savedGamesListContainer { grid-area: lst; margin: 0 !important; padding: 10px 10px 2px; max-height: 58vh; overflow-y: auto; border: 2px solid rgba(25,195,255,.55); border-radius: 12px; background: rgba(4,16,40,.70); min-width: 0; }
+    #savedGamesModal .player-card {
+        display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px !important; padding: 10px !important; min-width: 0;
+        border: 2px solid rgba(76,143,255,.65) !important; border-radius: 12px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important;
+    }
+    #savedGamesModal .player-card > div { grid-column: 1 / -1; min-width: 0; padding: 0 0 8px; border-right: 0; border-bottom: 1px solid rgba(76,143,255,.45); overflow-wrap: anywhere; }
+    #savedGamesModal .player-card strong { display: block; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.1rem; }
+    #savedGamesModal .player-card p { margin: 2px 0 0; color: #cfe0ff; font-size: .85rem; font-weight: 500; }
+    #savedGamesModal .player-card.pcf-local { border-color: #ffc107 !important; box-shadow: 0 0 12px rgba(255,193,7,.5) !important; }
+    #savedGamesModal .pcf-local-badge { display: inline-block; margin-top: 6px; padding: 3px 10px; border: 1px solid #6a4400; border-radius: 6px; background: linear-gradient(180deg, #ffe086 0%, #e3a21c 50%, #a56b00 100%); color: #2e1c00; font-weight: 800; font-size: .78rem; }
+    #savedGamesModal .player-card button.btn-sm { min-width: 0; width: 100%; min-height: 38px; padding: 6px 2px !important; font-size: .74rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; }
+    #savedGamesModal .player-card button.btn-sm:nth-of-type(1) { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; }
+    #savedGamesModal .player-card button.btn-sm:nth-of-type(3) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }
+    /* Botones de cualquier modal: nunca más anchos que su ventana (con mayúsculas y bisel algunos textos largos se salían) */
+    :is(.modal-content, .pcf-dlg, #pcfCommModal, #fd-modal) :is(button.btn, button.btn-sm, .pcf-dlg-actions > button) { max-width: 100%; white-space: normal; line-height: 1.15; }
+    /* Guardar partida: los tres botones apilados */
+    #pcfSaveActionsModal .modal-content { width: 92vw !important; max-width: 92vw !important; box-sizing: border-box; }
+    #pcfSaveActionsModal .modal-content > div { flex-direction: column !important; flex-wrap: nowrap !important; gap: 10px !important; }
+    #pcfSaveActionsModal .modal-content > div > button { width: 100%; flex: none; }
 }
-#savedGamesModal .player-card {
-    display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; margin: 0 0 12px !important; padding: 12px 16px !important;
-    border: 2px solid rgba(76,143,255,.65) !important; border-radius: 14px !important; background: linear-gradient(180deg, rgba(14,40,92,.92), rgba(5,18,44,.96)) !important; box-shadow: inset 0 0 14px rgba(70,150,255,.14);
-}
-#savedGamesModal .player-card > div { min-width: 0; padding-right: 16px; border-right: 1px solid rgba(76,143,255,.5); }
-#savedGamesModal .player-card strong { display: block; color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
-#savedGamesModal .player-card p { margin: 3px 0 0; color: #cfe0ff; font-size: .95rem; font-weight: 500; }
-#savedGamesModal .player-card.pcf-local { border-color: #ffc107 !important; box-shadow: 0 0 14px rgba(255,193,7,.55), inset 0 0 14px rgba(255,193,7,.12) !important; }
-#savedGamesModal .pcf-local-badge { display: inline-block; margin-top: 8px; padding: 3px 12px; border: 1px solid #6a4400; border-radius: 6px; background: linear-gradient(180deg, #ffe086 0%, #e3a21c 50%, #a56b00 100%); color: #2e1c00; font-weight: 800; font-size: .86rem; }
-#savedGamesModal .player-card button.btn-sm { min-width: 104px; }
-#savedGamesModal .player-card button.btn-sm:nth-of-type(1) { background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 40%, #1450c0 54%, #0a2a78 100%) !important; }
-#savedGamesModal .player-card button.btn-sm:nth-of-type(2)::before { content: ''; display: inline-block; width: 26px; height: 20px; margin-right: 6px; vertical-align: middle; background: url('assets/iconos/ui/boton-cargar.webp') center / contain no-repeat; }
-#savedGamesModal .player-card button.btn-sm:nth-of-type(3) { background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; border-color: #2a050b !important; }
+
 
 /* ============================================================
    Personal del club (Empleados) en el estilo del mockup
