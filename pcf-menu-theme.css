@@ -1776,3 +1776,132 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
         background: linear-gradient(180deg, #ffd24a 0%, #e8a812 100%) !important; color: #2b1a00 !important; font-weight: 800; text-shadow: none; border-bottom-color: #a56b00 !important;
     }
 }
+
+/* Alineación: en móvil se conserva el diseño de antes (sin la pestaña del XI; «POS, media» tras un punto medio) */
+#pcfXiHead { display: none; }
+#lineup .lr-p::before { content: ' · '; opacity: .8; }
+
+/* ============================================================
+   Alineación en el estilo del mockup
+   Cabecera verde (identidad de Equipo) · aviso de no disponibles · barra con «Alineación automática», nota del segundo entrenador y rotación
+   · campo con la pestaña «XI TITULAR · formación» y fichas azules (naranja con tarjeta roja si está sancionado)
+   · panel «Suplentes y no convocados» con filas por líneas. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #lineup.page { background: #030a1a; padding-bottom: 28px; }
+    #lineup.page::before {
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    #lineup .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #8dffa8 !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,96,44,.92), rgba(4,40,18,.95)) !important;
+        box-shadow: 0 0 18px rgba(80,255,130,.5), inset 0 0 22px rgba(80,255,130,.2), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #lineup .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,255,150,.7), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #lineup .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #34c25c 0%, #0f7a30 48%, #064a1b 100%); box-shadow: inset 0 0 0 2px #9dffb4, inset 0 0 24px rgba(80,255,130,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #lineup .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #lineup .page-header .page-close-btn {
+        margin-left: auto; height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    /* aviso (no disponibles / advertencias) e información */
+    #lineup #lineupMessage {
+        margin: 0 30px 12px; padding: 10px 22px; border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 16px rgba(70,150,255,.4);
+        color: #e6f0ff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 700; font-size: 1.35rem; letter-spacing: .01em;
+    }
+    #lineup #lineupMessage.alert-warning { border-color: #e0a625; background: linear-gradient(180deg, rgba(86,58,6,.94), rgba(44,28,2,.96)); box-shadow: 0 0 16px rgba(255,190,40,.40); color: #ffd24a !important; }
+    #lineup #lineupMessage strong { color: #ffe58a !important; }
+    /* barra: alineación automática · nota · rotación */
+    #lineup #pcfLineupBar {
+        margin: 0 30px 12px; padding: 8px 14px; display: flex; flex-wrap: nowrap; align-items: center; gap: 0;
+        border: 2px solid #3f7fe0; border-radius: 14px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.12);
+    }
+    #lineup #pcfAutoLineupBtn {
+        flex: none; height: 46px; padding: 0 28px !important; border: 1px solid #072a66; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #lineup #pcfLineupBar .pcf-note { flex: 1 1 auto; min-width: 0; margin: 0 22px; padding: 0 22px; border-left: 1px solid rgba(76,143,255,.55); border-right: 1px solid rgba(76,143,255,.55); opacity: 1; color: #e6f0ff; font-size: 1.08rem; font-weight: 500; line-height: 1.25; }
+    #lineup #pcfRotateBtn {
+        display: inline-flex; flex: none; width: auto; max-width: none; margin: 0; height: 46px; padding: 0 26px !important; align-items: center; border: 1px solid #5e3a00; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 1px 0 rgba(255,255,255,.4);
+        background: linear-gradient(180deg, #ffe38a 0%, #f2b928 46%, #d99a10 54%, #a56b00 100%) !important; color: #2b1a00 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -3px 5px rgba(0,0,0,.3), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #lineup #pcfRotateBtn:not(.on) { background: linear-gradient(180deg, #8aa4cc 0%, #506f9c 46%, #345180 54%, #1c2f52 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); border-color: #0b1e3f; }
+    /* campo + suplentes */
+    #lineup .lineup-main-container {
+        margin: 0 30px; display: grid; grid-template-columns: minmax(640px, min(calc(100% - 400px), calc((100vh - 380px) * 1.7778))) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 0 16px; align-items: start;
+    }
+    #lineup #pcfXiHead {
+        grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 22px; padding: 8px 16px; border: 2px solid #3f7fe0; border-bottom: 0; border-radius: 14px 14px 0 0;
+        background: linear-gradient(180deg, rgba(10,34,78,.92), rgba(5,20,48,.95));
+    }
+    #lineup #pcfXiHead .xi-tab {
+        position: relative; isolation: isolate; height: 38px; padding: 0 32px 0 18px; display: inline-flex; align-items: center; color: #06223e; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.5rem; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    }
+    #lineup #pcfXiHead .xi-tab::before { content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); background: linear-gradient(180deg, #8fe8ff, #3fb6f0 52%, #1f8cd0); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+    #lineup #pcfXiHead .xi-form { color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.9rem; letter-spacing: .03em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #lineup #pitchContainer {
+        grid-column: 1; grid-row: 2; width: 100%; max-width: none; border: 2px solid #3f7fe0; border-top: 0; border-radius: 0 0 14px 14px; overflow: hidden;
+        box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 18px rgba(0,0,0,.55);
+    }
+    /* huecos: invisibles cuando ya hay jugador (el nombre de la posición solo se ve en los huecos vacíos) */
+    #lineup #pitchContainer .pitch-position-placeholder:has(.pitch-player) { font-size: 0; color: transparent; background: none; border-color: transparent; }
+    #lineup #pitchContainer .pitch-position-placeholder:not(:has(.pitch-player)) { color: #fff; font-size: 1rem; font-weight: 700; background: rgba(5,18,44,.35); border: 2px dashed rgba(255,255,255,.7); border-radius: 8px; }
+    #lineup #pitchContainer .pitch-player {
+        width: 94%; height: 94%; padding: 2px 8px; border: 2px solid #7fc0ff; border-radius: 9px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .02em; line-height: 1.15;
+        background: linear-gradient(180deg, #3f7fe6 0%, #1c4fb8 46%, #123a92 54%, #0a2468 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 3px 6px rgba(0,0,0,.6), 0 0 8px rgba(70,150,255,.5);
+        text-shadow: 0 1px 2px rgba(0,0,0,.8);
+    }
+    #lineup #pitchContainer .pitch-player span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #lineup #pitchContainer .pitch-player span:first-child { font-size: 1.05rem; color: #fff; }
+    #lineup #pitchContainer .pitch-player span:last-child { font-size: .98rem; opacity: 1; color: #fff; }
+    #lineup #pitchContainer #pitch-slot-0 { left: 1.5% !important; }   /* el portero entero dentro del campo */
+    #lineup #pitchContainer .pitch-player { position: relative; }
+    #lineup #pitchContainer .pitch-player .pcf-st-lineup { position: absolute; right: 6px; top: 50%; width: 22px; height: 22px; margin: 0; transform: translateY(-50%); filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+    #lineup #pitchContainer .pitch-player:has(.pcf-st-lineup) span { padding-right: 20px; padding-left: 8px; }
+    #lineup #pitchContainer .pitch-player.suspended, #lineup #pitchContainer .pitch-player.warned { border-color: #ffd98a; background: linear-gradient(180deg, #f7c04a 0%, #e08a10 46%, #b86a00 54%, #7a4300 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 3px 6px rgba(0,0,0,.6), 0 0 10px rgba(255,190,40,.6); }
+    #lineup #pitchContainer .pitch-player.injured { border-color: #ff9a9a; background: linear-gradient(180deg, #e05a5a 0%, #b02020 46%, #7c1010 54%, #460808 100%); }
+    #lineup #pitchContainer .pitch-player.suspended, #lineup #pitchContainer .pitch-player.injured { opacity: 1 !important; }
+    #lineup #pitchContainer .pitch-player.suspended span, #lineup #pitchContainer .pitch-player.injured span { color: #fff !important; }
+    /* suplentes y no convocados */
+    #lineup .reserves-container {
+        grid-column: 2; grid-row: 1 / span 2; width: auto; min-width: 0; padding: 0 14px 14px !important; border: 2px solid #3f7fe0 !important; border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.12);
+    }
+    #lineup .reserves-container h2 {
+        position: relative; isolation: isolate; display: inline-flex; align-items: center; margin: 12px 0 8px -14px !important; height: 44px; padding: 0 44px 0 22px !important; background: none !important; border: 0 !important;
+        color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.55rem !important; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 2px 3px rgba(0,0,0,.7);
+    }
+    #lineup .reserves-container h2::before { content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 2px #4c8fff, inset 0 1px 0 rgba(255,255,255,.4); }
+    #lineup #reservesList { padding: 0 !important; border: 0 !important; background: none !important; gap: 5px !important; min-height: 0; }
+    #lineup #reservesList .pcf-res-group { margin: 10px 0 2px !important; padding: 0 0 2px; border-bottom: 0 !important; color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.35rem !important; letter-spacing: .02em; text-shadow: 0 2px 3px rgba(0,0,0,.6); }
+    #lineup #reservesList .draggable-player {
+        display: flex !important; align-items: center; gap: 12px; height: 44px; padding: 3px 12px 3px 10px !important; margin: 0 !important; border: 1px solid rgba(76,143,255,.65) !important; border-left-width: 5px !important; border-radius: 7px;
+        background: linear-gradient(180deg, rgba(14,40,92,.96), rgba(5,18,44,.98)) !important; box-shadow: inset 0 0 12px rgba(70,150,255,.12);
+        color: #fff; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 700; font-size: 1.15rem !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); text-align: left !important; white-space: nowrap;
+    }
+    #lineup #reservesList .draggable-player.pcf-pos-por { border-left-color: #ffd54f !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-def { border-left-color: #5fe97f !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-med { border-left-color: #4c9bff !important; }
+    #lineup #reservesList .draggable-player.pcf-pos-del { border-left-color: #ff6b5e !important; }
+    #lineup #reservesList .draggable-player .lr-n { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    #lineup #reservesList .draggable-player .lr-p { flex: none; min-width: 88px; padding-left: 14px; border-left: 1px solid rgba(255,255,255,.55); font-weight: 800; }
+    #lineup .lr-p::before { content: none; }
+    #lineup #reservesList .draggable-player .pcf-mini-wrap { margin: 0; }
+    #lineup #reservesList .draggable-player .pcf-mini { width: 22px; height: 32px; }
+    #lineup #reservesList .draggable-player .pcf-st-lineup { width: 20px; height: 20px; }
+    /* pie */
+    #lineup > .btn {
+        margin: 14px 30px 0 !important; height: 44px; padding: 0 24px !important; border: 1px solid #072a66; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+    #lineup > div:last-child { margin: 8px 30px 0 !important; color: #9db8e8 !important; font-size: .95rem !important; }
+}

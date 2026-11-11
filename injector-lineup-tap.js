@@ -81,11 +81,15 @@
                 b.dataset.ico = i; b.setAttribute('aria-label', label); if (!b.title) b.title = label;
                 if (b.parentElement !== tools) tools.appendChild(b);
             }
-        } else if (tools) {
-            if (rot) msg.after(rot);
-            if (swap) msg.after(swap);
-            if (auto) document.getElementById('pcfLineupBar')?.prepend(auto);
-            tools.remove();
+        } else {
+            const bar = document.getElementById('pcfLineupBar');
+            if (tools) {
+                if (swap) msg.after(swap);
+                if (auto) bar?.prepend(auto);
+                tools.remove();
+            }
+            // En escritorio la rotación va en la misma barra que «Alineación automática» (si la barra aún no existe, tras el aviso)
+            if (rot) { if (bar) { if (rot.parentElement !== bar) bar.appendChild(rot); } else if (rot.previousElementSibling !== msg) msg.after(rot); }
         }
     }
 

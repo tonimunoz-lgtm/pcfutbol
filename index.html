@@ -1824,7 +1824,7 @@ window.selectTeamAndStart = async function(teamName, division) {
                     if (playerInSlot.isInjured) playerDiv.classList.add('injured');
                     playerDiv.draggable = true;
                     playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(playerInSlot)));
-                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>(${playerInSlot.position}, ${playerInSlot.overall})</span>`;
+                    playerDiv.innerHTML = `<span>${playerInSlot.name}</span><span>${playerInSlot.position}, ${playerInSlot.overall}</span>`;
                     playerDiv.dataset.playername = playerInSlot.name;
                     // ✅ Aquí añadimos el onclick para abrir modal
                     playerDiv.onclick = () => openPlayerModal(playerInSlot);
@@ -1839,7 +1839,10 @@ window.selectTeamAndStart = async function(teamName, division) {
                 if (player.isInjured) playerDiv.classList.add('injured');
                 playerDiv.draggable = true;
                 playerDiv.ondragstart = (ev) => window.drag(ev, encodeURIComponent(JSON.stringify(player)));
-                playerDiv.textContent = `${player.name} (${player.overall}) - ${player.position}`;
+                // Nombre y «POS, media» en dos partes (en escritorio se muestran separados, como en el mockup); textContent: sin HTML de los datos
+                const lrName = document.createElement('span'); lrName.className = 'lr-n'; lrName.textContent = player.name;
+                const lrPos = document.createElement('span'); lrPos.className = 'lr-p'; lrPos.textContent = `${player.position}, ${player.overall}`;
+                playerDiv.append(lrName, lrPos);
                 playerDiv.dataset.playername = player.name;
                 // ✅ Aquí añadimos el onclick para abrir modal
                 playerDiv.onclick = () => openPlayerModal(player);

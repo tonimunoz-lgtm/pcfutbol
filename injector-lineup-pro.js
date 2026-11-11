@@ -104,6 +104,7 @@
             div.onclick = () => openPlayerCard(p);
         });
         groupReserves(byName);
+        ensureXiHead();
 
         // Motivo de los no disponibles en el aviso superior
         const msg = document.getElementById('lineupMessage');
@@ -141,6 +142,20 @@
             }
             list.appendChild(el);
         });
+    }
+
+    // ── Pestaña «XI titular · 4-5-1» sobre el campo (se muestra en escritorio) ──
+    function ensureXiHead() {
+        const row = document.querySelector('#lineup .lineup-main-container');
+        if (!row) return;
+        let head = document.getElementById('pcfXiHead');
+        if (!head) {
+            head = document.createElement('div'); head.id = 'pcfXiHead';
+            head.innerHTML = '<span class="xi-tab">XI titular</span><span class="xi-form"></span>';
+            row.insertBefore(head, row.firstChild);
+        }
+        const f = gs()?.formation;
+        head.querySelector('.xi-form').textContent = String(window.FORMATIONS?.[f]?.name || '').split(' ')[0];
     }
 
     // ── Barra con el botón de alineación automática ──────────────
