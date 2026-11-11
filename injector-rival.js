@@ -193,7 +193,7 @@
     // ── Render color badge resultado ──────────────────────────────
     function resultBadge(r) {
         const c = {V:'#4CAF50',E:'#f5a623',D:'#f44336'}[r] || '#666';
-        return `<span style="display:inline-block;width:20px;height:20px;border-radius:50%;
+        return `<span class="rv-badge" style="display:inline-block;width:20px;height:20px;border-radius:50%;
                              background:${c};color:#fff;font-size:.7em;font-weight:bold;
                              line-height:20px;text-align:center;">${r}</span>`;
     }
@@ -221,16 +221,16 @@
             const formBar = p.form
                 ? `<div style="width:${Math.round(p.form)}px;max-width:60px;height:3px;background:linear-gradient(90deg,${p.form>75?'#4CAF50':'#f5a623'},#333);border-radius:2px;margin-top:2px;"></div>`
                 : '';
-            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-                <span style="background:${posC}22;color:${posC};border-radius:4px;padding:2px 5px;font-size:.7em;font-weight:bold;min-width:32px;text-align:center;">${p.position}</span>
-                <div style="flex:1;min-width:0;">
-                    <div style="color:#ddd;font-size:.83em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${injBadge}${starBadge}</div>
-                    ${p.age ? `<div style="color:#99a;font-size:.7em;">${p.age} años${p.nationality ? ' · '+p.nationality : ''}</div>` : ''}
+            return `<div class="rv-row${starter ? ' rv-starter' : ''}" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+                <span class="rv-pos grp-${grp}" style="background:${posC}22;color:${posC};border-radius:4px;padding:2px 5px;font-size:.7em;font-weight:bold;min-width:32px;text-align:center;">${p.position}</span>
+                <div class="rv-pl" style="flex:1;min-width:0;">
+                    <div class="rv-pname" style="color:#ddd;font-size:.83em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${injBadge}${starBadge}</div>
+                    ${p.age ? `<div class="rv-page" style="color:#99a;font-size:.7em;">${p.age} años${p.nationality ? ' · '+p.nationality : ''}</div>` : ''}
                     ${formBar}
                 </div>
-                <div style="text-align:right;">
-                    <div style="color:${ovrColor(ovr)};font-weight:bold;font-size:.85em;">${ovr}</div>
-                    ${p.form ? `<div style="color:#99a;font-size:.7em;" title="Forma actual"><img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/forma.webp" alt="" aria-hidden="true">${Math.round(p.form)}</div>` : ''}
+                <div class="rv-pr" style="text-align:right;">
+                    <div class="rv-n" style="color:${ovrColor(ovr)};font-weight:bold;font-size:.85em;">${ovr}</div>
+                    ${p.form ? `<div class="rv-fn" style="color:#99a;font-size:.7em;" title="Forma actual"><img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/forma.webp" alt="" aria-hidden="true">${Math.round(p.form)}</div>` : ''}
                 </div>
             </div>`;
         };
@@ -238,19 +238,19 @@
         // En columnas para aprovechar el ancho (2-3 según la pantalla), sin desplazamiento
         const LINE = { POR: 0, DEF: 1, MED: 2, DEL: 3 };
         const byLine = arr => [...arr].sort((a, b) => (LINE[POS_GROUP[a.position]] ?? 2) - (LINE[POS_GROUP[b.position]] ?? 2) || quickOverall(b) - quickOverall(a));
-        const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0 18px;';
+        const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0 18px;';   // (clase rv-grid: 6 columnas en escritorio)
         return `
         <div style="margin-bottom:12px;">
-            <div style="color:#FFD700;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
+            <div class="rv-sec rv-sec-gold" style="color:#FFD700;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
                 <img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/titular.webp" alt="" aria-hidden="true"> Titular probable (11)
             </div>
-            <div style="${grid}">${byLine(starters).map(p => row(p, true)).join('')}</div>
+            <div class="rv-grid" style="${grid}">${byLine(starters).map(p => row(p, true)).join('')}</div>
         </div>
         <div>
-            <div style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
+            <div class="rv-sec rv-sec-bench" style="color:#cfe0ff;font-size:.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:bold;">
                 Banquillo y resto de la plantilla (${subs.length})
             </div>
-            <div style="${grid}">${byLine(subs).map(p => row(p, false)).join('')}</div>
+            <div class="rv-grid" style="${grid}">${byLine(subs).map(p => row(p, false)).join('')}</div>
         </div>`;
     }
 
@@ -372,6 +372,20 @@
     };
 
     // ── Construir la página de análisis del rival ─────────────────
+    // Escudo del rival junto al nombre: memoria → catálogo (con tope de 1,5 s); solo URL seguras. Sin escudo: iniciales.
+    const okImg = u => (typeof u === 'string' && /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp|gif|svg\+xml);base64,|\.?\/?assets\/)/i.test(u.trim())) ? u.trim() : null;
+    async function getRivalLogo(name) {
+        try {
+            const m = window.getCachedTeamData && window.getCachedTeamData(name); if (m && okImg(m.logo)) return okImg(m.logo);
+            if (window.getTeamData) {
+                const d = await Promise.race([window.getTeamData(name), new Promise(r => setTimeout(() => r(null), 1500))]);
+                if (d && okImg(d.logo)) return okImg(d.logo);
+            }
+        } catch (e) { /* sin escudo */ }
+        return null;
+    }
+    // Nombre corto para la comparación de medias: primera palabra; si coincide con la del rival («Real Madrid» / «Real Betis»), las dos primeras
+    const nmShort = (n, other) => { const w = String(n || '').split(' '), o = String(other || '').split(' ')[0]; return (w[0] === o && w[1]) ? w[0] + ' ' + w[1] : (w[0] || ''); };
     async function buildRivalPage(rivalName) {
         const container = document.getElementById('rival-analysis');
         if (!container) return;
@@ -390,6 +404,9 @@
         if (!s) return;
 
         const { squad: rivalSquad, isReal } = await getRivalSquad(rivalName);
+        const rivalLogo = await getRivalLogo(rivalName);
+        const ini = rivalName.replace(/^(FC|CF|CA|RCD|UD|SD|CD|RC|Real|Club)\s+/i, '').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        const crest = rivalLogo ? `<img class="rv-crest" src="${rivalLogo.replace(/"/g, '&quot;')}" alt="">` : `<span class="rv-crest rv-crest-i">${ini}</span>`;
         const xi   = getStartingXI(rivalSquad);
         const st   = getRivalStandings(rivalName);
         const last = getRivalLastResults(rivalName);
@@ -434,49 +451,49 @@
         </div>
 
         <!-- Header rival -->
-        <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;margin-bottom:16px;
+        <div class="rv-head" style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;margin-bottom:16px;
                     display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;">
-            <div>
-                <div style="font-size:1.1em;font-weight:bold;color:#fff;">${rivalName}</div>
-                <div style="color:#666;font-size:.8em;margin-top:2px;">
+            <div class="rv-idbox">${crest}<div class="rv-id">
+                <div class="rv-name" style="font-size:1.1em;font-weight:bold;color:#fff;">${rivalName}</div>
+                <div class="rv-sub" style="color:#666;font-size:.8em;margin-top:2px;">
                     ${isReal ? '📋 Plantilla real' : '⚙️ Plantilla generada'}
                     ${locLabel ? ' · ' + locLabel : ''}
                 </div>
-            </div>
-            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+            </div></div>
+            <div class="rv-stats" style="display:flex;gap:20px;flex-wrap:wrap;">
                 ${st ? `
-                <div style="text-align:center;">
+                <div class="rv-stat" style="text-align:center;">
                     <div style="color:#FFD700;font-size:1.3em;font-weight:bold;">${st.pos}º</div>
                     <div style="color:#666;font-size:.7em;">Posición</div>
                 </div>
-                <div style="text-align:center;">
+                <div class="rv-stat" style="text-align:center;">
                     <div style="color:#4CAF50;font-size:1.3em;font-weight:bold;">${st.pts}</div>
                     <div style="color:#666;font-size:.7em;">Puntos</div>
                 </div>
-                <div style="text-align:center;">
+                <div class="rv-stat" style="text-align:center;">
                     <div style="color:#aaa;font-size:1.1em;">${st.g}-${st.e}-${st.p}</div>
                     <div style="color:#666;font-size:.7em;">V-E-D</div>
                 </div>
-                <div style="text-align:center;">
+                <div class="rv-stat" style="text-align:center;">
                     <div style="color:#aaa;font-size:1.1em;">${st.gf}:${st.gc}</div>
                     <div style="color:#666;font-size:.7em;">Goles</div>
                 </div>` : '<div style="color:#555;font-size:.8em;">Sin datos de clasificación</div>'}
-                <div style="text-align:center;">
+                <div class="rv-stat" style="text-align:center;">
                     <div style="display:flex;gap:3px;">${form.split('').map(r=>resultBadge(r)).join('')}</div>
                     <div style="color:#666;font-size:.7em;margin-top:3px;">Últimos resultados</div>
                 </div>
             </div>
             <!-- Comparativa overall -->
-            <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 16px;text-align:center;min-width:140px;">
+            <div class="rv-ovr" style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 16px;text-align:center;min-width:140px;">
                 <div style="display:flex;gap:16px;align-items:center;justify-content:center;">
                     <div>
                         <div style="color:#4CAF50;font-size:1.4em;font-weight:bold;">${myAvg}</div>
-                        <div style="color:#555;font-size:.7em;">${s.team?.split(' ')[0] || 'Nosotros'}</div>
+                        <div style="color:#555;font-size:.7em;">${nmShort(s.team, rivalName) || 'Nosotros'}</div>
                     </div>
                     <div style="color:${diffColor};font-size:1.1em;font-weight:bold;">${diffStr}</div>
                     <div>
                         <div style="color:${ovrColor(rivalAvg)};font-size:1.4em;font-weight:bold;">${rivalAvg}</div>
-                        <div style="color:#555;font-size:.7em;">${rivalName.split(' ')[0]}</div>
+                        <div style="color:#555;font-size:.7em;">${nmShort(rivalName, s.team)}</div>
                     </div>
                 </div>
                 <div style="color:#aab;font-size:.7em;margin-top:3px;" title="Media del once según la posición de cada jugador (tu once actual, sin lesionados ni sancionados)">Media efectiva del once</div>
@@ -486,10 +503,10 @@
 
         <!-- TABS internos -->
         <div id="rival-tabs" style="display:flex;gap:4px;margin-bottom:0;">
-            <button id="rtab-squad"   onclick="window._rivalTab('squad')"   style="${tabBtn(true,'#4CAF50')}">👥 Plantilla</button>
-            <button id="rtab-field"   onclick="window._rivalTab('field')"   style="${tabBtn(false,'#4CAF50')}">🏟️ XI Probable</button>
-            <button id="rtab-stats"   onclick="window._rivalTab('stats')"   style="${tabBtn(false,'#4CAF50')}">📊 Estadísticas</button>
-            <button id="rtab-notes"   onclick="window._rivalTab('notes')"   style="${tabBtn(false,'#4CAF50')}">📝 Notas</button>
+            <button id="rtab-squad" class="rv-tab active" onclick="window._rivalTab('squad')"   style="${tabBtn(true,'#4CAF50')}"><span class="rv-emo">👥</span><img class="rv-ic" src="assets/iconos/plantilla.webp" alt=""> Plantilla</button>
+            <button id="rtab-field" class="rv-tab" onclick="window._rivalTab('field')"   style="${tabBtn(false,'#4CAF50')}"><span class="rv-emo">🏟️</span><img class="rv-ic" src="assets/iconos/alineacion.webp" alt=""> XI Probable</button>
+            <button id="rtab-stats" class="rv-tab" onclick="window._rivalTab('stats')"   style="${tabBtn(false,'#4CAF50')}"><span class="rv-emo">📊</span><img class="rv-ic" src="assets/iconos/marcador.webp" alt=""> Estadísticas</button>
+            <button id="rtab-notes" class="rv-tab" onclick="window._rivalTab('notes')"   style="${tabBtn(false,'#4CAF50')}"><span class="rv-emo">📝</span><img class="rv-ic" src="assets/iconos/noticias.webp" alt=""> Notas</button>
         </div>
         <div id="rival-tab-content" style="background:rgba(255,255,255,.03);border-radius:0 8px 8px 8px;
               padding:14px;border:1px solid rgba(255,255,255,.07);min-height:300px;">
@@ -520,7 +537,7 @@
         // Update tab button styles
         ['squad','field','stats','notes'].forEach(t => {
             const btn = document.getElementById(`rtab-${t}`);
-            if (btn) btn.style.cssText = tabBtn(t === tab, '#4CAF50');
+            if (btn) { btn.style.cssText = tabBtn(t === tab, '#4CAF50'); btn.classList.toggle('active', t === tab); }
         });
 
         if (tab === 'squad') {
@@ -643,37 +660,37 @@
             if (a == null || b == null) return '';
             const better = a - b;
             const col = better >= 2 ? '#4CAF50' : better <= -2 ? '#f44336' : '#f5a623';
-            return `<div style="display:grid;grid-template-columns:80px 36px 1fr 36px;gap:8px;align-items:center;font-size:.82em;margin:3px 0;">
-                <span style="color:#cfe0ff">${label}</span><strong style="text-align:right">${a.toFixed(0)}</strong>
-                <div style="display:flex;height:7px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.08)">
-                    <div style="width:${Math.max(5, Math.min(95, 50 + better * 4))}%;background:${col}"></div></div>
-                <strong>${b.toFixed(0)}</strong></div>`;
+            return `<div class="rv-line" style="display:grid;grid-template-columns:80px 36px 1fr 36px;gap:8px;align-items:center;font-size:.82em;margin:3px 0;">
+                <span class="rv-lab" style="color:#cfe0ff">${label}</span><strong class="rv-a" style="text-align:right">${a.toFixed(0)}</strong>
+                <div class="rv-track" style="display:flex;height:7px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.08)">
+                    <div class="rv-fill" style="width:${Math.max(5, Math.min(95, 50 + better * 4))}%;background:${col}"></div></div>
+                <strong class="rv-b">${b.toFixed(0)}</strong></div>`;
         }).join('');
         const dangers = [...rivalSquad].filter(p => !p.isInjured).sort((a, b) => (b.overall || 0) - (a.overall || 0)).slice(0, 3)
             .map(p => `${p.name} (${p.position}, ${p.overall})`).join(' · ');
         const sc = s.staff?.segundoEntrenador;
         return `
-        <div style="background:rgba(255,210,74,.07);border:1px solid rgba(255,210,74,.3);border-radius:12px;padding:14px;margin-bottom:16px;
+        <div class="rv-preview" style="background:rgba(255,210,74,.07);border:1px solid rgba(255,210,74,.3);border-radius:12px;padding:14px;margin-bottom:16px;
                     display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
-            <div>
-                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">🔮 Pronóstico estimado ${isHome === false ? '(fuera)' : '(en casa)'}</div>
-                <div style="display:flex;height:22px;border-radius:5px;overflow:hidden;font-size:.75em;font-weight:bold;">
-                    <div title="Victoria" style="width:${pc(w)}%;background:#2e7d32;display:flex;align-items:center;justify-content:center;">${pc(w)}%</div>
-                    <div title="Empate" style="width:${pc(d)}%;background:#8d6e00;display:flex;align-items:center;justify-content:center;">${pc(d)}%</div>
-                    <div title="Derrota" style="width:${pc(l)}%;background:#b71c1c;display:flex;align-items:center;justify-content:center;">${pc(l)}%</div>
+            <div class="rv-card rv-forecast">
+                <div class="rv-ct" style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;"><span class="rv-emo">🔮</span><i class="rv-ic ic-forecast"></i>Pronóstico estimado ${isHome === false ? '(fuera)' : '(en casa)'}</div>
+                <div class="rv-bar" style="display:flex;height:22px;border-radius:5px;overflow:hidden;font-size:.75em;font-weight:bold;">
+                    <div class="rv-w" title="Victoria" style="width:${pc(w)}%;background:#2e7d32;display:flex;align-items:center;justify-content:center;">${pc(w)}%</div>
+                    <div class="rv-d" title="Empate" style="width:${pc(d)}%;background:#8d6e00;display:flex;align-items:center;justify-content:center;">${pc(d)}%</div>
+                    <div class="rv-l" title="Derrota" style="width:${pc(l)}%;background:#b71c1c;display:flex;align-items:center;justify-content:center;">${pc(l)}%</div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:.72em;color:#aab;margin-top:3px;"><span>Victoria</span><span>Empate</span><span>Derrota</span></div>
-                <div style="font-size:.78em;color:#e6eefb;margin-top:10px;">⚠️ Más peligrosos: ${dangers || '—'}</div>
+                <div class="rv-barlab" style="display:flex;justify-content:space-between;font-size:.72em;color:#aab;margin-top:3px;"><span>Victoria</span><span>Empate</span><span>Derrota</span></div>
+                <div class="rv-warn" style="font-size:.78em;color:#e6eefb;margin-top:10px;"><span class="rv-emo">⚠️</span><i class="rv-ic ic-warn"></i>Más peligrosos: ${dangers || '—'}</div>
             </div>
-            <div>
-                <div style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;">📊 Líneas: nosotros · ellos</div>
+            <div class="rv-card rv-lines">
+                <div class="rv-ct" style="color:#FFD700;font-weight:bold;font-size:.85em;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;"><span class="rv-emo">📊</span><i class="rv-ic ic-lines"></i>Líneas: nosotros · ellos</div>
                 ${rows || '<div style="color:#aab;font-size:.8em">Sin datos suficientes</div>'}
             </div>
-            <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;">
-                <div style="font-size:.8em;color:#e6eefb;line-height:1.4;">${sc
-                    ? `🧠 Tu segundo entrenador (nivel ${sc.level}) puede preparar el partido${sc.level >= 3 ? ': once, formación y mentalidad' : ': once y mentalidad'}.`
-                    : '🧠 Sin segundo entrenador: el botón elige el mejor once en tu formación actual.'}</div>
-                <button class="btn" onclick="window.pcfAutoLineup && window.pcfAutoLineup()">⚡ ${sc ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
+            <div class="rv-card rv-auto" style="display:flex;flex-direction:column;justify-content:center;gap:8px;">
+                <div class="rv-note" style="font-size:.8em;color:#e6eefb;line-height:1.4;"><i class="rv-ic ic-info"></i>${sc
+                    ? `<span class="rv-emo">🧠</span> Tu segundo entrenador (nivel ${sc.level}) puede preparar el partido${sc.level >= 3 ? ': once, formación y mentalidad' : ': once y mentalidad'}.`
+                    : '<span class="rv-emo">🧠</span> Sin segundo entrenador: el botón elige el mejor once en tu formación actual.'}</div>
+                <button class="btn rv-auto-btn" onclick="window.pcfAutoLineup && window.pcfAutoLineup()"><span class="rv-emo">⚡</span><i class="rv-ic ic-bolt"></i>${sc ? 'Aplicar plan del segundo entrenador' : 'Alineación automática'}</button>
             </div>
         </div>`;
     }

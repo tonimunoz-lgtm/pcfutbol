@@ -1394,3 +1394,149 @@ div[style*="z-index:290000"] button:active { transform: translateY(1px); filter:
     #standings section.pcf-world-cups details { border: 1px solid rgba(76,143,255,.5) !important; border-radius: 8px !important; background: rgba(5,18,44,.7) !important; }
     #standings section.pcf-world-cups summary { color: #fff; font-size: 1.05rem; font-weight: 700; text-align: left !important; }
 }
+
+/* Ver rival: en móvil (conserva su diseño) no se muestran los iconos nuevos y el escudo se queda pequeño */
+#rival-analysis .rv-ic { display: none; }
+#rival-analysis .rv-idbox { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#rival-analysis .rv-crest { width: 44px; height: 50px; flex: none; object-fit: contain; }
+#rival-analysis .rv-crest-i { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #2a5aa0; border: 2px solid #7aa0d4; font: 800 .95rem sans-serif; color: #fff; }
+
+/* ============================================================
+   Ver rival (Análisis) en el estilo del mockup
+   Cabecera verde (identidad de Equipo) con la lupa · ficha del rival con escudo · tres tarjetas (pronóstico, líneas, alineación automática)
+   · pestañas inclinadas · plantilla en 6 columnas con etiquetas de posición de color. Solo escritorio (≥ 761 px).
+   ============================================================ */
+@media (min-width: 761px) {
+    #rival-analysis.page { background: #030a1a; padding-bottom: 28px; }
+    #rival-analysis.page::before {
+        content: ''; position: fixed; inset: 58px 0 0 0; z-index: -1; pointer-events: none;
+        background: url(assets/imagenes/fondo-menu-2.webp) center / cover no-repeat; filter: blur(6px) brightness(.5) saturate(1.1); transform: scale(1.06);
+    }
+    /* cabecera verde */
+    #rival-analysis .page-header {
+        position: relative; height: 58px; margin: 26px 30px 12px; padding: 0 14px 0 0; display: flex; align-items: center; gap: 12px; overflow: visible;
+        border: 2px solid #8dffa8 !important; border-radius: 10px; background: linear-gradient(180deg, rgba(14,96,44,.92), rgba(4,40,18,.95)) !important;
+        box-shadow: 0 0 18px rgba(80,255,130,.5), inset 0 0 22px rgba(80,255,130,.2), inset 0 1px 0 rgba(255,255,255,.3) !important;
+    }
+    #rival-analysis .page-header h1 {
+        position: relative; isolation: isolate; margin: -9px 0 -9px -6px !important; padding: 0 74px 0 20px !important; min-height: 76px; display: flex; align-items: center; gap: 14px;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.15rem; letter-spacing: .04em; text-transform: uppercase; color: #fff; white-space: nowrap;
+        text-shadow: 0 0 14px rgba(90,255,150,.7), 0 2px 3px #000; background: none !important; border: 0 !important; box-shadow: none !important;
+    }
+    #rival-analysis .page-header h1::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 36px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, #34c25c 0%, #0f7a30 48%, #064a1b 100%); box-shadow: inset 0 0 0 2px #9dffb4, inset 0 0 24px rgba(80,255,130,.5), inset 0 2px 0 rgba(255,255,255,.35);
+    }
+    #rival-analysis .page-header h1 span { color: #5dff8c !important; }
+    #rival-analysis .page-header h1 img.pcf-page-icon { width: 68px; height: 68px; flex: none; margin-top: -8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.65)); }
+    #rival-analysis .page-header .page-close-btn {
+        margin-left: auto; height: 38px; padding: 0 20px; border: 1px solid #2a050b !important; border-radius: 6px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; letter-spacing: .06em; font-size: .95rem; text-transform: uppercase;
+        background: linear-gradient(180deg, #ff9494 0%, #d6323d 46%, #a31524 54%, #560914 100%) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+
+    /* ficha del rival */
+    #rival-analysis .rv-head {
+        margin: 0 30px 14px !important; padding: 14px 22px !important; display: grid !important; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) auto; align-items: center; gap: 22px;
+        border: 2px solid #3f7fe0; border-radius: 14px !important; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important;
+        box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.12);
+    }
+    #rival-analysis .rv-idbox { display: flex; align-items: center; gap: 18px; min-width: 0; }
+    #rival-analysis .rv-crest { width: 76px; height: 86px; flex: none; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0,0,0,.65)); }
+    #rival-analysis .rv-crest-i { display: inline-flex; align-items: center; justify-content: center; width: 76px; height: 76px; border-radius: 50%; background: #2a5aa0; border: 2px solid #7aa0d4; font: 800 1.7rem 'Saira Condensed', sans-serif; color: #fff; }
+    #rival-analysis .rv-name { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.2rem !important; letter-spacing: .02em; text-transform: uppercase; color: #fff !important; text-shadow: 0 2px 3px rgba(0,0,0,.7); line-height: 1; }
+    #rival-analysis .rv-sub { margin-top: 6px !important; color: #cfe0ff !important; font-size: 1.02rem !important; font-weight: 600; }
+    #rival-analysis .rv-stats { flex-wrap: nowrap !important; gap: 0 !important; justify-content: space-around; }
+    #rival-analysis .rv-stat { flex: 1; padding: 0 16px; border-right: 1px solid rgba(76,143,255,.38); }
+    #rival-analysis .rv-stat:last-child { border-right: 0; }
+    #rival-analysis .rv-stat > div:first-child { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.2rem !important; line-height: 1.05; color: #fff; text-shadow: 0 2px 3px rgba(0,0,0,.6); }
+    #rival-analysis .rv-stat > div:first-child[style*="font-size:1.1em"] { font-size: 1.7rem !important; color: #fff !important; font-weight: 700; }
+    #rival-analysis .rv-stat > div:first-child[style*="FFD700"] { color: #ffd24a !important; }
+    #rival-analysis .rv-stat > div:first-child[style*="4CAF50"] { color: #5dff8c !important; }
+    #rival-analysis .rv-stat > div:last-child { color: #cfe0ff !important; font-size: 1.05rem !important; font-weight: 600; margin-top: 2px !important; }
+    #rival-analysis .rv-badge { width: 38px !important; height: 38px !important; line-height: 38px !important; font-size: 1.25rem !important; font-weight: 800 !important; box-shadow: inset 0 2px 0 rgba(255,255,255,.4), 0 2px 4px rgba(0,0,0,.6); }
+    #rival-analysis .rv-ovr { min-width: 250px !important; padding: 8px 24px !important; background: rgba(2,10,28,.72) !important; border: 1px solid rgba(76,143,255,.45); border-radius: 12px !important; }
+    #rival-analysis .rv-ovr > div:first-child { gap: 22px !important; }
+    #rival-analysis .rv-ovr > div:first-child > div:not(:nth-child(2)) > div:first-child { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2.5rem !important; line-height: 1; }
+    #rival-analysis .rv-ovr > div:first-child > div:nth-child(2) { font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 2rem !important; }
+    #rival-analysis .rv-ovr > div:first-child > div:not(:nth-child(2)) > div:last-child { color: #cfe0ff !important; font-size: 1.05rem !important; font-weight: 600; }
+    #rival-analysis .rv-ovr > div:last-child { color: #e6f0ff !important; font-size: 1.1rem !important; font-weight: 600; margin-top: 4px !important; }
+
+    /* tres tarjetas */
+    #rival-analysis .rv-preview { margin: 0 30px 14px !important; padding: 0 !important; border: 0 !important; background: none !important; grid-template-columns: 1.05fr 1fr .85fr !important; gap: 14px !important; }
+    #rival-analysis .rv-card {
+        padding: 14px 20px; min-width: 0; border: 2px solid #3f7fe0; border-radius: 14px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94));
+        box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.12);
+    }
+    #rival-analysis .rv-ct { display: flex; align-items: center; gap: 10px; margin-bottom: 12px !important; color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.5rem !important; letter-spacing: .03em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #rival-analysis .rv-emo { display: none; }
+    #rival-analysis .rv-ic { flex: none; display: inline-block; width: 34px; height: 34px; background: center / contain no-repeat; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+    #rival-analysis .rv-tab .rv-ic { width: 30px; height: 30px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+    #rival-analysis .ic-forecast { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='17' width='6' height='12' rx='1.5' fill='%2347d36b'/%3E%3Crect x='12' y='9' width='6' height='20' rx='1.5' fill='%2339b3ff'/%3E%3Crect x='21' y='3' width='6' height='26' rx='1.5' fill='%23ffd24a'/%3E%3C/svg%3E"); }
+    #rival-analysis .ic-lines { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='18' height='6' rx='3' fill='%2339b3ff'/%3E%3Crect x='3' y='13' width='26' height='6' rx='3' fill='%2347d36b'/%3E%3Crect x='3' y='22' width='12' height='6' rx='3' fill='%23ffd24a'/%3E%3C/svg%3E"); }
+    #rival-analysis .ic-warn { width: 26px; height: 26px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 30 28H2z' fill='%23ffd24a' stroke='%23704a00' stroke-width='1.5' stroke-linejoin='round'/%3E%3Crect x='14.5' y='11' width='3' height='9' rx='1.5' fill='%23402a00'/%3E%3Ccircle cx='16' cy='23.5' r='1.8' fill='%23402a00'/%3E%3C/svg%3E"); vertical-align: -6px; margin-right: 8px; }
+    #rival-analysis .ic-info { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23d94fe8'/%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23ffd9fb' stroke-width='2'/%3E%3Crect x='14.5' y='13' width='3' height='10' rx='1.5' fill='%23fff'/%3E%3Ccircle cx='16' cy='8.5' r='2' fill='%23fff'/%3E%3C/svg%3E"); }
+    #rival-analysis .ic-bolt { width: 26px; height: 26px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M19 2 6 18h8l-2 12 14-18h-8z' fill='%23ffe14a' stroke='%23704a00' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E"); margin-right: 8px; vertical-align: -6px; }
+    #rival-analysis .rv-bar { height: 38px !important; border: 1px solid rgba(255,255,255,.3); border-radius: 9px !important; font-size: 1.25rem !important; font-weight: 800 !important; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.8); box-shadow: 0 0 10px rgba(0,0,0,.5); }
+    #rival-analysis .rv-w { background: linear-gradient(180deg, #5fe07a 0%, #1d9a3b 55%, #0f6a26 100%) !important; }
+    #rival-analysis .rv-d { background: linear-gradient(180deg, #f2c13a 0%, #c78a0a 55%, #8a5a00 100%) !important; }
+    #rival-analysis .rv-l { background: linear-gradient(180deg, #ff6a6a 0%, #d62828 55%, #8f1010 100%) !important; }
+    #rival-analysis .rv-barlab { margin-top: 6px !important; font-size: 1.05rem !important; font-weight: 600; color: #e6f0ff !important; }
+    #rival-analysis .rv-warn { margin-top: 12px !important; font-size: 1.05rem !important; font-weight: 600; color: #fff !important; line-height: 1.3; }
+    #rival-analysis .rv-line { grid-template-columns: 92px 40px 1fr 40px !important; gap: 10px !important; margin: 8px 0 !important; font-size: 1.15rem !important; }
+    #rival-analysis .rv-lab { color: #fff !important; font-weight: 700; }
+    #rival-analysis .rv-a, #rival-analysis .rv-b { color: #fff; font-weight: 800; font-size: 1.2rem; }
+    #rival-analysis .rv-track { height: 12px !important; border-radius: 8px !important; background: rgba(255,255,255,.16) !important; box-shadow: inset 0 1px 3px rgba(0,0,0,.6); }
+    #rival-analysis .rv-fill { border-radius: 8px; filter: brightness(1.15) saturate(1.25); box-shadow: 0 0 8px rgba(255,255,255,.35); }
+    #rival-analysis .rv-auto { justify-content: center; gap: 14px !important; }
+    #rival-analysis .rv-note { display: flex; align-items: flex-start; gap: 12px; color: #fff !important; font-size: 1.2rem !important; font-weight: 600; line-height: 1.3 !important; }
+    #rival-analysis .rv-auto-btn {
+        width: 100%; height: 58px; border: 1px solid #072a66; border-radius: 8px; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.45rem; letter-spacing: .04em; text-transform: uppercase; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #6fe0ff 0%, #1f8cf0 46%, #1450c0 54%, #0a2a78 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.6) !important;
+    }
+
+    /* pestañas inclinadas */
+    #rival-analysis #rival-tabs { margin: 0 30px !important; gap: 4px !important; position: relative; z-index: 1; }
+    #rival-analysis .rv-tab {
+        position: relative; isolation: isolate; height: 48px; padding: 0 34px 0 26px !important; margin-right: -8px; border: 0 !important; border-radius: 0 !important; background: none !important; display: inline-flex; align-items: center; gap: 10px;
+        color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.35rem !important; letter-spacing: .02em; text-shadow: 0 1px 3px rgba(0,0,0,.8); filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)); cursor: pointer;
+    }
+    #rival-analysis .rv-tab::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+        background: linear-gradient(180deg, #1f55a8 0%, #0b2d63 48%, #061a3e 100%); box-shadow: inset 0 0 0 1px #4c8fff, inset 0 0 14px rgba(70,150,255,.5), inset 0 1px 0 rgba(255,255,255,.35);
+    }
+    #rival-analysis .rv-tab.active::before { background: linear-gradient(180deg, #6fe58b 0%, #25a847 46%, #0f7a30 54%, #064a1b 100%); box-shadow: inset 0 0 0 1px #b6ffc7, inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.35); }
+    #rival-analysis .rv-tab:hover::before { filter: brightness(1.15); }
+    #rival-analysis #rival-tab-content {
+        margin: -2px 30px 0 !important; padding: 12px 18px 16px !important; min-height: 0 !important; border: 2px solid #3f7fe0 !important; border-radius: 0 14px 14px 14px !important;
+        background: rgba(4,16,40,.90) !important; box-shadow: 0 0 18px rgba(70,150,255,.45), inset 0 0 22px rgba(70,150,255,.10);
+    }
+
+    /* plantilla: 6 columnas */
+    #rival-analysis .rv-sec { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.4rem !important; letter-spacing: .03em; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+    #rival-analysis .rv-sec .pcf-st-icon { width: 26px; height: 26px; }
+    #rival-analysis .rv-sec-gold { color: #ffe14a !important; }
+    #rival-analysis .rv-sec-bench { color: #fff !important; margin-top: 14px !important; padding-top: 12px; border-top: 2px solid rgba(76,143,255,.45); }
+    #rival-analysis .rv-grid { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: 0 !important; }
+    #rival-analysis .rv-row { box-sizing: border-box; min-height: 60px; padding: 8px 12px !important; gap: 10px !important; border-bottom: 1px solid rgba(76,143,255,.28) !important; border-right: 1px solid rgba(76,143,255,.28); }
+    #rival-analysis .rv-row:nth-child(6n) { border-right: 0; }
+    #rival-analysis .rv-pos { min-width: 48px !important; padding: 7px 4px !important; border-radius: 7px !important; font-size: 1.02rem !important; font-weight: 800 !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.7); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.6); }
+    #rival-analysis .rv-pos.grp-POR { background: linear-gradient(180deg, #ffe38a, #e3a21c 55%, #a56b00) !important; color: #3a2400 !important; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+    #rival-analysis .rv-pos.grp-DEF { background: linear-gradient(180deg, #6fc3ff, #1f8cf0 55%, #1450c0) !important; }
+    #rival-analysis .rv-pos.grp-MED { background: linear-gradient(180deg, #6fe58b, #25a847 55%, #0f7a30) !important; }
+    #rival-analysis .rv-pos.grp-DEL { background: linear-gradient(180deg, #ff8a8a, #d6323d 55%, #8f1010) !important; }
+    #rival-analysis .rv-pname { color: #fff !important; font-size: 1.12rem !important; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+    #rival-analysis .rv-page { color: #b8c9ea !important; font-size: .95rem !important; }
+    #rival-analysis .rv-n { color: #d4ff3a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-size: 1.7rem !important; font-weight: 800 !important; text-shadow: 0 0 8px rgba(190,255,40,.4), 0 1px 2px #000; }
+    #rival-analysis .rv-fn { display: none; }
+
+    /* resto de pestañas (XI probable, estadísticas, notas) */
+    #rival-analysis #rival-tab-content [style*="color:#888"], #rival-analysis #rival-tab-content [style*="color:#999"] { color: #cfe0ff !important; font-size: 1.02rem !important; }
+    #rival-analysis #rival-tab-content [style*="text-transform:uppercase"] { color: #ffe14a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem !important; letter-spacing: .03em; }
+    #rival-analysis #rival-tab-content [style*="color:#666"], #rival-analysis #rival-tab-content [style*="color:#555"], #rival-analysis #rival-tab-content [style*="color:#444"] { color: #9db8e8 !important; }
+    #rival-analysis #rival-tab-content [style*="color:#ddd"] { color: #fff !important; }
+    #rival-analysis #rival-tab-content [style*="color:#aaa"] { color: #e6f0ff !important; }
+    #rival-analysis #rival-tab-content div[style*="justify-content:space-between;font-size:.75em"] { font-size: 1.02rem !important; margin-bottom: 3px !important; }
+    #rival-analysis #rival-tab-content div[style*="height:5px"] { height: 9px !important; border-radius: 6px !important; box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+    #rival-analysis #rival-tab-content textarea { background: rgba(8,28,66,.8) !important; border: 2px solid rgba(76,143,255,.6) !important; color: #fff !important; font-size: 1.05rem !important; }
+}
