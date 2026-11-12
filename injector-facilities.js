@@ -637,25 +637,19 @@
                </div>`;
 
         const tabStadium  = _activeTab === 'stadium';
-        const tabBtnBase  = 'border:none;border-radius:8px 8px 0 0;padding:10px 18px;cursor:pointer;font-weight:bold;font-size:.85em;transition:all .2s;white-space:nowrap;';
-        const tabActiveS  = tabBtnBase + 'background:#FFD700;color:#000;';
-        const tabActiveT  = tabBtnBase + 'background:#2196F3;color:#fff;';
-        const tabInactive = tabBtnBase + 'background:rgba(255,255,255,.06);color:#666;';
-
-        // Grid responsivo: 2 col en desktop, 1 col en móvil estrecho
         const gridStyle = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;';
 
         const tabContent = tabStadium
-            ? `<div style="${gridStyle}">
+            ? `<div class="fa-grid" style="${gridStyle}">
                 ${renderUpgradeList(STADIUM_UPGRADES, 'stadium', d.stadiumDone, d.construction)}
                </div>`
-            : `<div style="${gridStyle}">
+            : `<div class="fa-grid" style="${gridStyle}">
                 ${renderUpgradeList(TRAINING_UPGRADES, 'training', d.trainingDone, d.construction)}
                </div>`;
 
         container.innerHTML = `
         <div class="page-header">
-            <h1>🏟️ Estadio e Instalaciones</h1><span>👥 Afición ${fmt(s.fanbase)} · 🏋️ Entrenamiento Nv.${s.trainingLevel || 1} · Popularidad ${s.popularity || 50}/100</span>
+            <h1>🏟️ Estadio e Instalaciones</h1><span class="fa-info"><span>👥 Afición ${fmt(s.fanbase)}</span><span>🏋️ Entrenamiento Nv.${s.trainingLevel || 1}</span><span>Popularidad ${s.popularity || 50}/100</span></span>
             <button class="page-close-btn" onclick="closePage('facilities')">✖ CERRAR</button>
         </div>
 
@@ -663,11 +657,11 @@
         ${constructionHTML}
 
         <!-- PESTAÑAS -->
-        <div style="display:flex;gap:4px;margin-bottom:0;margin-top:8px;overflow-x:auto;">
-            <button style="${tabStadium ? tabActiveS : tabInactive}" onclick="window._facTab('stadium')">🏟️ Estadio</button>
-            <button style="${!tabStadium ? tabActiveT : tabInactive}" onclick="window._facTab('training')">🏋️ C. Entrenamiento</button>
+        <div class="fa-tabs" style="display:flex;gap:4px;margin-bottom:0;margin-top:8px;overflow-x:auto;">
+            <button class="fa-tab stadium${tabStadium ? ' on' : ''}" onclick="window._facTab('stadium')">🏟️ Estadio</button>
+            <button class="fa-tab training${!tabStadium ? ' on' : ''}" onclick="window._facTab('training')">🏋️ C. Entrenamiento</button>
         </div>
-        <div style="background:rgba(255,255,255,.03);border-radius:0 8px 8px 8px;padding:12px;border:1px solid rgba(255,255,255,.07);">
+        <div class="fa-panel">
             ${tabContent}
         </div>
         `;
@@ -699,6 +693,13 @@
         ${items}`;
     }
 
+    // Texto plano de los requisitos que faltan (para el aviso y el tooltip)
+    const plain = html => String(html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    window._facReq = function (el) {
+        const txt = (el?.getAttribute('data-req') || '').split('|').filter(Boolean).join('\n') || 'Sin requisitos adicionales';
+        if (window.pcfNotify) window.pcfNotify('Antes hay que construir', txt); else alert('Antes hay que construir:\n' + txt);
+    };
+
     function renderUpgradeList(upgrades, category, done, construction) {
         const s = gs();
         const balance = s?.balance || 0;
@@ -713,69 +714,44 @@
             const missingReq = upg.capacityAdd > 0 && !atMax
                 ? seatRequirementsMissing(Math.min(capNow + upg.capacityAdd, MAX_STADIUM_CAPACITY), true) : [];
             const seatBusy   = upg.capacityAdd > 0 && !construction.some(c => c.id === upg.id) && seatsInConstruction();
+            const reqAttr    = missingReq.map(m => plain(m).replace(/"/g, '').replace(/\|/g, '/')).join('|');
 
-            let statusBadge = '';
-            let btnDisabled = false;
-            let cardStyle   = '';
-
+            let badge = '', btnDisabled = false, state = '';
             if (inProgress) {
                 const prog = construction.find(c => c.id === upg.id && c.category === category);
-                statusBadge = `<span style="background:#f5a623;color:#000;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;">EN OBRAS ${prog?.weeksLeft}sem</span>`;
-                btnDisabled = true;
+                badge = `<span class="fc-badge work">EN OBRAS ${prog?.weeksLeft} sem</span>`; btnDisabled = true; state = 'fc-busy';
             } else if (isDone || atMax) {
-                statusBadge = `<span style="background:#2e7d32;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;">✓ COMPLETADO</span>`;
-                btnDisabled = true;
-                cardStyle = 'opacity:.6;';
+                badge = `<span class="fc-badge done">✓ COMPLETADO</span>`; btnDisabled = true; state = 'fc-done';
             } else if (missingReq.length) {
-                statusBadge = `<span title="Falta: ${missingReq.map(m => m.replace(/<[^>]*>/g, '')).join(', ').replace(/"/g,'')}" style="background:#555;color:#fff;border-radius:4px;padding:2px 7px;font-size:.72em;font-weight:bold;cursor:help;">🔒 Requisitos</span>`;
-                btnDisabled = true;
+                badge = `<button type="button" class="fc-badge lock" data-req="${reqAttr}" onclick="window._facReq(this)" title="${reqAttr.split('|').join(', ')}">🔒 Requisitos</button>`; btnDisabled = true; state = 'fc-lock';
             } else if (seatBusy) {
-                statusBadge = `<span style="color:#f5a623;font-size:.72em;">Otra ampliación en obras</span>`;
-                btnDisabled = true;
+                badge = `<span class="fc-badge work">Otra ampliación en obras</span>`; btnDisabled = true;
             } else if (!canAfford) {
-                statusBadge = `<span style="color:#f44336;font-size:.72em;">Sin fondos</span>`;
+                badge = `<span class="fc-badge nofunds">Sin fondos</span>`;
             }
 
-            // Efectos a mostrar
-            const effects = [];
-            if (upg.capacityAdd)       effects.push(`+${fmt(upg.capacityAdd)} asientos`);
-            if (upg.fanbaseBonus)       effects.push(`+${Math.round(upg.fanbaseBonus*100)}% afición`);
-            if (upg.trainingBonus)      effects.push(`+${upg.trainingBonus} entrenamiento`);
-            if (upg.popularityBonus)    effects.push(`+${upg.popularityBonus} popularidad`);
-            if (upg.incomeWeeklyBonus)  effects.push(`+${fmt(upg.incomeWeeklyBonus)}€/sem`);
-            if (upg.injuryReduction)    effects.push(`-${Math.round(upg.injuryReduction*100)}% lesiones`);
-            if (upg.maxBuilds && !isDone && !atMax) effects.push(`(${timesBuilt}/${upg.maxBuilds})`);
-
-            const colorBorder = category === 'stadium' ? 'rgba(255,215,0,.15)' : 'rgba(33,150,243,.15)';
-            const colorAccent = category === 'stadium' ? '#FFD700' : '#2196F3';
+            // Efectos a mostrar (cada uno con su icono)
+            const fx = [];
+            if (upg.capacityAdd)       fx.push(['🏟️', `+${fmt(upg.capacityAdd)} asientos`]);
+            if (upg.fanbaseBonus)      fx.push(['👥', `+${Math.round(upg.fanbaseBonus * 100)}% afición`]);
+            if (upg.trainingBonus)     fx.push(['🏋️', `+${upg.trainingBonus} entrenamiento`]);
+            if (upg.popularityBonus)   fx.push(['⭐', `+${upg.popularityBonus} popularidad`]);
+            if (upg.incomeWeeklyBonus) fx.push(['🪙', `+${fmt(upg.incomeWeeklyBonus)} €/sem`]);
+            if (upg.injuryReduction)   fx.push(['🩹', `-${Math.round(upg.injuryReduction * 100)}% lesiones`]);
+            if (upg.maxBuilds && !isDone && !atMax) fx.push(['🔁', `${timesBuilt}/${upg.maxBuilds} construidas`]);
 
             return `
-            <div style="background:rgba(255,255,255,.04);border:1px solid ${colorBorder};
-                        border-radius:10px;padding:13px;${cardStyle}display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="fc-card ${state} fc-${category}" style="display:flex;flex-direction:column;justify-content:space-between;">
                 <div>
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-                        <span style="color:${colorAccent};font-weight:bold;font-size:.9em;display:flex;align-items:center;gap:8px;">${facIcon(upg.id, 'pcf-fac-icon-card')}${facName(upg)}</span>
-                        ${statusBadge}
-                    </div>
-                    <div style="color:#888;font-size:.78em;margin-bottom:7px;line-height:1.4;">${upg.desc}</div>
-                    ${missingReq.length ? `<div style="color:#f5a623;font-size:.74em;margin-bottom:6px;line-height:1.35;">🔒 Antes hay que construir: ${missingReq.join(', ')}</div>` : ''}
-                    ${capFull ? `<div style="color:#4CAF50;font-size:.74em;margin-bottom:6px;">🏟️ Estadio completado (${fmt(MAX_STADIUM_CAPACITY)} asientos)</div>` : ''}
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-                        ${effects.map(e => `<span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.72em;color:#aaa;">${e}</span>`).join('')}
-                    </div>
+                    <div class="fc-head"><span class="fc-name">${facIcon(upg.id, 'pcf-fac-icon-card')}<span>${facName(upg)}</span></span>${badge}</div>
+                    <div class="fc-desc">${upg.desc}</div>
+                    ${missingReq.length ? `<div class="fc-req" data-req="${reqAttr}" onclick="window._facReq(this)" title="${reqAttr.split('|').join(', ')}">Requiere mejoras previas</div>` : ''}
+                    ${capFull ? `<div class="fc-note">🏟️ Estadio completado (${fmt(MAX_STADIUM_CAPACITY)} asientos)</div>` : ''}
+                    <div class="fc-fx">${fx.map(([ic, t]) => `<span class="fc-chip"><i>${ic}</i>${t}</span>`).join('')}</div>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-                    <div>
-                        <div style="color:#f5a623;font-weight:bold;">${fmt(upg.cost)}€</div>
-                        <div style="color:#555;font-size:.75em;">⏱ ${upg.weeks} semanas</div>
-                    </div>
-                    <button onclick="window._facStart('${upg.id}','${category}')"
-                        ${btnDisabled ? 'disabled' : ''}
-                        style="background:${btnDisabled ? '#333' : canAfford ? colorAccent : '#555'};
-                               color:${btnDisabled ? '#666' : canAfford ? '#000' : '#aaa'};
-                               border:none;border-radius:8px;padding:7px 14px;
-                               cursor:${btnDisabled ? 'not-allowed' : 'pointer'};
-                               font-weight:bold;font-size:.8em;white-space:nowrap;">
+                <div class="fc-foot">
+                    <div class="fc-cost"><div class="fc-price">${fmt(upg.cost)} €</div><div class="fc-time">⏱ ${upg.weeks} semanas</div></div>
+                    <button type="button" class="fc-btn ${btnDisabled ? 'off' : canAfford ? 'on' : 'nofunds'}" onclick="window._facStart('${upg.id}','${category}')" ${btnDisabled ? 'disabled' : ''}>
                         ${inProgress ? '🏗️ En obra' : isDone || atMax ? '✓ Hecho' : '▶ Construir'}
                     </button>
                 </div>
