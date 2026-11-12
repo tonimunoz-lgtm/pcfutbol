@@ -34,6 +34,31 @@
         });
     }
 
+    // Panel con el diagnóstico del último fallo de avance, con botón para copiarlo
+    function showSimDiagnostic() {
+        if (document.getElementById('pcfSimDiag')) return;
+        const d = (window.__pcfSimErrors || []).slice(-1)[0]; if (!d) return;
+        const txt = JSON.stringify(d, null, 2);
+        const box = document.createElement('div'); box.id = 'pcfSimDiag';
+        box.style.cssText = 'position:fixed;inset:0;z-index:300000;background:rgba(2,8,22,.82);display:flex;align-items:center;justify-content:center;padding:16px;';
+        box.innerHTML = '<div style="width:min(640px,100%);max-height:92vh;overflow:auto;padding:18px 20px;border:2px solid #ffc107;border-radius:14px;background:linear-gradient(180deg,#10285c,#061a40);color:#e6f0ff;font-family:sans-serif;box-shadow:0 0 24px rgba(255,193,7,.45);">'
+            + '<h3 style="margin:0 0 8px;color:#ffd24a;">⚠️ El avance de jornada falla de forma repetida</h3>'
+            + '<p style="margin:0 0 10px;line-height:1.4;font-size:.95rem;">Se ha restaurado el estado anterior para no duplicar partidos ni cargos, pero la jornada no consigue completarse. Copia este diagnóstico y envíalo: indica exactamente qué la bloquea.</p>'
+            + '<textarea id="pcfSimDiagTxt" readonly style="width:100%;height:190px;box-sizing:border-box;padding:8px;border:1px solid #4c8fff;border-radius:8px;background:#04102a;color:#cfe0ff;font:12px/1.35 monospace;"></textarea>'
+            + '<div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end;">'
+            + '<button type="button" id="pcfSimDiagCopy" style="padding:10px 18px;border:1px solid #072a66;border-radius:8px;background:linear-gradient(180deg,#6fe0ff,#1f8cf0 46%,#1450c0 54%,#0a2a78);color:#fff;font-weight:800;cursor:pointer;">Copiar diagnóstico</button>'
+            + '<button type="button" id="pcfSimDiagClose" style="padding:10px 18px;border:1px solid #2a050b;border-radius:8px;background:linear-gradient(180deg,#ff9494,#d6323d 46%,#a31524 54%,#560914);color:#fff;font-weight:800;cursor:pointer;">Cerrar</button></div></div>';
+        document.body.appendChild(box);
+        const ta = box.querySelector('#pcfSimDiagTxt'); ta.value = txt;
+        box.querySelector('#pcfSimDiagClose').onclick = () => box.remove();
+        box.querySelector('#pcfSimDiagCopy').onclick = async () => {
+            let ok = false;
+            try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) { /* sin permiso: se usa el método antiguo */ }
+            if (!ok) { ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (e) { /* */ } }
+            box.querySelector('#pcfSimDiagCopy').textContent = ok ? '✓ Copiado' : 'Selecciona el texto y cópialo';
+        };
+    }
+
     document.addEventListener('click', async (e) => {
         const btn = e.target.closest && e.target.closest('[onclick*="simulateWeek"]');
         if (!btn) return;
@@ -80,14 +105,27 @@
                 autosaveTimer = setTimeout(() => { autosaveTimer=null; window.pcfSaveCurrentGame(); }, 700);
             }
         } catch (err) {
+            const msg = String((err && err.message) || err).slice(0, 220);
+            // Datos para localizar el fallo: qué ha lanzado el error y en qué punto de la partida estaba
+            const diag = {
+                hora: new Date().toISOString(), error: msg,
+                pila: String((err && err.stack) || '').split('\n').slice(0, 8).join('\n'),
+                equipo: checkpoint?.team, division: checkpoint?.division, modo: checkpoint?.gameMode,
+                temporada: checkpoint?.currentSeason, fase: checkpoint?.seasonType, jornada: checkpoint?.week,
+                version: (document.querySelector('script[src*="injector-sim-guard"]')?.src || '').split('?')[1] || '', navegador: navigator.userAgent.slice(0, 120)
+            };
+            window.__pcfSimErrors = [...(window.__pcfSimErrors || []), diag].slice(-6);
             if(checkpoint){
                 window.gameLogic.replaceGameState(checkpoint);
-                window.gameLogic.addNews('No se ha completado el avance. Se ha restaurado el estado anterior para evitar duplicar partidos o cargos.','warning');
+                window.gameLogic.addNews('No se ha completado el avance (' + msg.slice(0, 120) + '). Se ha restaurado el estado anterior para evitar duplicar partidos o cargos.','warning');
                 window.ui?.refreshUI?.(window.gameLogic.getViewState());
             }
             console.error('[SimGuard] Error simulando la jornada:', err);
             // Aviso visible (antes solo quedaba una noticia): si la jornada se repite con otro resultado es porque el avance falló y se deshizo
-            try { window.pcfToast?.('La jornada no se ha podido completar y se ha deshecho (' + String((err && err.message) || err).slice(0, 140) + '). Si se repite, anota este mensaje.', { type: 'error', duration: 14000 }); } catch (e) { /* */ }
+            try { window.pcfToast?.('La jornada no se ha podido completar y se ha deshecho (' + msg.slice(0, 140) + '). Si se repite, anota este mensaje.', { type: 'error', duration: 14000 }); } catch (e) { /* */ }
+            // Si el mismo avance falla dos veces seguidas, panel con el diagnóstico listo para copiar
+            const reps = window.__pcfSimErrors.filter(d => d.error === diag.error && d.jornada === diag.jornada && d.temporada === diag.temporada && d.fase === diag.fase).length;
+            if (reps >= 2) showSimDiagnostic();
         } finally {
             busy = false;
             setButtonsBusy(false);
