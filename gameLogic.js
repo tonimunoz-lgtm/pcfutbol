@@ -3630,7 +3630,7 @@ function generateStaffCandidates(role, forceNew = false) {
         const level = 1 + Math.floor(Math.random() * 5); // Nivel 1 a 5  
         const salaryScale = ECONOMY.staffSalaryScale[gameState.division] ?? 1;
         const salary = Math.floor((roleConfig.minSalary + (roleConfig.maxSalary - roleConfig.minSalary) * (level / 5)) * salaryScale);  
-        const name = staffNames[Math.floor(Math.random() * staffNames.length)] + " " + staffNames[Math.floor(Math.random() * staffNames.length)];  
+        const name = (typeof window !== 'undefined' && window.pcfStaffName) ? window.pcfStaffName(role) : (staffNames[Math.floor(Math.random() * staffNames.length)] + " García " + staffNames[Math.floor(Math.random() * staffNames.length)]);  
   
         let clausula = Math.floor(roleConfig.baseClausula * level * roleConfig.levelCostMultiplier * divisionFactor * salaryScale * (0.8 + Math.random() * 0.4));  
   

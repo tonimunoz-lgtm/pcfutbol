@@ -313,7 +313,7 @@ console.log('🏫 Youth Training Injector cargando...');
         if (nameEl)  nameEl.textContent  = coach ? coach.name  : 'No Contratado';
         if (lvlEl)   lvlEl.textContent   = coach ? coach.level : '-';
         if (salEl)   salEl.textContent   = coach ? (coach.salary ? fmt(coach.salary) + '€' : '-') : '-';
-        if (clausEl) clausEl.textContent = coach ? 'N/A' : '-';
+        if (clausEl) clausEl.textContent = coach ? (coach.clausula > 0 ? fmt(coach.clausula) + '€' : 'Sin cláusula') : '-';
         if (btnEl) {
             btnEl.disabled    = false;
             btnEl.textContent = coach ? 'Cambiar' : 'Contratar';
@@ -363,7 +363,7 @@ console.log('🏫 Youth Training Injector cargando...');
         const candidates = Array.from({ length: 3 }, () => {
             const level = 1 + Math.floor(Math.random() * 5);
             const salary = Math.floor(YOUTH_ROLE_CONFIG.minSalary + (YOUTH_ROLE_CONFIG.maxSalary - YOUTH_ROLE_CONFIG.minSalary) * (level / 5));
-            const name = staffNames[Math.floor(Math.random() * staffNames.length)] + ' ' + staffNames[Math.floor(Math.random() * staffNames.length)];
+            const name = window.pcfStaffName ? window.pcfStaffName(YOUTH_ROLE) : (staffNames[Math.floor(Math.random() * staffNames.length)] + ' García');
             const clausula = level <= 1 && Math.random() < 0.5 ? 0 : Math.max(1000, Math.floor(YOUTH_ROLE_CONFIG.baseClausula * level * YOUTH_ROLE_CONFIG.levelCostMultiplier * (0.8 + Math.random() * 0.4)));
             return { name, level, salary: Math.round(salary), clausula: Math.round(clausula), role: YOUTH_ROLE, displayName: YOUTH_ROLE_CONFIG.displayName };
         });

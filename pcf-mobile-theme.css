@@ -403,3 +403,51 @@
     #negotiations .pcf-player-scroll tbody td:nth-child(8) .btn { width: 100%; min-height: 42px; font-size: 1.05rem !important; }
     #negotiations .pcf-player-scroll td.pcf-pos-cell, #negotiations .pcf-player-scroll td:nth-child(4), #negotiations .pcf-player-scroll td:nth-child(4) * { color: #fff !important; font-weight: 800 !important; }
 }
+
+/* ── R71 · Móvil: Decisiones (Gestión comercial) como el mockup ──
+   Cintas inclinadas de color con icono grande y título en cursiva, tarjetas de cristal
+   con borde azul, cifras en cajas y deslizadores con su valor al lado. */
+@media (max-width: 767px), (max-height: 500px) and (max-width: 1100px) {
+    #commercial .data-grid .data-box { border: 2px solid #3f7fe0; border-radius: 12px; background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)); box-shadow: 0 0 14px rgba(70,150,255,.40), inset 0 0 20px rgba(70,150,255,.14); }
+    #commercial .data-grid .data-label { color: #fff !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: .95rem !important; letter-spacing: .02em !important; text-transform: uppercase; line-height: 1.1; }
+    #commercial .data-grid .data-value { color: #ffd24a !important; font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.9rem !important; text-shadow: 0 0 10px rgba(255,210,74,.4), 0 2px 3px rgba(0,0,0,.8); }
+    #commercial .pcf-com-grid { margin: 34px 0 16px !important; gap: 38px 0 !important; }
+    #commercial .pcf-com-card {
+        position: relative; padding: 38px 12px 14px !important; border: 2px solid #3f7fe0 !important; border-top: 2px solid #3f7fe0 !important; border-radius: 14px !important; min-width: 0;
+        background: linear-gradient(180deg, rgba(10,34,78,.90), rgba(4,16,40,.94)) !important; box-shadow: 0 0 14px rgba(70,150,255,.40), inset 0 0 22px rgba(70,150,255,.14) !important;
+    }
+    #commercial .pcf-com-card[style*="4fc3f7"] { --p1:#8be8ff; --p2:#1fb0dc; --p3:#0b7aa6; --p4:#053f5c; --pe:#c4f3ff; }
+    #commercial .pcf-com-card[style*="ffd24a"] { --p1:#ffe786; --p2:#e3ab1e; --p3:#b07a00; --p4:#5f3d00; --pe:#fff2b4; }
+    #commercial .pcf-com-card[style*="aed581"] { --p1:#9ff0a8; --p2:#2fbf55; --p3:#178a38; --p4:#0a4a1e; --pe:#c8ffd0; }
+    #commercial .pcf-com-card[style*="ff8a65"] { --p1:#ffc27a; --p2:#ee7a1c; --p3:#b04f08; --p4:#5e2a02; --pe:#ffdcb0; }
+    #commercial .pcf-com-card[style*="ba68c8"] { --p1:#d8c0ff; --p2:#9a5fe8; --p3:#6130b0; --p4:#2d1260; --pe:#eadcff; }
+    #commercial .pcf-com-label {
+        position: absolute !important; top: -24px; left: -8px; z-index: 3; margin: 0 !important; min-height: 46px; padding: 3px 40px 3px 10px !important; display: flex !important; align-items: center; gap: 8px; isolation: isolate;
+        border-radius: 0 !important; background: none !important; box-shadow: none !important; border: 0 !important; max-width: calc(100% + 8px); overflow: hidden; text-overflow: ellipsis;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem !important; letter-spacing: .02em !important; text-transform: uppercase; color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,.75); white-space: nowrap;
+    }
+    #commercial .pcf-com-label::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 100%, 0 100%);
+        background: linear-gradient(180deg, var(--p1, #8bbcff) 0%, var(--p2, #2f72d9) 46%, var(--p3, #1a4cae) 54%, var(--p4, #0a2a70) 100%);
+        box-shadow: inset 0 0 0 2px var(--pe, #b3d8ff), inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 6px rgba(0,0,0,.35);
+    }
+    #commercial .pcf-com-label img.pcf-head-ico { width: 38px; height: 38px; flex: none; margin: -3px 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+    #commercial .pcf-com-card p, #commercial .pcf-com-card .pcf-skin-muted { color: #d3e3ff !important; font-size: .95rem !important; line-height: 1.4; }
+    #commercial .pcf-com-card label { color: #fff; font-weight: 700; font-size: 1rem; }
+    #commercial .pcf-com-card > div:has(> input[type=range]) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 12px !important; }
+    #commercial .pcf-com-card > div:has(> input[type=range]) > label { flex: 0 0 100%; margin: 0 !important; }
+    #commercial .pcf-com-card input[type=range] { flex: 1 1 0; width: auto; min-width: 0; max-width: none !important; height: 8px; accent-color: #3f8cff; }
+    #commercial .pcf-com-card .pcf-sl-box { min-width: 70px; padding: 8px 10px; text-align: center; border: 1px solid rgba(76,143,255,.7); border-radius: 8px; background: rgba(5,18,44,.85); color: #fff; font-weight: 800; font-size: 1.02rem; }
+    #commercial .pcf-com-card select { width: 100%; max-width: none !important; min-height: 44px; border: 1px solid #9fb6dc !important; border-radius: 6px !important; background: #f3f6fc !important; color: #0a1a35 !important; font-weight: 700; }
+    #commercial .pcf-com-card button.btn, #commercial .pcf-com-card button#fd-btn-offers {
+        min-height: 44px; border: 1px solid #06142e !important; border-radius: 8px !important; color: #fff !important; padding: 8px 14px !important;
+        font-family: 'Saira Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem !important; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8);
+        background: linear-gradient(180deg, #8bbcff 0%, #2f72d9 40%, #1a4cae 54%, #0a2a70 100%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.55) !important;
+    }
+    #commercial .pcf-com-card[style*="aed581"] button.btn { background: linear-gradient(180deg, #7fe597 0%, #22a84f 40%, #137a35 54%, #08461d 100%) !important; }
+    #commercial .pcf-com-card button#fd-btn-offers[style*="230, 81, 0"], #commercial .pcf-com-card button#fd-btn-offers[style*="e65100"] { background: linear-gradient(180deg, #ffc27a 0%, #ee7a1c 40%, #b04f08 54%, #5e2a02 100%) !important; }
+    #commercial .pcf-com-card .pcf-skin-box, #commercial .pcf-com-card #pcfBoardsCard > div, #commercial #fd-contracts > div { background: rgba(5,18,44,.62) !important; border: 1px solid rgba(76,143,255,.50) !important; border-radius: 10px !important; }
+    #commercial #pcfPrizeHelp { margin-top: 10px !important; padding: 10px 12px; border: 1px solid rgba(76,143,255,.5); border-radius: 8px; background: rgba(5,18,44,.7); }
+    #commercial #pcfPrizeHelp summary { color: #fff !important; font-weight: 700; }
+    #commercial #pcfPrizeHelp table td { color: #e6f0ff !important; }
+}

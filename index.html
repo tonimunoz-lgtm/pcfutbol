@@ -30,6 +30,8 @@
 <script src="./injector-intro.js"></script>
 <script src="./injector-dialogs.js"></script>
     <!-- Firebase Config y Injectors -->
+    <script src="./staff-names.js"></script>
+    <script src="./injector-install-prompt.js"></script>
     <script type="module" src="./firebase-config.js"></script>
     <script type="module" src="./injector-firebase-sync.js"></script>
 
@@ -1580,6 +1582,11 @@ window.selectTeamAndStart = async function(teamName, division) {
         function updateStaffDisplay(state) {
             [...new Set([...Object.keys(STAFF_ROLES), 'entrenadorJuveniles'])].forEach(role => {
                 const staff = state.staff[role];
+                // Partidas antiguas: nombres de dos nombres de pila («Sofía Carlos») → nombre con apellidos
+                if (staff && window.pcfFixLegacyStaffName) {
+                    const fixed = window.pcfFixLegacyStaffName(staff.name, role);
+                    if (fixed) { staff.name = fixed; gameLogic.updateGameState({ staff: state.staff }); }
+                }
                 if (role === 'entrenadorJuveniles' && staff && !(Number(staff.salary) > 0)) {
                     staff.salary = 500 + Math.round(1500 * (staff.level || 1) / 5);
                     gameLogic.updateGameState({ staff: state.staff });
@@ -1596,7 +1603,7 @@ window.selectTeamAndStart = async function(teamName, division) {
                 const effTxt = staff && window.staffEffectText ? window.staffEffectText(role, staff.level) : '';
                 [nameElem, levelElem].forEach(el => { if (el) { el.title = effTxt; el.style.cursor = effTxt ? 'help' : ''; } });
                 if (salaryElem) salaryElem.textContent = staff ? staff.salary.toLocaleString('es-ES') + '€' : '-';
-                if (clausulaElem) clausulaElem.textContent = staff ? 'N/A' : '-';
+                if (clausulaElem) clausulaElem.textContent = staff ? (staff.clausula > 0 ? staff.clausula.toLocaleString('es-ES') + '€' : 'Sin cláusula') : '-';
                 if (btnElem) {
                     btnElem.disabled = false;
                     btnElem.textContent = staff ? 'Cambiar' : 'Contratar';
@@ -2395,7 +2402,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 })();
 </script>
     
-<script>window.PCF_BUILD = 'r70'; try { console.info('PC Fútbol Manager · versión ' + window.PCF_BUILD); } catch (e) {}</script>
-<div id="pcfBuild" aria-hidden="true" title="Versión desplegada" style="position:fixed;right:6px;bottom:3px;z-index:3;font:10px/1 monospace;color:rgba(255,255,255,.4);pointer-events:none;">r70</div>
+<script>window.PCF_BUILD = 'r71'; try { console.info('PC Fútbol Manager · versión ' + window.PCF_BUILD); } catch (e) {}</script>
+<div id="pcfBuild" aria-hidden="true" title="Versión desplegada" style="position:fixed;right:6px;bottom:3px;z-index:3;font:10px/1 monospace;color:rgba(255,255,255,.4);pointer-events:none;">r71</div>
 </body>
 </html>
