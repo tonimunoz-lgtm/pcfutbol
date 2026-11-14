@@ -4439,6 +4439,8 @@ if (typeof window !== 'undefined') {
     };
     window.autoFixLineup = autoFixLineup;
     window.pcfSecondCoachLevel = secondCoachLevel;
+    window.pcfGenerateYoungsters = generateInitialAcademy;
+    window.pcfEmergencyCallUp = emergencyCallUp;
     // Descanso parcial entre partidos de una misma semana (copa/Europa): 3-4 días de recuperación.
     window.pcfMidweekRecovery = (points = 15) => { for (const p of gameState.squad || []) p.condition = Math.min(100, (p.condition ?? 100) + points); };
     // Para copas y competiciones: fuerza y plantilla reales de un equipo español
