@@ -52,3 +52,10 @@ Misma medida (1280×640, WebP) y mismo estilo base de arriba. Se añade el estil
 | `fifa_deuda.webp` | Denuncia por impagos (saldo negativo) | Stack of unpaid invoices on a desk next to a crumpled contract and a football boot, tense office lighting |
 | `uefa_fairplay.webp` | Aviso de la UEFA (Fair Play Financiero) | Calculator, ledger and a football on a boardroom table, executives in silhouette studying charts |
 | `rebeldia.webp` | Jugador rebelde (R74) | Empty training pitch at dawn with a lone pair of football boots on the grass, goalposts in the mist |
+
+## Fichajes
+Misma medida (1280×640, WebP) y mismo estilo base de arriba.
+
+| Archivo | Cuándo sale | Prompt (añade el estilo común) |
+|---|---|---|
+| `fichaje_clausula.webp` | Fichas a un jugador pagando su cláusula de rescisión | Anonymous football player in a plain colored kit signing a contract at a desk in a club office, a club executive handing him the pen, cameras flashing behind a glass window, a plain scarf draped over the desk, no faces clearly visible |
