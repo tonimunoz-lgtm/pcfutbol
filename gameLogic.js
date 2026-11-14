@@ -1021,6 +1021,9 @@ function canSellPlayer(p) {
 }
 
 function signPlayer(player) {  
+    if ((gameState.sanctions?.banLeft || 0) > 0) {
+        return { success: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas.' };
+    }
     if (gameState.squad.length >= 25) {  
         return { success: false, message: 'La plantilla está completa (25 jugadores max).' };  
     }  
@@ -3532,6 +3535,9 @@ function computeAttendance(state, price) {
     let att = Math.floor(interest * priceEffect);
     const cap = DEMAND_CAP[state.division];
     if (cap) att = Math.min(att, Math.round(cap * (0.5 + pop / 100)));
+    // Sanción de las autoridades: estadio cerrado (0 %) o cierre parcial de grada (60 %)
+    const cl = state.sanctions?.closure;
+    if (cl && cl.left > 0) att = cl.partial ? Math.floor(att * 0.6) : 0;
     return Math.max(0, Math.min(state.stadiumCapacity || 0, att));
 }
 // Merchandising: ingresos netos de la semana (solo se cobran en jornadas en casa)

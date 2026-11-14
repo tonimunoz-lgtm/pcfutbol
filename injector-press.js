@@ -13,7 +13,7 @@
         rfef_grupo2: 'Primera RFEF (Grupo 2)', promesas: 'Liga Promesas' };
     const COMP = { copa: 'Copa del Rey', champions: 'Champions League', europaLeague: 'Europa League', conferenceLague: 'Conference League' };
     const PAPERS = ['El Diario del Fútbol', 'La Voz del Balón', 'Sport Total', 'El Gol de Hoy'];
-    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥', leyenda_club: '🕊️', dorsal_retirado: '👕', leyenda_liga: '🌟', despedida: '👋' };
+    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥', leyenda_club: '🕊️', dorsal_retirado: '👕', leyenda_liga: '🌟', despedida: '👋', invasion: '🏃', objetos: '🍾', cantos: '🚫', estadio_cerrado: '🔒', multa_club: '💶', sancion_tecnico: '🟨', fifa_fichajes: '⛔', fifa_deuda: '📄', uefa_fairplay: '⚖️', rebeldia: '✊' };
     // «El Clásico» → «el Clásico»; «Derbi madrileño» → «el derbi madrileño»
     const withArticle = n => /^El /.test(n) ? n.replace(/^El /, 'el ') : 'el ' + n.charAt(0).toLowerCase() + n.slice(1);
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
@@ -141,6 +141,46 @@
                 'La afición agradece los servicios prestados con una cariñosa ovación. Las puertas del club seguirán abiertas para él.'];
             a.side = ['Los compañeros le despiden con un emotivo vídeo', 'La grada: «Aquí siempre tendrás tu casa»'];
             a.quote = pick(['«Me voy agradecido a todos. El club siempre estará en mi corazón.»', '«Ha sido un orgullo vestir esta camiseta. Gracias por todo.»'], seed >> 2);
+        } else if (['invasion', 'objetos', 'cantos', 'estadio_cerrado', 'multa_club', 'sancion_tecnico', 'fifa_fichajes', 'fifa_deuda', 'uefa_fairplay', 'rebeldia'].includes(item.kind)) {
+            const og = item.organ || 'la RFEF', rv = item.rival || 'su rival', fine = item.fine ? `${fmt(item.fine)} €` : '';
+            const INC = { invasion: 'una invasión de campo', objetos: 'el lanzamiento de objetos al árbitro y al césped', cantos: 'cánticos racistas desde la grada' };
+            a.kicker = item.kind === 'rebeldia' ? 'VESTUARIO · CRISIS' : item.kind === 'fifa_fichajes' || item.kind === 'fifa_deuda' ? 'FIFA · COMUNICADO OFICIAL' : item.kind === 'uefa_fairplay' ? 'UEFA · COMUNICADO OFICIAL' : 'COMITÉ DE COMPETICIÓN · COMUNICADO';
+            if (['invasion', 'objetos', 'cantos', 'estadio_cerrado', 'multa_club'].includes(item.kind)) {
+                const inc = INC[item.incident] || 'graves incidentes en la grada';
+                a.headline = item.closure ? pick([`Sanción a ${team}: estadio ${item.partial ? 'parcialmente ' : ''}cerrado`, `${team}, castigado con ${item.partial ? 'cierre parcial' : 'puerta cerrada'}`], seed)
+                    : pick([`Multa a ${team} por los incidentes ante ${rv}`, `${og.charAt(0).toUpperCase() + og.slice(1)} multa a ${team}`], seed);
+                a.sub = `${item.sanction || 'Sanción económica'} ${fine ? '· Multa: ' + fine : ''}`.trim();
+                a.paragraphs = [`${og.charAt(0).toUpperCase() + og.slice(1)} ha hecho público su comunicado tras ${inc} en el partido ante ${rv}. ${item.sanction || ''}`,
+                    `${fine ? `El club deberá abonar ${fine}. ` : ''}${item.repeat ? 'Pesa la reincidencia: el organismo advierte de sanciones mayores si se repite.' : 'El organismo recuerda al club su responsabilidad en el control de la grada.'} La directiva estudia medidas con los grupos de animación.`];
+                a.side = ['La directiva condena lo ocurrido y colaborará con la investigación', 'Seguridad del estadio, en entredicho'];
+                a.quote = pick(['«Lamentamos lo sucedido. Esto no representa a nuestra afición.»', '«Pedimos disculpas. Tomaremos medidas para que no se repita.»'], seed >> 2);
+            } else if (item.kind === 'sancion_tecnico') {
+                a.headline = pick([`Multa al técnico de ${team} por protestar`, `${og.charAt(0).toUpperCase() + og.slice(1)} castiga al entrenador de ${team}`], seed);
+                a.sub = `Sanción de ${fine} tras el partido ante ${rv}`;
+                a.paragraphs = [`El entrenador de ${team} ha sido sancionado por sus protestas al colegiado en el partido ante ${rv}.`, 'En el club restan importancia al asunto, aunque la directiva pide más templanza en la banda.'];
+                a.side = ['El técnico: «Defiendo a mi equipo, nada más»', 'El arbitraje, de nuevo en el centro del debate'];
+            } else if (item.kind === 'fifa_deuda') {
+                a.headline = pick([`Denuncia ante la FIFA contra ${team} por impagos`, `${team}, reclamado por la FIFA por sus deudas`], seed);
+                a.sub = `Saldo del club: ${fmt(item.balance)} €`;
+                a.paragraphs = [`La FIFA ha recibido una reclamación por impagos contra ${team}. El saldo del club es negativo y las deudas con jugadores y proveedores se acumulan.`, 'Si no se regulariza la situación, el organismo podría bloquear los fichajes del club.'];
+                a.side = ['La directiva promete poner al día los pagos', 'Los agentes, en alerta con el club'];
+            } else if (item.kind === 'fifa_fichajes') {
+                a.headline = pick([`La FIFA bloquea los fichajes de ${team}`, `${team}, vetado en el mercado por la FIFA`], seed);
+                a.sub = `Bloqueo de ${item.weeks || 8} semanas por deudas sin regularizar`;
+                a.paragraphs = [`La FIFA ha decretado el bloqueo de fichajes de ${team} durante ${item.weeks || 8} semanas por no regularizar sus deudas.`, 'El club no podrá incorporar jugadores hasta que acabe la sanción. En la directiva piden calma y trabajan para equilibrar las cuentas.'];
+                a.side = ['El entrenador, preocupado por la plantilla', 'La afición, indignada con la gestión'];
+            } else if (item.kind === 'uefa_fairplay') {
+                a.headline = pick([`La UEFA abre expediente a ${team} por el Fair Play`, `Aviso de la UEFA a ${team}: cuentas en rojo`], seed);
+                a.sub = `Multa de ${fine} por incumplir el Fair Play Financiero`;
+                a.paragraphs = [`La UEFA ha sancionado a ${team} con ${fine} por incumplir las normas de control financiero mientras compite en Europa.`, 'El organismo advierte de medidas más duras si las cuentas no mejoran.'];
+                a.side = ['La directiva: «Cumpliremos con la normativa»', 'Los socios piden explicaciones'];
+            } else {
+                const nm = item.playerName || 'Un jugador';
+                a.headline = pick([`${nm} se rebela: no se presenta a entrenar`, `Crisis en ${team}: ${nm} planta al club`], seed);
+                a.sub = 'El futbolista exige su salida y el vestuario está tenso';
+                a.paragraphs = [`${nm} no se ha presentado a los entrenamientos de ${team} y se declara en rebeldía para forzar su marcha.`, 'El club se enfrenta a un pulso: pactar su salida o aguantar el plante, con el vestuario pendiente de la decisión.'];
+                a.side = ['El agente del jugador, en conversaciones con otros clubes', 'Los compañeros piden que se resuelva cuanto antes'];
+            }
         } else {
             a.headline = `${team}: gran noticia`; a.sub = ''; a.paragraphs = [''];
         }

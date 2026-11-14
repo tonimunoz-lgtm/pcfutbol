@@ -36,3 +36,19 @@ Misma medida (1280×640, WebP) y mismo estilo base de arriba. Se añade a cada p
 
 `leyenda_liga.webp` también se usa para los **hijos de la cantera** (jugadores formados en tu club que se retiran en otro).
 El banner del museo va en `assets/museo/banner.webp` (ver `assets/museo/LEEME.md`).
+
+## Organismos, sanciones y rebeldía (R75)
+Misma medida (1280×640, WebP) y mismo estilo base de arriba. Se añade el estilo común a cada prompt.
+
+| Archivo | Cuándo sale | Prompt |
+|---|---|---|
+| `invasion.webp` | Invasión de campo (reincidencia: puerta cerrada) | Anonymous fans running onto the pitch at night, stewards chasing them, players frozen mid-pitch, floodlights, tense atmosphere |
+| `objetos.webp` | Objetos al árbitro o al campo | Referee shielding himself while bottles and flares land on the grass, assistant referee ducking, smoke in the stands, wide shot |
+| `cantos.webp` | Cánticos racistas (cierre parcial) | Stadium stand with a closed, empty sector sealed by barriers, a partial view of the rest of the crowd in silence, grim mood, no signs or text |
+| `estadio_cerrado.webp` | Cierre de 2 o más partidos | Empty stadium with every seat vacant, a lone ball on the center spot, floodlights on, eerie silence |
+| `multa_club.webp` | Primera invasión de campo (solo multa) | Club executives in suits around a table with sealed envelopes and a gavel, serious faces turned away, dim office |
+| `sancion_tecnico.webp` | Multa al entrenador por protestar | Coach in a suit on the touchline gesturing angrily at the fourth official, technical area, blurred crowd |
+| `fifa_fichajes.webp` | Bloqueo de fichajes de la FIFA | Football transfer documents stamped and locked inside a glass cabinet, a red padlock on the door, empty club office |
+| `fifa_deuda.webp` | Denuncia por impagos (saldo negativo) | Stack of unpaid invoices on a desk next to a crumpled contract and a football boot, tense office lighting |
+| `uefa_fairplay.webp` | Aviso de la UEFA (Fair Play Financiero) | Calculator, ledger and a football on a boardroom table, executives in silhouette studying charts |
+| `rebeldia.webp` | Jugador rebelde (R74) | Empty training pitch at dawn with a lone pair of football boots on the grass, goalposts in the mist |

@@ -70,6 +70,7 @@
         const squad = updSquad(s, c.name, q => ({ ...q, rebel: true, moodMod: clamp((q.moodMod || 0) - 15, -40, 40) }))
             .map(q => (q.name !== c.name && q.contractType === 'owned') ? { ...q, moodMod: clamp((q.moodMod || 0) - 2, -40, 40) } : q);
         gl().updateGameState({ rebel: save(s, { case: { ...c, stage: 2, stage2At: absWeek(s), asked: false } }), squad });
+        window.pcfQueuePress?.({ kind: 'rebeldia', playerName: c.name, reason: c.reason });
         news(msg || `✊ ${c.name} se declara en rebeldía: no se ha presentado a entrenar y exige su salida. El vestuario está tenso.`, 'error');
         window.ui?.refreshUI?.(gl().getViewState());
     }
