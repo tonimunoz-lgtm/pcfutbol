@@ -1408,6 +1408,17 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             gameState.clauseSignings = { season: gameState.currentSeason, n: (gameState.clauseSignings?.season === gameState.currentSeason ? gameState.clauseSignings.n : 0) + 1 };
             addNews(`✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`, 'success');
             if (player.club && player.club !== gameState.team) addNews(`📰 ${player.club} lamenta la marcha de ${player.name}, que se ha acogido a su cláusula (${clause.toLocaleString('es-ES')}€).${(player.overall || 0) >= 78 ? ' Es una de las operaciones del mercado.' : ''}`, 'info');
+            // Efectos cruzados de un fichaje por cláusula: la afición se ilusiona si el fichado está por encima del nivel de tu plantilla
+            // y la prensa lo cuenta en portada. (El nivel se compara sin contar al propio fichado.)
+            try {
+                const gap = (player.overall || 0) - squadLevel(gameState.squad.filter(x => x.name !== player.name));
+                if (gap > 0) {
+                    const bump = Math.min(4, Math.max(1, Math.round(gap / 5)));
+                    gameState.popularity = Math.min(100, (gameState.popularity || 50) + bump);
+                    addNews(`📣 La afición se ilusiona con la llegada de ${player.name}: la popularidad sube ${bump} punto${bump > 1 ? 's' : ''}.`, 'success');
+                }
+                queuePress({ kind: 'fichaje_clausula', playerName: player.name, from: player.club, clause, overall: player.overall, position: player.position, nationality: player.nationality });
+            } catch (e) { console.error('[Cláusula] efectos cruzados:', e); }
             return signedClause;
         } else {
             // Continuar a negociación con club

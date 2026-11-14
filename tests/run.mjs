@@ -70,6 +70,7 @@ const tests = {
         assert(pl, 'fichado'); assert.equal(pl.contractYears, 5, 'years ' + pl.contractYears); assert.equal(pl.releaseClause, 80e6, 'clause ' + pl.releaseClause);
         assert.equal(pl.car, 300, 'car ' + pl.car); assert.equal(pl.house, 600, 'house ' + pl.house); assert.equal(pl.merchPercent, 5, 'merch ' + pl.merchPercent); assert.equal(pl.ticketPercent, 3, 'ticket ' + pl.ticketPercent);
         assert.equal(s.balance, 100e6 - 20e6 - 50000, 'cláusula + prima: ' + s.balance);
+        assert((s.pendingPress || []).some(x => x.kind === 'fichaje_clausula' && x.playerName === 'Rival 0'), 'portada de prensa del fichaje');
         // una oferta justa a 1 año se rechaza donde la misma a 4-5 años se acepta
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]));
         g.startNegotiation(base()); const p0 = g.getGameState().negotiatingPlayer; const sal = Math.round(p0.salary * 0.85);
@@ -197,9 +198,26 @@ const tests = {
         for (const v of [NaN, -5, 0, 'abc', Infinity]) g.offerToPlayer(v, 0, 0, 0, 0, 0);
         assert(Number.isFinite(g.getGameState().balance));
     },
+    async 'temporada completa de principio a fin: sin errores, con 3 parones, sin jugadores bloqueados ni NaN'() {
+        Object.assign(globalThis, { alert() {}, confirm: () => true }); window.pcfNotify = async () => {}; window.pcfConfirm = async () => true; window.updateNextMatchInfo = () => {}; window.ui = { refreshUI() {} };
+        const cfg = await imp('config.js'); const warn = console.warn; console.warn = () => {}; console.log = () => {};
+        try {
+            await g.selectTeamWithInitialSquad(cfg.TEAMS_DATA.primera[3], 'primera', 'career', {});
+            let windows = 0, weeks = 0; const seen = new Set();
+            while (weeks < 60 && g.getGameState().currentSeason === '2026/2027') {
+                await g.simulateFullWeek(); weeks++;
+                const s = g.getGameState(); if (s.intl && !seen.has(s.intl.key)) { seen.add(s.intl.key); windows++; }
+            }
+            const s = g.getGameState();
+            assert.equal(windows, 3, 'parones: ' + windows);
+            assert(s.squad.every(p => !p._intlKey && !(p.isSuspended && p._suspCause === 'intl')), 'sin bloqueos al terminar');
+            assert(Object.values(s.world.clubs).every(c => c.squad.every(p => !p._intlKey)), 'la IA tampoco');
+            assert(Number.isFinite(s.balance) && s.squad.every(p => Number.isFinite(p.overall) && Number.isFinite(p.condition ?? 100)));
+        } finally { console.warn = warn; console.log = origLog; }
+    },
 };
 let fail = 0;
 for (const [name, fn] of Object.entries(tests)) {
-    try { fn(); origLog('  ✔', name); } catch (e) { fail++; origLog('  ✘', name, '\n     ', e.message.split('\n')[0]); }
+    try { await fn(); origLog('  ✔', name); } catch (e) { fail++; origLog('  ✘', name, '\n     ', e.message.split('\n')[0]); }
 }
 origLog(fail ? `\n${fail} test(s) fallan` : '\nTodos los tests pasan'); process.exit(fail ? 1 : 0);

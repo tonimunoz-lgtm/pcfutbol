@@ -94,7 +94,7 @@ export function endWindow(state) {
         }
     }
     // resultados de las selecciones con jugadores del usuario (informativos, deterministas)
-    const results = [], nations = [...new Set(info.called.map(c => c.nation))].slice(0, 4), codes = Object.keys(info.teams);
+    const results = [], nations = [...new Set(info.called.map(c => c.nation))].slice(0, 2), codes = Object.keys(info.teams);
     for (const n of nations) {
         const rivals = codes.filter(c => c !== n && (TOP.has(c) || MID.has(c)));
         if (!rivals.length) continue;

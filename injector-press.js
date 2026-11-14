@@ -13,7 +13,7 @@
         rfef_grupo2: 'Primera RFEF (Grupo 2)', promesas: 'Liga Promesas' };
     const COMP = { copa: 'Copa del Rey', champions: 'Champions League', europaLeague: 'Europa League', conferenceLague: 'Conference League' };
     const PAPERS = ['El Diario del Fútbol', 'La Voz del Balón', 'Sport Total', 'El Gol de Hoy'];
-    const EMOJI = { copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥', leyenda_club: '🕊️', dorsal_retirado: '👕', leyenda_liga: '🌟', despedida: '👋', invasion: '🏃', objetos: '🍾', cantos: '🚫', estadio_cerrado: '🔒', multa_club: '💶', sancion_tecnico: '🟨', fifa_fichajes: '⛔', fifa_deuda: '📄', uefa_fairplay: '⚖️', rebeldia: '✊' };
+    const EMOJI = { fichaje_clausula: '✍️', copa: '🏆', liga: '🥇', ascenso: '⬆️', champions: '⭐', europaLeague: '🌍', conferenceLague: '🌐', premio: '🎖️', derbi: '🔥', leyenda_club: '🕊️', dorsal_retirado: '👕', leyenda_liga: '🌟', despedida: '👋', invasion: '🏃', objetos: '🍾', cantos: '🚫', estadio_cerrado: '🔒', multa_club: '💶', sancion_tecnico: '🟨', fifa_fichajes: '⛔', fifa_deuda: '📄', uefa_fairplay: '⚖️', rebeldia: '✊' };
     // «El Clásico» → «el Clásico»; «Derbi madrileño» → «el derbi madrileño»
     const withArticle = n => /^El /.test(n) ? n.replace(/^El /, 'el ') : 'el ' + n.charAt(0).toLowerCase() + n.slice(1);
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
@@ -132,6 +132,15 @@
                 'Aficionados de todos los colores reconocen el legado de un futbolista que marcó una época. Los clubes preparan tributos en los estadios.'];
             a.side = ['Aplausos de todos los estadios para el campeón', 'Rivales y compañeros: «Ha sido un honor enfrentarte»'];
             a.quote = pick(['«Gracias a todos los que me habéis apoyado, también a los que me habéis silbado.»', '«Me llevo el cariño de todos los estadios. Ha sido un viaje precioso.»', '«He sido un privilegiado: viví mi sueño durante muchos años.»'], seed >> 2);
+        } else if (item.kind === 'fichaje_clausula') {
+            const nm = item.playerName || 'El jugador', from = item.from || 'su club';
+            a.kicker = `MERCADO · FICHAJE POR CLÁUSULA`;
+            a.headline = pick([`${team} paga la cláusula de ${nm}`, `Golpe de mercado: ${nm} deja ${from} y ficha por ${team}`, `${nm} ya es de ${team}: el club abona su cláusula`], seed);
+            a.sub = `${fmt(item.clause)} € por un ${item.position || 'jugador'}${item.overall ? ' de media ' + item.overall : ''}`;
+            a.paragraphs = [`${team} ha activado la cláusula de rescisión de ${nm} y se lo lleva de ${from} sin que el club pueda negarse.`,
+                'El jugador ha aceptado las condiciones de su nuevo contrato y llega con ganas de demostrar su valía. La operación cambia las cuentas del vestuario.'];
+            a.side = [`${from} lamenta la salida y busca recambio`, 'La afición recibe la noticia con ilusión'];
+            a.quote = pick(['«Venir aquí era mi decisión. Quiero ganar títulos con esta camiseta.»', '«Me siento muy ilusionado con este proyecto.»'], seed >> 2);
         } else if (item.kind === 'despedida') {
             const nm = item.playerName || 'El jugador';
             a.kicker = `DESPEDIDA · ${team.toUpperCase()}`;
