@@ -28,6 +28,7 @@
         if (window.isSimulatingWeek?.()) return syncMsg('Espera a que termine la jornada antes de sincronizar.', 'bad');
         if (btn) btn.disabled = true;
         let ok = 0; const fails = [];
+        window.__pcfConflicts = window.__pcfConflicts || new Set();
         for (let i = 0; i < pending.length; i++) {
             const g = pending[i];
             syncMsg(`Subiendo ${i + 1} de ${pending.length}: ${g.name}…`);
@@ -35,18 +36,21 @@
                 const loaded = await window.loadGameFromCloud(uid, g.id, true);          // copia de este dispositivo
                 if (!loaded || !loaded.success || !loaded.data || !loaded.data.gameState) throw new Error((loaded && (loaded.message || loaded.error)) || 'No se pudo leer la copia local');
                 const r = await window.saveGameToCloud(uid, g.id, g.name, loaded.data.gameState);
-                if (r && r.success) ok++; else fails.push({ g, code: r && r.code, message: r && r.error });
-            } catch (e) { fails.push({ g, code: e && e.code, message: e && e.message }); }
+                if (r && r.success) { ok++; window.__pcfConflicts.delete(g.id); }
+                else { fails.push({ g, code: r && r.code, message: r && r.error }); if (r && r.code === 'save/conflict') window.__pcfConflicts.add(g.id); }
+            } catch (e) { fails.push({ g, code: e && e.code, message: e && e.message }); if (e && e.code === 'save/conflict') window.__pcfConflicts.add(g.id); }
         }
-        await window.openSavedGamesModal();                                               // repinta: las subidas pierden la etiqueta
+        await window.openSavedGamesModal({ fromSync: true });                              // repinta (sin volver a lanzar la subida automática: antes eso hacía un bucle infinito con los conflictos)
         const f = fails[0];
         if (!fails.length) syncMsg(`✅ ${ok} partida${ok === 1 ? '' : 's'} subida${ok === 1 ? '' : 's'} a la nube. Ya aparecerán en tus otros dispositivos.`, 'ok');
         else syncMsg(`${ok ? `✅ ${ok} subida${ok === 1 ? '' : 's'}. ` : ''}No se ha podido subir ${fails.length} partida${fails.length === 1 ? '' : 's'} («${f.g.name}»): ${explainCloud(f.code, f.message)}`, 'bad');
+        if (fails.length && window.__pcfSyncToastShown) return;
+        if (fails.length) window.__pcfSyncToastShown = true;
         try { window.pcfToast?.(fails.length ? 'No se han podido sincronizar todas las partidas' : 'Partidas sincronizadas con la nube', { type: fails.length ? 'error' : 'success', duration: 6000 }); } catch (e) { /* */ }
     };
 
     // Función para abrir el modal de partidas guardadas
-    window.openSavedGamesModal = async function() {
+    window.openSavedGamesModal = async function(opts) {
 
         // Crear modal si no existe
         if (!document.getElementById('savedGamesModal')) {
@@ -95,9 +99,13 @@
             window._pcfPendingGames = pending.map(g => ({ id: g.id, name: g.name || 'Partida sin nombre' }));
             const syncBtn = document.getElementById('pcfSyncButton');
             if (syncBtn) syncBtn.style.display = 'none';
-            if (pending.length && !games.cloudError) window.pcfSyncPendingGames();                 // se suben solas, sin que el jugador tenga que hacer nada
+            // Subida automática: una vez por apertura del modal y solo de las copias sin conflicto (los conflictos los decide el jugador)
+            const conflicts = window.__pcfConflicts || new Set();
+            const syncable = pending.filter(g => !conflicts.has(g.id));
+            window._pcfPendingGames = syncable.map(g => ({ id: g.id, name: g.name || 'Partida sin nombre' }));
+            if (syncable.length && !games.cloudError && !opts?.fromSync) { window.__pcfSyncToastShown = false; window.pcfSyncPendingGames(); }
             if (games && games.cloudError) syncMsg('No se ha podido leer la nube: ' + explainCloud(games.cloudError.code, games.cloudError.message) + ' Lo que ves son las copias de este dispositivo.', 'warn');
-            else if (pending.length) syncMsg('Sincronizando tus partidas…', 'info');
+            else if (pending.length && !opts?.fromSync && pending.some(g => !conflicts.has(g.id))) syncMsg('Sincronizando tus partidas…', 'info');
             else syncMsg('');
 
             if (!games || games.length === 0) {
@@ -121,8 +129,13 @@
                     const row=document.createElement('p');row.textContent=text;info.appendChild(row);
                 }
                 
+                if (game.localOnly && (window.__pcfConflicts || new Set()).has(game.id)) {
+                    const warn = document.createElement('p'); warn.style.cssText = 'color:#ffd24a;font-size:.9em';
+                    warn.textContent = '⚠️ Conflicto: la nube tiene otra versión (p. ej. jugada en otro dispositivo). «Cargar» abre la copia de este dispositivo; «Versión de la nube» abre la de la nube. Al guardar, la que cargues sustituirá a la otra.';
+                    info.appendChild(warn);
+                }
                 card.appendChild(info);
-                const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
+                const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],...(game.localOnly?[['☁️ Versión de la nube',()=>window.loadGameFromCloudUI(game.id,true)]]:[]),['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
                 for(const [label,action] of actions){const button=document.createElement('button');button.type='button';button.className='btn btn-sm';button.textContent=label;button.onclick=action;card.appendChild(button);}
                 container.appendChild(card);
             }
