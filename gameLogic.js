@@ -3825,6 +3825,18 @@ function startNationalWindow() {
         const mine = {}; callup.called.forEach(c => { (mine[c.nation] = mine[c.nation] || []).push(c.name); });
         const txt = Object.entries(mine).map(([n, l]) => `${NatTeams.nationName(n)}: ${l.join(', ')}`).join(' · ');
         addNews(callup.called.length ? `🌍 Parón de selecciones: tus convocados no estarán disponibles esta jornada. ${txt}.` : '🌍 Parón de selecciones: ninguno de tus jugadores ha sido convocado.', 'info');
+        // una noticia por cada convocado importante (los de mayor nivel primero; el resto queda en el resumen)
+        const POS = { POR: 'portero', LD: 'lateral', LI: 'lateral', DFC: 'central', DC: 'delantero', MC: 'centrocampista', MI: 'centrocampista', MD: 'centrocampista', MCO: 'mediapunta', EXT: 'extremo' };
+        const LINES = [
+            (n, nat, r) => `🌍 ${n} ha sido convocado por ${nat}: se incorpora a la concentración y será baja esta jornada.`,
+            (n, nat, r) => `🌍 El seleccionador de ${nat} cuenta con ${n}. Tu ${r} viajará con su país.`,
+            (n, nat, r) => `🌍 ${n} (${r}) recibe la llamada de ${nat} y no podrá jugar con tu equipo en este parón.`
+        ];
+        [...callup.called].sort((a, b) => (b.overall || 0) - (a.overall || 0)).slice(0, 6).forEach((c, i) => {
+            const natName = NatTeams.nationName(c.nation);
+            addNews(LINES[i % LINES.length](c.name, natName, POS[c.position] || 'jugador'), 'info');
+        });
+        if (callup.called.length > 6) addNews(`🌍 Otros ${callup.called.length - 6} jugadores de tu plantilla también se unen a sus selecciones.`, 'info');
         if (callup.called.length) { const ch = autoFixLineup({ announce: false, required: true }); if (ch.length) addNews(`🔁 Once ajustado por los convocados: ${ch.join(', ')}.`, 'info'); }
     } catch (e) { console.error('[Selecciones] inicio del parón:', e); }
 }
