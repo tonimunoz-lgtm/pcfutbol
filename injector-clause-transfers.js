@@ -2,7 +2,7 @@
 //  · Mercado de Fichajes: desplegable División → Equipo con su plantilla (mismo estilo que la lista de mercado).
 //  · Pagar cláusula abre una OFERTA al jugador (sueldo, prima de fichaje, comisión de intermediarios, coche, casa, % merchandising/entradas).
 //    Responde tras la siguiente jornada, como una renovación. La cláusula solo se cobra si acepta.
-//  · Negociaciones: bloque «Fichajes por cláusula en curso» con el estado, contraofertas (máx. 3 intentos) y opción de retirar.
+//  · Negociaciones: filas dentro de «Negociaciones en curso» con el estado, contraofertas (máx. 3 intentos) y opción de retirar.
 // Las reglas (dinero, ambición, límite anual…) y la decisión del jugador viven en gameLogic (clauseAssess / offerToPlayer).
 (function () {
     'use strict';
@@ -37,7 +37,10 @@
         .pcf-cd-body{padding:14px 16px;overflow-y:auto;font-size:.92rem;line-height:1.4}
         .pcf-cd-head{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(122,160,212,.3)}
         .pcf-cd-head b{color:#fff}.pcf-cd-head span{opacity:.85}
-        .pcf-cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:8px 0}
+        #clauseOfferModal .modal-content{max-height:92vh;overflow-y:auto}
+        .pcf-cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:12px 0 14px;align-items:start}
+        .pcf-cd-grid .form-group{margin:0;min-width:0}
+        .pcf-cd-grid .form-group input,.pcf-cd-grid .form-group select{width:100% !important;max-width:100% !important;box-sizing:border-box !important;min-width:0}
         .pcf-cd-grid label{display:block;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a9c0e6;margin-bottom:3px}
         .pcf-cd-grid label small{text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
         .pcf-cd-grid input[type=number]{width:100%;box-sizing:border-box;min-width:0}
@@ -47,8 +50,6 @@
         .pcf-cd-warn{color:#ffd24a}
         .pcf-cd-actions{display:flex;gap:8px;justify-content:flex-end;padding:10px 16px 14px;flex-wrap:wrap}
         .pcf-cd-actions .btn{flex:0 1 auto}
-        #pcfClauseDeals{background:linear-gradient(180deg,rgba(36,80,142,.45),rgba(7,22,48,.75));border:1px solid #06142e;border-left:4px solid #ff9800;border-radius:3px;padding:12px 14px;margin:0 0 16px}
-        #pcfClauseDeals h3{margin:0 0 8px;font-size:.95rem;letter-spacing:.08em;text-transform:uppercase;color:var(--pcf-gold,#ffd24a)}
         .pcf-cdl-row{display:flex;gap:12px;align-items:center;padding:8px 0;border-top:1px solid rgba(122,160,212,.25)}
         .pcf-cdl-row:first-of-type{border-top:0}.pcf-cdl-ic{font-size:1.4rem}.pcf-cdl-body{flex:1;font-size:.88rem;line-height:1.45}
         .pcf-cdl-tag{display:inline-block;margin:2px 0 0;padding:1px 9px;border-radius:10px;font-size:.72rem;font-weight:700}
@@ -132,54 +133,73 @@
     }
 
     // ───────────────────────── Formulario de oferta ─────────────────────────
+    const CARS = [[0, 'Sin coche'], [100, 'Básico · 100 €/sem'], [300, 'Superior · 300 €/sem'], [700, 'Lujo · 700 €/sem']];
+    const HOUSES = [[0, 'Sin casa'], [250, 'Piso · 250 €/sem'], [600, 'Casa · 600 €/sem'], [1500, 'Mansión · 1.500 €/sem']];
+    const tierOpts = (list, cur) => list.map(([v, t]) => `<option value="${v}"${Number(cur) === v ? ' selected' : ''}>${t}</option>`).join('');
+    // los tratos guardados con casillas (versión anterior) pasan a un nivel básico
+    const tierOf = (v, list) => v === true ? list[1][0] : (Number(v) || 0);
+
     function openOffer(team, id, existing) {
         const st = gs(), club = window.pcfWorld.getClub(team), p = club?.squad.find(x => x.id === id);
         if (!st || !p) return notify('Fichaje', 'No se encuentra al jugador.');
         const a = window.pcfEconomy.clauseAssess({ id, name: p.name, club: team });
         if (!a.ok && !existing) return notify('Fichaje no viable', a.reasons.join('\n'));
         const expected = Math.round(window.pcfEconomy.expectedSalary(p, st.division) / 100) * 100;
-        const o = existing?.offer || { salary: Math.round(Math.max(p.salary || 0, expected) * 1.1 / 100) * 100, bonus: 0, agentFee: 0, car: false, house: false, merch: 0, ticket: 0 };
+        const eo = existing?.offer;
+        const o = eo ? { ...eo, car: tierOf(eo.car, CARS), house: tierOf(eo.house, HOUSES) }
+            : { salary: Math.round(Math.max(p.salary || 0, expected) * 1.1 / 100) * 100, bonus: 0, agentFee: 0, car: 0, house: 0, merch: 0, ticket: 0, years: 3, newClause: Math.round((p.value || 0) * 2 / 10000) * 10000 };
         const left = existing ? MAX_ATTEMPTS - existing.attempts : MAX_ATTEMPTS;
-        const back = document.createElement('div'); back.className = 'pcf-cd-back';
-        back.innerHTML = `<div class="pcf-cd" role="dialog" aria-modal="true"><h3>💰 Fichaje por cláusula</h3><div class="pcf-cd-body">
-            <div class="pcf-cd-head"><b>${flag(p)} ${esc(p.name)}</b><span>${esc(p.position)} · ${p.age} años · media ${p.overall}</span><span>${esc(team)}</span></div>
-            <div class="pcf-cd-note">Cláusula: <b>${fmt(a.clause)}€</b> (se cobra solo si el jugador acepta) · Tu caja: <b>${fmt(st.balance)}€</b><br>
-                Sueldo actual: ${fmt(p.salary)}€/sem · Sueldo de mercado para tu categoría: ~${fmt(expected)}€/sem
-                ${existing && existing.lastMessage ? `<br><span class="pcf-cd-warn">Última respuesta: ${esc(existing.lastMessage)}</span>` : ''}</div>
+        document.getElementById('clauseOfferModal')?.remove();
+        const back = document.createElement('div'); back.className = 'modal active'; back.id = 'clauseOfferModal';
+        back.innerHTML = `<div class="modal-content"><span class="modal-close" id="cdClose">&times;</span>
+            <h1>💰 Fichaje por cláusula</h1>
+            <div class="renewal-player-info"><h3>${flag(p)} ${esc(p.name)}</h3>
+                <p>Posición: ${esc(p.position)} | Edad: ${p.age} | Overall: ${p.overall} | Club: ${esc(team)}</p></div>
+            <h3>Condiciones actuales:</h3>
+            <table style="width:100%;margin-bottom:20px"><tr><td>Salario actual:</td><td style="font-weight:bold">${fmt(p.salary)}€/sem</td></tr>
+                <tr><td>Salario de mercado (tu categoría):</td><td style="font-weight:bold">~${fmt(expected)}€/sem</td></tr>
+                <tr><td>Cláusula a pagar:</td><td style="font-weight:bold">${fmt(a.clause)}€ <small>(solo se cobra si acepta)</small></td></tr>
+                <tr><td>Tu caja:</td><td style="font-weight:bold">${fmt(st.balance)}€</td></tr></table>
+            ${existing && existing.lastMessage ? `<p class="pcf-cd-warn">Última respuesta: ${esc(existing.lastMessage)}</p>` : ''}
+            <h3>Oferta al jugador:</h3>
             <div class="pcf-cd-grid">
-                <div><label>Sueldo <small>€/semana</small></label><input type="number" id="cdSalary" min="100" step="100" value="${o.salary}"></div>
-                <div><label>Prima de fichaje <small>€ al firmar</small></label><input type="number" id="cdBonus" min="0" step="1000" value="${o.bonus || 0}"></div>
-                <div><label>Comisión intermediarios <small>€ al firmar</small></label><input type="number" id="cdAgent" min="0" step="1000" value="${o.agentFee || 0}"></div>
-                <div><label>% merchandising</label><input type="number" id="cdMerch" min="0" max="100" value="${o.merch || 0}"></div>
-                <div><label>% entradas</label><input type="number" id="cdTicket" min="0" max="100" value="${o.ticket || 0}"></div>
-                <div></div>
-                <div class="chk"><input type="checkbox" id="cdCar" ${o.car ? 'checked' : ''}><label for="cdCar" style="margin:0">Coche</label></div>
-                <div class="chk"><input type="checkbox" id="cdHouse" ${o.house ? 'checked' : ''}><label for="cdHouse" style="margin:0">Casa</label></div>
+                <div class="form-group"><label>Duración del contrato:</label><select id="cdYears">${[1, 2, 3, 4, 5].map(y => `<option value="${y}"${(o.years || 3) === y ? ' selected' : ''}>${y} año${y > 1 ? 's' : ''}</option>`).join('')}</select></div>
+                <div class="form-group"><label>Nuevo salario semanal (€)</label><input type="number" id="cdSalary" min="100" step="100" value="${o.salary}"></div>
+                <div class="form-group"><label>Nueva cláusula de rescisión (€)</label><input type="number" id="cdNewClause" min="0" step="10000" value="${o.newClause || 0}"></div>
+                <div class="form-group"><label>Prima de firma (€, pago único):</label><input type="number" id="cdBonus" min="0" step="1000" value="${o.bonus || 0}"></div>
+                <div class="form-group"><label>Comisión intermediarios (€, pago único):</label><input type="number" id="cdAgent" min="0" step="1000" value="${o.agentFee || 0}"></div>
+                <div class="form-group"><label>Coche (coste semanal):</label><select id="cdCar">${tierOpts(CARS, o.car)}</select></div>
+                <div class="form-group"><label>Casa (coste semanal):</label><select id="cdHouse">${tierOpts(HOUSES, o.house)}</select></div>
+                <div class="form-group"><label>% Merchandising de la semana:</label><input type="number" id="cdMerch" min="0" max="100" step="0.1" value="${o.merch || 0}"></div>
+                <div class="form-group"><label>% Entradas de la semana:</label><input type="number" id="cdTicket" min="0" max="100" step="0.1" value="${o.ticket || 0}"></div>
             </div>
             <div class="pcf-cd-note" id="cdTotal"></div>
-            <div class="pcf-cd-note">Tu oferta llegará al jugador y a su agente y <b>responderán tras la próxima jornada</b>. Prima y comisión mejoran su respuesta; todo se paga junto con la cláusula
-                solo si aceptan. Te quedan <b>${left}</b> intento${left === 1 ? '' : 's'}.</div>
-        </div><div class="pcf-cd-actions"><button class="btn page-close-btn" id="cdCancel">Cancelar</button><button class="btn" id="cdSend">📨 Enviar oferta</button></div></div>`;
+            <p style="font-size:.82em;opacity:.75;margin:8px 0 6px">Cláusula, prima y comisión se pagan al firmar, solo si acepta. El sueldo, el coche, la casa y los porcentajes se pagan cada semana y aparecen en la Caja (incentivos semanales).
+                Responderá tras la próxima jornada. Te quedan <b>${left}</b> intento${left === 1 ? '' : 's'}.</p>
+            <div style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="cdSend">✅ Enviar oferta</button><button class="btn" style="background:#666" id="cdCancel">❌ Cancelar</button></div></div>`;
         document.body.appendChild(back);
         const val = i => Math.max(0, Number(back.querySelector(i).value) || 0);
         const total = () => {
-            const t = a.clause + val('#cdBonus') + val('#cdAgent'), ok = t <= st.balance;
-            back.querySelector('#cdTotal').innerHTML = `Coste si aceptan: <b>${fmt(t)}€</b> (cláusula + prima + comisión) ${ok ? '' : '<span class="pcf-cd-warn">· te faltan ' + fmt(t - st.balance) + '€</span>'}`;
+            const now = a.clause + val('#cdBonus') + val('#cdAgent'), ok = now <= st.balance;
+            const week = val('#cdSalary') + val('#cdCar') + val('#cdHouse');
+            back.querySelector('#cdTotal').innerHTML = `Al firmar: <b>${fmt(now)}€</b> (cláusula + prima + comisión) ${ok ? '' : '<span class="pcf-cd-warn">· te faltan ' + fmt(now - st.balance) + '€</span>'}<br>
+                Cada semana: <b>${fmt(week)}€</b> (sueldo + coche + casa)${val('#cdMerch') || val('#cdTicket') ? ` + ${val('#cdMerch')}% merchandising y ${val('#cdTicket')}% entradas` : ''}`;
             return ok;
         };
-        back.addEventListener('input', total); total();
-        back.querySelector('#cdCancel').onclick = () => back.remove();
+        back.addEventListener('input', total); back.addEventListener('change', total); total();
+        const close = () => back.remove();
+        back.querySelector('#cdCancel').onclick = close; back.querySelector('#cdClose').onclick = close;
         back.querySelector('#cdSend').onclick = async () => {
             if (!total()) return notify('Sin fondos', 'No tienes dinero para cláusula, prima y comisión juntas.');
-            const offer = { salary: val('#cdSalary'), bonus: val('#cdBonus'), agentFee: val('#cdAgent'), merch: Math.min(100, val('#cdMerch')), ticket: Math.min(100, val('#cdTicket')),
-                car: back.querySelector('#cdCar').checked, house: back.querySelector('#cdHouse').checked };
+            const offer = { salary: val('#cdSalary'), years: Math.max(1, Math.min(5, val('#cdYears') || 3)), newClause: val('#cdNewClause'), bonus: val('#cdBonus'), agentFee: val('#cdAgent'),
+                merch: Math.min(100, val('#cdMerch')), ticket: Math.min(100, val('#cdTicket')), car: val('#cdCar'), house: val('#cdHouse') };
             if (offer.salary < 100) return notify('Oferta', 'Indica un sueldo semanal válido.');
-            back.remove();
+            close();
             const cur = gs(), list = deals().filter(d => d.playerId !== id);
             list.push({ id: existing?.id || 'cd_' + Date.now(), playerId: id, playerName: p.name, club: team, clause: a.clause, offer, attempts: existing?.attempts || 0, status: 'pending',
                 lastMessage: existing?.lastMessage || '', season: cur.currentSeason, seasonType: cur.seasonType, week: cur.week });
             setDeals(list);
-            gl().addNews(`📨 Oferta enviada a ${p.name} (${team}) para ficharlo por su cláusula (${fmt(a.clause)}€): ${fmt(offer.salary)}€/sem${offer.bonus ? ' + prima ' + fmt(offer.bonus) + '€' : ''}${offer.agentFee ? ' + comisión ' + fmt(offer.agentFee) + '€' : ''}.`, 'info');
+            gl().addNews(`📨 Oferta enviada a ${p.name} (${team}) para ficharlo por su cláusula (${fmt(a.clause)}€): ${fmt(offer.salary)}€/sem, ${offer.years} año${offer.years > 1 ? 's' : ''}${offer.bonus ? ' + prima ' + fmt(offer.bonus) + '€' : ''}.`, 'info');
             window.ui?.refreshUI?.(gs()); renderPlayers(); renderDeals();
             await notify('Oferta enviada', `${p.name} y su agente estudiarán tu oferta. Responderán tras la próxima jornada.\nPuedes seguirla en Negociaciones.`);
         };
@@ -200,7 +220,7 @@
             let r;
             try {
                 gl().startNegotiation({ ...p, club: d.club, releaseClause: d.clause, clausePaid: true, clauseAmount: d.clause, askingPrice: 0 });
-                r = gl().offerToPlayer(o.salary, o.bonus, o.car ? 1 : 0, o.house ? 1 : 0, o.merch, o.ticket, undefined, o.agentFee);
+                r = gl().offerToPlayer(o.salary, o.bonus, tierOf(o.car, CARS), tierOf(o.house, HOUSES), o.merch, o.ticket, undefined, o.agentFee, o.years || 3, o.newClause || 0);
             } catch (e) { r = { success: false, message: 'Error: ' + e.message }; }
             finally { if (gs()?.negotiatingPlayer) gl().endNegotiation(true); }
             if (r.success) {
@@ -223,29 +243,21 @@
     }
 
     // ───────────────────────── Negociaciones: estado ─────────────────────────
-    function renderDeals() {
-        const page = document.getElementById('negotiations'); if (!page || !gs()) return;
-        let box = document.getElementById('pcfClauseDeals');
-        const list = deals();
-        if (!box) {
-            box = document.createElement('div'); box.id = 'pcfClauseDeals';
-            const ongoing = document.getElementById('pcfOngoing');
-            if (ongoing) ongoing.parentNode.insertBefore(box, ongoing);
-            else { const l = document.getElementById('negotiationsSquadList'); (l ? l.parentNode : page).insertBefore(box, l || null); }
-        }
-        if (!list.length) { box.style.display = 'none'; return; }
-        box.style.display = '';
-        box.innerHTML = '<h3>💰 Fichajes por cláusula en curso</h3>' + list.map(d => {
-            const o = d.offer;
-            const tag = d.status === 'pending' ? '<span class="pcf-cdl-tag wait">⏳ Esperando respuesta · tras la próxima jornada</span>'
-                : `<span class="pcf-cdl-tag counter">↩️ Rechazada · intento ${d.attempts} de ${MAX_ATTEMPTS}</span>`;
-            return `<div class="pcf-cdl-row"><span class="pcf-cdl-ic">${d.status === 'pending' ? '📨' : '🔁'}</span><div class="pcf-cdl-body">
+    // Las filas se pintan dentro de «Negociaciones en curso» (#pcfOngoing, injector-negotiations.js).
+    function rowsHtml() {
+        return deals().map(d => {
+            const o = d.offer, car = tierOf(o.car, CARS), house = tierOf(o.house, HOUSES);
+            const tag = d.status === 'pending' ? '<span class="pcf-neg-tag wait">Esperando respuesta del jugador · tras la próxima jornada</span>'
+                : `<span class="pcf-neg-tag" style="background:rgba(255,87,34,.2);color:#ffab91;border:1px solid #ff5722">Rechazada · intento ${d.attempts} de ${MAX_ATTEMPTS}</span>`;
+            return `<div class="pcf-neg-row"><span class="pcf-neg-ic">${d.status === 'pending' ? '💰' : '🔁'}</span><div class="pcf-neg-body">
                 <strong>${esc(d.playerName)}</strong> <small>(${esc(d.club)})</small><br>
-                Cláusula ${fmt(d.clause)}€ · ${fmt(o.salary)}€/sem${o.bonus ? ' · prima ' + fmt(o.bonus) + '€' : ''}${o.agentFee ? ' · comisión ' + fmt(o.agentFee) + '€' : ''}${o.car ? ' · coche' : ''}${o.house ? ' · casa' : ''}<br>
+                Fichaje por cláusula: ${fmt(d.clause)}€ · ${fmt(o.salary)}€/sem · ${o.years || 3} año${(o.years || 3) > 1 ? 's' : ''}${o.bonus ? ' · prima ' + fmt(o.bonus) + '€' : ''}${o.agentFee ? ' · comisión ' + fmt(o.agentFee) + '€' : ''}${car ? ' · coche ' + fmt(car) + '€/sem' : ''}${house ? ' · casa ' + fmt(house) + '€/sem' : ''}${o.merch ? ' · ' + o.merch + '% merch.' : ''}${o.ticket ? ' · ' + o.ticket + '% entradas' : ''}<br>
                 ${tag}${d.status === 'counter' && d.lastMessage ? `<br><small>${esc(d.lastMessage)}</small>` : ''}</div>
-                <div class="pcf-cdl-act">${d.status === 'counter' ? `<button class="btn btn-sm" data-cd-improve="${esc(d.id)}">Mejorar oferta</button>` : ''}
-                <button class="btn btn-sm page-close-btn" data-cd-drop="${esc(d.id)}">Retirar</button></div></div>`;
+                <span style="display:flex;gap:6px;flex-wrap:wrap">${d.status === 'counter' ? `<button class="btn btn-sm" data-cd-improve="${esc(d.id)}">Mejorar oferta</button>` : ''}
+                <button class="btn btn-sm page-close-btn" data-cd-drop="${esc(d.id)}">Retirar</button></span></div>`;
         }).join('');
+    }
+    function bindRows(box) {
         box.querySelectorAll('[data-cd-improve]').forEach(b => b.onclick = () => { const d = deals().find(x => x.id === b.dataset.cdImprove); if (d) openOffer(d.club, d.playerId, d); });
         box.querySelectorAll('[data-cd-drop]').forEach(b => b.onclick = async () => {
             const d = deals().find(x => x.id === b.dataset.cdDrop); if (!d) return;
@@ -253,6 +265,7 @@
             if (ok) { setDeals(deals().filter(x => x.id !== d.id)); renderDeals(); renderPlayers(); }
         });
     }
+    function renderDeals() { document.getElementById('pcfClauseDeals')?.remove(); if (typeof window.pcfRenderOngoing === 'function') window.pcfRenderOngoing(); }
 
     // ───────────────────────── Enganches ─────────────────────────
     function hookPayClause() {
@@ -292,6 +305,6 @@
         [1500, 4000, 8000, 12000].forEach(ms => setTimeout(() => { build(); hookPayClause(); hookSim(); hookPage(); }, ms));
     }
     window.pcfClauseRefresh = () => { fillDivisions(); renderDeals(); };
-    window.pcfClauseDeals = { list: deals, resolve: resolveDeals };
+    window.pcfClauseDeals = { list: deals, resolve: resolveDeals, rowsHtml, bindRows };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

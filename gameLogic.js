@@ -1171,7 +1171,7 @@ function signPlayer(player) {
         }
         refillClubSquad(origin.club, origin.player.position);      // el club vendedor repone su plantilla
         const id=moved.player.id;Object.assign(moved.player,newPlayer,{id,club:gameState.team});
-        if(!newPlayer.loan){moved.player.contractType='owned';moved.player.contractYears=3;delete moved.player.loanOwner;}
+        if(!newPlayer.loan){moved.player.contractType='owned';moved.player.contractYears=Number(newPlayer.contractYears)>0?Number(newPlayer.contractYears):3;delete moved.player.loanOwner;}
     }else{
         if(w)assignPlayerIds(w,[newPlayer],gameState.team);
         gameState.squad.push(newPlayer);
@@ -1276,11 +1276,13 @@ function startNegotiation(player) {
     return { success: true, message: `Iniciando negociación con ${player.name}.` };  
 }  
   
-function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent, offeredShirt, offeredAgentFee) {  
+function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent, offeredShirt, offeredAgentFee, offeredYears, offeredClause) {  
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
     offeredSalary = Number(offeredSalary);
+    offeredYears = Math.max(1, Math.min(5, Math.round(Number(offeredYears)) || 3));
+    offeredClause = Math.max(0, Number(offeredClause) || 0);
     offeredAgentFee = player.clausePaid ? Math.max(0, Number(offeredAgentFee) || 0) : 0;   // comisión de intermediarios: solo en fichajes por cláusula
     offeredMerchPercent = Math.max(0, Math.min(100, Number(offeredMerchPercent) || 0));
     offeredTicketPercent = Math.max(0, Math.min(100, Number(offeredTicketPercent) || 0));
@@ -1303,6 +1305,10 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     // La prima es un importe (€, pago único al firmar). Un booleano antiguo equivale a 10 semanas de salario.
     offeredBonus = typeof offeredBonus === 'number' ? Math.max(0, offeredBonus) : (offeredBonus ? Math.round(offeredSalary * 10) : 0);
     if (offeredBonus > 0) acceptanceChance += 0.05 + Math.min(0.10, offeredBonus / (offeredSalary * 52));
+    if (player.clausePaid) {                       // duración del contrato, como en las renovaciones
+        if (offeredYears >= 4) acceptanceChance += 0.1; else if (offeredYears <= 2) acceptanceChance -= 0.1;
+        if ((player.age || 25) > 30 && offeredYears >= 3) acceptanceChance += 0.1;
+    }
     if (offeredAgentFee > 0) acceptanceChance += Math.min(0.12, offeredAgentFee / (offeredSalary * 26) * 0.12);   // los intermediarios empujan: 26 semanas de sueldo = +0,12
     if (offeredCar) acceptanceChance += 0.05;  
     if (offeredHouse) acceptanceChance += 0.05;  
@@ -1384,7 +1390,8 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
                 loan: false,  
                 club: gameState.team,
                 contractType: 'owned',
-                contractYears: 3 + Math.floor(Math.random() * 3) // 3-5 años
+                contractYears: offeredYears,
+                ...(offeredClause > 0 ? { releaseClause: offeredClause } : {})
             };
             
             const signedClause = signPlayer(newPlayer);

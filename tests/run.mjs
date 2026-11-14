@@ -59,6 +59,23 @@ const tests = {
         assert.equal(yes.success, true, yes.message);
         assert.equal(g.getGameState().balance, 100e6 - 20e6 - low * 26, 'cláusula + comisión');
     },
+    'cláusula: años, nueva cláusula, coche/casa por niveles y % se aplican al fichado y la duración influye en la respuesta'() {
+        const st = worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]); g.replaceGameState(st);
+        const base = () => ({ ...g.getGameState().world.clubs.Rival.squad[0], clausePaid: true, clauseAmount: 20e6, isFreeAgent: false });
+        g.startNegotiation(base());
+        const r = g.offerToPlayer(60000, 50000, 300, 600, 5, 3, undefined, 0, 5, 80e6);
+        assert.equal(r.success, true, r.message);
+        const s = g.getGameState(), pl = s.squad.find(x => x.name === 'Rival 0');
+        assert(pl, 'fichado'); assert.equal(pl.contractYears, 5, 'years ' + pl.contractYears); assert.equal(pl.releaseClause, 80e6, 'clause ' + pl.releaseClause);
+        assert.equal(pl.car, 300, 'car ' + pl.car); assert.equal(pl.house, 600, 'house ' + pl.house); assert.equal(pl.merchPercent, 5, 'merch ' + pl.merchPercent); assert.equal(pl.ticketPercent, 3, 'ticket ' + pl.ticketPercent);
+        assert.equal(s.balance, 100e6 - 20e6 - 50000, 'cláusula + prima: ' + s.balance);
+        // una oferta justa a 1 año se rechaza donde la misma a 4-5 años se acepta
+        g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]));
+        g.startNegotiation(base()); const p0 = g.getGameState().negotiatingPlayer; const sal = Math.round(p0.salary * 0.85);
+        const short = g.offerToPlayer(sal, 0, 0, 0, 0, 0, undefined, 0, 1, 0);
+        g.startNegotiation(base()); const long = g.offerToPlayer(sal, 0, 0, 0, 0, 0, undefined, 0, 5, 0);
+        assert(!(short.success && !long.success), 'más años nunca empeora la respuesta');
+    },
     'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
         assert.equal(g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }).ok, true);

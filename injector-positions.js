@@ -103,15 +103,17 @@
         if (!st || !Array.isArray(st.lineup)) return;
         const nameIdx = ths.findIndex(th => /^JUGADOR$/i.test(th.textContent.trim()));
         if (nameIdx < 0) return;
+        // el nombre sin la bandera de nacionalidad (span) que precede al texto
+        const cellName = r => { const c = r.children[nameIdx]; if (!c) return ''; const k = c.cloneNode(true); k.querySelectorAll('span').forEach(x => x.remove()); return k.textContent.trim(); };
         const tbody = table.querySelector('tbody'); if (!tbody) return;
         const rows = [...tbody.querySelectorAll('tr:not(.pcf-sep)')];
-        const sig = st.lineup.map(p => p && p.name).join('|') + '#' + rows.length + '#' + rows.map(r => r.children[nameIdx]?.textContent.trim()).join(',').length;
+        const sig = st.lineup.map(p => p && p.name).join('|') + '#' + rows.length + '#' + rows.map(cellName).join(',').length;
         if (tbody.dataset.pcfGroup === sig) return;
         const byName = new Map((st.squad || []).map(p => [p.name, p]));
         const inXI = new Set(st.lineup.filter(Boolean).map(p => p.name));
         const startersRows = [], benchCand = [], restRows = [];
         rows.forEach(r => {
-            const n = r.children[nameIdx]?.textContent.trim(), p = byName.get(n);
+            const n = cellName(r), p = byName.get(n);
             if (inXI.has(n)) startersRows.push(r);
             else if (p && !p.isInjured && !p.isSuspended && p.contractType !== 'loaned_out') benchCand.push({ r, o: p.overall || 0 });
             else restRows.push(r);

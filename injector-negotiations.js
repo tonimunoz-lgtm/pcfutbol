@@ -330,6 +330,8 @@
         const terms = getTerms();
         const waiting = new Set(bids.map(b => b.playerName));
         const rows = [];
+        const cd = window.pcfClauseDeals;
+        if (cd && cd.rowsHtml) { const h = cd.rowsHtml(); if (h) rows.push(h); }
         bids.forEach(b => rows.push(`<div class="pcf-neg-row"><span class="pcf-neg-ic">📨</span><div class="pcf-neg-body">
             <strong>${b.playerName}</strong> <small>(${b.club})</small><br>
             ${b.isLoan ? `Cesión: pagas el ${b.amount}% de su salario` : `Traspaso: ${fmt(b.amount)}€${(b.exchange || []).length ? ' + ' + b.exchange.join(', ') : ''}`}
@@ -346,6 +348,7 @@
         });
         box.innerHTML = `<h3 style="margin:0 0 8px;font-size:.95rem;letter-spacing:.08em;text-transform:uppercase;color:var(--pcf-gold,#ffd24a)">Negociaciones en curso</h3>` +
             (rows.length ? rows.join('') : `<div class="pcf-neg-empty">No tienes ninguna negociación abierta. Las ofertas que hagas en Fichar, y los acuerdos con jugadores pendientes de cerrar con su club, aparecerán aquí para retomarlas cuando quieras.</div>`);
+        if (cd && cd.bindRows) cd.bindRows(box);
         box.querySelectorAll('[data-pcf-withdraw]').forEach(b => b.onclick = () => {
             const n = decodeURIComponent(b.dataset.pcfWithdraw);
             setBids(getBids().filter(x => x.playerName !== n)); renderOngoing();
