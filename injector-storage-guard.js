@@ -21,7 +21,18 @@
     window.__pcfStorageGuard = true;
 
     // Temporizador que no trabaja con la pestaña oculta (ahorra batería en móvil). Lo usan los módulos que sondean el estado.
-    window.pcfEvery = function (fn, ms) { return setInterval(() => { if (!document.hidden) fn(); }, ms); };
+    // Diagnóstico del orden de los envoltorios de simulateWeek (cada inyector lo reasigna; el orden depende de los tiempos de carga).
+// Solo registra; no cambia el comportamiento. Consulta: pcfSimWrapperOrder() → ['index.html','injector-x.js',...] (de dentro a fuera).
+(function () {
+    let current; const order = [];
+    const fileOf = () => { const m = String(new Error().stack).split('\n').slice(2).map(l => (l.match(/([\w.-]+\.(?:js|html))/) || [])[1]).find(f => f && f !== 'injector-storage-guard.js'); return m || '?'; };
+    try {
+        Object.defineProperty(window, 'simulateWeek', { configurable: true, enumerable: true,
+            get() { return current; }, set(fn) { current = fn; if (typeof fn === 'function') { order.push(fileOf()); window.__pcfSimWrapperOrder = order.slice(); } } });
+    } catch (_) { /* si el navegador no lo permite, se sigue sin diagnóstico */ }
+    window.pcfSimWrapperOrder = () => order.slice();
+})();
+window.pcfEvery = function (fn, ms) { return setInterval(() => { if (!document.hidden) fn(); }, ms); };
 
     const LS = window.localStorage;
     const origSet = Storage.prototype.setItem;

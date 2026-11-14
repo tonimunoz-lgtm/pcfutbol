@@ -112,7 +112,7 @@
                 pila: String((err && err.stack) || '').split('\n').slice(0, 8).join('\n'),
                 equipo: checkpoint?.team, division: checkpoint?.division, modo: checkpoint?.gameMode,
                 temporada: checkpoint?.currentSeason, fase: checkpoint?.seasonType, jornada: checkpoint?.week,
-                version: window.PCF_BUILD || '', navegador: navigator.userAgent.slice(0, 120)
+                envoltorios: (window.pcfSimWrapperOrder?.() || []).join(' > '), version: window.PCF_BUILD || '', navegador: navigator.userAgent.slice(0, 120)
             };
             window.__pcfSimErrors = [...(window.__pcfSimErrors || []), diag].slice(-6);
             if(checkpoint){

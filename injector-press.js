@@ -278,5 +278,5 @@
     pcfEvery(() => { try { flush(); } catch (e) { console.warn('press:', e.message); } }, 900);
     window.pcfPress = { show, flush, build, preload };
     // Con el juego en reposo se precargan las imágenes de las portadas (si existen)
-    setTimeout(() => Object.keys(EMOJI).forEach(k => preload(`assets/prensa/${k}.webp`)), 4000);
+    if (!navigator.connection?.saveData) setTimeout(() => Object.keys(EMOJI).forEach(k => preload(`assets/prensa/${k}.webp`)), 4000);
 })();
