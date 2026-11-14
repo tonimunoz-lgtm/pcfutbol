@@ -71,6 +71,7 @@
     function statusOf(p) {
         if (!p) return null;
         if (p.isInjured) return { cls: 'inj', icon: 'lesionado', text: `Lesionado: ${p.weeksOut || 1} semana(s) de baja` };
+        if (p.rebel) return { cls: 'sus', icon: 'sancionado', text: 'En rebeldía: no se presenta a los entrenamientos' };
         if (p.isSuspended) return { cls: 'sus', icon: 'sancionado', text: `Sancionado: ${p.suspensionWeeks || 1} partido(s)` };
         if ((p._yellowCycle ?? ((p.yellowCards || 0) % YELLOW_LIMIT())) === YELLOW_LIMIT() - 1) return { cls: 'warn', icon: 'apercibido', text: `Apercibido: una amarilla más y será sancionado` };
         if ((p.condition ?? 100) < 70) return { cls: 'warn', icon: 'apercibido', text: `Fatiga: condición física ${Math.round(p.condition)}%. Conviene rotar.` };

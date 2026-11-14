@@ -592,7 +592,7 @@ function syncLineupFromSquad() {
     gameState.lineup = (gameState.lineup || []).map(p => (p && byName.get(p.name)) || null).filter(Boolean);
 }
 
-const isAvailable = p => p && !p.isInjured && !p.isSuspended && p.contractType !== 'loaned_out';
+const isAvailable = p => p && !p.isInjured && !p.isSuspended && !p.rebel && p.contractType !== 'loaned_out';
 
 // Convocatoria de urgencia: sube a un canterano o, si no hay, ficha a un
 // jugador libre barato (contrato de 1 año) para poder completar el once.

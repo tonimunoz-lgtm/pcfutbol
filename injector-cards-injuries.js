@@ -143,6 +143,9 @@ function hookSimulateWeek() {
                     if (squadPlayer.isSuspended) {
                         errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
                     }
+                    if (squadPlayer.rebel) {
+                        errors.push(`✊ ${squadPlayer.name} se ha declarado en rebeldía y no se presenta`);
+                    }
                 }
             });
             
@@ -218,6 +221,9 @@ setTimeout(() => {
                     
                     if (squadPlayer.isSuspended) {
                         errors.push(`🚫 ${squadPlayer.name} está sancionado (${squadPlayer.suspensionWeeks} partidos)`);
+                    }
+                    if (squadPlayer.rebel) {
+                        errors.push(`✊ ${squadPlayer.name} se ha declarado en rebeldía y no se presenta`);
                     }
                 }
             });
