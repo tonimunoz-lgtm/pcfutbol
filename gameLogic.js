@@ -1,5 +1,6 @@
 import { randomPerson, ensureNationality, foreignSquad } from './nationalities.js';
 import { settleWeeklyFinance } from './weekly-ledger.js';
+import * as NatTeams from './intl.js';
 import { createCompetitionSeason, advanceCompetitionSeason, userCompetitionFixture, recordCompetitionResult, competitionChampions, competitionLeagueField, europeanPlaces } from './competition-engine.js';
 import { createGameEvents } from './game-events.js';
 const gameEvents=createGameEvents();
@@ -147,6 +148,7 @@ function replaceGameState(saved) {
     stateGeneration++;
     Object.keys(gameState).forEach(k => delete gameState[k]);
     Object.assign(gameState, JSON.parse(JSON.stringify(INITIAL_GAME_STATE)), restored);
+    try { if (gameState.intl && gameState.intl.key !== `${gameState.currentSeason}|${gameState.week}`) { NatTeams.clearFlags(gameState); gameState.intl = null; } } catch (_) { /* partida sin parón abierto */ }   // una partida guardada a mitad de jornada no deja jugadores bloqueados
     // Null explicitly means "no saved competition"; never borrow another career's browser data.
     if (!Object.hasOwn(restored, 'competitions')) gameState.competitions = null;
     if (!Object.hasOwn(restored, 'competitionPlayoff')) gameState.competitionPlayoff = null;
@@ -3504,11 +3506,14 @@ async function simulateFullWeekInner() {
             gameState.week = 1;
             if (gameState.boardTargetSeason !== gameState.currentSeason) await computeBoardTarget();
             addNews(`¡Comienza la temporada regular ${gameState.currentSeason} en ${divisionName(gameState.division)}!`, 'success');  
+            addNews(`🌍 Parones de selecciones esta temporada: jornadas ${NatTeams.windowWeeks(gameState.maxSeasonWeeks).join(', ')}. Los convocados no estarán disponibles ese fin de semana.`, 'info');
         }  
 
         window.updateNextMatchInfo();
         return { myMatch: null, forcedLoss: false };
     }  
+
+    startNationalWindow();       // por si la partida llega a esta jornada sin haber abierto el parón (idempotente)
 
     // ===== VALIDAR ALINEACIÓN =====
     const preSimLineupValidation = validateLineup(gameState.lineup);  
@@ -3658,10 +3663,21 @@ async function simulateFullWeekInner() {
 
     // Close every league on the same world date; these fixtures are never re-simulated.
     captureWorldClub();await advanceWorldLeagues(gameState.week);
+    try {                                                   // fin del parón: vuelta de los convocados
+        const back = NatTeams.endWindow(gameState);
+        if (back) {
+            back.results.forEach(r => addNews(`🌍 ${NatTeams.nationName(r.home)} ${r.hg}-${r.ag} ${NatTeams.nationName(r.away)} (selecciones)`, 'info'));
+            back.scorers.forEach(x => addNews(`🌍 ${x.name} ha marcado con ${NatTeams.nationName(x.nation)}.`, 'success'));
+            back.injured.forEach(x => addNews(`🏥 ${x.name} vuelve lesionado de la selección (${x.weeks} semana${x.weeks > 1 ? 's' : ''}).`, 'warning'));
+            if (back.returned.length) addNews(`🌍 Vuelven de la selección: ${back.returned.map(x => x.name).join(', ')}. Algo cansados, pero con la confianza alta.`, 'info');
+            captureWorldClub();
+        }
+    } catch (e) { console.error('[Selecciones] fin del parón:', e); }
     advanceSeasonTournaments(gameState.week);
     closeWorldClubFinances(gameState.week,'regular');runWorldMarket();
     // ===== ACTUALIZAR PRÓXIMO PARTIDO =====
     gameState.week++;
+    startNationalWindow();       // ¿la próxima jornada es de parón? Los convocados se ven ausentes antes de jugarla
     window.updateNextMatchInfo();
 
     weeklyYouthGrowth();
@@ -3708,6 +3724,19 @@ async function simulateFullWeekInner() {
 
 
   
+// Parón de selecciones: al llegar a la jornada del parón los convocados quedan no disponibles (se ve en Plantilla) y se ajusta el once.
+function startNationalWindow() {
+    try {
+        const had = gameState.intl && gameState.intl.key;
+        const callup = NatTeams.beginWindow(gameState);
+        if (!callup || had === callup.key) return;
+        const mine = {}; callup.called.forEach(c => { (mine[c.nation] = mine[c.nation] || []).push(c.name); });
+        const txt = Object.entries(mine).map(([n, l]) => `${NatTeams.nationName(n)}: ${l.join(', ')}`).join(' · ');
+        addNews(callup.called.length ? `🌍 Parón de selecciones: tus convocados no estarán disponibles esta jornada. ${txt}.` : '🌍 Parón de selecciones: ninguno de tus jugadores ha sido convocado.', 'info');
+        if (callup.called.length) { const ch = autoFixLineup({ announce: false, required: true }); if (ch.length) addNews(`🔁 Once ajustado por los convocados: ${ch.join(', ')}.`, 'info'); }
+    } catch (e) { console.error('[Selecciones] inicio del parón:', e); }
+}
+
 function handlePreseasonWeek() {
     for(const p of gameState.squad){p.condition=Math.min(100,(p.condition??100)+15);if(p.isInjured){p.weeksOut=Math.max(0,(p.weeksOut||0)-1);if(!p.weeksOut){p.isInjured=false;p.injuryType=null;}}}  
     addNews(`Semana ${gameState.week} de pretemporada.`, 'system');  
@@ -4633,7 +4662,8 @@ if (typeof window !== 'undefined') {
         advance:advanceWorldLeagues,market:runWorldMarket,move:worldMove,
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
-    window.pcfEconomy = {
+    window.pcfIntl = { windowWeeks: NatTeams.windowWeeks, nextWindow: () => NatTeams.nextWindow(gameState), nationName: NatTeams.nationName };
+window.pcfEconomy = {
         clauseAssess, offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
         benefits: (state, ticket = 0, merch = 0) => {
             const result = { house: 0, car: 0, tickets: 0, merch: 0 };

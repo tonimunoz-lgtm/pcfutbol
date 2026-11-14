@@ -240,7 +240,7 @@ function renderSquadList(squad, currentTeam) {
     squad.forEach((p, realIdx) => { if (p) p._realSquadIndex = realIdx; });
     const sorted = [...squad].sort((a, b) => b.overall - a.overall);  
     let playersHtml = sorted.map((p, idx) => {  
-        const statusText = p.rebel ? `<span style="color: #ff3333;">✊ Rebeldía</span>` : p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';
+        const statusText = p.rebel ? `<span style="color: #ff3333;">✊ Rebeldía</span>` : p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : (p.isSuspended && p._suspCause === 'intl') ? `<span style="color:#7fb3ff">🌍 Selección${p.intlNation ? ' (' + p.intlNation + ')' : ''}</span>` : 'Apto';
         
         // ✅ VALORES CON DEFAULTS
         const contractType = p.contractType || 'owned';
@@ -385,7 +385,7 @@ function renderAcademyList(academy) {
   
     const sorted = academy.sort((a, b) => b.overall - a.overall);  
     let youngstersHtml = sorted.map((p, idx) => {  
-        const statusText = p.rebel ? `<span style="color: #ff3333;">✊ Rebeldía</span>` : p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : 'Apto';  
+        const statusText = p.rebel ? `<span style="color: #ff3333;">✊ Rebeldía</span>` : p.isInjured ? `<span style="color: #ff3333;">Les. (${p.weeksOut} sem)</span>` : (p.isSuspended && p._suspCause === 'intl') ? `<span style="color:#7fb3ff">🌍 Selección${p.intlNation ? ' (' + p.intlNation + ')' : ''}</span>` : 'Apto';  
         return `  
             <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  

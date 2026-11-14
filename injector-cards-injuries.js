@@ -284,12 +284,14 @@ function enhanceSquadTable() {
         
         initializePlayerCards(player);
         
-        let estadoCell = cells.find(c => c.textContent.includes('Apto') || c.textContent.includes('Les.'));
+        let estadoCell = cells.find(c => c.textContent.includes('Apto') || c.textContent.includes('Les.') || c.textContent.includes('Selección'));
         
         if (estadoCell) {
             const cellIndex = cells.indexOf(estadoCell);
             
-            if (player.isSuspended) {
+            if (player.isSuspended && player._suspCause === 'intl') {
+                estadoCell.innerHTML = `<span style="color:#7fb3ff;">🌍 Selección${player.intlNation ? ' (' + player.intlNation + ')' : ''}</span>`;
+            } else if (player.isSuspended) {
                 estadoCell.innerHTML = `<span style="color:#FF9800;">🚫 Sancionado (${player.suspensionWeeks})</span>`;
             } else if (player.isInjured) {
                 estadoCell.innerHTML = `<span style="color:#f33;">🏥 Les. (${player.weeksOut} sem)</span>`;

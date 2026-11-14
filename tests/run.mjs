@@ -24,6 +24,7 @@ const params = rng => ({ teamName: 'A', opponentName: 'B', teamLineup: L(75, 'A'
     opponentBench: L(70, 'Bb').slice(0, 9), teamFormation: '433', opponentFormation: '433', rng });
 
 const nat = await imp('nationalities.js');
+const intlMod = await imp('intl.js');
 const worldWith = (division, userOvr, others) => {
     const sq = (club, arr) => arr.map((o, i) => ({ id: club + i, name: club + ' ' + i, position: 'MC', age: 27, overall: o, salary: 5000, contractType: 'owned', contractYears: 3, club, releaseClause: 20e6, value: 5e6 }));
     const clubs = { T: { name: 'T', division, squad: sq('T', Array(16).fill(userOvr)), snapshot: { academy: [] }, balance: 50e6 } };
@@ -75,6 +76,48 @@ const tests = {
         const short = g.offerToPlayer(sal, 0, 0, 0, 0, 0, undefined, 0, 1, 0);
         g.startNegotiation(base()); const long = g.offerToPlayer(sal, 0, 0, 0, 0, 0, undefined, 0, 5, 0);
         assert(!(short.success && !long.success), 'más años nunca empeora la respuesta');
+    },
+    'selecciones: ventanas, convocatoria por líneas, no convoca lesionados/flojos, vuelta determinista y restaura el once'() {
+        const I = intlMod;
+        const w = I.windowWeeks(38); assert.equal(w.length, 3); assert(w.every(x => x >= 2 && x <= 37) && w[0] < w[1] && w[1] < w[2], w.join());
+        const mk = (club, nat, pos, o, i, extra = {}) => ({ id: club + pos + i, name: club + ' ' + pos + i, nationality: nat, position: pos, overall: o, age: 27, condition: 100, form: 70, contractType: 'owned', ...extra });
+        const squad = [...Array(4).fill(0).map((_, i) => mk('T', 'ES', 'POR', 85 - i, i)), ...Array(10).fill(0).map((_, i) => mk('T', 'ES', 'DFC', 85 - i, i)), mk('T', 'ES', 'DC', 90, 1, { isInjured: true }),
+            mk('T', 'ES', 'DC', 60, 2), mk('T', 'FR', 'DC', 88, 3), mk('T', 'ES', 'MC', 82, 4, { age: 17 })];
+        const state = () => ({ seasonType: 'regular', week: w[0], maxSeasonWeeks: 38, currentSeason: 2026, team: 'T', squad: JSON.parse(JSON.stringify(squad)),
+            lineup: [], world: { clubs: { R: { squad: [mk('R', 'ES', 'POR', 80, 1), mk('R', 'ES', 'DC', 80, 2)] } } } });
+        const a = state(); const info = I.beginWindow(a);
+        assert(info && info.called.length > 0);
+        const away = a.squad.filter(p => p._intlKey);
+        assert.equal(away.filter(p => p.position === 'POR' && p.nationality === 'ES').length + a.world.clubs.R.squad.filter(p => p._intlKey && p.position === 'POR').length, 3, 'máx. 3 porteros por selección');
+        assert(away.every(p => p.isSuspended && p._suspCause === 'intl'));
+        assert(!a.squad.find(p => p.isInjured)._intlKey, 'un lesionado no se convoca');
+        assert(!a.squad.find(p => p.age === 17)._intlKey, 'un menor de 18 no se convoca');
+        assert(!a.squad.find(p => p.overall === 60)._intlKey, 'un jugador flojo no se convoca');
+        assert(a.squad.find(p => p.nationality === 'FR')._intlKey, 'un francés bueno sí');
+        assert(a.world.clubs.R.squad.some(p => p._intlKey), 'la IA también pierde jugadores');
+        assert.equal(I.beginWindow(a), info, 'idempotente en la misma jornada');
+        const lineupNames = a.squad.slice(0, 3).map(p => p.name); a.intl.lineupNames = lineupNames;
+        const r1 = I.endWindow(a);
+        assert(a.squad.every(p => !p._intlKey && !p.intlNation) && a.squad.every(p => !(p.isSuspended && p._suspCause === 'intl')), 'todos liberados');
+        assert.equal(a.intl, null);
+        const b = state(); I.beginWindow(b); const r2 = I.endWindow(b);
+        assert.deepEqual(JSON.stringify(r1), JSON.stringify(r2), 'misma jornada → mismo resultado');
+        assert.deepEqual(JSON.stringify(a.squad.map(p => [p.condition, p.form, p.isInjured])), JSON.stringify(b.squad.map(p => [p.condition, p.form, p.isInjured])));
+        const played = a.squad.filter(p => p.caps); assert(played.length > 0 && played.every(p => p.condition <= 90));
+        const c = state(); c.week = w[0] + 1; assert.equal(I.beginWindow(c), null, 'fuera de ventana no hay convocatoria');
+    },
+    'selecciones: una jornada de parón no deja jugadores bloqueados ni rompe la liga del usuario'() {
+        const st = worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]);
+        st.seasonType = 'regular'; st.week = intlMod.windowWeeks(38)[0]; st.maxSeasonWeeks = 38;
+        st.squad.forEach(p => { p.nationality = 'ES'; }); st.squad[0].overall = 90; st.squad[0].position = 'DC'; st.squad[1].overall = 91; st.squad[1].position = 'POR';
+        st.world.clubs.T.squad = st.squad; g.replaceGameState(st);
+        const s = g.getGameState(); const info = intlMod.beginWindow(s);
+        assert(info.called.length >= 2, 'convoca a los mejores');
+        const saved = JSON.parse(JSON.stringify(s));
+        g.replaceGameState(saved);                    // misma jornada: los convocados siguen ausentes (se ven en Plantilla)
+        assert(g.getGameState().squad.some(p => p._intlKey), 'mismo parón: se conserva');
+        saved.week += 1; g.replaceGameState(saved);   // parón viejo: se limpia, nadie queda bloqueado
+        assert(g.getGameState().squad.every(p => !p._intlKey && !(p.isSuspended && p._suspCause === 'intl')), 'parón viejo: limpia los bloqueos');
     },
     'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
