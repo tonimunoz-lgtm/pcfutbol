@@ -70,8 +70,8 @@ function tactics(a,b,la,lb) {
     if(a.formation==='451'){control*=1.04;attack*=.96;}
     if(a.press==='high'){
         const endurance=average(a.active.filter(Boolean).map(p=>value(p,'RE')));
-        control*=1.035+(endurance-60)/1500;defense*=.97;
-        attack*=1.02;
+        control*=1.035+(endurance-60)/1500;defense*=.985;
+        attack*=1.06;      // presión alta: más robos en campo rival (antes era siempre peor que presión media)
     }else if(a.press==='low'){defense*=1.07;attack*=.94;control*=.93;}
     const field=a.active.filter(p=>p&&p.position!=='POR');
     if(a.instruction==='counter'){
@@ -85,6 +85,8 @@ function tactics(a,b,la,lb) {
         const aerial=average(field.filter(p=>['DC','EXT'].includes(p.position)).map(p=>value(p,'CA')),50);
         attack*=clamp(.95+(aerial-50)*.002,.91,1.08);control*=.94;
     } else if(a.instruction==='setpieces'){attack*=1.01;control*=.97;}
+    // Segundo entrenador: además de los cambios, da orden táctico (±1,2 % de control; la IA usa el nivel 3 = neutro)
+    {const k=1+((a.coachLevel||3)-3)*.005;control*=k;attack*=k;defense*=k;}
     return {attack:attack*a.attackMod,defense:defense*a.defenseMod,control};
 }
 // k < 1 amortigua la diferencia de nivel entre los equipos (en los derbis el favorito lo tiene menos fácil)
@@ -200,7 +202,7 @@ export function simulateFootballMatch(params = {}) {
                 const shooter=choose(s.active.filter(p=>p&&p.position!=='POR'),p=>({DC:7,EXT:5,MCO:3,MC:1.5}[p.position]||.5)*(value(p,'EF')+20),rng);
                 if(!shooter)continue;
                 s.shots++;
-                const corner=rng()<.32,quality=clamp(model.quality*(corner&&s.instruction==='setpieces'?1.20:1),.025,.35);
+                const corner=rng()<.32,quality=clamp(model.quality*(corner&&s.instruction==='setpieces'?1.10:1),.025,.35);
                 if(corner)s.corners++;
                 s.xg+=quality;
                 const target=clamp(.35+(value(shooter,'EF')-60)*.002,.24,.48);

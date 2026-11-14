@@ -1070,7 +1070,7 @@ function signPlayer(player) {
     });  
     
     newPlayer.overall = calculatePlayerOverall(newPlayer);  
-    newPlayer.form = 70 + Math.floor(Math.random() * 20);  
+    newPlayer.form = 75;  
     newPlayer.matches = 0;  
     newPlayer.isInjured = false;  
     newPlayer.weeksOut = 0;  
@@ -1134,7 +1134,7 @@ function signYoungster(youngster) {
   
     const newYoungster = { ...youngster, club: gameState.team };  
     newYoungster.overall = calculatePlayerOverall(newYoungster);  
-    newYoungster.form = 60 + Math.floor(Math.random() * 20);  
+    newYoungster.form = 68;  
     newYoungster.isInjured = false;  
     newYoungster.weeksOut = 0;  
   
@@ -1218,6 +1218,10 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     offeredMerchPercent = Math.max(0, Math.min(100, Number(offeredMerchPercent) || 0));
     offeredTicketPercent = Math.max(0, Math.min(100, Number(offeredTicketPercent) || 0));
     if (!Number.isFinite(offeredSalary) || offeredSalary <= 0) return { success: false, message: 'Indica un salario semanal positivo.' };
+    // Decisión por UMBRAL (sin tirada): el jugador acepta si su valoración de la oferta llega al mínimo exigido,
+    // y si no, el agente dice cuánto falta. Mismo input → misma respuesta.
+    const ACCEPT_THRESHOLD = 0.6;
+    const evalChance = (offeredSalary) => {
     let acceptanceChance = 0.5;
 
     const refSalary = Math.max(player.salary || 0, expectedSalary(player, gameState.division)) || 1;
@@ -1257,10 +1261,11 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             else { acceptanceChance -= dem.retired ? 0.05 : (star ? 0.15 : 0.10); shirtNote = ` Esperaba el dorsal ${dem.number}.`; }
         }
     }
-    const roll = Math.random();  
-    acceptanceChance += acceptanceChance > 0 ? secretaryBonus() : 0;  
-  
-    const accepted = roll < acceptanceChance;  
+    acceptanceChance += acceptanceChance > 0 ? secretaryBonus() : 0;
+    return { acceptanceChance, salaryFactor, shirtNote };
+    };
+    let { acceptanceChance, salaryFactor, shirtNote } = evalChance(offeredSalary);
+    const accepted = acceptanceChance >= ACCEPT_THRESHOLD;
   
     if (accepted) {  
         gameState.playerOffer = {  
@@ -1326,12 +1331,20 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     } else {  
         // Ruptura definitiva solo ante ofertas claramente bajas; si la oferta es
         // razonable, el jugador pide más y se puede volver a intentar
-        if (salaryFactor < 0.8 && roll > 0.85) {  
-            endNegotiation();  
-            return { success: false, message: `${player.name} ha rechazado tu oferta. No está interesado en venir.`, type: 'error' };  
-        } else {  
-            return { success: false, message: `${player.name} encuentra tu oferta insuficiente. Podrías subir el salario o añadir más incentivos.` };  
-        }  
+        if (salaryFactor < 0.6) {
+            endNegotiation();
+            return { success: false, message: `${player.name} ha rechazado tu oferta: está muy por debajo de lo que cobra o espera. No está interesado en venir.`, type: 'error' };
+        }
+        // ¿Cuánto más de sueldo haría falta? (búsqueda del mínimo que alcanza el umbral, manteniendo el resto de condiciones)
+        let lo = offeredSalary, hi = offeredSalary * 4, found = null;
+        if (evalChance(hi).acceptanceChance >= ACCEPT_THRESHOLD) {
+            for (let n = 0; n < 24; n++) { const mid = (lo + hi) / 2; if (evalChance(mid).acceptanceChance >= ACCEPT_THRESHOLD) hi = mid; else lo = mid; }
+            found = Math.ceil(hi / 100) * 100;
+        }
+        const hint = found
+            ? ` Pide un ${Math.max(1, Math.ceil((found / offeredSalary - 1) * 100))} % más de sueldo (unos ${found.toLocaleString('es-ES')}€/sem) o mejores incentivos.`
+            : ' Aunque subas el sueldo no le convence: mejora los incentivos (prima, coche, casa) o la categoría/popularidad del club.';
+        return { success: false, message: `${player.name} encuentra tu oferta insuficiente.${hint}${shirtNote}`, type: 'warning', neededSalary: found };
     }  
 }
   
@@ -1368,8 +1381,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         else if (myWageContribution >= 50) acceptanceChance += 0.1;  
         else if (myWageContribution < 30) acceptanceChance -= 0.2;  
   
-        const roll = Math.random();  
-        const accepted = myWageContribution === 100 || roll < acceptanceChance;  
+        const accepted = myWageContribution === 100 || acceptanceChance >= 0.6;   // umbral: asumir al menos el 50 % del salario
   
         if (accepted) {  
             gameState.clubOffer = { type: 'loan', wageContribution: myWageContribution, finalWageForUs };  
@@ -1383,7 +1395,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
             return signPlayer(newPlayer);  
         } else {  
             endNegotiation();  
-            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión. Quieren que te hagas cargo de más salario.`, type: 'error' };  
+            return { success: false, message: `El ${player.club} ha rechazado tu oferta de cesión: piden que asumas al menos el 50 % del salario (ofreciste el ${myWageContribution} %).`, type: 'error' };  
         }  
   
     } else {  
@@ -1404,11 +1416,9 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
         }, 0);
         const offerFactor = (offerAmount + exchangeValue) / playerAskingPrice;
 
-        let acceptanceChance = offerFactor >= 1 ? 0.85 : offerFactor >= 0.9 ? 0.55 : offerFactor >= 0.8 ? 0.3 : offerFactor >= 0.7 ? 0.1 : 0;
-        if (acceptanceChance > 0) acceptanceChance += secretaryBonus();
-
-        const roll = Math.random();  
-        const accepted = roll < acceptanceChance;  
+        // Umbral: el club acepta si la oferta (con jugadores a cambio) llega a su mínimo; el secretario técnico lo rebaja un poco
+        const minFactor = Math.max(0.8, 0.95 - secretaryBonus());
+        const accepted = offerFactor >= minFactor;
   
         if (accepted && !gameState.playerOffer) {
             // Sin oferta previa al jugador no hay condiciones de contrato: no se descuenta nada.
@@ -1452,12 +1462,12 @@ playerExchange.forEach(pName => {
                 return { success: false, message: 'No se pudo completar el fichaje; no se ha cobrado nada.', type: 'error' };
             }
         } else {  
-            if (offerFactor < 0.6 || roll > 0.9) {  
-                endNegotiation();  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. No quieren vender a ${player.name} por esa cantidad.`, type: 'error' };  
-            } else {  
-                return { success: false, message: `El ${player.club} ha rechazado tu oferta. Podrías mejorarla o añadir algún jugador.` };  
-            }  
+            const missing = Math.max(0, Math.ceil(playerAskingPrice * minFactor - (offerAmount + exchangeValue)));
+            if (offerFactor < 0.6) {
+                endNegotiation();
+                return { success: false, message: `El ${player.club} ha rechazado tu oferta: está muy lejos de lo que piden por ${player.name}. Se rompen las negociaciones.`, type: 'error' };
+            }
+            return { success: false, message: `El ${player.club} rechaza tu oferta. Les faltan unos ${missing.toLocaleString('es-ES')}€ (un ${Math.max(1, Math.ceil(missing / playerAskingPrice * 100))} % del precio) en dinero o jugadores.`, type: 'warning', missing };
         }  
     }  
 }  
@@ -2204,8 +2214,48 @@ function averageForm(lineup) {
     return players.reduce((sum, p) => sum + (p.form || 75), 0) / players.length;
 }
 
+// Semilla por partido: temporada, jornada, competición, equipos, alineaciones y tácticas. El mismo partido con el mismo
+// estado da siempre el mismo resultado (recargar o el rollback de SimGuard no «tiran el dado» otra vez); cualquier
+// cambio real (alineación, táctica, lesión, forma) cambia la semilla y, por tanto, el partido.
+function matchSeedKey(home, away, homeName, awayName, state, options) {
+    const side = s => [s.formation, s.mentality, s.press, s.instruction, s.style,
+        (s.lineup || []).map(p => p ? (p.id ?? p.name) + ':' + (p.form ?? '') : '-').join(',')].join('/');
+    return [state.currentSeason, state.week, options.competition || 'league', options.salt || '', homeName, awayName,
+        side(home), side(away), home.isUser ? (state.matchPlan || '') : ''].join('|');
+}
+function seededRng(key) {
+    let seed = 2166136261;
+    for (let i = 0; i < key.length; i++) seed = Math.imul(seed ^ key.charCodeAt(i), 16777619) >>> 0;
+    return () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+}
+// Palancas de contexto → motor (teamAttackMod/DefenseMod): ambiente del estadio (popularidad × aforo), estadio cerrado,
+// derbi y confianza de la directiva. Son pequeñas (±2 %) pero hacen que afición, sanciones y directiva tengan efecto.
+function contextMods(side, name, state, options, derbyLevel) {
+    const user = !!side.isUser, clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+    const club = user ? state : (state.world?.clubs?.[name]?.snapshot || {});
+    const isHomeSide = options.isHomeSide === true && !options.neutral;
+    let attack = 1, defense = 1;
+    if (isHomeSide) {
+        const pop = clampN(((club.popularity ?? 50) - 50) / 50, -1, 1);
+        let ambient = 0.02 * pop;
+        if (user && state.sanctions?.closure?.left > 0) ambient = state.sanctions.closure.partial ? ambient * 0.4 : -0.01;   // sin público (o parcial) no hay ambiente
+        attack += ambient; defense += ambient * 0.5;
+    }
+    if (user) {
+        const conf = state.boardConfidence ?? 65;
+        const pressure = conf < 35 ? -0.015 : conf > 80 ? 0.01 : 0;       // directiva sin confianza = vestuario tenso
+        attack += pressure; defense += pressure;
+    }
+    if (derbyLevel) { const d = 0.005 * derbyLevel; attack += d; defense += d; }   // el derbi se juega con más intensidad
+    return { attack: Math.round(attack * 10000) / 10000, defense: Math.round(defense * 10000) / 10000 };
+}
 function matchParameters(home, away, homeName, awayName, state, options = {}) {
+    const derbyLevel = rivalryOf(homeName, awayName)?.level || 0;
+    const hm = contextMods(home, homeName, state, { ...options, isHomeSide: options.isHome !== false }, derbyLevel);
+    const am = contextMods(away, awayName, state, { ...options, isHomeSide: options.isHome === false }, derbyLevel);
     return {
+        teamAttackMod: hm.attack, teamDefenseMod: hm.defense, opponentAttackMod: am.attack, opponentDefenseMod: am.defense,
+        rng: seededRng(matchSeedKey(home, away, homeName, awayName, state, options)),
         teamName: homeName, opponentName: awayName, homeTeamName: homeName, awayTeamName: awayName,
         teamLineup: home.lineup, opponentLineup: away.lineup, teamBench: home.bench, opponentBench: away.bench,
         teamFormation: home.formation, opponentFormation: away.formation,
@@ -2236,22 +2286,38 @@ function resolveFootballKnockout(params, first, aggregate = [0,0]) {
                 const pool=players[i],p=pool.length?pool[n%pool.length]:null;
                 const keeper=outcome.finalLines[1-i].keeper;
                 const chance=Math.max(.55,Math.min(.90,.76+((p?.EF||60)-keeper)*.0018));
-                return Math.random()<chance?1:0;
+                return (params.rng||Math.random)()<chance?1:0;
             };
             for(let n=0;n<5;n++){h+=kick(0,n);a+=kick(1,n);}
             let n=5;while(h===a && n<100){h+=kick(0,n);a+=kick(1,n);n++;}
             // A tie cannot advance: continue with one final independent draw if needed.
-            if(h===a){if(Math.random()<.5)h++;else a++;}
+            if(h===a){if((params.rng||Math.random)()<.5)h++;else a++;}
             penalties={home:h,away:a};
         }
     }
     return { outcome, extraTime, penalties };
 }
+// Forma tras un partido: única y determinista para usuario e IA (sin tiradas). Depende del resultado, de la
+// dificultad del rival (diferencia de nivel) y de la aportación individual (goles, asistencias, minutos).
+function formDelta(record, goalsFor, goalsAgainst, strengthGap) {
+    const result = goalsFor > goalsAgainst ? 2 : goalsFor < goalsAgainst ? -2 : 0;
+    const upset = Math.max(-1.5, Math.min(1.5, strengthGap / 6));      // rival más fuerte: ganar vale más y perder duele menos
+    const bonus = result === 0 ? upset * 0.5 : upset;
+    const contribution = Math.min(2, (record.goals || 0) * 1 + (record.assists || 0) * 0.5);
+    const share = Math.min(1, (record.minutes || 0) / 90);              // pocos minutos, poco efecto
+    let d = (result + bonus) * share + contribution;
+    if (record.position === 'POR' && goalsAgainst === 0) d += 1;        // portería a cero
+    return Math.max(-4, Math.min(4, d));
+}
 function applyFootballOutcome(outcome, home, away, homeName, awayName, state, competition='league') {
     const sides=[home,away],names=[homeName,awayName];
+    const strengths=sides.map(sd=>calculateTeamEffectiveOverall(sd.lineup||[],sd.formation||'433'));
     sides.forEach((side,i)=>{
         const played=new Set(outcome.players[i].filter(p=>p.minutes>0).map(p=>p.name));
         for(const p of side.squad){
+            if(competition==='league'&&!played.has(p.name)&&p.form!==undefined){   // el que no juega vuelve poco a poco a su forma media
+                const b=p._baseForm??p.form;p._baseForm=b>72?b-1:(b<68?b+1:b);p.form=p._baseForm;
+            }
             if(p.isSuspended && !played.has(p.name) && p.suspensionWeeks>0){
                 p.suspensionWeeks--;if(!p.suspensionWeeks){p.isSuspended=false;p._suspCause=null;}   // cumplida la sanción: el contador queda a cero
             }
@@ -2259,6 +2325,12 @@ function applyFootballOutcome(outcome, home, away, homeName, awayName, state, co
         for(const record of outcome.players[i]){
             const p=side.squad.find(p=>p.name===record.name);if(!p)continue;
             p.condition=record.condition;
+            if(record.minutes>0){
+                const gf=i===0?outcome.teamGoals:outcome.opponentGoals, ga=i===0?outcome.opponentGoals:outcome.teamGoals;
+                const base=p._baseForm??p.form??70;
+                p._baseForm=Math.round(Math.max(45,Math.min(95,base+formDelta(record,gf,ga,strengths[1-i]-strengths[i]))));
+                p.form=p._baseForm;
+            }
             if(record.minutes>0 || record.entered){
                 if(competition==='league'&&state.world&&p.id){
                     const division=side.isUser?state.division:(state.world.clubs[names[i]]?.division||state.division);
@@ -2329,7 +2401,7 @@ async function playCupFootballMatch(match) {
         opponentSquad=state.foreignSquads[key];
     }
     const own=sideFromSquad(state.squad,state,true),opp=sideFromSquad(opponentSquad,state,false);
-    const params=matchParameters(own,opp,me,match.opponent,state,{isHome:match.isHome,neutral:match.neutral});
+    const params=matchParameters(own,opp,me,match.opponent,state,{isHome:match.isHome,neutral:match.neutral,competition:'cup',salt:String(match.id??match.round??match.phase??'')+'|'+(match.leg??'')});
     const engine=window.calculateMatchOutcomeImproved||calculateMatchOutcomeImproved;
     const first=engine(params),agg=match.aggregate||{my:0,opp:0};
     const resolved=match.decidesTie?resolveFootballKnockout(params,first,[agg.my,agg.opp]):{outcome:first,extraTime:null,penalties:null};
@@ -2370,6 +2442,11 @@ console.log('✅ Motor de partidos por intervalos cargado (Etapa 2)');
 // ========================================
 // ✅ FUNCIÓN WRAPPER: Procesar partido completo
 // ========================================
+// Afición acotada: entre el 40 % y el 250 % de la base de su división y aforo (antes solo subía, sin techo)
+function fanbaseWithin(value) {
+    const base = (gameState.stadiumCapacity || 10000) * (ECONOMY.fanbaseFactor[gameState.division] ?? 0.8);
+    return Math.floor(Math.max(base * 0.4, Math.min(Math.max(base * 2.5, gameState.fanbase || 0), value)));   // no recorta partidas antiguas ya por encima del techo
+}
 async function processMatch(homeTeam, awayTeam, gameState) {
     // 1️⃣ Simular partido con motor mejorado
     const result = await playMatchImproved(homeTeam, awayTeam, gameState);
@@ -2406,30 +2483,19 @@ async function processMatch(homeTeam, awayTeam, gameState) {
         // Se actualiza el jugador de la PLANTILLA (la alineación puede tener copias)
         syncLineupFromSquad();
         const playedNames=new Set((result.playerStats?.[homeTeam===gameState.team?0:1]||[]).filter(p=>p.minutes>0||p.entered).map(p=>p.name));
-        gameState.squad.filter(p=>playedNames.has(p.name)).forEach(player => {
-            // Appearances and minutes are recorded by the common match engine.
-            const form = player.form || 70;
-            if (ourGoals > rivalGoals) player.form = Math.min(95, form + 1 + Math.floor(Math.random() * 3));
-            else if (ourGoals < rivalGoals) player.form = Math.max(45, form - 1 - Math.floor(Math.random() * 3));
-            else player.form = Math.max(45, Math.min(95, form + (form > 75 ? -1 : 1)));
-            player._baseForm=player.form;
-        });
-        // Los suplentes que no juegan vuelven poco a poco a su forma media
-        const inXI = new Set(gameState.lineup.filter(Boolean).map(p => p.name));
-        gameState.squad.forEach(p => {
-            if (!inXI.has(p.name) && p.form !== undefined) p.form += p.form > 72 ? -1 : (p.form < 68 ? 1 : 0);
-        });
-        
+        // La forma se actualiza ya en applyFootballOutcome (determinista, igual para usuario e IA)
         // La prima prometida se paga y se consume en ESTE partido (antes solo se consumía en copa)
         if (Number(gameState.fd_bonus) > 0) gameState.fd_bonus = 0;
 
         // Actualizar popularidad
         if (ourGoals > rivalGoals) {
             gameState.popularity = Math.min(100, gameState.popularity + 2);
-            gameState.fanbase = Math.floor(gameState.fanbase * 1.01);
+            gameState.fanbase = fanbaseWithin(gameState.fanbase * 1.01);
         } else if (ourGoals < rivalGoals) {
             gameState.popularity = Math.max(0, gameState.popularity - 1);
+            gameState.fanbase = fanbaseWithin(gameState.fanbase * 0.994);      // la afición también baja con las derrotas
         }
+        if (gameState.balance < 0) gameState.fanbase = fanbaseWithin(gameState.fanbase * 0.999);   // club arruinado: la gente se desengancha
     }
     
     return result;
@@ -3244,6 +3310,10 @@ async function endSeason() {
     }
 
     const nextDivisionKey = summary.userMove ? summary.userMove.to : currentDivision;
+    if (summary.userMove && DIVISION_RANK[summary.userMove.to] > DIVISION_RANK[currentDivision]) {
+        gameState.fanbase = Math.floor((gameState.fanbase || 0) * 0.92);      // descenso: la afición se resiente (la división nueva ajusta el suelo)
+        gameState.popularity = Math.max(0, (gameState.popularity || 50) - 5);
+    }
     const text = buildSeasonSummaryText(summary);
 
     // Europa (solo informativo aquí; las competiciones las gestiona su módulo)
@@ -4320,7 +4390,7 @@ async function counterOffer(offerIndex) {
     
     // Aceptan si no supera lo máximo que están dispuestos a pagar
     const maxAmount = offer.maxAmount || roundMoney(offer.amount * 1.1);
-    const accepted = counter <= maxAmount && Math.random() < (counter <= offer.amount * 1.05 ? 0.9 : 0.6);
+    const accepted = counter <= maxAmount;   // umbral: acepta si no supera lo máximo que está dispuesto a pagar
     
     if (accepted) {
         // Aceptan contraoferta
