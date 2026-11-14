@@ -16,7 +16,7 @@
     const fmt = n => Math.round(Number(n) || 0).toLocaleString('es-ES');
     const gl = () => window.gameLogic;
     const gs = () => gl()?.getViewState?.();
-    const flag = p => window.PCF_NATIONS?.flagOf?.(p) || '';
+    const flag = p => { const N = window.PCF_NATIONS; if (!N) return ''; try { N.ensureNationality?.(p, 'other'); } catch (_) { /* */ } return N.flagOf(p) || ''; };
     const deals = () => (gs()?.clauseDeals || []).slice();
     const setDeals = list => gl().updateGameState({ clauseDeals: list });
     const notify = (t, m) => (window.pcfNotify ? window.pcfNotify(t, m) : Promise.resolve(window.alert(t + '\n\n' + m)));

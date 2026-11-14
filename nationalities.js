@@ -64,14 +64,35 @@ const MIX = {
     segunda: [['ES',74],['AR',5],['CO',3],['UY',2],['FR',2],['MA',2],['BR',2],['PT',2],['VE',1],['CI',1],['SN',1],['NG',1],['EN',1],['MX',1],['PE',1],['EC',1]],
     other:   [['ES',88],['AR',3],['MA',2],['CO',1],['FR',1],['UY',1],['SN',1],['CI',1],['VE',1]]
 };
-export function guessNationality(key, division) {
+// Si el nombre delata una procedencia (nombre y apellido de un país concreto) se respeta; si suena a español, ES casi siempre.
+function nationFromName(name, key) {
+    const tokens = String(name || '').replace(/\(.*?\)/g, '').split(/[\s,]+/).filter(Boolean);
+    if (!tokens.length) return null;
+    const hits = {};
+    for (const [pool, v] of Object.entries(NAME_POOLS)) {
+        if (pool === 'es') continue;
+        const n = tokens.filter(t => v.g.includes(t) || v.s.includes(t)).length;
+        if (n >= 2 || (n === 1 && tokens.length === 2 && v.s.includes(tokens[tokens.length - 1]))) hits[pool] = n;
+    }
+    const pool = Object.keys(hits).sort((a, b) => hits[b] - hits[a])[0];
+    if (!pool) return null;
+    const list = Object.keys(NATIONS).filter(c => NATIONS[c].p === pool);
+    return list.length ? list[hash('np|' + key) % list.length] : null;
+}
+export function guessNationality(key, division, name) {
+    const fromName = nationFromName(name, key);
+    if (fromName) return fromName;
+    if (name) {            // nombre de aspecto español: casi siempre español (el resto, hispanoamericanos)
+        const r = seededRandom('nat|' + key)();
+        return r < 0.9 ? 'ES' : pickW(seededRandom('nat2|' + key), [['AR', 4], ['CO', 2], ['UY', 2], ['MX', 1], ['VE', 1], ['CL', 1], ['PE', 1], ['EC', 1]]);
+    }
     const mix = MIX[division] || (division === 'primera' || division === 'segunda' ? MIX[division] : MIX.other);
     return pickW(seededRandom('nat|' + key), mix);
 }
 // Asigna nacionalidad si falta. No sobrescribe nunca un valor válido (p. ej. el del admin).
 export function ensureNationality(p, division) {
     if (!p || (p.nationality && NATIONS[p.nationality])) return p;
-    p.nationality = guessNationality((p.id ?? '') + '|' + p.name + '|' + p.age, division);
+    p.nationality = guessNationality((p.id ?? '') + '|' + p.name + '|' + p.age, division, p.name);
     p.nationalityGuessed = true;       // marca: fue una suposición automática (el admin puede corregirla)
     return p;
 }

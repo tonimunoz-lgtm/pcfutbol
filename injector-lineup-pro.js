@@ -259,6 +259,16 @@
     window.pcfAutoLineup = autoLineup;
 
     // ── Ficha del jugador ────────────────────────────────────────
+    // Nacionalidad con bandera (si el jugador aún no la tiene se le asigna una estable acorde con su nombre)
+    const NT = () => window.PCF_NATIONS;
+    function natInfo(p) {
+        const N = NT(); if (!N) return null;
+        try { N.ensureNationality?.(p, p.division || gs()?.division || 'other'); } catch (_) { /* */ }
+        return N.NATIONS?.[p.nationality] ? { flag: N.flagOf(p), name: N.NATIONS[p.nationality].n } : null;
+    }
+    const natChip = p => { const n = natInfo(p); return n ? `<span class="pcf-chip" title="Nacionalidad">${n.flag} ${esc(n.name)}</span>` : ''; };
+    const natLabel = p => { const n = natInfo(p); return n ? `${n.flag} ${esc(n.name)}` : '—'; };
+
     function openPlayerCard(player) {
         const modal = document.getElementById('playerModal');
         const content = modal?.querySelector('.player-modal-content');
@@ -276,6 +286,7 @@
                     <h2>${esc(p.name)}</h2>
                     <div class="pcf-chips">
                         <span class="pcf-chip">${esc(POS_LABELS[p.position] || p.position)}</span>
+                        ${natChip(p)}
                         <span class="pcf-chip" title="Media (valoración global según su posición)">Media ${p.overall ?? '—'}</span>
                         ${p.potential ? `<span class="pcf-chip" title="Potencial: hasta dónde puede llegar">Potencial ${p.potential}</span>` : ''}
                         <span class="pcf-chip ${s ? 'bad' : 'ok'}">${s ? esc(s.text) : 'Disponible'}</span>
@@ -285,6 +296,8 @@
             <div class="pcf-card-grid">
                 <div class="pcf-card-sec">
                     <h3>Personal</h3>
+                    <div class="pcf-row"><span>Nacionalidad</span><span>${natLabel(p)}</span></div>
+                    ${p.caps ? `<div class="pcf-row"><span>Internacionalidades</span><span>${p.caps}</span></div>` : ''}
                     <div class="pcf-row"><span>Edad</span><span>${p.age ?? '—'} años</span></div>
                     <div class="pcf-row"><span>Pie</span><span>${esc(p.foot || '—')}</span></div>
                     <div class="pcf-row"><span>Forma</span><span>${Math.round(p.form || 0)}</span></div>

@@ -3745,14 +3745,24 @@ function syncNationalitiesFromCatalog() {
         perClub.set(club, m);
     }
     let changed = 0;
-    const apply = (club, list) => (list || []).forEach(p => {
+    const apply = (club, list, division) => (list || []).forEach(p => {
         if (!p || !p.name) return;
         const nat = perClub.get(club)?.get(p.name) ?? (dup.has(p.name) ? undefined : global.get(p.name));
-        if (nat && p.nationality !== nat) { p.nationality = nat; delete p.nationalityGuessed; changed++; }
-        else if (nat && p.nationalityGuessed) { delete p.nationalityGuessed; }
+        if (nat) {
+            if (p.nationality !== nat) { p.nationality = nat; changed++; }
+            delete p.nationalityGuessed;
+        } else if (!p.nationality || !window.PCF_NATIONS.NATIONS[p.nationality] || p.nationalityGuessed) {
+            // sin dato del admin: suposición estable acorde con el nombre (también para jugadores de partidas antiguas o creados por la IA)
+            const before = p.nationality; delete p.nationality; ensureNationality(p, division);
+            if (p.nationality !== before) changed++;
+        }
     });
-    apply(gameState.team, gameState.squad); apply(gameState.team, gameState.academy);
-    for (const [name, c] of Object.entries(gameState.world?.clubs || {})) { if (name !== gameState.team) apply(name, c.squad); }
+    apply(gameState.team, gameState.squad, gameState.division); apply(gameState.team, gameState.academy, gameState.division);
+    for (const [name, c] of Object.entries(gameState.world?.clubs || {})) {
+        if (name === gameState.team) continue;
+        apply(name, c.squad, c.division); apply(name, c.snapshot?.academy, c.division);
+    }
+    apply(null, gameState.freeAgentsPool, 'other');
     return changed;
 }
 
