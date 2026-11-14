@@ -138,7 +138,7 @@
         tbody.dataset.pcfGroup = sig;
     }
 
-    const CONTAINERS = '#squadList, #academyList, #negotiationsSquadList, #availablePlayersSearchResult';
+    const CONTAINERS = '#squadList, #academyList, #negotiationsSquadList, #availablePlayersSearchResult, #pcfClauseList';
     function enhanceTables() {
         css();
         document.querySelectorAll(CONTAINERS).forEach(box => {

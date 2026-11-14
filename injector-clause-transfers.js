@@ -26,7 +26,12 @@
         const css = document.createElement('style');
         css.textContent = `
         #pcfClauseBox .pcf-cl-sel{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
-        #pcfClauseBox .pcf-cl-sel select{flex:1 1 220px;min-width:0}
+        #pcfClauseBox .pcf-cl-sel select{flex:1 1 260px;min-width:0;max-width:100%;text-overflow:ellipsis}
+        #pcfClauseList table{width:100%;border-collapse:collapse}
+        #pcfClauseList th,#pcfClauseList td{text-align:center;vertical-align:middle;white-space:nowrap;padding:8px 6px}
+        #pcfClauseList th:first-child,#pcfClauseList td:first-child{text-align:left;padding-left:12px;font-weight:700}
+        #pcfClauseList td.pcf-cl-no{white-space:normal;min-width:190px;max-width:260px;text-align:left;font-size:.78rem;line-height:1.3}
+        #pcfClauseList td.pcf-pos-cell{text-align:left}
         #pcfClauseList .pcf-player-scroll table{font-size:.8em;min-width:1250px}
         #pcfClauseList td.pcf-cl-no{color:#ffb3b3;font-size:.72rem;white-space:normal;min-width:170px;line-height:1.25}
         #pcfClauseList .pcf-cl-ok{color:#a5d6a7;font-weight:700}
@@ -76,7 +81,7 @@
         const box = document.createElement('div');
         box.id = 'pcfClauseBox';
         box.innerHTML = `
-            <h2>🏟️ Ojear clubes · Pagar cláusula</h2>
+            <h2>Ojear clubes · Pagar cláusula</h2>
             <div class="alert alert-info" style="margin-bottom:10px">Puedes fichar a cualquier jugador pagando su cláusula, aunque no esté en venta: su club no puede negarse. Pero el jugador decide si le conviene
                 tu proyecto (nivel de tu plantilla y categoría) y negocia su contrato. Máximo 2 cláusulas por temporada.</div>
             <div class="pcf-cl-sel"><select id="pcfClauseDiv"></select><select id="pcfClauseTeam"></select></div>
@@ -117,17 +122,17 @@
         const rows = [...club.squad].sort((a, b) => (b.overall || 0) - (a.overall || 0)).map(p => {
             const a = window.pcfEconomy.clauseAssess({ id: p.id, name: p.name, club: team });
             const mine = open.has(p.id);
-            const action = mine ? '<span class="pcf-cl-ok">🤝 Negociando</span>'
-                : a.ok ? `<button class="btn btn-sm" style="background:#FF5722" data-pay="${esc(p.id)}">💰 Cláusula</button>`
+            const action = mine ? '<span class="pcf-cl-ok">Negociando</span>'
+                : a.ok ? `<button class="btn btn-sm" style="background:#FF5722" data-pay="${esc(p.id)}">Pagar cláusula</button>`
                 : `<button class="btn btn-sm" disabled style="opacity:.45" title="${esc(a.reasons.join(' '))}">No viable</button>`;
             const why = (!mine && !a.ok) ? `<td class="pcf-cl-no">${esc(a.reasons.join(' '))}</td>` : '<td class="pcf-cl-ok">' + (mine ? 'En negociación' : 'Fichable') + '</td>';
             return `<tr><td>${flag(p)} ${esc(p.name)}</td><td><strong>${p.overall}</strong></td><td>${p.potential ?? '-'}</td><td>${p.age}</td><td>${esc(p.position)}</td><td>${esc(p.foot || '-')}</td>
-                ${ATTRS.map(k => `<td>${p[k] || 0}</td>`).join('')}
+                ${ATTRS.map(k => `<td>${Math.round(p[k] || 0)}</td>`).join('')}
                 <td>${fmt(p.salary)}€</td><td>${fmt(window.pcfEconomy.marketValue(p))}€</td><td style="color:#b45f06;font-weight:bold">${fmt(a.clause)}€</td>
                 <td>${p.contractType === 'loaned' ? 'Cedido' : (p.contractYears ?? '-') + ' a.'}</td>${why}<td>${action}</td></tr>`;
         }).join('');
         out.innerHTML = `<div class="pcf-player-scroll" tabindex="0" aria-label="Plantilla del club" style="overflow:auto;max-height:65vh"><table><thead><tr>
-            <th>JUGADOR</th><th>OVR</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>${ATTRS.map(k => `<th>${k}</th>`).join('')}
+            <th>JUGADOR</th><th>MEDIA</th><th>POT</th><th>EDAD</th><th>POS</th><th>PIE</th>${ATTRS.map(k => `<th>${k}</th>`).join('')}
             <th>SALARIO</th><th>VALOR</th><th>CLÁUSULA</th><th>CONTRATO</th><th>FICHAJE</th><th>ACCIONES</th></tr></thead><tbody>${rows}</tbody></table></div>`;
         out.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => openOffer(team, b.dataset.pay));
     }
