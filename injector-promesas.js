@@ -528,9 +528,11 @@
     // ============================================================
     // PASO 9: Parchar PROMOTION_RELEGATION
     // ============================================================
+    let patchTries = 0;
     function patchPromotionRelegation() {
         if (typeof PROMOTION_RELEGATION === 'undefined' && !window.PROMOTION_RELEGATION) {
-            setTimeout(patchPromotionRelegation, 300);
+            // PROMOTION_RELEGATION vive en un módulo (config.js) y no es global: antes se reintentaba cada 300 ms para siempre
+            if (++patchTries < 20) setTimeout(patchPromotionRelegation, 300);
             return;
         }
         const pr = typeof PROMOTION_RELEGATION !== 'undefined' ? PROMOTION_RELEGATION : window.PROMOTION_RELEGATION;
