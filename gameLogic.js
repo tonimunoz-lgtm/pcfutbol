@@ -1,6 +1,7 @@
 import { randomPerson, ensureNationality, foreignSquad } from './nationalities.js';
 import { settleWeeklyFinance } from './weekly-ledger.js';
 import * as NatTeams from './intl.js';
+import * as StaffSync from './staff-sync.js';
 import { createCompetitionSeason, advanceCompetitionSeason, userCompetitionFixture, recordCompetitionResult, competitionChampions, competitionLeagueField, europeanPlaces } from './competition-engine.js';
 import { createGameEvents } from './game-events.js';
 const gameEvents=createGameEvents();
@@ -1224,6 +1225,11 @@ function promoteYoungster(name) {
     promotedPlayer.matches = 0;  
     promotedPlayer.isInjured = false;  
     promotedPlayer.weeksOut = 0;  
+    // entrenador de juveniles + segundo entrenador lo habían recomendado para cubrir un hueco: llega con confianza
+    if ((gameState.staffBrief?.coverNames || []).includes(youngster.name) && StaffSync.synergies(gameState).youthPlan) {
+        promotedPlayer.form = Math.min(99, (promotedPlayer.form ?? 65) + 5);
+        addNews(`🤝 ${promotedPlayer.name} sube al primer equipo recomendado por el entrenador de juveniles y el segundo entrenador: llega con confianza.`, 'success');
+    }
 
     // ✅ FIX: ASIGNAR CONTRATO CORRECTO
     promotedPlayer.contractType = 'owned';
@@ -1312,6 +1318,8 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
         if (offeredYears >= 4) acceptanceChance += 0.1; else if (offeredYears <= 2) acceptanceChance -= 0.1;
         if ((player.age || 25) > 30 && offeredYears >= 3) acceptanceChance += 0.1;
     }
+    // ojeador + secretario: si el jugador era un objetivo recomendado en la reunión técnica, negocian con más ventaja
+    if ((gameState.staffBrief?.targetNames || []).includes(player.name) && StaffSync.synergies(gameState).scoutDeal) acceptanceChance += 0.04;
     if (offeredAgentFee > 0) acceptanceChance += Math.min(0.12, offeredAgentFee / (offeredSalary * 26) * 0.12);   // los intermediarios empujan: 26 semanas de sueldo = +0,12
     if (offeredCar) acceptanceChance += 0.05;  
     if (offeredHouse) acceptanceChance += 0.05;  
@@ -2625,16 +2633,8 @@ function secondCoachAdvice() {
         addNews(`[Segundo Entrenador] ${p.name} (${p.overall}/${p.potential}) es un gran talento. Deberíamos darle más minutos para que crezca.`, 'info');  
     }  
   
-    const criticalPositions = ['POR', 'DFC', 'MC', 'DC'];  
-    for (const pos of criticalPositions) {  
-        const availableInPosition = availableSquad.filter(p => p.position === pos).length;  
-        if (pos === 'POR' && availableInPosition < 2) {  
-            addNews(`[Segundo Entrenador] Solo tenemos ${availableInPosition} ${pos} apto. Deberíamos buscar refuerzos para la portería.`, 'warning');  
-        } else if (pos !== 'POR' && availableInPosition < 3) {  
-            addNews(`[Segundo Entrenador] Tenemos pocos ${pos} aptos (${availableInPosition}). Considera fichar.`, 'warning');  
-        }  
-    }  
-  
+    // Los huecos de plantilla (poca profundidad, bajas) ya no se avisan aquí: los analiza la reunión del cuerpo técnico (runStaffMeeting),
+    // que cruza lo que ven el segundo entrenador, la cantera, el ojeador, el secretario y el médico.
     if (gameState.staff.scout && gameState.balance > 100000 && Math.random() < 0.3) {  
         const topPlayersInMarket = getPlayerMarketData({}, gameState.staff.scout.level)  
                                     .filter(p => p.overall > 80 && p.transferListed && !p.loanListed);  
@@ -3521,6 +3521,8 @@ async function simulateFullWeekInner() {
             addNews(`🌍 Parones de selecciones esta temporada: jornadas ${NatTeams.windowWeeks(gameState.maxSeasonWeeks).join(', ')}. Los convocados no estarán disponibles ese fin de semana.`, 'info');
         }  
 
+        startNationalWindow();
+        runStaffMeeting();           // también en pretemporada: hay tiempo de arreglar los huecos antes de que empiece la liga
         window.updateNextMatchInfo();
         return { myMatch: null, forcedLoss: false };
     }  
@@ -3538,6 +3540,8 @@ async function simulateFullWeekInner() {
         if (p.isInjured) {  
             p.weeksOut--;  
             if (fisioLevel && p.weeksOut > 0 && Math.random() < fisioLevel * 0.1) p.weeksOut--;
+            // médico + fisio coordinados (protocolo de recuperación): una semana menos cada tres en las bajas largas, sin azar
+            if (p.weeksOut >= 3 && (gameState.week + p.weeksOut) % 3 === 0 && StaffSync.synergies(gameState).recovery) p.weeksOut--;
             if (p.weeksOut <= 0) {  
                 p.isInjured = false;  
                 p.weeksOut = 0;  
@@ -3691,6 +3695,7 @@ async function simulateFullWeekInner() {
     // ===== ACTUALIZAR PRÓXIMO PARTIDO =====
     gameState.week++;
     startNationalWindow();       // ¿la próxima jornada es de parón? Los convocados se ven ausentes antes de jugarla
+    runStaffMeeting();           // reunión del cuerpo técnico sobre la plantilla de la próxima jornada (ya con los convocados fuera)
     window.updateNextMatchInfo();
 
     weeklyYouthGrowth();
@@ -3775,6 +3780,40 @@ function syncNationalitiesFromCatalog() {
     }
     apply(null, gameState.freeAgentsPool, 'other');
     return changed;
+}
+
+// Reunión semanal del cuerpo técnico (staff-sync.js): los empleados se pasan la información y proponen acciones coordinadas.
+function runStaffMeeting() {
+    try {
+        if (!gameState.staff || !Object.values(gameState.staff).some(Boolean)) { gameState.staffBrief = null; return null; }
+        const lvlScout = gameState.staff.scout?.level || 0;
+        const ctx = {
+            layout: getFormationLayout(gameState.formation || '433'), compat: POSITION_COMPATIBILITY,
+            marketFor: (pos, minOvr) => { try { return getPlayerMarket({ position: pos, minOverall: minOvr }); } catch (_) { return []; } },
+            clauseTargets: (pos, minOvr, maxClause) => {
+                const out = [];
+                for (const [club, c] of Object.entries(gameState.world?.clubs || {})) {
+                    if (club === gameState.team) continue;
+                    for (const p of c.squad || []) {
+                        if (p.position !== pos || (p.overall || 0) < minOvr || p.contractType === 'loaned_out') continue;
+                        const clause = Number(p.releaseClause) || 0; if (!clause || clause > maxClause) continue;
+                        out.push({ id: p.id, name: p.name, club, overall: p.overall, clause });
+                    }
+                }
+                out.sort((a, b) => b.overall - a.overall || a.clause - b.clause);
+                return out.slice(0, 10).filter(c => { try { return clauseAssess({ id: c.id, name: c.name, club: c.club }).ok; } catch (_) { return false; } });
+            }
+        };
+        const brief = StaffSync.buildBriefing(gameState, ctx);
+        const abs = (parseInt(String(gameState.currentSeason).split('/')[0], 10) || 2026) * 60 + (gameState.seasonType === 'preseason' ? 0 : (gameState.week || 0));
+        const n = StaffSync.newsFor(brief, gameState.staffBrief, abs);
+        n.lines.forEach(l => addNews(`[${StaffSync.roleLabel(l.role)}] ${l.text}`, 'info'));
+        // se guarda una versión ligera (sin objetos de jugador completos) para el panel y los efectos
+        const slim = x => JSON.parse(JSON.stringify(x, (k, v) => (k === 'player' ? undefined : v)));
+        gameState.staffBrief = { ...slim(brief), said: n.said };
+        gameState.staffBriefPlayers = Object.fromEntries(brief.needs.flatMap(nd => (nd.cover.targets || []).filter(t => t.player).map(t => [t.name, t.player])));
+        return gameState.staffBrief;
+    } catch (e) { console.error('[Reunión técnica]', e); return null; }
 }
 
 // Parón de selecciones: al llegar a la jornada del parón los convocados quedan no disponibles (se ve en Plantilla) y se ajusta el once.
@@ -4716,6 +4755,7 @@ if (typeof window !== 'undefined') {
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
     window.pcfSyncNationalities = () => { const n = syncNationalitiesFromCatalog(); if (n && typeof window.ui?.refreshUI === 'function') { try { window.ui.refreshUI(getViewState()); } catch (_) { /* */ } } return n; };
+    window.pcfStaffMeeting = () => runStaffMeeting();
     window.pcfIntl = { windowWeeks: NatTeams.windowWeeks, nextWindow: () => NatTeams.nextWindow(gameState), nationName: NatTeams.nationName };
 window.pcfEconomy = {
         clauseAssess, offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,

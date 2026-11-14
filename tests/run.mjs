@@ -25,6 +25,7 @@ const params = rng => ({ teamName: 'A', opponentName: 'B', teamLineup: L(75, 'A'
 
 const nat = await imp('nationalities.js');
 const intlMod = await imp('intl.js');
+const staffMod = await imp('staff-sync.js');
 const worldWith = (division, userOvr, others) => {
     const sq = (club, arr) => arr.map((o, i) => ({ id: club + i, name: club + ' ' + i, position: 'MC', age: 27, overall: o, salary: 5000, contractType: 'owned', contractYears: 3, club, releaseClause: 20e6, value: 5e6 }));
     const clubs = { T: { name: 'T', division, squad: sq('T', Array(16).fill(userOvr)), snapshot: { academy: [] }, balance: 50e6 } };
@@ -134,6 +135,37 @@ const tests = {
         assert.equal(s.squad.find(p => p.name === 'Viajero').nationality, 'AR', 'por nombre único si cambió de club');
         delete globalThis.getCachedTeamData;
     },
+    'cuerpo técnico: el segundo entrenador detecta el hueco, la cantera lo cubre y el secretario lo respalda'() {
+        const S = staffMod, layout = [{ pos: 'POR' }, { pos: 'DFC' }, { pos: 'DFC' }, { pos: 'LI' }, { pos: 'LD' }, { pos: 'MC' }, { pos: 'MC' }, { pos: 'MC' }, { pos: 'EXT' }, { pos: 'EXT' }, { pos: 'DC' }];
+        const mk = (pos, n, o = 74) => Array.from({ length: n }, (_, i) => ({ name: pos + i, position: pos, overall: o, age: 27, condition: 100, contractType: 'owned', contractYears: 3 }));
+        const squad = [...mk('POR', 2), ...mk('DFC', 4), ...mk('LI', 2), ...mk('LD', 2), ...mk('MC', 4), ...mk('EXT', 3), ...mk('DC', 1)];
+        const staff = { segundoEntrenador: { level: 3 }, entrenadorJuveniles: { level: 3 }, scout: { level: 4 }, secretario: { level: 3 }, medico: { level: 3 } };
+        const st = (over = {}) => ({ currentSeason: '2026/2027', seasonType: 'regular', week: 5, balance: 20e6, squad: JSON.parse(JSON.stringify(squad)), lineup: [], academy: [], staff, ...over });
+        const ctx = { layout, compat: { DC: ['DC', 'EXT', 'MCO'] } };
+        let b = S.buildBriefing(st({ academy: [{ name: 'Canterano', position: 'DC', overall: 68, potential: 82, age: 18 }] }), ctx);
+        const need = b.needs.find(n => n.pos === 'DC'); assert(need, 'detecta que solo hay un DC');
+        assert.deepEqual(need.chain.map(c => c.role), ['segundoEntrenador', 'entrenadorJuveniles', 'secretario']);
+        assert.equal(need.cover.kind, 'academy'); assert.equal(need.actions[0].type, 'promote'); assert(b.coverNames.includes('Canterano'));
+        // sin nadie en la cantera: el ojeador busca en el mercado y el secretario dice si se puede pagar
+        const market = [{ name: 'Fichable', position: 'DC', overall: 76, club: 'Otro', askingPrice: 5e6, transferListed: true }, { name: 'Carísimo', position: 'DC', overall: 90, club: 'Otro', askingPrice: 90e6 }];
+        b = S.buildBriefing(st(), { ...ctx, marketFor: () => market });
+        const n2 = b.needs.find(n => n.pos === 'DC'); assert.equal(n2.cover.kind, 'market');
+        assert(n2.chain.some(c => c.role === 'scout' && /Fichable/.test(c.text)) && n2.chain.some(c => c.role === 'secretario' && /asumible/.test(c.text)));
+        assert(!n2.chain.some(c => /Carísimo/.test(c.text)), 'no propone lo que no se puede pagar');
+        assert(b.targetNames.includes('Fichable'));
+        // sin ojeador, el segundo entrenador lo dice
+        b = S.buildBriefing(st({ staff: { segundoEntrenador: { level: 2 } } }), ctx);
+        assert(b.needs.find(n => n.pos === 'DC').chain.some(c => /No tenemos ojeador/.test(c.text)));
+        // lesión larga del único DC → entra el médico y el hueco es crítico
+        const inj = st(); inj.squad.find(p => p.position === 'DC').isInjured = true; inj.squad.find(p => p.position === 'DC').weeksOut = 6;
+        b = S.buildBriefing(inj, ctx); const n3 = b.needs.find(n => n.pos === 'DC');
+        assert.equal(n3.level, 'crit'); assert.equal(n3.cause, 'injury'); assert(n3.chain.some(c => c.role === 'medico' && /6 semanas/.test(c.text)));
+        // las noticias no se repiten antes de 6 semanas y no hay azar
+        const a = S.newsFor(b, null, 100), again = S.newsFor(b, { said: a.said }, 103), later = S.newsFor(b, { said: a.said }, 107);
+        assert(a.lines.length > 0 && again.lines.length === 0 && later.lines.length > 0, `${a.lines.length}/${again.lines.length}/${later.lines.length}`);
+        assert.equal(JSON.stringify(S.buildBriefing(inj, ctx)), JSON.stringify(b), 'determinista');
+        assert.deepEqual(S.synergies(st()), { recovery: false, scoutDeal: true, youthPlan: true });
+    },
     'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
         assert.equal(g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }).ok, true);
@@ -203,6 +235,7 @@ const tests = {
         const cfg = await imp('config.js'); const warn = console.warn; console.warn = () => {}; console.log = () => {};
         try {
             await g.selectTeamWithInitialSquad(cfg.TEAMS_DATA.primera[3], 'primera', 'career', {});
+            g.updateGameState({ staff: { segundoEntrenador: { name: 'S', level: 3 }, entrenadorJuveniles: { name: 'J', level: 3 }, scout: { name: 'O', level: 4 }, secretario: { name: 'T', level: 3 }, medico: { name: 'M', level: 3 }, fisio: { name: 'F', level: 3 } } });
             let windows = 0, weeks = 0; const seen = new Set();
             while (weeks < 60 && g.getGameState().currentSeason === '2026/2027') {
                 await g.simulateFullWeek(); weeks++;
@@ -210,6 +243,7 @@ const tests = {
             }
             const s = g.getGameState();
             assert.equal(windows, 3, 'parones: ' + windows);
+            assert(s.staffBrief && Array.isArray(s.staffBrief.needs), 'la reunión técnica se ha celebrado');
             assert(s.squad.every(p => !p._intlKey && !(p.isSuspended && p._suspCause === 'intl')), 'sin bloqueos al terminar');
             assert(Object.values(s.world.clubs).every(c => c.squad.every(p => !p._intlKey)), 'la IA tampoco');
             assert(Number.isFinite(s.balance) && s.squad.every(p => Number.isFinite(p.overall) && Number.isFinite(p.condition ?? 100)));
