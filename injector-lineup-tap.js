@@ -49,16 +49,21 @@
             btn = document.createElement('button');
             btn.id = 'pcfRotateBtn'; btn.type = 'button'; btn.className = 'btn';
             btn.addEventListener('click', () => {
+                if (!window.gameLogic.getGameState().staff?.segundoEntrenador) {
+                    (window.pcfNotify || alert)('Rotación automática', 'La rotación automática necesita un segundo entrenador. Contrátalo en Gestión → Empleados.');
+                    return;
+                }
                 const on = window.gameLogic.getGameState().autoRotate !== false;
                 window.gameLogic.updateGameState({ autoRotate: !on });
                 refreshRotateButton(document.getElementById('lineupMessage'));
             });
             msg.after(btn);
         }
-        const on = window.gameLogic?.getGameState?.().autoRotate !== false;
+        const hasCoach = !!window.gameLogic?.getGameState?.().staff?.segundoEntrenador;
+        const on = hasCoach && window.gameLogic?.getGameState?.().autoRotate !== false;
         btn.classList.toggle('on', on);
-        btn.textContent = on ? '🔄 Rotación automática: ACTIVADA' : '🔄 Rotación automática: DESACTIVADA';
-        btn.title = 'Si está activada, antes de cada partido un titular fatigado cede su puesto a un suplente de su posición que rinda ahora más (media × condición), como hace la IA.';
+        btn.textContent = !hasCoach ? '🔄 Rotación automática: SIN SEGUNDO ENTRENADOR' : (on ? '🔄 Rotación automática: ACTIVADA' : '🔄 Rotación automática: DESACTIVADA');
+        btn.title = 'Requiere segundo entrenador (cuanto mayor su nivel, antes detecta la fatiga). Si está activada, antes de cada partido un titular fatigado cede su puesto a un suplente de su posición que rinda ahora más (media × condición), como hace la IA.';
     }
 
     // En móvil los tres botones (cambio, rotación, automática) viven en la cabecera, junto al título y «Cerrar»;

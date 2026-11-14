@@ -643,7 +643,7 @@
             isHome: isHome !== false, preview: true, teamLineup: myLineup, opponentLineup: rivalXI,
             teamName: s.team, opponentName: rivalName, teamBench: window.selectMatchBench(s.squad || [],myLineup),
             opponentBench: window.selectMatchBench(rivalSquad,rivalXI), teamInjuryRisk: window.matchInjuryRisk(s),
-            teamPlan: s.matchPlan || 'hold', opponentPlan: 'react', teamAutoSubs: s.autoSubstitutions !== false, teamFormation: s.formation || '433',
+            teamPlan: s.matchPlan || 'hold', opponentPlan: 'react', teamAutoSubs: s.autoSubstitutions !== false, teamCoachLevel: window.pcfSecondCoachLevel ? window.pcfSecondCoachLevel() : 3, teamFormation: s.formation || '433',
             teamMentality: s.mentality || 'balanced', opponentFormation: window.chooseAIFormation(rivalSquad),
             opponentMentality: 'balanced', teamForm: window.averageMatchForm(myLineup),
             opponentForm: window.averageMatchForm(rivalXI), homeIsUser: true, awayIsUser: false });

@@ -36,7 +36,7 @@ function makeSide(p, prefix, index) {
     return {team,formation,mentality:p[prefix+'Mentality']||'balanced',press:p[prefix+'Press']||'medium',
         instruction:p[prefix+'Instruction']||'none',plan:p[prefix+'Plan']||'hold',
         form:Number(p[prefix+'Form'] ?? 75),attackMod:p[prefix+'AttackMod']||1,defenseMod:p[prefix+'DefenseMod']||1,
-        autoSubs:p.autoSubs!==false && p[prefix+'AutoSubs']!==false,changes:0,active,bench,records,goals:0,
+        autoSubs:p.autoSubs!==false && p[prefix+'AutoSubs']!==false,coachLevel:Number.isFinite(Number(p[prefix+'CoachLevel']))?Number(p[prefix+'CoachLevel']):3,changes:0,active,bench,records,goals:0,
         shots:0,onTarget:0,corners:0,fouls:0,offsides:0,passes:0,completed:0,saves:0,control:0,xg:0};
 }
 function skill(player, attrs) {
@@ -95,11 +95,19 @@ function shotModel(a,b,la,lb,ta,tb,home,k=1) {
     const quality=clamp(.112*Math.exp((la.attack-lb.defense)*.007*k),.035,.25);
     return {shots,quality};
 }
-function substitute(side,slot,minute,timeline,reason) {
+// Cambios por fatiga según el nivel del segundo entrenador (la IA usa el nivel 3 de siempre).
+const FATIGUE_WINDOWS={1:[82],2:[72,82],3:[62,72,82],4:[60,70,80],5:[55,65,75,85]};
+const FATIGUE_LIMIT={1:80,2:84,3:88,4:90,5:92};
+const SUB_SLIP={1:.30,2:.15};
+function substitute(side,slot,minute,timeline,reason,rng=Math.random) {
     if(!side.autoSubs || side.changes>=5)return false;
+    // Las sustituciones forzadas (lesión, portero expulsado) las hace cualquiera; las tácticas, solo con segundo entrenador.
+    if(reason==='fatiga' && side.coachLevel<1)return false;
     const off=side.active[slot],pos=layout(side.formation)[slot]?.pos||off?.position||'MC';
     const candidates=side.bench.filter(p=>!p.removed && p.fitness>35 && (pos==='POR'?p.position==='POR':p.position!=='POR'));
-    const on=candidates.sort((a,b)=>(skill(b,['RE','AT','DF'])*compatible(b,pos)*(.62+.38*b.fitness/100))-(skill(a,['RE','AT','DF'])*compatible(a,pos)*(.62+.38*a.fitness/100)))[0];
+    const ranked=candidates.sort((a,b)=>(skill(b,['RE','AT','DF'])*compatible(b,pos)*(.62+.38*b.fitness/100))-(skill(a,['RE','AT','DF'])*compatible(a,pos)*(.62+.38*a.fitness/100)));
+    // Un segundo entrenador de poco nivel a veces elige al segundo mejor
+    const on=(reason==='fatiga' && ranked.length>1 && rng()<(SUB_SLIP[side.coachLevel]||0))?ranked[1]:ranked[0];
     if(!on)return false;
     if(off){off.active=false;off.removed=true;}
     on.active=true;on.entered=true;on.slot=slot;side.active[slot]=on;side.bench=side.bench.filter(p=>p!==on);side.changes++;
@@ -175,9 +183,9 @@ export function simulateFootballMatch(params = {}) {
                 const hurt=choose(s.active.filter(Boolean),p=>1+(100-p.fitness)/35,rng);
                 if(hurt)injury(s,hurt,minute,timeline,rng);
             }
-            if([62,72,82].includes(minute)){
+            if((FATIGUE_WINDOWS[s.coachLevel]||[]).includes(minute)){
                 const tired=s.active.map((p,i)=>({p,i})).filter(x=>x.p&&x.p.position!=='POR').sort((x,y)=>x.p.fitness-y.p.fitness)[0];
-                if(tired&&tired.p.fitness<88)substitute(s,tired.i,minute,timeline,'fatiga');
+                if(tired&&tired.p.fitness<(FATIGUE_LIMIT[s.coachLevel]||88))substitute(s,tired.i,minute,timeline,'fatiga',rng);
             }
         }
         const lines=state.sides.map(lineStrength),ta=tactics(a,b,lines[0],lines[1]),tb=tactics(b,a,lines[1],lines[0]);

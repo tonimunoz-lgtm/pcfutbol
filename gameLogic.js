@@ -620,10 +620,24 @@ function emergencyCallUp(position) {
 
 // Sustituye en el once a los lesionados, sancionados, cedidos o vendidos.
 // Si no hay portero o no llega a 11, hace una convocatoria de urgencia.
-function autoFixLineup({ announce = true } = {}) {
+// Nivel del segundo entrenador contratado (0 = no hay). Las automatizaciones del once dependen de él.
+function secondCoachLevel(state = gameState) {
+    const c = state && state.staff && state.staff.segundoEntrenador;
+    return c ? Math.max(1, Math.min(5, Number(c.level) || 1)) : 0;
+}
+// Probabilidad de que un segundo entrenador novato elija al segundo mejor candidato en vez del mejor.
+const COACH_MISTAKE = { 1: .25, 2: .12, 3: 0, 4: 0, 5: 0 };
+
+// required = true: partido sin validación previa (eliminatorias, copa). Sin segundo entrenador se cubren
+// las bajas de forma básica y se avisa; en liga, sin segundo entrenador, el once lo arregla el usuario.
+function autoFixLineup({ announce = true, required = false } = {}) {
     syncLineupFromSquad();
+    const level = secondCoachLevel();
+    if (level === 0 && !required) return [];
     const layout = getFormationLayout(gameState.formation || '433');
     const changes = [];
+    const condOf = x => Math.max(1, Math.min(100, x.condition ?? 100));
+    const rate = x => level >= 3 ? (x.overall || 0) * (.62 + .38 * condOf(x) / 100) : (x.overall || 0);
     // Hueco por cada puesto
     const slots = layout.map((slot, i) => gameState.lineup[i] || null);
     slots.forEach((p, i) => {
@@ -631,8 +645,11 @@ function autoFixLineup({ announce = true } = {}) {
         const used = new Set(slots.filter(x => x && isAvailable(x)).map(x => x.name));
         const want = layout[i].pos;
         const pool = gameState.squad.filter(x => isAvailable(x) && !used.has(x.name))
-            .sort((a, b) => (b.overall || 0) - (a.overall || 0));
-        let cand = pool.find(x => x.position === want)
+            .sort((a, b) => rate(b) - rate(a));
+        const exactList = pool.filter(x => x.position === want);
+        // Un segundo entrenador de poco nivel a veces se equivoca y pone al segundo mejor
+        const slip = level > 0 && Math.random() < (COACH_MISTAKE[level] || 0) && exactList.length > 1;
+        let cand = (slip ? exactList[1] : exactList[0])
             || pool.find(x => want !== 'POR' && x.position !== 'POR' && (POSITION_COMPATIBILITY[want] || []).includes(x.position))
             || pool.find(x => (want === 'POR') === (x.position === 'POR'));
         if (!cand) cand = emergencyCallUp(want === 'POR' ? 'POR' : null);
@@ -645,11 +662,13 @@ function autoFixLineup({ announce = true } = {}) {
     });
     gameState.lineup = slots.filter(Boolean);
     if (announce && changes.length) {
-        addNews(`🔁 [Segundo Entrenador] Cambios en el once por bajas: ${changes.join(', ')}.`, 'info');
+        addNews(level > 0
+            ? `🔁 [Segundo Entrenador] Cambios en el once por bajas: ${changes.join(', ')}.`
+            : `⚠️ Sin segundo entrenador nadie ha revisado el once: se han cubierto las bajas por defecto (${changes.join(', ')}).`, level > 0 ? 'info' : 'warning');
     }
-    // Rotación automática (se apaga con gameState.autoRotate=false): descansa a los titulares fatigados.
-    if (gameState.autoRotate !== false && gameState.seasonType !== 'preseason') {
-        const rested = rotateTiredPlayers();
+    // Rotación automática (se apaga con gameState.autoRotate=false): solo con segundo entrenador.
+    if (level > 0 && gameState.autoRotate !== false && gameState.seasonType !== 'preseason') {
+        const rested = rotateTiredPlayers(level);
         if (announce && rested.length) addNews(`🔄 [Rotación] ${rested.join('; ')}.`, 'info');
         changes.push(...rested);
     }
@@ -659,17 +678,20 @@ function autoFixLineup({ announce = true } = {}) {
 // Mismo criterio que usa la IA al elegir once: rendimiento = media × (0,62 + 0,38 × condición).
 // Un titular cede su puesto si un suplente disponible, de su posición (o compatible), rinde ahora
 // al menos 2 puntos más. Así el usuario no queda en desventaja por no rotar a mano.
-function rotateTiredPlayers() {
+// Cuanto mejor es el segundo entrenador, antes detecta la fatiga y con menos ventaja del suplente rota.
+const ROTATION_BY_LEVEL = { 1: { cond: 70, diff: 4 }, 2: { cond: 78, diff: 3 }, 3: { cond: 85, diff: 2 }, 4: { cond: 90, diff: 2 }, 5: { cond: 93, diff: 1.5 } };
+function rotateTiredPlayers(level = secondCoachLevel()) {
+    const cfg = ROTATION_BY_LEVEL[level] || ROTATION_BY_LEVEL[3];
     const layout = getFormationLayout(gameState.formation || '433');
     const lineup = gameState.lineup, out = [];
     if (!Array.isArray(lineup) || lineup.length !== layout.length) return out;
     const cond = p => Math.max(1, Math.min(100, p.condition ?? 100));
     const score = x => (x.overall || 0) * (.62 + .38 * cond(x) / 100);
     const inXI = new Set(lineup.map(p => p.name));
-    const order = lineup.map((p, i) => ({ p, i })).filter(x => cond(x.p) < 90).sort((a, b) => score(a.p) - score(b.p));
+    const order = lineup.map((p, i) => ({ p, i })).filter(x => cond(x.p) < cfg.cond).sort((a, b) => score(a.p) - score(b.p));
     for (const { p, i } of order) {
         const want = layout[i].pos;
-        const pool = gameState.squad.filter(x => isAvailable(x) && !inXI.has(x.name) && score(x) >= score(p) + 2 &&
+        const pool = gameState.squad.filter(x => isAvailable(x) && !inXI.has(x.name) && score(x) >= score(p) + cfg.diff &&
             ((want === 'POR') === (x.position === 'POR')));
         const exact = pool.filter(x => x.position === want);
         const compat = pool.filter(x => x.position !== want && want !== 'POR' && (POSITION_COMPATIBILITY[want] || []).includes(x.position));
@@ -2140,6 +2162,7 @@ function matchParameters(home, away, homeName, awayName, state, options = {}) {
         teamMentality: home.mentality, opponentMentality: away.mentality,
         teamForm: averageForm(home.lineup), opponentForm: averageForm(away.lineup),
         teamPlan: home.isUser ? state.matchPlan || 'hold' : 'react', opponentPlan: away.isUser ? state.matchPlan || 'hold' : 'react',
+        teamCoachLevel: home.isUser ? secondCoachLevel(state) : 3, opponentCoachLevel: away.isUser ? secondCoachLevel(state) : 3,
         teamAutoSubs: home.isUser ? state.autoSubstitutions !== false : true,
         opponentAutoSubs: away.isUser ? state.autoSubstitutions !== false : true,
         teamInjuryRisk: home.isUser ? matchInjuryRisk(state) : matchInjuryRisk(state.world?.clubs[homeName]?.snapshot||{}),
@@ -2907,7 +2930,7 @@ async function playoffStep() {
     const run = gameState.playoffRun;
     if (!run || run.done) return;
     syncLineupFromSquad();
-    autoFixLineup();
+    autoFixLineup({ required: true });
     const me = gameState.team;
     const t = userTie(run);
     if (!t) return;
@@ -3659,7 +3682,7 @@ function staffEffectText(role, level) {
         case 'fisio': return `Reduce el riesgo de lesión un ${pct(lv * 5)} y da un ${pct(lv * 10)} de probabilidad de recuperar a un lesionado una semana antes.`;
         case 'entrenador': return `Reduce el riesgo de lesión un ${pct(lv * 8)} (sin él, +20 %) y multiplica la progresión anual de los jóvenes ×${eff.training ?? 1} (sin él, ×0,8).`;
         case 'entrenadorPorteros': return `Mejora el entrenamiento de los porteros en EN, CA y DF (nivel ${lv}).`;
-        case 'segundoEntrenador': return `Cubre automáticamente las bajas del once, avisa de alineaciones inválidas y de carencias en la plantilla. Con nivel alto, mejores sustitutos.`;
+        case 'segundoEntrenador': return `Sin él no hay alineación automática, rotaciones ni cambios por fatiga. Con él: cubre las bajas del once (nivel ${lv}: ${lv >= 3 ? 'sin errores y atento a la fatiga' : 'a veces elige mal'}), rota a los cansados desde ${ROTATION_BY_LEVEL[lv].cond} % de condición, hace ${({1:1,2:2,3:3,4:3,5:4})[lv]} ronda${lv > 1 ? 's' : ''} de cambios por fatiga en el partido, ajusta la mentalidad según el rival${lv >= 3 ? ' y elige la formación' : ''}.`;
         case 'analista': return `Informe del próximo rival antes de cada partido: nivel 1 datos básicos; nivel ${lv >= 4 ? lv + ' formación y mentalidad recomendadas' : lv + ' datos de ataque y defensa'}.`;
         case 'scout': return `Muestra ${30 + lv * 10} jugadores en el mercado y encuentra promesas de media ${35 + lv * 5}-${50 + lv * 5}.`;
         case 'secretario': return `Mejora un ${pct(Math.max(0, ((eff.negotiation ?? 1) - 0.5) * 15))} la probabilidad de cerrar fichajes y renovaciones, y avisa de precios de venta excesivos.`;
@@ -4337,6 +4360,7 @@ export {
     getSeasonCalendar,
     pickBestXI,
     autoFixLineup,
+    secondCoachLevel,
     sortStandings,
     divisionName
 }; 
@@ -4414,6 +4438,7 @@ if (typeof window !== 'undefined') {
         canSell: (p) => canSellPlayer(p)
     };
     window.autoFixLineup = autoFixLineup;
+    window.pcfSecondCoachLevel = secondCoachLevel;
     // Descanso parcial entre partidos de una misma semana (copa/Europa): 3-4 días de recuperación.
     window.pcfMidweekRecovery = (points = 15) => { for (const p of gameState.squad || []) p.condition = Math.min(100, (p.condition ?? 100) + points); };
     // Para copas y competiciones: fuerza y plantilla reales de un equipo español

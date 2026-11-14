@@ -464,7 +464,7 @@
                 <option value="attack" ${s.matchPlan==='attack'?'selected':''}>Atacar desde el minuto 60</option>
                 <option value="protect" ${s.matchPlan==='protect'?'selected':''}>Reaccionar si perdemos y proteger ventaja desde el 75</option>
             </select></label>
-            <label><input type="checkbox" ${s.autoSubstitutions!==false?'checked':''} onchange="window._setFootballAutoSubs(this.checked)"> Sustituciones automáticas por lesión y fatiga (hasta cinco)</label>
+            <label><input type="checkbox" ${s.autoSubstitutions!==false?'checked':''} onchange="window._setFootballAutoSubs(this.checked)"> Sustituciones automáticas (hasta cinco): por lesión siempre; por fatiga solo con segundo entrenador, según su nivel</label>
             <p>La presión alta desgasta más. El plan y los cambios se aplican durante el encuentro.</p>
         </div>
         <!-- BALANCE RESULTANTE -->

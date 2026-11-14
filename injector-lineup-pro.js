@@ -111,7 +111,7 @@
         const bad = (st.lineup || []).map(p => p && byName.get(p.name)).filter(p => p && (p.isInjured || p.isSuspended));
         if (msg && bad.length) {
             msg.className = 'alert alert-warning';
-            msg.innerHTML = `⚠️ No pueden jugar: ${bad.map(p => `<strong>${esc(p.name)}</strong> (${esc(statusOf(p).text.toLowerCase())})`).join(', ')}. Cámbialos o pulsa «Alineación automática».`;
+            msg.innerHTML = `⚠️ No pueden jugar: ${bad.map(p => `<strong>${esc(p.name)}</strong> (${esc(statusOf(p).text.toLowerCase())})`).join(', ')}. ${st?.staff?.segundoEntrenador ? 'Cámbialos o pulsa «Alineación automática».' : 'Cámbialos a mano: sin segundo entrenador no hay alineación automática.'}`;
         }
         ensureBar();
     }
@@ -191,6 +191,10 @@
         if (!st) return;
         const sc = st.staff?.segundoEntrenador;
         const level = sc?.level || 0;
+        if (!sc) {
+            (window.pcfNotify || alert)('Alineación automática', 'Necesitas un segundo entrenador para usar la alineación automática.\nContrátalo en Gestión → Empleados. Cuanto mayor sea su nivel, mejor elegirá el once, la formación y la mentalidad según el rival.');
+            return;
+        }
         const before = new Set((st.lineup || []).map(p => p?.name));
         const eff = (xi, f) => window.calculateTeamEffectiveOverallImproved ? window.calculateTeamEffectiveOverallImproved(xi, f) : 0;
 

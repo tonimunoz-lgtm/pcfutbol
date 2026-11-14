@@ -1186,7 +1186,7 @@ function hookCupSimulateWeek(){
         try { window.pcfMidweekRecovery?.(15); } catch (e) { /* */ }
         // 0. Igual que en liga: sustituye en el once a lesionados/sancionados antes de validar
         //    (sin esto, un sancionado en el once impedía jugar la copa una y otra vez).
-        try { window.gameLogic.autoFixLineup?.(); } catch (e) { console.warn('autoFixLineup (copa):', e.message); }
+        try { window.gameLogic.autoFixLineup?.({ required: true }); } catch (e) { console.warn('autoFixLineup (copa):', e.message); }
 
         // 1. Anuncio
         await showAnnouncementModal(pending);
