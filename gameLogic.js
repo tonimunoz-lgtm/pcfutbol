@@ -91,13 +91,30 @@ const gameState = {
 const INITIAL_GAME_STATE = JSON.parse(JSON.stringify(gameState));
 let stateGeneration=0;
   
+// El foco de entrenamiento guarda además el id/nombre del jugador: si la plantilla cambia de orden
+// (fichajes, ventas, ascensos) el índice se recalcula en vez de apuntar a otro jugador.
+function syncTrainingFocus() {
+    const f = gameState.trainingFocus, squad = gameState.squad;
+    if (!f || !Array.isArray(squad) || f.playerIndex === -1 || f.playerIndex === undefined) return;
+    if (f.playerId === undefined && f.playerName === undefined) {            // partida antigua: se fija ahora
+        const p = squad[f.playerIndex];
+        if (p) { f.playerId = p.id ?? null; f.playerName = p.name; }
+        return;
+    }
+    const idx = squad.findIndex(p => (f.playerId != null && p.id === f.playerId) || (f.playerId == null && p.name === f.playerName));
+    if (idx >= 0) f.playerIndex = idx;
+    else gameState.trainingFocus = { playerIndex: -1, attribute: null };      // el jugador ya no está en la plantilla
+}
+
 function getViewState() {
+    syncTrainingFocus();
     // UI snapshots deliberately omit the global world; updates remain partial.
     const { world, ...view } = gameState;
     return JSON.parse(JSON.stringify(view));
 }
 
 function getGameState() {
+    syncTrainingFocus();
     captureWorldClub();
     return JSON.parse(JSON.stringify(gameState));  
 }  
@@ -111,7 +128,7 @@ function updateGameState(newState) {
         const incomingIds = new Set(newState.newsFeed.map(n => n?.id).filter(Boolean));
         const fresh = (gameState.newsFeed || []).filter(n => n?.id && n.id > incomingMax && !incomingIds.has(n.id));
         if (fresh.length) {
-            newState = { ...newState, newsFeed: [...fresh, ...newState.newsFeed].slice(0, 40),
+            newState = { ...newState, newsFeed: [...fresh, ...newState.newsFeed].slice(0, NEWS_CAP),
                 unreadNewsCount: Math.max(newState.unreadNewsCount || 0, gameState.unreadNewsCount || 0) };
         }
     }
@@ -143,13 +160,18 @@ function replaceGameState(saved) {
     return getGameState();
 }
 
+const NEWS_CAP = 150;
 let newsSeq = Date.now();
   
 function addNews(message, type = 'info', read = false) {  
     gameState.newsFeed.unshift({ id: ++newsSeq, week: gameState.week, message: message, timestamp: Date.now(), type: type, read: read });  
-    if (gameState.newsFeed.length > 40) {  
-        gameState.newsFeed.pop();  
-    }  
+    if (gameState.newsFeed.length > NEWS_CAP) {
+        // Al recortar se descartan antes las noticias leídas y poco importantes; avisos/errores sin leer se conservan.
+        let idx = -1;
+        for (let i = gameState.newsFeed.length - 1; i >= 0; i--) { const n = gameState.newsFeed[i]; if (n.read && n.type !== 'error' && n.type !== 'success') { idx = i; break; } }
+        if (idx < 0) for (let i = gameState.newsFeed.length - 1; i >= 0; i--) { if (gameState.newsFeed[i].type === 'info' || gameState.newsFeed[i].type === 'system') { idx = i; break; } }
+        gameState.newsFeed.splice(idx >= 0 ? idx : gameState.newsFeed.length - 1, 1);
+    }
     if (type !== 'system' && !read) { // Solo incrementar contador si no es una noticia del sistema  
         gameState.unreadNewsCount++;  
     }
@@ -1020,6 +1042,13 @@ function canSellPlayer(p) {
     return { ok: false, message: `${p.name} acaba de llegar al club: no puedes ponerlo a la venta hasta dentro de ${left} jornada(s).` };
 }
 
+// ¿Puede el club incorporar a un jugador ahora mismo? Se comprueba ANTES de cobrar nada.
+function canReceivePlayer(extraLeaving = 0) {
+    if ((gameState.sanctions?.banLeft || 0) > 0) return { ok: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas. No se ha cobrado nada.' };
+    if ((gameState.squad || []).length - extraLeaving >= 25) return { ok: false, message: 'La plantilla está completa (25 jugadores max). Vende o cede a alguien antes. No se ha cobrado nada.' };
+    return { ok: true };
+}
+
 function signPlayer(player) {  
     if ((gameState.sanctions?.banLeft || 0) > 0) {
         return { success: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas.' };
@@ -1247,6 +1276,10 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             // FICHAJE DIRECTO - Sin negociación con club. La cláusula se cobra ahora.
             const clause = Number(player.clauseAmount) || 0;
             const bonusPay = Math.max(0, Number(gameState.playerOffer?.bonus) || 0);
+            const canReceive = canReceivePlayer();
+            if (!canReceive.ok) { gameState.playerOffer = null; return { success: false, message: canReceive.message, type: 'error' }; }
+            const balanceBeforeClause = gameState.balance, purchasesBeforeClause = gameState.playerPurchases || 0,
+                movementsBeforeClause = (gameState.seasonMovements || []).length;
             if (gameState.balance < clause + bonusPay) {
                 return { success: false, message: `No tienes dinero para la cláusula (${clause.toLocaleString('es-ES')}€) y la prima de fichaje (${bonusPay.toLocaleString('es-ES')}€).`, type: 'error' };
             }
@@ -1273,14 +1306,16 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
                 contractYears: 3 + Math.floor(Math.random() * 3) // 3-5 años
             };
             
+            const signedClause = signPlayer(newPlayer);
+            if (!signedClause || !signedClause.success) {
+                // Reserva fallida: se devuelve TODO lo cobrado (valores absolutos, sin riesgo de doble reembolso).
+                gameState.balance = balanceBeforeClause; gameState.playerPurchases = purchasesBeforeClause;
+                if (Array.isArray(gameState.seasonMovements)) gameState.seasonMovements = gameState.seasonMovements.slice(0, movementsBeforeClause);
+                return { success: false, message: ((signedClause && signedClause.message) || 'No se pudo completar el fichaje') + ' No se ha cobrado nada.', type: 'error' };
+            }
             endNegotiation(true);
-            
-            addNews(
-                `✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`,
-                'success'
-            );
-            
-            return signPlayer(newPlayer);
+            addNews(`✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`, 'success');
+            return signedClause;
         } else {
             // Continuar a negociación con club
             gameState.negotiationStep = 2;  
@@ -1312,6 +1347,9 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
     const leaving = (playerExchange || []).length;
     if (gameState.squad.length - leaving + 1 > 25) {
         return { success: false, message: 'No tienes hueco en la plantilla (máximo 25). Vende o cede a alguien antes.', type: 'error' };
+    }
+    if ((gameState.sanctions?.banLeft || 0) > 0) {
+        return { success: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas. No se ha cobrado nada.', type: 'error' };
     }
 
     if (player.loanListed && isLoan) {  
@@ -1395,6 +1433,11 @@ playerExchange.forEach(pName => {
             };  
             endNegotiation(true);  
             const signed = signPlayer(newPlayer);
+            if (!signed || !signed.success) {
+                // signPlayer puede fallar sin lanzar excepción: se devuelve lo cobrado (valores absolutos).
+                gameState.balance = balanceBefore; gameState.playerPurchases = purchasesBefore;
+                return { success: false, message: ((signed && signed.message) || 'No se pudo completar el fichaje') + ' No se ha cobrado nada.', type: 'error' };
+            }
             if (signed && signed.success && bonusToPay > 0) {
                 gameState.balance -= bonusToPay;
                 logMovement('signing', `Prima de fichaje: ${newPlayer.name}`, -bonusToPay);
@@ -1435,11 +1478,13 @@ function setTrainingFocus(playerIndex, attribute) {
         return { success: false, message: 'Atributo no válido para entrenar.' };  
     }  
   
-    gameState.trainingFocus = { playerIndex, attribute };  
+    const focused = gameState.squad[playerIndex];
+    gameState.trainingFocus = { playerIndex, attribute, playerId: focused.id ?? null, playerName: focused.name };  
     return { success: true, message: `Entrenamiento enfocado en ${attribute} para ${gameState.squad[playerIndex].name}.` };  
 }  
   
 function applyWeeklyTraining() {  
+    syncTrainingFocus();
     if (gameState.trainingFocus.playerIndex === -1 || !gameState.trainingFocus.attribute) {  
         return { success: false, message: 'No hay un foco de entrenamiento establecido.' };  
     }  
@@ -2373,6 +2418,9 @@ async function processMatch(homeTeam, awayTeam, gameState) {
             if (!inXI.has(p.name) && p.form !== undefined) p.form += p.form > 72 ? -1 : (p.form < 68 ? 1 : 0);
         });
         
+        // La prima prometida se paga y se consume en ESTE partido (antes solo se consumía en copa)
+        if (Number(gameState.fd_bonus) > 0) gameState.fd_bonus = 0;
+
         // Actualizar popularidad
         if (ourGoals > rivalGoals) {
             gameState.popularity = Math.min(100, gameState.popularity + 2);
@@ -2953,6 +3001,7 @@ async function playoffStep() {
     const r = await playMatchImproved(home, away, gameState, {
         knockout: legNo === 1, aggregate: firstLeg ? [firstLeg.ag, firstLeg.hg] : [0,0], competition: 'playoff'
     });
+    if (Number(gameState.fd_bonus) > 0) gameState.fd_bonus = 0;   // prima consumida por este partido de playoff
     const hg=r.homeGoals,ag=r.awayGoals,extraTime=r.extraTime,penalties=r.penalties;
     let processed={advances:null,isLeg:true};
     if(legNo===1){
@@ -3175,11 +3224,13 @@ async function endSeason() {
     let summary;
     try {
         const pre = pr && pr.done ? { tables: pr.tables, playoffs: pr.results } : null;
-        gameState.playoffRun = null;
         summary = await resolveSeasonEnd(pre);
+        gameState.playoffRun = null;
     } catch (e) {
+        // Antes se seguía con un resumen vacío (sin ascensos ni descensos y sin avisar). Ahora se aborta:
+        // SimGuard restaura el estado anterior y avisa al jugador, que puede reintentar.
         console.error('Error resolviendo el fin de temporada:', e);
-        summary = { season: gameState.currentSeason, userDivision: currentDivision, userPosition: 0, userMove: null, tables: {}, playoffs: {}, moves: [] };
+        throw new Error('No se pudo cerrar la temporada (' + String((e && e.message) || e).slice(0, 120) + ')');
     }
 
     const nextDivisionKey = summary.userMove ? summary.userMove.to : currentDivision;
