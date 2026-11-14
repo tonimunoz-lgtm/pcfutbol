@@ -1262,17 +1262,26 @@ function startNegotiation(player) {
     gameState.playerOffer = null;  
     gameState.clubOffer = null;  
   
-    gameState.negotiatingPlayer = player.isFreeAgent || player.clausePaid ? { ...player } : normalizeMarketPlayer(player);
+    if (player.isFreeAgent || player.clausePaid) {
+        // Jugadores de clubes del mundo o agentes libres: pueden venir sin valor/salario/potencial (la ventana de negociación los necesita)
+        const c = { ...player };
+        if (!Number.isFinite(Number(c.value))) c.value = marketValue(c);
+        if (!Number.isFinite(Number(c.salary)) || c.salary <= 0) c.salary = expectedSalary(c, teamDivision(c.club) || gameState.division);
+        if (c.potential === undefined) { try { ensurePotential(c); } catch (_) {} }
+        if (c.potential === undefined) c.potential = c.overall;
+        gameState.negotiatingPlayer = c;
+    } else gameState.negotiatingPlayer = normalizeMarketPlayer(player);
     gameState.negotiationStep = 1;  
   
     return { success: true, message: `Iniciando negociación con ${player.name}.` };  
 }  
   
-function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent, offeredShirt) {  
+function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, offeredMerchPercent, offeredTicketPercent, offeredShirt, offeredAgentFee) {  
     const player = gameState.negotiatingPlayer;  
     if (!player) return { success: false, message: 'No hay un jugador en negociación activa.' };  
   
     offeredSalary = Number(offeredSalary);
+    offeredAgentFee = player.clausePaid ? Math.max(0, Number(offeredAgentFee) || 0) : 0;   // comisión de intermediarios: solo en fichajes por cláusula
     offeredMerchPercent = Math.max(0, Math.min(100, Number(offeredMerchPercent) || 0));
     offeredTicketPercent = Math.max(0, Math.min(100, Number(offeredTicketPercent) || 0));
     if (!Number.isFinite(offeredSalary) || offeredSalary <= 0) return { success: false, message: 'Indica un salario semanal positivo.' };
@@ -1294,6 +1303,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
     // La prima es un importe (€, pago único al firmar). Un booleano antiguo equivale a 10 semanas de salario.
     offeredBonus = typeof offeredBonus === 'number' ? Math.max(0, offeredBonus) : (offeredBonus ? Math.round(offeredSalary * 10) : 0);
     if (offeredBonus > 0) acceptanceChance += 0.05 + Math.min(0.10, offeredBonus / (offeredSalary * 52));
+    if (offeredAgentFee > 0) acceptanceChance += Math.min(0.12, offeredAgentFee / (offeredSalary * 26) * 0.12);   // los intermediarios empujan: 26 semanas de sueldo = +0,12
     if (offeredCar) acceptanceChance += 0.05;  
     if (offeredHouse) acceptanceChance += 0.05;  
     if (offeredMerchPercent) acceptanceChance += 0.03;  
@@ -1347,12 +1357,16 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             if (!assess.ok) { gameState.playerOffer = null; endNegotiation(); return { success: false, message: assess.reasons.join(' ') + ' No se ha cobrado nada.', type: 'error' }; }
             const balanceBeforeClause = gameState.balance, purchasesBeforeClause = gameState.playerPurchases || 0,
                 movementsBeforeClause = (gameState.seasonMovements || []).length;
-            if (gameState.balance < clause + bonusPay) {
+            if (gameState.balance < clause + bonusPay + offeredAgentFee) {
                 return { success: false, message: `No tienes dinero para la cláusula (${clause.toLocaleString('es-ES')}€) y la prima de fichaje (${bonusPay.toLocaleString('es-ES')}€).`, type: 'error' };
             }
             if (bonusPay > 0) {
                 gameState.balance -= bonusPay;
                 logMovement('signing', `Prima de fichaje: ${player.name}`, -bonusPay);
+            }
+            if (offeredAgentFee > 0) {
+                gameState.balance -= offeredAgentFee;
+                logMovement('signing', `Comisión de intermediarios: ${player.name}`, -offeredAgentFee);
             }
             if (clause > 0) {
                 if (gameState.balance < clause) {

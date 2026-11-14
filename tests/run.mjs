@@ -48,6 +48,17 @@ const tests = {
         assert(s.world.clubs.Rival.squad.length >= 20, 'el club vendedor repone plantilla: ' + s.world.clubs.Rival.squad.length);
         assert.equal(s.world.clubs.Rival.balance, 1e7 + 40e6, 'el vendedor cobra la cláusula');
     },
+    'cláusula: la comisión de intermediarios mejora la respuesta, se cobra al firmar y el jugador sin "value" no rompe la ventana'() {
+        const st = worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]); g.replaceGameState(st);
+        const base = () => { const p = { ...g.getGameState().world.clubs.Rival.squad[0] }; delete p.value; return { ...p, clausePaid: true, clauseAmount: 20e6, isFreeAgent: false }; };
+        g.startNegotiation(base());
+        const np = g.getGameState().negotiatingPlayer; assert(Number.isFinite(np.value) && Number.isFinite(np.salary) && np.potential !== undefined, 'campos normalizados');
+        let low = 5600; // algo por debajo de lo que pide
+        const no = g.offerToPlayer(low, 0, 0, 0, 0, 0, undefined, 0); assert.equal(no.success, false); assert(no.neededSalary !== undefined);
+        g.startNegotiation(base()); const yes = g.offerToPlayer(low, 0, 0, 0, 0, 0, undefined, low * 26);
+        assert.equal(yes.success, true, yes.message);
+        assert.equal(g.getGameState().balance, 100e6 - 20e6 - low * 26, 'cláusula + comisión');
+    },
     'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
         assert.equal(g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }).ok, true);

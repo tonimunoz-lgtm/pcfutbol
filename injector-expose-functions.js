@@ -78,15 +78,15 @@
             document.getElementById('negotiationPlayerPosition').textContent = player.position;
             document.getElementById('negotiationPlayerAge').textContent = player.age;
             document.getElementById('negotiationPlayerOverall').textContent = player.overall;
-            document.getElementById('negotiationPlayerPotential').textContent = player.potential;
-            document.getElementById('negotiationPlayerCurrentSalary').textContent = player.salary.toLocaleString('es-ES');
-            document.getElementById('negotiationPlayerValue').textContent = player.value.toLocaleString('es-ES');
+            document.getElementById('negotiationPlayerPotential').textContent = player.potential ?? player.overall ?? '-';
+            document.getElementById('negotiationPlayerCurrentSalary').textContent = (player.salary ?? 0).toLocaleString('es-ES');
+            document.getElementById('negotiationPlayerValue').textContent = (player.value ?? 0).toLocaleString('es-ES');
 
             const askingPriceElem = document.getElementById('negotiationPlayerAskingPrice');
             const loanInfoElem = document.getElementById('negotiationPlayerLoanInfo');
             if (player.transferListed) {
                 askingPriceElem.style.display = 'block';
-                document.getElementById('negotiationPlayerAskingPriceValue').textContent = player.askingPrice.toLocaleString('es-ES');
+                document.getElementById('negotiationPlayerAskingPriceValue').textContent = (player.askingPrice ?? 0).toLocaleString('es-ES');
                 loanInfoElem.style.display = 'none';
             } else if (player.loanListed) {
                 askingPriceElem.style.display = 'none';
@@ -122,7 +122,7 @@
 
                 if (player.loanListed) {
                     negotiationLoanOffer.style.display = 'block';
-                    document.getElementById('loanPlayerSalaryExample').textContent = player.salary.toLocaleString('es-ES');
+                    document.getElementById('loanPlayerSalaryExample').textContent = (player.salary ?? 0).toLocaleString('es-ES');
                     document.getElementById('loanClubContributionInfo').textContent = (player.loanWageContribution || 0).toLocaleString('es-ES');
                     document.getElementById('loanWageContribution').value = 50;
                     document.getElementById('loanWageContributionValue').textContent = '50%';
