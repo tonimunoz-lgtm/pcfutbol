@@ -25,8 +25,7 @@
     (function () {
         const css = document.createElement('style');
         css.textContent = `
-        #pcfClauseBox .pcf-cl-sel{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
-        #pcfClauseBox .pcf-cl-sel select{flex:1 1 260px;min-width:0;max-width:100%;text-overflow:ellipsis}
+        #pcfClauseSel select{flex:1 1 260px;min-width:0;max-width:100%;text-overflow:ellipsis}
         #pcfClauseList table{width:100%;border-collapse:collapse}
         #pcfClauseList th,#pcfClauseList td{text-align:center;vertical-align:middle;white-space:nowrap;padding:8px 6px}
         #pcfClauseList th:first-child,#pcfClauseList td:first-child{text-align:left;padding-left:12px;font-weight:700}
@@ -78,17 +77,16 @@
         const page = document.getElementById('transfers');
         if (!page || document.getElementById('pcfClauseBox')) return !!page;
         const anchor = [...page.querySelectorAll('h2')].find(h => /Contratar Jóvenes/i.test(h.textContent));
-        const box = document.createElement('div');
-        box.id = 'pcfClauseBox';
-        box.innerHTML = `
-            <h2>Ojear clubes · Pagar cláusula</h2>
-            <div class="alert alert-info" style="margin-bottom:10px">Puedes fichar a cualquier jugador pagando su cláusula, aunque no esté en venta: su club no puede negarse. Pero el jugador decide si le conviene
+        // elementos hijos directos de la página, como el resto de secciones (el tema da márgenes y estilo a los hijos directos)
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<h2 id="pcfClauseBox">Ojear clubes · Pagar cláusula</h2>
+            <div class="alert alert-info" id="pcfClauseInfo">Puedes fichar a cualquier jugador pagando su cláusula, aunque no esté en venta: su club no puede negarse. Pero el jugador decide si le conviene
                 tu proyecto (nivel de tu plantilla y categoría) y negocia su contrato. Máximo 2 cláusulas por temporada.</div>
-            <div class="pcf-cl-sel"><select id="pcfClauseDiv"></select><select id="pcfClauseTeam"></select></div>
+            <div id="pcfClauseSel" class="pcf-cl-sel" style="display: flex; flex-wrap: wrap; gap: 10px;"><select id="pcfClauseDiv"></select><select id="pcfClauseTeam"></select></div>
             <div id="pcfClauseList"></div>`;
-        if (anchor) anchor.parentNode.insertBefore(box, anchor); else page.appendChild(box);
-        box.querySelector('#pcfClauseDiv').onchange = fillTeams;
-        box.querySelector('#pcfClauseTeam').onchange = renderPlayers;
+        [...wrap.children].forEach(el => { if (anchor) page.insertBefore(el, anchor); else page.appendChild(el); });
+        document.getElementById('pcfClauseDiv').onchange = fillTeams;
+        document.getElementById('pcfClauseTeam').onchange = renderPlayers;
         fillDivisions();
         return true;
     }
