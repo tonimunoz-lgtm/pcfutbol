@@ -1335,3 +1335,12 @@ tr:nth-child(even) td.pcf-col-media { background:#ffe8a3 !important; }
     .main-center-circle #nextMatchTeams  { font-size: clamp(13px, 2.1vh, 20px); font-weight: 800; }
     .main-center-circle #nextMatchDate   { font-size: clamp(11px, 1.7vh, 16px); }
 }
+
+/* R76 · Renovación (solo escritorio): formulario en cuadrícula de dos columnas, como la oferta de fichajes */
+@media (min-width: 768px) and (min-height: 501px), (min-width: 1101px) {
+  #renewalModal .pcf-renew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; margin: 12px 0 14px; align-items: start; }
+  #renewalModal .pcf-renew-grid .form-group { margin: 0; min-width: 0; }
+  #renewalModal .pcf-renew-grid .form-group label { display: block; margin: 0 0 4px; font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #a9c0e6; }
+  #renewalModal .pcf-renew-grid .form-group input, #renewalModal .pcf-renew-grid .form-group select { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; min-width: 0; }
+  #renewalModal .pcf-renew-grid .form-group .alert { margin: 6px 0 0; }
+}
