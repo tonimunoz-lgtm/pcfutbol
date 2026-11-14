@@ -140,7 +140,7 @@
         pendingSaves++;
         try {
             const result = await window.saveGameToCloud(window.currentUserId, gameId,
-                `[Auto] ${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
+                `${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
             if (!result?.success) {
                 window.gameLogic.addNews(result?.code === 'save/conflict' ? result.error : result?.localSaved ? 'Copia local guardada, pero la nube no la ha aceptado' + (result?.code ? ' (' + result.code + ')' : '') + '. Abre Cargar partida y pulsa «Sincronizar con la nube» para ver el motivo y subirla.' : 'No se ha podido guardar la partida. Vuelve a intentarlo antes de cerrar.', 'warning');
                 return result;

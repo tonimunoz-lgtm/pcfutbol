@@ -60,7 +60,13 @@
         if(typeof window.saveCurrentGame!=='function' || typeof window.openSavedGamesModal!=='function'){setTimeout(install,100);return;}
         if(window.saveCurrentGame._pcfSaveActions)return;
         const saveCloud=window.saveCurrentGame;
-        window.saveCurrentGame=()=>showSaveActions(saveCloud);
+        window.saveCurrentGame=async()=>{
+            if(window.isSimulatingWeek?.())return alert('Espera a que termine la jornada antes de guardar.');
+            if(!window.currentUserId)return saveCloud.call(window);             // mantiene el aviso de «inicia sesión»
+            const r=await window.pcfSaveCurrentGame?.();
+            if(r&&r.success){window.pcfToast?window.pcfToast('✅ Partida guardada',{type:'success',duration:3000}):alert('✅ Partida guardada');}
+            else alert('No se ha podido guardar en la nube'+(r&&r.localSaved?' (copia local guardada; se subirá sola)':'')+(r&&r.error?': '+r.error:''));
+        };
         window.saveCurrentGame._pcfSaveActions=true;
         // Keep the original main buttons and their styles. Extra actions belong in dialogs.
         window.openSettingsPage=()=>window.openSavedGamesModal();

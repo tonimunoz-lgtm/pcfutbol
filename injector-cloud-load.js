@@ -58,6 +58,7 @@
                     <span class="modal-close" onclick="document.getElementById('savedGamesModal').classList.remove('active')">&times;</span>
                     <h1>Cargar partida</h1>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+                        <button type="button" class="btn btn-sm" id="pcfExportBackupButton">Exportar copia</button>
                         <button type="button" class="btn btn-sm" id="pcfImportBackupButton">Importar copia</button>
                     </div>
                     <div id="pcfSyncBar" style="display:none;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 12px;">
@@ -76,6 +77,8 @@
         // Abrir modal
         const importButton=document.getElementById('pcfImportBackupButton');
         if(importButton)importButton.onclick=()=>window.pcfImportBackup?.();
+        const exportButton=document.getElementById('pcfExportBackupButton');
+        if(exportButton)exportButton.onclick=()=>window.pcfExportBackup?.();
         document.getElementById('savedGamesModal').classList.add('active');
         if(!window.currentUserId){
             document.getElementById('savedGamesListContainer').textContent='Inicia sesión para ver tus partidas de la nube, o importa una copia desde tu equipo.';
@@ -91,9 +94,10 @@
             const pending = (games || []).filter(g => g.localOnly);
             window._pcfPendingGames = pending.map(g => ({ id: g.id, name: g.name || 'Partida sin nombre' }));
             const syncBtn = document.getElementById('pcfSyncButton');
-            if (syncBtn) { syncBtn.style.display = pending.length ? '' : 'none'; syncBtn.disabled = false; syncBtn.onclick = () => window.pcfSyncPendingGames(); }
+            if (syncBtn) syncBtn.style.display = 'none';
+            if (pending.length && !games.cloudError) window.pcfSyncPendingGames();                 // se suben solas, sin que el jugador tenga que hacer nada
             if (games && games.cloudError) syncMsg('No se ha podido leer la nube: ' + explainCloud(games.cloudError.code, games.cloudError.message) + ' Lo que ves son las copias de este dispositivo.', 'warn');
-            else if (pending.length) syncMsg('Las partidas marcadas como «copia local pendiente» solo están en este dispositivo. Pulsa «Sincronizar con la nube» para que aparezcan en todos.', 'info');
+            else if (pending.length) syncMsg('Sincronizando tus partidas…', 'info');
             else syncMsg('');
 
             if (!games || games.length === 0) {
@@ -116,9 +120,9 @@
                 for(const text of [`Equipo: ${game.team||'?'} | Jornada: ${game.week||'?'} | División: ${game.division||'?'}`,new Date(game.lastSaved||0).toLocaleString('es-ES')]){
                     const row=document.createElement('p');row.textContent=text;info.appendChild(row);
                 }
-                if(game.localOnly){card.classList.add('pcf-local');const badge=document.createElement('span');badge.className='pcf-local-badge';badge.textContent='Copia local pendiente de sincronizar';info.appendChild(badge);}
+                
                 card.appendChild(info);
-                const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],['Cargar nube',()=>window.loadGameFromCloudUI(game.id,true)],['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
+                const actions=[['Cargar',()=>window.loadGameFromCloudUI(game.id)],['Borrar',()=>window.deleteGameFromCloudUI(game.id,game.name||'esta partida')]];
                 for(const [label,action] of actions){const button=document.createElement('button');button.type='button';button.className='btn btn-sm';button.textContent=label;button.onclick=action;card.appendChild(button);}
                 container.appendChild(card);
             }
