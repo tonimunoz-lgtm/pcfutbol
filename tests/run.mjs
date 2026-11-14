@@ -119,6 +119,20 @@ const tests = {
         saved.week += 1; g.replaceGameState(saved);   // parón viejo: se limpia, nadie queda bloqueado
         assert(g.getGameState().squad.every(p => !p._intlKey && !(p.isSuspended && p._suspCause === 'intl')), 'parón viejo: limpia los bloqueos');
     },
+    'nacionalidades: el catálogo del admin corrige las supuestas de una partida en curso, por club y por nombre'() {
+        const st = worldWith('promesas', 60, [['Rival', 'promesas', [60, 60]]]);
+        st.world.clubs.Rival.squad[0].name = 'Pedro Lopez'; st.world.clubs.Rival.squad[0].nationality = 'NG'; st.world.clubs.Rival.squad[0].nationalityGuessed = true;
+        st.world.clubs.Rival.squad[1].name = 'Jhonefer Piedrahita'; st.world.clubs.Rival.squad[1].nationality = 'BR'; st.world.clubs.Rival.squad[1].nationalityGuessed = true;
+        st.world.clubs.T.squad[0].name = 'Viajero'; st.world.clubs.T.squad[0].nationality = 'FR';       // jugador que ya no está en su club de origen
+        st.leagues = { promesas: ['T', 'Rival'] };
+        globalThis.getCachedTeamData = n => ({ Rival: { squad: [{ name: 'Pedro Lopez', nationality: 'ES' }, { name: 'Jhonefer Piedrahita', nationality: 'CO' }] }, Antiguo: { squad: [{ name: 'Viajero', nationality: 'AR' }] } }[n]);
+        st.leagues = { promesas: ['T', 'Rival', 'Antiguo'] };
+        g.replaceGameState(st);
+        const s = g.getGameState(), r = s.world.clubs.Rival.squad;
+        assert.equal(r[0].nationality, 'ES'); assert.equal(r[1].nationality, 'CO'); assert(!r[0].nationalityGuessed, 'ya no es suposición');
+        assert.equal(s.squad.find(p => p.name === 'Viajero').nationality, 'AR', 'por nombre único si cambió de club');
+        delete globalThis.getCachedTeamData;
+    },
     'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
         g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
         assert.equal(g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }).ok, true);

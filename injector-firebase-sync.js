@@ -115,6 +115,7 @@ window.preloadTeamCatalog = function({retry=false, quiet=false}={}) {
             for (const [name, value] of Object.entries(data)) teamCache.set(name, value);
             window.pcfCatalogOffline = false; window.pcfCatalogFromCache = false;
             catalogTask = Promise.resolve(true);
+            try { setTimeout(() => window.pcfSyncNationalities?.(), 300); } catch (_) {}      // las nacionalidades del admin se aplican a la partida en curso
             if (data !== cached) {
                 idbSave(data);
                 try { localStorage.setItem('pcf_catalog_meta', JSON.stringify({ version: window.__pcfCatalogVersion ?? null, ts: Date.now() })); } catch (_) {}

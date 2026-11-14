@@ -298,7 +298,7 @@
                     <span class="tc-xi-name" style="color:#ccc;font-size:.72em;">${p.name?.split(' ').pop() || p.name}</span>
                     <span class="tc-xi-ovr" style="color:#888;font-size:.68em;">${p.overall || 70}</span>
                     ${p.isInjured ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/lesionado.webp" alt="" title="Lesionado" aria-hidden="true">` : ''}
-                    ${p.isSuspended ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/sancionado.webp" alt="" title="Sancionado" aria-hidden="true">` : ''}
+                    ${p.isSuspended ? (p._suspCause === 'intl' ? `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/seleccion.webp" alt="" title="Convocado con la selección" aria-hidden="true">` : `<img class="pcf-st-icon pcf-st-sm" src="assets/iconos/estados/sancionado.webp" alt="" title="Sancionado" aria-hidden="true">`) : ''}
                 </div>`).join('')
         ).join('');
         return `

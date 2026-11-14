@@ -1,5 +1,7 @@
 import { escapeHTML, jsAttribute, safeImageURL } from './safe-html.js';
-import { flagOf, nationName } from './nationalities.js';
+import { flagOf, nationName, ensureNationality } from './nationalities.js';
+// Bandera en miniatura delante del nombre (si el jugador no tiene nacionalidad se le asigna una estable, como en Plantilla)
+const flagTag = (p) => { try { ensureNationality(p, p.division || 'other'); } catch (_) { /* */ } const f = flagOf(p); return f ? `<span title="${nationName(p.nationality)}" style="display:inline-block;margin-right:4px">${f}</span>` : ''; };
 // ui.js - Renderizado y UI  
   
 import * as gameLogic from './gameLogic.js';  
@@ -389,7 +391,7 @@ function renderAcademyList(academy) {
         return `  
             <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
-                <td>${escapeHTML(p.name)}</td>  
+                <td>${flagTag(p)}${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential ?? '-'}</td>  
                 <td style="white-space:nowrap">${(() => { const st = p.ovrStart ?? p.overall; const d = p.overall - st;
@@ -461,7 +463,7 @@ function renderPlayerMarketList(players) {
         
         return `  
             <tr>  
-                <td>${escapeHTML(p.name)}</td>  
+                <td>${flagTag(p)}${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential ?? '-'}</td>  
                 <td>${p.age}</td>  
@@ -528,7 +530,7 @@ function renderAvailableYoungstersMarket(youngsters) {
   
     let youngstersHtml = youngsters.map(y => `  
         <tr>  
-            <td>${escapeHTML(y.name)}</td>  
+            <td>${flagTag(y)}${escapeHTML(y.name)}</td>  
             <td><strong>${y.overall}</strong></td>  
             <td>${y.potential ?? '-'}</td>  
             <td>${y.age}</td>  

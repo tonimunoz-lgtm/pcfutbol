@@ -433,7 +433,7 @@
                 <tbody>
                     ${pool.sort((a,b)=>b.overall-a.overall).map(a => `
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                            <td style="padding:7px;"><strong>${a.name}</strong></td>
+                            <td style="padding:7px;"><strong>${(window.PCF_NATIONS?.flagOf?.(window.PCF_NATIONS.ensureNationality?.(a, a.division || 'other') || a) || '')} ${a.name}</strong></td>
                             <td style="padding:7px; text-align:center;">
                                 <span style="background:#e94560;color:white;padding:1px 6px;border-radius:4px;font-size:0.8em;">${a.position}</span>
                             </td>

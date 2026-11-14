@@ -156,6 +156,7 @@ function replaceGameState(saved) {
     aiSquadCache.clear();
     worldTask=null;
     captureWorldClub();
+    try { syncNationalitiesFromCatalog(); } catch (_) { /* catálogo aún no cargado */ }
     newsSeq = Math.max(newsSeq, ...(gameState.newsFeed || []).map(n => Number(n.id) || 0));
     updateWeeklyFinancials();
     if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
@@ -3513,6 +3514,7 @@ async function simulateFullWeekInner() {
         return { myMatch: null, forcedLoss: false };
     }  
 
+    try { syncNationalitiesFromCatalog(); } catch (e) { console.error('[Nacionalidades]', e); }
     startNationalWindow();       // por si la partida llega a esta jornada sin haber abierto el parón (idempotente)
 
     // ===== VALIDAR ALINEACIÓN =====
@@ -3724,6 +3726,36 @@ async function simulateFullWeekInner() {
 
 
   
+// Las nacionalidades que el admin ha puesto en el catálogo mandan sobre las supuestas (o antiguas) de una partida ya empezada.
+// Se casa por club + nombre y, si el jugador cambió de club, por nombre único en todo el catálogo. Idempotente.
+function syncNationalitiesFromCatalog() {
+    const get = typeof window !== 'undefined' && window.getCachedTeamData;
+    if (typeof get !== 'function' || !gameState.team) return 0;
+    const valid = c => c && window.PCF_NATIONS?.NATIONS?.[c];
+    const clubNames = new Set([gameState.team, ...Object.keys(gameState.world?.clubs || {}), ...Object.values(gameState.leagues || {}).flat()]);
+    const perClub = new Map(), global = new Map(), dup = new Set();
+    for (const club of clubNames) {
+        const cat = get(club); if (!cat || !Array.isArray(cat.squad)) continue;
+        const m = new Map();
+        for (const cp of cat.squad) {
+            if (!cp?.name || !valid(cp.nationality)) continue;
+            m.set(cp.name, cp.nationality);
+            if (global.has(cp.name) && global.get(cp.name) !== cp.nationality) dup.add(cp.name); else global.set(cp.name, cp.nationality);
+        }
+        perClub.set(club, m);
+    }
+    let changed = 0;
+    const apply = (club, list) => (list || []).forEach(p => {
+        if (!p || !p.name) return;
+        const nat = perClub.get(club)?.get(p.name) ?? (dup.has(p.name) ? undefined : global.get(p.name));
+        if (nat && p.nationality !== nat) { p.nationality = nat; delete p.nationalityGuessed; changed++; }
+        else if (nat && p.nationalityGuessed) { delete p.nationalityGuessed; }
+    });
+    apply(gameState.team, gameState.squad); apply(gameState.team, gameState.academy);
+    for (const [name, c] of Object.entries(gameState.world?.clubs || {})) { if (name !== gameState.team) apply(name, c.squad); }
+    return changed;
+}
+
 // Parón de selecciones: al llegar a la jornada del parón los convocados quedan no disponibles (se ve en Plantilla) y se ajusta el once.
 function startNationalWindow() {
     try {
@@ -4662,6 +4694,7 @@ if (typeof window !== 'undefined') {
         advance:advanceWorldLeagues,market:runWorldMarket,move:worldMove,
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
+    window.pcfSyncNationalities = () => { const n = syncNationalitiesFromCatalog(); if (n && typeof window.ui?.refreshUI === 'function') { try { window.ui.refreshUI(getViewState()); } catch (_) { /* */ } } return n; };
     window.pcfIntl = { windowWeeks: NatTeams.windowWeeks, nextWindow: () => NatTeams.nextWindow(gameState), nationName: NatTeams.nationName };
 window.pcfEconomy = {
         clauseAssess, offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
