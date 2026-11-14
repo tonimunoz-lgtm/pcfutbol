@@ -13,6 +13,17 @@ export const NATIONS = {
     PL:{n:'Polonia',f:'🇵🇱',p:'sl'}, CZ:{n:'Chequia',f:'🇨🇿',p:'sl'}, UA:{n:'Ucrania',f:'🇺🇦',p:'sl'}, GR:{n:'Grecia',f:'🇬🇷',p:'sl'},
     DK:{n:'Dinamarca',f:'🇩🇰',p:'nord'}, SE:{n:'Suecia',f:'🇸🇪',p:'nord'}, NO:{n:'Noruega',f:'🇳🇴',p:'nord'}, JP:{n:'Japón',f:'🇯🇵',p:'jp'}, KR:{n:'Corea del Sur',f:'🇰🇷',p:'jp'}
 };
+// Países añadidos para las nacionalidades reales de los jugadores de las divisiones
+Object.assign(NATIONS, {
+    SI:{n:'Eslovenia',f:'🇸🇮',p:'sl'}, SK:{n:'Eslovaquia',f:'🇸🇰',p:'sl'}, HU:{n:'Hungría',f:'🇭🇺',p:'sl'}, RO:{n:'Rumanía',f:'🇷🇴',p:'sl'},
+    GE:{n:'Georgia',f:'🇬🇪',p:'sl'}, MK:{n:'Macedonia del Norte',f:'🇲🇰',p:'sl'}, BA:{n:'Bosnia',f:'🇧🇦',p:'sl'}, AL:{n:'Albania',f:'🇦🇱',p:'sl'},
+    RU:{n:'Rusia',f:'🇷🇺',p:'sl'}, AM:{n:'Armenia',f:'🇦🇲',p:'sl'}, FI:{n:'Finlandia',f:'🇫🇮',p:'nord'}, IS:{n:'Islandia',f:'🇮🇸',p:'nord'},
+    GN:{n:'Guinea',f:'🇬🇳',p:'af'}, CD:{n:'RD Congo',f:'🇨🇩',p:'af'}, GA:{n:'Gabón',f:'🇬🇦',p:'af'}, CV:{n:'Cabo Verde',f:'🇨🇻',p:'af'},
+    TG:{n:'Togo',f:'🇹🇬',p:'af'}, GQ:{n:'Guinea Ecuatorial',f:'🇬🇶',p:'af'}, AO:{n:'Angola',f:'🇦🇴',p:'af'}, ZM:{n:'Zambia',f:'🇿🇲',p:'af'},
+    BF:{n:'Burkina Faso',f:'🇧🇫',p:'af'}, GW:{n:'Guinea-Bisáu',f:'🇬🇼',p:'af'}, KE:{n:'Kenia',f:'🇰🇪',p:'af'},
+    DO:{n:'Rep. Dominicana',f:'🇩🇴',p:'es'}, HN:{n:'Honduras',f:'🇭🇳',p:'es'}, PA:{n:'Panamá',f:'🇵🇦',p:'es'},
+    CA:{n:'Canadá',f:'🇨🇦',p:'en'}, AU:{n:'Australia',f:'🇦🇺',p:'en'}
+});
 const NAME_POOLS = {
     es:{g:'Álvaro Iván Sergio Diego Marcos Hugo Joaquín Mateo Nicolás Rubén Adrián Gonzalo Emiliano Lucas Bruno Julián Facundo Matías Santiago Ramiro',
         s:'García Fernández Rodríguez López Martínez Sánchez Pérez Gómez Ruiz Díaz Moreno Torres Navarro Romero Vega Cabrera Molina Ortega Silva Acosta Herrera Medina Rojas Suárez Benítez Paredes'},
@@ -70,7 +81,14 @@ export function randomPerson(division, spanishName, rng = Math.random) {
     const name = NATIONS[nationality].p === 'es' ? spanishName() : foreignName(nationality, rng);
     return { name, nationality };
 }
-export const flagOf = p => (p && NATIONS[p.nationality]?.f) || '';
+// Bandera en miniatura como imagen: los emoji de bandera no se dibujan en Windows (salen solo las letras «ES», «FR»…)
+const FLAG_ISO = { EN: 'gb-eng', SC: 'gb-sct', WA: 'gb-wls' };
+export const flagOf = p => {
+    const c = p && NATIONS[p.nationality] ? p.nationality : '';
+    if (!c) return '';
+    const iso = FLAG_ISO[c] || c.toLowerCase();
+    return `<img class="pcf-flag" src="https://flagcdn.com/20x15/${iso}.png" srcset="https://flagcdn.com/40x30/${iso}.png 2x" width="20" height="15" alt="${c}" loading="lazy" decoding="async" style="vertical-align:-2px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.35)" onerror="this.replaceWith(document.createTextNode('${c}'))">`;
+};
 export const nationName = code => NATIONS[code]?.n || code || '';
 
 export function foreignName(country, rng) {
