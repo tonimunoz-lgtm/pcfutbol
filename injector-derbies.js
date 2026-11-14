@@ -8,7 +8,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const R = () => window.pcfRivalries;
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -143,5 +143,5 @@
     window.addEventListener('pcf:state-replaced', () => setTimeout(() => { try { window.updateNextMatchInfo?.(); } catch (e) { /* */ } lastKey = ''; }, 600));
     window.pcfDerbies = { nextMatch, html, tick: () => { lastKey = ''; tick(); } };
     installEvent(); installAchievements();
-    setInterval(tick, 1500);
+    pcfEvery(tick, 1500);
 })();

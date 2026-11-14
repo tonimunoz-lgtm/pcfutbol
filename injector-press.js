@@ -8,7 +8,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const DIV = { primera: 'Primera División', segunda: 'Segunda División', rfef_grupo1: 'Primera RFEF (Grupo 1)',
         rfef_grupo2: 'Primera RFEF (Grupo 2)', promesas: 'Liga Promesas' };
     const COMP = { copa: 'Copa del Rey', champions: 'Champions League', europaLeague: 'Europa League', conferenceLague: 'Conference League' };
@@ -275,7 +275,7 @@
             gl().updateGameState({ pendingPress: now.filter(x => x.id !== item.id) });
         } finally { showing = false; }
     }
-    setInterval(() => { try { flush(); } catch (e) { console.warn('press:', e.message); } }, 900);
+    pcfEvery(() => { try { flush(); } catch (e) { console.warn('press:', e.message); } }, 900);
     window.pcfPress = { show, flush, build, preload };
     // Con el juego en reposo se precargan las imágenes de las portadas (si existen)
     setTimeout(() => Object.keys(EMOJI).forEach(k => preload(`assets/prensa/${k}.webp`)), 4000);

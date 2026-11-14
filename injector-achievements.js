@@ -7,7 +7,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const DIV_ORDER = ['promesas', 'rfef_grupo2', 'rfef_grupo1', 'segunda', 'primera'];
@@ -241,5 +241,5 @@
     });
 
     window.pcfAchievements = { ACH, CH, evaluate: () => { lastKey = ''; evaluate(); }, htmlChallenges, htmlAchievements, context };
-    setInterval(() => { try { evaluate(); } catch (err) { console.warn('Logros:', err.message); } }, 2500);
+    pcfEvery(() => { try { evaluate(); } catch (err) { console.warn('Logros:', err.message); } }, 2500);
 })();

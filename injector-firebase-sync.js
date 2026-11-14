@@ -1,5 +1,4 @@
 // injector-firebase-sync.js  
-import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
 import { TEAM_CUSTOM_DATA } from './teamData.js'; // <-- Importación correcta de TEAM_CUSTOM_DATA  
   
 (function() {  
@@ -98,6 +97,14 @@ window.preloadTeamCatalog = function({retry=false, quiet=false}={}) {
             if (window.firebaseConfig?.enabled && !window.firebaseDB) { for (let i = 0; i < 20 && !window.firebaseDB; i++) await new Promise(r => setTimeout(r, 250)); }
             if (!window.firebaseConfig?.enabled || !window.firebaseDB) return false;
             await window.authReadyPromise;
+            // Catálogo versionado: si la versión no ha cambiado (y la copia tiene <24 h) se usa la copia sin releer todos los equipos
+            let remoteVersion = null;
+            try { remoteVersion = await window.getCatalogVersionFromFirebase?.(); } catch (_) {}
+            if (cached && remoteVersion != null) {
+                let meta = null; try { meta = JSON.parse(localStorage.getItem('pcf_catalog_meta') || 'null'); } catch (_) {}
+                if (meta && meta.version === remoteVersion && Date.now() - meta.ts < 24 * 3600 * 1000) { window.__pcfCatalogVersion = remoteVersion; return cached; }
+            }
+            window.__pcfCatalogVersion = remoteVersion;
             const result = await window.getAllTeamsDataFromFirebase();
             if (!result.success) throw new Error(result.error || 'Catálogo no disponible');
             return result.data;
@@ -108,7 +115,10 @@ window.preloadTeamCatalog = function({retry=false, quiet=false}={}) {
             for (const [name, value] of Object.entries(data)) teamCache.set(name, value);
             window.pcfCatalogOffline = false; window.pcfCatalogFromCache = false;
             catalogTask = Promise.resolve(true);
-            idbSave(data);
+            if (data !== cached) {
+                idbSave(data);
+                try { localStorage.setItem('pcf_catalog_meta', JSON.stringify({ version: window.__pcfCatalogVersion ?? null, ts: Date.now() })); } catch (_) {}
+            }
         }).catch(() => {});
         let timer, slowNotice;
         if (!quiet) slowNotice = setTimeout(() => window.pcfToast?.('Cargando el catálogo de equipos… la conexión va lenta', { type: 'info', duration: 7000 }), 1500);
@@ -237,6 +247,7 @@ window.getTeamData = function(teamName) {
                 await window.authReadyPromise;  
             }  
             console.log('📥 Precargando equipos desde Firebase...');  
+            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
             const querySnapshot = await getDocs(collection(window.firebaseDB, 'teams_data'));  
             let count = 0;  
             querySnapshot.forEach(docSnap => {  

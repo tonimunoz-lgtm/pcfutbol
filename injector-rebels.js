@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const rnd = () => Math.random();
@@ -180,7 +180,7 @@
     }
     function init() {
         if (!register()) { setTimeout(init, 500); return; }
-        setInterval(() => { try { tick(); } catch (e) { console.warn('Rebeldes:', e.message); } }, 2500);
+        pcfEvery(() => { try { tick(); } catch (e) { console.warn('Rebeldes:', e.message); } }, 2500);
         window.pcfRebels = { EVENTS, tick, startCase: name => { const s = gs(); const p = (s.squad || []).find(q => q.name === name); if (p) startCase(s, p); }, state: () => R(gs()) };
     }
     init();

@@ -3,10 +3,24 @@ import { splitSnapshot, joinSnapshot, chunkIds } from './save-chunks.js';
 import { localSave, localLoad, localList, localDelete } from './local-saves.js';
 import { packGameState, unpackGameData } from './save-codec.js';
 // firebase-config.js  
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';  
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';  
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';  
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+// El SDK de Firebase se carga de forma dinámica: si no hay red (o gstatic no responde) el módulo sigue cargando
+// y el guardado local en IndexedDB sigue funcionando; solo se desactiva la nube.
+const SDK_BASE = 'https://www.gstatic.com/firebasejs/10.7.1/';
+let initializeApp, getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch, runTransaction,
+    getAuth, onAuthStateChanged, getStorage, ref, uploadBytes, getDownloadURL;
+let sdkLoaded = false;
+try {
+    const [appMod, fsMod, authMod, stMod] = await Promise.all([
+        import(SDK_BASE + 'firebase-app.js'), import(SDK_BASE + 'firebase-firestore.js'),
+        import(SDK_BASE + 'firebase-auth.js'), import(SDK_BASE + 'firebase-storage.js')]);
+    ({ initializeApp } = appMod);
+    ({ getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch, runTransaction } = fsMod);
+    ({ getAuth, onAuthStateChanged } = authMod);
+    ({ getStorage, ref, uploadBytes, getDownloadURL } = stMod);
+    sdkLoaded = true;
+} catch (error) {
+    console.warn('⚠️ No se pudo cargar el SDK de Firebase (¿sin conexión?). Se juega con guardado local.', error);
+}
 
   
 // Configuración directa de Firebase  
@@ -34,7 +48,7 @@ const authReadyPromise = new Promise((resolve) => {
 window.authReadyPromise = authReadyPromise; // Exponer globalmente  
   
 // Inicializar Firebase  
-if (firebaseConfig.enabled) {  
+if (firebaseConfig.enabled && sdkLoaded) {  
     try {  
         console.log('🔥 Inicializando Firebase...');  
         app = initializeApp(firebaseConfig);  
@@ -66,6 +80,7 @@ if (firebaseConfig.enabled) {
             if (user) {  
                 currentUserId = user.uid;  
                 window.currentUserId = user.uid;  
+                try { localStorage.setItem('pcf_last_uid', user.uid); } catch (_) {}   // para guardar en local si luego falta la red
                 authReady = true;  
                 console.log('✅ Usuario autenticado con UID:', user.uid, 'Email:', user.email || 'sin email'); 
                 // Resolver la promesa de autenticación lista  
@@ -117,7 +132,7 @@ if (firebaseConfig.enabled) {
     }  
 }  
 
-const storage = getStorage(app);
+const storage = (sdkLoaded && app) ? getStorage(app) : null;
 window.firebaseStorage = storage;
 
 // Función para subir imágenes
@@ -154,6 +169,8 @@ async function saveTeamDataToFirebase(teamName, teamData) {
     }  
     try {  
         await setDoc(doc(db, 'teams_data', teamName), teamData);  
+        // Versión del catálogo: los clientes leen solo este documento y se ahorran releer todos los equipos si no ha cambiado
+        try { await setDoc(doc(db, 'teams_data', '__catalog_meta'), { version: Date.now() }); } catch (_) {}
         window.cacheTeamData?.(teamName, teamData);
         try { localStorage.setItem(`team_data_${teamName}`, JSON.stringify(teamData)); } catch (_) {}  
         return { success: true };  
@@ -214,6 +231,7 @@ async function getAllTeamsDataFromFirebase() {
         const querySnapshot = await getDocs(collection(db, 'teams_data'));  
         const allData = {};  
         querySnapshot.forEach((d) => {  
+            if (d.id.startsWith('__')) return;   // documentos de control (p. ej. __catalog_meta)
             allData[d.id] = d.data();  
             try { localStorage.setItem(`team_data_${d.id}`, JSON.stringify(d.data())); } catch (_) {}  
         });  
@@ -223,6 +241,13 @@ async function getAllTeamsDataFromFirebase() {
     }  
 }  
   
+async function getCatalogVersionFromFirebase() {
+    if (!firebaseConfig.enabled || !db) return null;
+    try { const d = await getDoc(doc(db, 'teams_data', '__catalog_meta')); return d.exists() ? (d.data().version ?? null) : null; }
+    catch (_) { return null; }
+}
+window.getCatalogVersionFromFirebase = getCatalogVersionFromFirebase;
+
 // Serialize saves in this tab, capturing each snapshot before the next simulation.
 let saveQueue = Promise.resolve();
 let prepareQueue = Promise.resolve();

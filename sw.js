@@ -1,6 +1,6 @@
 // Service worker mínimo: red primero y copia de respaldo (solo mismo origen).
 // Firebase y otros dominios externos NO se tocan. Sube CACHE al publicar una versión nueva.
-const CACHE = 'pcf-static-2026-11-14-r77';
+const CACHE = 'pcf-static-2026-11-14-r78';
 const CORE = ['./', './index.html', './staff-names.js', './injector-install-prompt.js', './injector-staff-life.js', './injector-rebels.js', './injector-sanctions.js', './injector-injury-treatment.js', './style.css', './pcf6-theme.css', './pcf-mobile.css', './pcf-pwa.css', './pcf-mobile-fixes.css', './pcf-menu-theme.css', './pcf-mobile-theme.css', './manifest.webmanifest'];
 self.addEventListener('install', e => e.waitUntil(
     caches.open(CACHE)
@@ -11,7 +11,10 @@ self.addEventListener('activate', e => e.waitUntil(
         .then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
     const r = e.request;
-    if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;
+    const u = new URL(r.url);
+    // El SDK de Firebase (versionado, inmutable) también se cachea para poder arrancar sin red
+    const isSdk = u.origin === 'https://www.gstatic.com' && u.pathname.startsWith('/firebasejs/');
+    if (r.method !== 'GET' || (u.origin !== self.location.origin && !isSdk)) return;
     e.respondWith(fetch(r).then(res => {
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
         return res;

@@ -134,12 +134,16 @@
 
     window.pcfSaveCurrentGame = async function() {
         const state = window.gameLogic?.getViewState();
-        if (!state?.team || !window.saveGameToCloud || !window.currentUserId) return { success: false, skipped: true };
+        // Sin SDK de Firebase (sin red al arrancar) se guarda en local con el último usuario conocido
+        let uid = window.currentUserId;
+        if (!uid && !window.firebaseDB) { try { uid = localStorage.getItem('pcf_last_uid'); } catch (_) {} }
+        if (!state?.team || !window.saveGameToCloud || !uid) return { success: false, skipped: true };
         const gameId = state.gameId || `autosave_${state.team}`;
         window.gameLogic.updateGameState({ gameId });
         pendingSaves++;
+        window.__pcfDirty = false;
         try {
-            const result = await window.saveGameToCloud(window.currentUserId, gameId,
+            const result = await window.saveGameToCloud(uid, gameId,
                 `${state.team} - Jornada ${state.week}`, window.gameLogic.getGameState());
             if (!result?.success) {
                 window.gameLogic.addNews(result?.code === 'save/conflict' ? result.error : result?.localSaved ? 'Copia local guardada, pero la nube no la ha aceptado' + (result?.code ? ' (' + result.code + ')' : '') + '. Abre Cargar partida y pulsa «Sincronizar con la nube» para ver el motivo y subirla.' : 'No se ha podido guardar la partida. Vuelve a intentarlo antes de cerrar.', 'warning');
@@ -152,9 +156,14 @@
             return { success: false, error: error.message };
         } finally { pendingSaves--; }
     };
-    document.addEventListener('visibilitychange',()=>{
-        if(document.visibilityState==='hidden' && autosaveTimer && !busy){clearTimeout(autosaveTimer);autosaveTimer=null;window.pcfSaveCurrentGame();}
-    });
+    // Al ocultar la pestaña (cambio de app en móvil) se guarda si hay jornada pendiente de autoguardado o cambios sin guardar
+    const saveOnHide=()=>{
+        if(document.visibilityState!=='hidden'||busy||pendingSaves)return;
+        if(autosaveTimer){clearTimeout(autosaveTimer);autosaveTimer=null;window.pcfSaveCurrentGame();}
+        else if(window.__pcfDirty&&window.gameLogic?.getViewState?.()?.team){window.pcfSaveCurrentGame();}
+    };
+    document.addEventListener('visibilitychange',saveOnHide);
+    window.addEventListener('pagehide',()=>{ if(!busy&&!pendingSaves&&(autosaveTimer||window.__pcfDirty)){ if(autosaveTimer){clearTimeout(autosaveTimer);autosaveTimer=null;} window.pcfSaveCurrentGame(); } });
     window.addEventListener('beforeunload',event=>{
         if(busy || autosaveTimer || pendingSaves){event.preventDefault();event.returnValue='';}
     });

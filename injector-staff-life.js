@@ -11,7 +11,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const rnd = () => Math.random();
@@ -211,7 +211,7 @@
         css();
         if (!register()) { setTimeout(init, 500); return; }
         wrapAfter();
-        setInterval(() => { try { lazyWrap(); weeklyTick(); } catch (e) { console.warn('Personal:', e.message); } }, 2500);
+        pcfEvery(() => { try { lazyWrap(); weeklyTick(); } catch (e) { console.warn('Personal:', e.message); } }, 2500);
         window.pcfStaffLife = { EVENTS, weeklyTick, paintMood, moodOf };
     }
     init();

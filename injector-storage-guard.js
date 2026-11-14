@@ -20,6 +20,9 @@
     if (window.__pcfStorageGuard) return;
     window.__pcfStorageGuard = true;
 
+    // Temporizador que no trabaja con la pestaña oculta (ahorra batería en móvil). Lo usan los módulos que sondean el estado.
+    window.pcfEvery = function (fn, ms) { return setInterval(() => { if (!document.hidden) fn(); }, ms); };
+
     const LS = window.localStorage;
     const origSet = Storage.prototype.setItem;
     const CACHE_TEAM = /^team_data_/, CACHE_GAMES = /^user_games_/;

@@ -54,7 +54,7 @@ console.log('🎯 Injector Promanager cargando...');
         try { if (pmState.active && window.gameLogic?.updateGameState) window.gameLogic.updateGameState({ promanager: { ...pmState } }); } catch (e) { /* */ }
     }
     function restoreFromGame() {
-        const g = window.gameLogic?.getGameState?.();
+        const g = window.gameLogic?.getViewState?.();
         if (!g || !g.team) return false;
         if (g.gameMode !== 'promanager') {
             if (pmState.active) { pmState.active = false; updateRepBadge(); }
@@ -606,7 +606,7 @@ console.log('🎯 Injector Promanager cargando...');
         injectRepBadge();
         installPmCallback();
         restoreFromGame();
-        setInterval(restoreFromGame, 1200);   // detecta cargas de partida y recargas
+        pcfEvery(restoreFromGame, 1200);   // detecta cargas de partida y recargas
 
         // Instalar el hook con delay de 2.5s para garantizar que somos los ÚLTIMOS
         // en hookear simulateWeek (todos los otros injectors usan delays de 200-800ms)

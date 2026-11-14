@@ -10,7 +10,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const P = s => window.pcfDifficulty?.params?.(s) || { aid: 1, cooldown: 1 };
     const level = s => s?.difficulty || 'normal';
@@ -232,5 +232,5 @@
         finally { running = false; }
     }
     window.pcfAid = { evaluate: evaluateAid, metrics, choose: applyChoice, OFFERS };
-    setInterval(tick, 2000);
+    pcfEvery(tick, 2000);
 })();

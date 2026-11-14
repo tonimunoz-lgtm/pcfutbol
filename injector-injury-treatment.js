@@ -9,7 +9,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const SCALE = { primera: 1, segunda: .35, rfef_grupo1: .08, rfef_grupo2: .08, promesas: .01 };
     const COST = { intensive: 20000, surgery: 90000, elite: 250000 };
@@ -64,7 +64,7 @@
     function init() {
         const api = window.pcfEvents; if (!api?.EVENTS) { setTimeout(init, 600); return; }
         if (!api.EVENTS.some(e => e.id === EV.id)) api.EVENTS.push(EV);
-        setInterval(() => { try { maybeShow(); } catch (e) { console.warn('treatment:', e.message); } }, 2500);
+        pcfEvery(() => { try { maybeShow(); } catch (e) { console.warn('treatment:', e.message); } }, 2500);
     }
     init();
     window.pcfInjuryTreatment = { maybeShow, cost };

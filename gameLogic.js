@@ -120,6 +120,7 @@ function getGameState() {
 }  
   
 function updateGameState(newState) {  
+    if (typeof window !== 'undefined') window.__pcfDirty = true;   // hay cambios sin guardar (se guarda al ocultar la pestaña)
     // Muchos módulos toman una copia del estado, añaden noticias (que van al
     // estado real) y luego guardan la copia entera: sin esto, esas noticias se
     // perdían. Se conservan las noticias más nuevas que no traiga la copia.
@@ -164,6 +165,7 @@ const NEWS_CAP = 150;
 let newsSeq = Date.now();
   
 function addNews(message, type = 'info', read = false) {  
+    if (typeof window !== 'undefined') window.__pcfDirty = true;
     gameState.newsFeed.unshift({ id: ++newsSeq, week: gameState.week, message: message, timestamp: Date.now(), type: type, read: read });  
     if (gameState.newsFeed.length > NEWS_CAP) {
         // Al recortar se descartan antes las noticias leídas y poco importantes; avisos/errores sin leer se conservan.
@@ -2984,7 +2986,15 @@ async function playoffStep() {
     autoFixLineup({ required: true });
     const me = gameState.team;
     const t = userTie(run);
-    if (!t) return;
+    if (!t) {
+        // Salida de emergencia: antes se salía en silencio y la temporada quedaba bloqueada en 'playoff'.
+        // Se cierra el playoff simulando lo que quede y se continúa con el fin de temporada.
+        console.error('Playoff sin eliminatoria del usuario; se cierra automáticamente.', run);
+        addNews('⚠️ No se encontró tu eliminatoria de playoff; se ha cerrado automáticamente para no bloquear la temporada.', 'warning');
+        try { await advancePlayoff(); }
+        catch (e) { console.error('advancePlayoff falló:', e); run.done = true; run.curList = null; gameState.seasonType = 'regular'; await endSeason(); }
+        return;
+    }
     const legNo = t.legs.length;
     const home = legNo === 0 ? t.teamB : t.teamA, away = legNo === 0 ? t.teamA : t.teamB;
     const isHome = home === me;
@@ -3525,6 +3535,7 @@ async function simulateFullWeekInner() {
 
     // ===== FIN DE TEMPORADA =====
     // Si quedan partidos de copa o de Europa, la temporada sigue hasta jugarlos
+    // Se mantiene la longitud del mundo: las demás divisiones deben terminar su liga antes de resolver ascensos/descensos
     if (gameState.week > gameState.maxSeasonWeeks) {
         const pendingCups = (typeof window !== 'undefined' && window.CupMatches?.pendingCount?.()) || 0;
         if (pendingCups > 0) {

@@ -12,7 +12,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -561,5 +561,5 @@
     Object.assign(api, { renderMuseum, demandFor, negotiationUI, analyze, isClubLegend, isLeagueLegend, ensureShirts, changeShirt, openShirtDialog, html, tick: () => { lastKey = ''; return tick(); }, processPending, runCeremony, ROLES });
     window.pcfLegacy = api;
     installEvents();
-    setInterval(() => { tick(); }, 2000);
+    pcfEvery(() => { tick(); }, 2000);
 })();

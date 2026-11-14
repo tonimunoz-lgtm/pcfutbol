@@ -15,7 +15,7 @@
 (function () {
     'use strict';
     const gl = () => window.gameLogic;
-    const gs = () => gl()?.getGameState?.();
+    const gs = () => gl()?.getViewState?.();   // sin el mundo completo: se consulta cada pocos segundos
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const fmt = n => Math.round(n || 0).toLocaleString('es-ES');
     const RATE = { easy: .006, normal: .012, hard: .02 };
@@ -132,6 +132,6 @@
         try { const s = gs(); if (!s || !s.team || s.seasonType !== 'regular' && s.seasonType !== 'preseason') return; processMatches(s); weekly(gs()); }
         catch (e) { console.warn('sanctions:', e.message); }
     }
-    setInterval(tick, 2000);
+    pcfEvery(tick, 2000);
     window.pcfSanctions = { tick, state: () => SS(gs()), test: kind => { const s = gs(); return incident(s, SS(s), { week: s.week || 1 }, 'Rival CF', 0, false, 0, kind); } };
 })();
