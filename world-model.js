@@ -1,9 +1,11 @@
+import { ensureNationality } from './nationalities.js';
 // Persistent ownership and transactions. No UI or network dependencies.
 export const CLUB_FIELDS = ['academy','lineup','staff','balance','teamLogo','stadiumImage','stadiumName','stadiumCapacity','fanbase','popularity','ticketPrice','merchandisingPrice','trainingLevel','trainingFocus','weeklyIncomeBase','weeklyIncome','weeklyExpenses','pendingOffers','pendingRenewals','competitions','competitionPlayoff','cupData','matchPlan','autoSubstitutions','pressStyle','specialInstruction','formation','mentality','lastWeekFinance','playerPurchases','playerSalesIncome','playerCompensations','seasonMovements','financePostings','squadToppedUp','potentialFixed','lastMatchResultHTML','lastMatchResultAt'];
 export function assignPlayerIds(world, squad, club) {
     const names=new Set();
     for(const p of squad){
         if(!p.id)p.id=`p_${world.nextPlayerId++}`;
+        ensureNationality(p,world.clubs?.[club]?.division);
         if(names.has(p.name))p.name=`${p.name} (${p.id})`;
         names.add(p.name);p.club=club;
     }

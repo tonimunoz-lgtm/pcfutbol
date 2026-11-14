@@ -1,3 +1,4 @@
+import { randomPerson, ensureNationality, foreignSquad } from './nationalities.js';
 import { settleWeeklyFinance } from './weekly-ledger.js';
 import { createCompetitionSeason, advanceCompetitionSeason, userCompetitionFixture, recordCompetitionResult, competitionChampions, competitionLeagueField, europeanPlaces } from './competition-engine.js';
 import { createGameEvents } from './game-events.js';
@@ -213,7 +214,7 @@ async function generateInitialSquad() {
                 
                 // Convertir jugadores básicos a jugadores completos
                 const realSquad = teamData.squad.map(player => {
-                    const completedPlayer = {
+                    const completedPlayer = ensureNationality({
                         ...player,
                         club: gameState.team,
                         currentTeam: gameState.team,
@@ -228,7 +229,7 @@ async function generateInitialSquad() {
                         goals: player.goals || 0,
                         assists: player.assists || 0,
                         history: player.history || []
-                    };
+                    }, gameState.division);
                     
                     // Calcular campos derivados
                     if (!completedPlayer.overall) {
@@ -296,7 +297,7 @@ function generateInitialAcademy() {
         const age = 16 + Math.floor(Math.random() * 2);
         
         const player = {  
-            name: generateRandomName(),  
+            ...randomPerson('other', generateRandomName),  
             age: age,  
             position: pos,  
             foot: Math.random() < 0.8 ? 'Diestro' : (Math.random() < 0.5 ? 'Zurdo' : 'Ambidiestro'),  
@@ -743,7 +744,7 @@ const ATTR_PROFILE = {
 
 function buildGeneratedPlayer(position, target, age, division) {
     const player = {
-        name: generateRandomName(), age, position,
+        ...randomPerson(division, generateRandomName), age, position,
         foot: Math.random() < 0.75 ? 'Diestro' : 'Zurdo',
         matches: 0, form: 65 + Math.floor(Math.random() * 15), isInjured: false, weeksOut: 0,
         contractType: 'owned', contractYears: age < 23 ? 3 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 3)
@@ -1052,6 +1053,7 @@ function canReceivePlayer(extraLeaving = 0) {
 }
 
 function signPlayer(player) {  
+    ensureNationality(player, gameState.division);
     if ((gameState.sanctions?.banLeft || 0) > 0) {
         return { success: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas.' };
     }
@@ -2396,7 +2398,7 @@ async function playCupFootballMatch(match) {
         const key=`${state.currentSeason}|${match.opponent}`;
         if(!state.foreignSquads[key]){
             const xi=syntheticLineup(match.oppRating||75,match.opponent);
-            state.foreignSquads[key]=xi.concat(xi.slice(0,9).map(p=>({...p,name:p.name+' suplente'})));
+            state.foreignSquads[key]=foreignSquad(match.opponent,match.oppRating||75,xi,String(state.currentSeason));   // nombres y nacionalidades inventados, estables por temporada
         }
         opponentSquad=state.foreignSquads[key];
     }

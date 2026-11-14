@@ -3,6 +3,7 @@
 // ✅ CORREGIDO: Campos contractType, contractYears y releaseClause
 // ✅ NUEVO: Soporte para plantillas reales desde Firestore
 
+import { randomPerson } from './nationalities.js';
 import { ATTRIBUTES, POSITIONS, POSITION_ATTRIBUTE_WEIGHTS, STAFF_LEVEL_EFFECTS, TEAMS_DATA } from './config.js';  
   
 // Combinar todos los equipos de TEAMS_DATA para la generación de jugadores de la IA  
@@ -208,7 +209,7 @@ function generateRandomPlayer(minOverallTarget, maxOverallTarget) {
     const foot = generateRandomFoot();  
   
     const player = {  
-        name: generateRandomName(),  
+        ...randomPerson('segunda', generateRandomName),  
         position: position,  
         age: age,  
         club: club,  
@@ -245,7 +246,7 @@ function generateRandomYoungster(minOverallTarget, maxOverallTarget, highPotenti
     const age = 16 + Math.floor(Math.random() * 5);
   
     const player = {  
-        name: generateRandomName(),  
+        ...randomPerson('other', generateRandomName),  
         position: position,  
         age: age,  
         club: 'Libre',  
@@ -414,7 +415,7 @@ function generatePlayerWithTargetOverall(position, targetOverall, teamName) {
     const age = 18 + Math.floor(Math.random() * 17);
     
     const player = {
-        name: generateRandomName(),
+        ...randomPerson('segunda', generateRandomName),
         age: age,
         position: position,
         foot: Math.random() < 0.7 ? 'Diestro' : 'Zurdo',

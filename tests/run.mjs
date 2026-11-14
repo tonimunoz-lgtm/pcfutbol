@@ -23,7 +23,20 @@ const star = { name: 'Estrella', position: 'DC', overall: 85, age: 24, club: 'Ot
 const params = rng => ({ teamName: 'A', opponentName: 'B', teamLineup: L(75, 'A'), opponentLineup: L(70, 'B'), teamBench: L(75, 'Ab').slice(0, 9),
     opponentBench: L(70, 'Bb').slice(0, 9), teamFormation: '433', opponentFormation: '433', rng });
 
+const nat = await imp('nationalities.js');
 const tests = {
+    'nacionalidades: no pisan la del admin y completan las que faltan'() {
+        assert.equal(nat.ensureNationality({ name: 'A', age: 20, nationality: 'AR' }, 'primera').nationality, 'AR');
+        const p = nat.ensureNationality({ name: 'B', age: 20 }, 'segunda'); assert(nat.NATIONS[p.nationality]);
+        assert.equal(nat.ensureNationality({ name: 'B', age: 20 }, 'segunda').nationality, p.nationality, 'determinista');
+    },
+    'equipos extranjeros: plantilla con nombres, estable por temporada'() {
+        const xi = L(80, 'X'), a = nat.foreignSquad('Bayern München', 80, xi, '2026'), b = nat.foreignSquad('Bayern München', 80, xi, '2026');
+        assert.equal(a.length, 20); assert.equal(JSON.stringify(a), JSON.stringify(b));
+        assert(a.every(p => p.name && !/ DC | MC /.test(p.name) && nat.NATIONS[p.nationality]));
+        assert.equal(new Set(a.map(p => p.name)).size, 20);
+        assert.notEqual(a[0].name, nat.foreignSquad('Bayern München', 80, xi, '2027')[0].name);
+    },
     'calendario: todos los cruces, sin doble partido en una semana, rachas ≤2'() {
         for (const n of [4, 6, 18, 19, 20, 21, 22]) {
             const teams = Array.from({ length: n }, (_, i) => 'T' + i), cal = generateLeagueCalendar(teams);

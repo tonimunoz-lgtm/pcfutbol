@@ -66,6 +66,8 @@
         for (const a in w) { sum += (parseInt(p[a]) || 0) * w[a]; tw += w[a]; }
         return tw ? Math.round(sum / tw) : 0;
     }
+    // Países disponibles para la nacionalidad (código · nombre). Los códigos son los de nationalities.js
+    const nationList = () => Object.entries(window.PCF_NATIONS?.NATIONS || {});   // se evalúa al usarlo: el módulo se carga después de este script
     // Deja un jugador con todos los campos que espera el juego
     function normalizePlayer(raw) {
         const p = { ...(raw || {}) };
@@ -80,6 +82,9 @@
         p.contractYears = Math.min(10, Math.max(0, parseInt(p.contractYears ?? 3) || 0)) || (p.contractType === 'loaned' ? 1 : 3);
         p.salary = Math.max(0, parseInt(p.salary) || 1000);
         p.releaseClause = Math.max(0, parseInt(p.releaseClause) || 0);
+        p.nationality = String(p.nationality || '').toUpperCase().trim();   // código de país (ES, AR, FR…); vacío = el juego lo asigna
+        if (p.nationality && nationList().length && !nationList().some(n => n[0] === p.nationality)) p.nationality = '';
+        else if (p.nationality) delete p.nationalityGuessed;
         p.isInjured = !!p.isInjured; p.weeksOut = parseInt(p.weeksOut) || 0;
         p.isSuspended = !!p.isSuspended; p.suspensionWeeks = parseInt(p.suspensionWeeks) || 0;
         p.yellowCards = parseInt(p.yellowCards) || 0; p.redCards = parseInt(p.redCards) || 0;
@@ -642,7 +647,7 @@
                     stadiumCapacity: 20000, initialBudget: 10000000,
                     squad: [{ name: 'Jugador Ejemplo', position: 'DC', age: 25, foot: 'Diestro',
                         EN: 70, VE: 75, RE: 72, AG: 74, CA: 73, EF: 76, MO: 70, AT: 75, DF: 40,
-                        contractType: 'owned', contractYears: 3, salary: 20000, releaseClause: 10000000 }]
+                        nationality: 'ES', contractType: 'owned', contractYears: 3, salary: 20000, releaseClause: 10000000 }]
                 }]
             };
             downloadJSON(sample, 'ejemplo_division.json');
@@ -788,6 +793,10 @@
                             ${POSITIONS.map(pos => `<option value="${pos}" ${player.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}
                         </select>
                         <input type="number" placeholder="Edad" value="${player.age || 25}" min="16" max="40" onchange="window.adminBackend.updatePlayer(${index}, 'age', parseInt(this.value))">
+                        <select title="Nacionalidad" onchange="window.adminBackend.updatePlayer(${index}, 'nationality', this.value)">
+                            <option value="">🌍 Nacionalidad…</option>
+                            ${(window.PCF_NATIONS ? Object.entries(window.PCF_NATIONS.NATIONS) : []).map(([c, v]) => `<option value="${c}" ${player.nationality === c ? 'selected' : ''}>${v.f} ${v.n}</option>`).join('')}
+                        </select>
                     </div>
                     
                     <!-- Datos de contrato -->
