@@ -1046,6 +1046,61 @@ function canSellPlayer(p) {
 }
 
 // ¿Puede el club incorporar a un jugador ahora mismo? Se comprueba ANTES de cobrar nada.
+// ===== FICHAJE POR CLÁUSULA DE RESCISIÓN =====
+// Cualquier jugador con contrato en vigor puede ficharse pagando su cláusula, aunque no esté en venta ni cedible; el club no puede negarse.
+// Lo que sí decide es el JUGADOR: su ambición. Un crack no baja a un club claramente inferior (y a una división inferior casi nunca).
+const CLAUSE_MAX_PER_SEASON = 2;
+function squadLevel(squad) {
+    const top = (squad || []).filter(p => p && p.contractType !== 'loaned_out').map(p => p.overall || 0).sort((a, b) => b - a).slice(0, 14);
+    return top.length ? top.reduce((x, y) => x + y, 0) / top.length : 0;
+}
+function ambitionCheck(player, fromDivision, fromLevel, state = gameState) {
+    const o = player.overall || calculatePlayerOverall(player), age = player.age || 25;
+    const myLevel = squadLevel(state.squad), drop = (DIVISION_RANK[state.division] ?? 0) - (DIVISION_RANK[fromDivision] ?? DIVISION_RANK[state.division] ?? 0);
+    const pop = Math.max(-3, Math.min(3, ((state.popularity ?? 50) - 50) / 10));
+    let tol;
+    if (drop >= 2) tol = o <= 62 ? 30 : -99;                          // dos categorías por debajo: solo jugadores modestos
+    else if (drop === 1) tol = 3 + pop + (age >= 31 ? 4 : 0) + (o <= 65 ? 10 : 0);
+    else tol = 12 + pop + (age >= 32 ? 5 : 0) + (o < 70 ? 8 : 0) + (drop < 0 ? 4 : 0);   // misma división (o subiendo): más flexible
+    const needLevel = Math.round((o - tol) * 10) / 10;
+    const ok = myLevel >= needLevel;
+    let reason = '';
+    if (!ok) {
+        reason = drop >= 2 ? `${player.name} no bajaría dos categorías para jugar en tu club.`
+            : drop === 1 ? `${player.name} (media ${o}) no ve un proyecto ganador bajando de categoría: tu plantilla promedia ${myLevel.toFixed(1)} y necesitaría ${needLevel.toFixed(1)}.`
+            : `A ${player.name} (media ${o}) no le convence el proyecto: tu plantilla promedia ${myLevel.toFixed(1)} y necesitaría al menos ${needLevel.toFixed(1)}.`;
+    }
+    return { ok, myLevel: Math.round(myLevel * 10) / 10, needLevel, divisionDrop: drop, reason };
+}
+function clauseAssess(ref, state = gameState) {
+    const reasons = [];
+    const w = state.world, origin = w && locatePlayer(w, ref);
+    const player = origin ? origin.player : ref;
+    if (!player) return { ok: false, reasons: ['Jugador no encontrado.'] };
+    if (origin && origin.club === state.team) return { ok: false, reasons: ['Ya es tu jugador.'] };
+    if (player.contractType === 'loaned' || player.contractType === 'loaned_out' || player.loan) reasons.push('Está cedido: no se puede pagar su cláusula mientras dure la cesión.');
+    const clause = Number(player.releaseClause) > 0 ? Number(player.releaseClause) : roundMoney(marketValue(player) * 2.5);
+    if ((state.sanctions?.banLeft || 0) > 0) reasons.push('La FIFA tiene bloqueados vuestros fichajes.');
+    if ((state.squad || []).length >= 25) reasons.push('Tu plantilla está completa (25).');
+    const done = state.clauseSignings?.season === state.currentSeason ? state.clauseSignings.n : 0;
+    if (done >= CLAUSE_MAX_PER_SEASON) reasons.push(`Ya has pagado ${CLAUSE_MAX_PER_SEASON} cláusulas esta temporada.`);
+    if (state.balance < clause) reasons.push(`Te faltan ${(clause - state.balance).toLocaleString('es-ES')}€ para pagar la cláusula.`);
+    const fromDivision = origin ? w.clubs[origin.club]?.division : teamDivision(player.club);
+    const ambition = ambitionCheck(player, fromDivision, origin ? squadLevel(w.clubs[origin.club].squad) : 0, state);
+    if (!ambition.ok) reasons.push(ambition.reason);
+    return { ok: reasons.length === 0, reasons, clause, ambition, club: origin ? origin.club : player.club, playerId: player.id };
+}
+// El club que pierde un jugador repone la plantilla (mínimo 20) con una incorporación acorde a su nivel
+function refillClubSquad(clubName, position) {
+    const w = gameState.world, c = w?.clubs?.[clubName];
+    if (!c || c.name === gameState.team) return;
+    const divTarget = SQUAD_QUALITY[c.division]?.target || 55;
+    const clubTarget = Math.round(divTarget * 0.5 + Math.min(divTarget + 12, Math.max(divTarget - 6, c.prestige ?? divTarget)) * 0.5);
+    while (c.squad.length < 20) {
+        const p = buildGeneratedPlayer(position || 'MC', clubTarget - 4, 22 + Math.floor(Math.random() * 8), c.division);
+        assignPlayerIds(w, [p], c.name); c.squad.push(p);
+    }
+}
 function canReceivePlayer(extraLeaving = 0) {
     if ((gameState.sanctions?.banLeft || 0) > 0) return { ok: false, message: '⚖️ La FIFA tiene bloqueados los fichajes del club por sus deudas. No se ha cobrado nada.' };
     if ((gameState.squad || []).length - extraLeaving >= 25) return { ok: false, message: 'La plantilla está completa (25 jugadores max). Vende o cede a alguien antes. No se ha cobrado nada.' };
@@ -1114,6 +1169,7 @@ function signPlayer(player) {
             if(newPlayer.transferFee){gameState.balance+=newPlayer.transferFee;gameState.playerPurchases=Math.max(0,(gameState.playerPurchases||0)-newPlayer.transferFee);}
             return moved;
         }
+        refillClubSquad(origin.club, origin.player.position);      // el club vendedor repone su plantilla
         const id=moved.player.id;Object.assign(moved.player,newPlayer,{id,club:gameState.team});
         if(!newPlayer.loan){moved.player.contractType='owned';moved.player.contractYears=3;delete moved.player.loanOwner;}
     }else{
@@ -1287,6 +1343,8 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             const bonusPay = Math.max(0, Number(gameState.playerOffer?.bonus) || 0);
             const canReceive = canReceivePlayer();
             if (!canReceive.ok) { gameState.playerOffer = null; return { success: false, message: canReceive.message, type: 'error' }; }
+            const assess = clauseAssess(player);                  // reglas de la cláusula: ambición del jugador, límite anual, dinero
+            if (!assess.ok) { gameState.playerOffer = null; endNegotiation(); return { success: false, message: assess.reasons.join(' ') + ' No se ha cobrado nada.', type: 'error' }; }
             const balanceBeforeClause = gameState.balance, purchasesBeforeClause = gameState.playerPurchases || 0,
                 movementsBeforeClause = (gameState.seasonMovements || []).length;
             if (gameState.balance < clause + bonusPay) {
@@ -1323,7 +1381,9 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
                 return { success: false, message: ((signedClause && signedClause.message) || 'No se pudo completar el fichaje') + ' No se ha cobrado nada.', type: 'error' };
             }
             endNegotiation(true);
+            gameState.clauseSignings = { season: gameState.currentSeason, n: (gameState.clauseSignings?.season === gameState.currentSeason ? gameState.clauseSignings.n : 0) + 1 };
             addNews(`✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`, 'success');
+            if (player.club && player.club !== gameState.team) addNews(`📰 ${player.club} lamenta la marcha de ${player.name}, que se ha acogido a su cláusula (${clause.toLocaleString('es-ES')}€).${(player.overall || 0) >= 78 ? ' Es una de las operaciones del mercado.' : ''}`, 'info');
             return signedClause;
         } else {
             // Continuar a negociación con club
@@ -4468,6 +4528,7 @@ export {
     playMatchImproved, 
     processMatch,
     signPlayer,  
+    clauseAssess,
     signYoungster,  
     promoteYoungster,  
     sellPlayer,  
@@ -4552,7 +4613,7 @@ if (typeof window !== 'undefined') {
         assert:()=>assertWorldOwnership(gameState.world,gameState.freeAgentsPool||[])
     };
     window.pcfEconomy = {
-        offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
+        clauseAssess, offseasonCashflow, structure: structureCost, derby: (a, b) => rivalryOf(a, b)?.level || 0, ECONOMY, marketValue, expectedSalary, secretaryBonus, normalizeMarketPlayer, roundMoney,
         benefits: (state, ticket = 0, merch = 0) => {
             const result = { house: 0, car: 0, tickets: 0, merch: 0 };
             for (const p of state.squad || []) {

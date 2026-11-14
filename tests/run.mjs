@@ -24,7 +24,36 @@ const params = rng => ({ teamName: 'A', opponentName: 'B', teamLineup: L(75, 'A'
     opponentBench: L(70, 'Bb').slice(0, 9), teamFormation: '433', opponentFormation: '433', rng });
 
 const nat = await imp('nationalities.js');
+const worldWith = (division, userOvr, others) => {
+    const sq = (club, arr) => arr.map((o, i) => ({ id: club + i, name: club + ' ' + i, position: 'MC', age: 27, overall: o, salary: 5000, contractType: 'owned', contractYears: 3, club, releaseClause: 20e6, value: 5e6 }));
+    const clubs = { T: { name: 'T', division, squad: sq('T', Array(16).fill(userOvr)), snapshot: { academy: [] }, balance: 50e6 } };
+    for (const [n, d, arr] of others) clubs[n] = { name: n, division: d, squad: sq(n, arr), snapshot: { academy: [] }, balance: 1e7 };
+    return { ...baseState(16), clauseSignings: undefined, division, squad: clubs.T.squad, balance: 100e6, world: { clubs, divisions: {}, loans: [], transfers: [], nextPlayerId: 9999, nextTransferId: 1, revision: 1 } };
+};
 const tests = {
+    'cláusula: una superestrella de Primera no ficha por un club de RFEF'() {
+        g.replaceGameState(worldWith('rfef_grupo1', 58, [['Gran', 'primera', [88, 86, 84]]]));
+        const a = g.clauseAssess({ id: 'Gran0', name: 'Gran 0', club: 'Gran' });
+        assert.equal(a.ok, false); assert(/categor|proyecto/.test(a.reasons.join(' ')), a.reasons.join(' '));
+    },
+    'cláusula: fichaje completo mueve al jugador, cobra, repone al club y limita a 2 por temporada'() {
+        const st = worldWith('primera', 72, [['Rival', 'primera', Array(20).fill(72)]]); st.squad = st.squad.slice(0, 12); st.world.clubs.T.squad = st.squad; g.replaceGameState(st);
+        for (let i = 0; i < 3; i++) {
+            const pl = { ...g.getGameState().world.clubs.Rival.squad[0], clausePaid: true, clauseAmount: 20e6, isFreeAgent: false };
+            g.startNegotiation(pl); const r = g.offerToPlayer(60000, 0, 1, 1, 0, 0);
+            if (i < 2) { assert.equal(r.success, true, 'fichaje ' + i + ': ' + r.message); } else { assert.equal(r.success, false); assert(/2 cláusulas/.test(r.message), r.message); }
+        }
+        const s = g.getGameState();
+        assert.equal(s.balance, 100e6 - 40e6, 'cobra solo 2 cláusulas'); assert.equal(s.squad.length, 14);
+        assert(s.world.clubs.Rival.squad.length >= 20, 'el club vendedor repone plantilla: ' + s.world.clubs.Rival.squad.length);
+        assert.equal(s.world.clubs.Rival.balance, 1e7 + 40e6, 'el vendedor cobra la cláusula');
+    },
+    'cláusula: un jugador de nivel parecido sí ficha, y sin dinero no'() {
+        g.replaceGameState(worldWith('primera', 72, [['Rival', 'primera', [72, 70, 68]]]));
+        assert.equal(g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }).ok, true);
+        const poor = worldWith('primera', 72, [['Rival', 'primera', [72]]]); poor.balance = 1e6; g.replaceGameState(poor);
+        const a = g.clauseAssess({ id: 'Rival0', name: 'Rival 0', club: 'Rival' }); assert.equal(a.ok, false); assert(/faltan/i.test(a.reasons.join(' ')));
+    },
     'nacionalidades: no pisan la del admin y completan las que faltan'() {
         assert.equal(nat.ensureNationality({ name: 'A', age: 20, nationality: 'AR' }, 'primera').nationality, 'AR');
         const p = nat.ensureNationality({ name: 'B', age: 20 }, 'segunda'); assert(nat.NATIONS[p.nationality]);
