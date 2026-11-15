@@ -344,6 +344,20 @@ function renderSquadList(squad, currentTeam) {
     }
 } 
   
+
+// Pulsar el nombre en Fichar o Cantera abre la ficha del jugador (la de Plantilla/Alineación)
+function bindCardClicks(list, rows) {
+    list._pcfRows = rows;
+    if (list._pcfCardBound2) return;
+    list._pcfCardBound2 = true;
+    list.addEventListener('click', e => {
+        const td = e.target.closest && e.target.closest('td.pcf-sq-name[data-i]');
+        if (!td) return;
+        const p = (list._pcfRows || [])[Number(td.dataset.i)];
+        if (p && typeof window.pcfOpenPlayerCard === 'function') window.pcfOpenPlayerCard(p);
+    });
+}
+
 function renderAcademyList(academy) {  
     const list = document.getElementById('academyList');  
     if (!list) return;  
@@ -391,7 +405,7 @@ function renderAcademyList(academy) {
         return `  
             <tr style="${p.club === 'Tu Equipo' ? 'background: rgba(233, 69, 96, 0.1);' : ''}">  
                 <td>${idx + 1}</td>  
-                <td>${flagTag(p)}${escapeHTML(p.name)}</td>  
+                <td class="pcf-sq-name" data-i="${idx}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Ver ficha del jugador">${flagTag(p)}${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential ?? '-'}</td>  
                 <td style="white-space:nowrap">${(() => { const st = p.ovrStart ?? p.overall; const d = p.overall - st;
@@ -416,6 +430,7 @@ function renderAcademyList(academy) {
     }).join('');  
   
     list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
+    bindCardClicks(list, sorted);
 }  
   
   
@@ -463,7 +478,7 @@ function renderPlayerMarketList(players) {
         
         return `  
             <tr>  
-                <td>${flagTag(p)}${escapeHTML(p.name)}</td>  
+                <td class="pcf-sq-name" data-i="${idx}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Ver ficha del jugador">${flagTag(p)}${escapeHTML(p.name)}</td>  
                 <td><strong>${p.overall}</strong></td>  
                 <td>${p.potential ?? '-'}</td>  
                 <td>${p.age}</td>  
@@ -497,6 +512,7 @@ function renderPlayerMarketList(players) {
     }).join('');  
   
     list.innerHTML = headerHtml + playersHtml + `</tbody></table></div>`;  
+    bindCardClicks(list, players);
 }
   
   
@@ -528,9 +544,9 @@ function renderAvailableYoungstersMarket(youngsters) {
                 <tbody>  
     `;  
   
-    let youngstersHtml = youngsters.map(y => `  
+    let youngstersHtml = youngsters.map((y, idx) => `  
         <tr>  
-            <td>${flagTag(y)}${escapeHTML(y.name)}</td>  
+            <td class="pcf-sq-name" data-i="${idx}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Ver ficha del jugador">${flagTag(y)}${escapeHTML(y.name)}</td>  
             <td><strong>${y.overall}</strong></td>  
             <td>${y.potential ?? '-'}</td>  
             <td>${y.age}</td>  
@@ -546,6 +562,7 @@ function renderAvailableYoungstersMarket(youngsters) {
     `).join('');  
   
     list.innerHTML = headerHtml + youngstersHtml + `</tbody></table></div>`;  
+    bindCardClicks(list, youngsters);
 }  
   
   
