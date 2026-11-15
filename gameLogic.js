@@ -2056,6 +2056,38 @@ function worldMove(options) {
     }
     return result;
 }
+// Lo que paga un club por fichar y a qué jugadores mira: los clubes ricos y de prestigio buscan al mejor jugador que pueden pagar
+// para su puesto (no al más barato), compran a divisiones inferiores y también a rivales, y pueden hacer sitio liberando a un suplente.
+function aiClubWages(c) { return (c.squad || []).reduce((n, p) => n + (p.salary || 0), 0); }
+function aiSignFreeAgents(maxDeals) {
+    const w = gameState.world, pool = gameState.freeAgentsPool;
+    if (!w || !Array.isArray(pool) || !pool.length) return [];
+    const done = [];
+    const clubs = Object.values(w.clubs).filter(c => c.name !== gameState.team).sort((a, b) => ((b.prestige ?? 60) + Math.random() * 6) - ((a.prestige ?? 60) + Math.random() * 6));
+    for (const c of clubs) {
+        if (done.length >= maxDeals) break;
+        if (c.squad.length >= 25 || !pool.length) continue;
+        const wages = aiClubWages(c);
+        const starters = pickBestXI(c.squad, chooseAIFormation(c.squad)).filter(Boolean);
+        const need = c.squad.length < 21;
+        const free = pool.filter(p => (p.age || 30) <= 33 && !p.isInjured).sort((a, b) => (b.overall || 0) - (a.overall || 0));
+        for (const p of free) {
+            const salary = expectedSalary(p, c.division);
+            if (c.balance - salary * 26 < wages * 10) continue;
+            const slot = starters.filter(x => x.position === p.position).sort((a, b) => (a.overall || 0) - (b.overall || 0))[0];
+            if (!need && !(slot && (p.overall || 0) >= (slot.overall || 0) + 1)) continue;
+            const idx = pool.indexOf(p); if (idx < 0) continue;
+            pool.splice(idx, 1);
+            p.isFreeAgent = false; p.contractType = 'owned'; p.contractYears = 2 + Math.floor(Math.random() * 2); p.salary = Math.max(100, salary);
+            p.club = c.name; p.transferListed = false; p.loanListed = false; p.joinedSeason = gameState.currentSeason; p.joinedPhase = gameState.seasonType; p.joinedWeek = gameState.week;
+            c.squad.push(p);
+            const m = { id: `t_${w.nextTransferId++}`, type: 'free', playerId: p.id, name: p.name, from: 'Libre', to: c.name, fee: 0, season: w.season, week: gameState.week, phase: gameState.seasonType };
+            w.transfers.push(m); done.push(m);
+            break;
+        }
+    }
+    return done;
+}
 function runWorldMarket() {
     const w=gameState.world;if(!w)return [];
     const week=gameState.week,phase=gameState.seasonType;
@@ -2063,34 +2095,64 @@ function runWorldMarket() {
     w.marketTicks[tick]=true;
     const midpoint=Math.floor((gameState.maxSeasonWeeks||38)/2);
     if(!(phase==='preseason'||phase==='regular'&&(week<=2||Math.abs(week-midpoint)<=2)))return [];
-    const emitted=[];
-    for(const buyer of Object.values(w.clubs)){
-        if(buyer.name===gameState.team||emitted.length>=6||Math.random()>.16||buyer.squad.length>=25)continue;
-        const wages=buyer.squad.reduce((n,p)=>n+(p.salary||0),0),reserve=wages*26;
-        const starters=pickBestXI(buyer.squad,chooseAIFormation(buyer.squad));
-        const weakest=starters.filter(Boolean).sort((a,b)=>(a.overall||0)-(b.overall||0))[0];if(!weakest)continue;
+    const emitted=[], pre=phase==='preseason';
+    // Los agentes libres los reparte primero el usuario (primeras semanas); luego la IA ficha a los que le mejoran
+    if(pre&&week>=3){ for(const m of aiSignFreeAgents(10)) emitted.push(m); }
+    const maxDeals=pre?14:6, maxPerClubSeason=2;
+    const buyers=Object.values(w.clubs).filter(c=>c.name!==gameState.team)
+        .sort((a,b)=>((b.prestige??60)+Math.random()*8)-((a.prestige??60)+Math.random()*8));
+    for(const buyer of buyers){
+        if(emitted.length>=maxDeals)break;
+        const bought=buyer._mktSeason===w.season?(buyer._mktBought||0):0;
+        const prest=buyer.prestige??60, rich=prest>=(SQUAD_QUALITY[buyer.division]?.target||55)+4;
+        if(bought>=maxPerClubSeason+(rich?1:0))continue;
+        if(Math.random()>(pre?.30:.12)+(rich?.12:0))continue;
+        const wages=aiClubWages(buyer),reserve=wages*12;
+        const starters=pickBestXI(buyer.squad,chooseAIFormation(buyer.squad)).filter(Boolean);
+        if(!starters.length)continue;
+        const cap=buyer.balance*(rich?.5:.3), minGain=rich?3:2;
         const candidates=[];
         for(const seller of Object.values(w.clubs)){
             if(seller===buyer||seller.name===gameState.team||seller.squad.length<=18)continue;
-            if(Math.abs((DIVISION_RANK[buyer.division]||0)-(DIVISION_RANK[seller.division]||0))>1)continue;
+            const dd=(DIVISION_RANK[buyer.division]||0)-(DIVISION_RANK[seller.division]||0);
+            if(dd>2||dd<-1)continue;
             for(const p of seller.squad){
-                if(p.contractType!=='owned'||p.position!==weakest.position||p.isInjured||p.age>32||p.overall<weakest.overall+2||p.overall>weakest.overall+10)continue;
+                if(p.contractType!=='owned'||p.loanOwner||p.isInjured||(p.age||30)>33)continue;
                 if(!p.transferListed&&seller.squad.filter(q=>q.position===p.position).length<3)continue;
-                const fee=roundMoney(marketValue(p)*1.05),salary=expectedSalary(p,buyer.division);
-                if(buyer.balance-fee<reserve+salary*26||fee>Math.max(10000,buyer.balance*.20))continue;
-                candidates.push({seller,p,fee,salary});
+                const same=starters.filter(x=>x.position===p.position).sort((a,b)=>(a.overall||0)-(b.overall||0))[0];
+                const slot=same||starters.slice().sort((a,b)=>(a.overall||0)-(b.overall||0))[0];
+                const gain=(p.overall||0)-(slot.overall||0);
+                if(gain<minGain||gain>16)continue;
+                // las estrellas de su equipo cuestan más: el vendedor no las suelta por el precio de mercado
+                const star=!p.transferListed&&(p.overall||0)>=(seller.prestige??60)-3;
+                const fee=roundMoney(marketValue(p)*(p.transferListed?1.0:1.15)*(star?1.25:1)),salary=expectedSalary(p,buyer.division);
+                if(fee>cap||buyer.balance-fee<reserve+salary*26)continue;
+                candidates.push({seller,p,fee,salary,gain});
             }
         }
-        candidates.sort((a,b)=>a.fee-b.fee);const deal=candidates[0];
-        if(deal){const r=worldMove({id:deal.p.id,from:deal.seller.name,to:buyer.name,fee:deal.fee,salary:deal.salary});if(r.success)emitted.push(r.movement);}
-        else{
+        // el mejor jugador que puede pagar; a igualdad, el más barato
+        candidates.sort((a,b)=>((b.p.overall||0)-(a.p.overall||0))||a.fee-b.fee);
+        const deal=candidates[0];
+        if(deal){
+            if(buyer.squad.length>=25){   // hace sitio liberando al suplente de menor nivel
+                const keep=new Set(starters.map(x=>x.id));
+                const out=buyer.squad.filter(q=>!keep.has(q.id)&&q.contractType==='owned').sort((a,b)=>(a.overall||0)-(b.overall||0))[0];
+                if(!out)continue;
+                buyer.squad.splice(buyer.squad.indexOf(out),1);registerWorldFreeAgent(out);
+            }
+            const r=worldMove({id:deal.p.id,from:deal.seller.name,to:buyer.name,fee:deal.fee,salary:deal.salary});
+            if(r.success){emitted.push(r.movement);buyer._mktSeason=w.season;buyer._mktBought=bought+1;}
+        }else{
             const p=buyer.squad.find(p=>p.contractType==='owned'&&p.contractYears<=1&&p.age<=32);
             if(p&&buyer.balance>reserve){p.contractYears=3;p.salary=Math.max(p.salary||100,expectedSalary(p,buyer.division));
                 const m={id:`t_${w.nextTransferId++}`,type:'renewal',playerId:p.id,name:p.name,from:buyer.name,to:buyer.name,fee:0,season:w.season,week,phase};w.transfers.push(m);emitted.push(m);}
         }
     }
     if(w.transfers.length>500)w.transfers=w.transfers.slice(-500);
-    for(const m of emitted.slice(0,3))addNews(m.type==='renewal'?`📋 ${m.to} renueva a ${m.name} por 3 temporadas.`:`🔄 ${m.to} ficha a ${m.name} del ${m.from} por ${(Number(m.fee)||0).toLocaleString('es-ES')}€.`, 'info');
+    // se anuncian primero los fichajes de más nivel
+    const ranked=emitted.filter(m=>m.type==='transfer'||m.type==='free').slice().sort((a,b)=>(b.fee||0)-(a.fee||0));
+    for(const m of [...ranked.slice(0,3),...emitted.filter(m=>m.type==='renewal').slice(0,1)])
+        addNews(m.type==='renewal'?`📋 ${m.to} renueva a ${m.name} por 3 temporadas.`:m.type==='free'?`✍️ ${m.to} ficha como agente libre a ${m.name}.`:`🔄 ${m.to} ficha a ${m.name} del ${m.from} por ${(Number(m.fee)||0).toLocaleString('es-ES')}€.`, 'info');
     w.revision++;return emitted;
 }
 // Initialize career-market decisions once per season. Catalog templates are never written.
@@ -2180,8 +2242,22 @@ function rollWorldSeason(summary) {
             if (top.length) c.prestige = Math.round(top.reduce((x, y) => x + y, 0) / top.length);
         }
         const divTarget = SQUAD_QUALITY[c.division]?.target || 55;
-        const clubTarget = Math.round(divTarget * 0.5 + Math.min(divTarget + 12, Math.max(divTarget - 6, c.prestige ?? divTarget)) * 0.5);
         const oldDivision = Object.values(w.divisions).find(d => d.standings[c.name]);
+        // El prestigio se mueve cada año: sigue al nivel real de la plantilla y premia o castiga la clasificación.
+        // Nunca baja más de 8 puntos de su nivel histórico, así un grande en mal momento sigue pudiendo reponer con calidad.
+        if (c.heritage === undefined) c.heritage = c.prestige ?? divTarget;
+        {
+            const top16 = c.squad.map(p => p.overall || 0).sort((x, y) => y - x).slice(0, 16);
+            const squadLvl = top16.length ? top16.reduce((x, y) => x + y, 0) / top16.length : c.prestige;
+            let bonus = 0;
+            if (oldDivision) {
+                const rows = Object.entries(oldDivision.standings).map(([n, st]) => ({ n, pts: st.pts || 0, gd: (st.gf || 0) - (st.gc || 0) })).sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+                const pos = rows.findIndex(r => r.n === c.name);
+                if (pos >= 0 && rows.length > 6) bonus = pos === 0 ? 2 : pos < 3 ? 1 : pos >= rows.length - 3 ? -1 : 0;
+            }
+            c.prestige = Math.max(c.heritage - 8, Math.min(95, Math.round((c.prestige ?? squadLvl) * 0.75 + squadLvl * 0.25) + bonus));
+        }
+        const clubTarget = Math.round(divTarget * 0.35 + Math.min(divTarget + 16, Math.max(divTarget - 6, c.prestige ?? divTarget)) * 0.65);
         const previousGames=oldDivision?.standings[c.name]?.pj ?? 0;
         const survivors=[];
         for(const p of c.squad){
@@ -2207,7 +2283,18 @@ function rollWorldSeason(summary) {
         for(const p of academy){p.age++;if(p.overall<(p.potential||p.overall)){for(const a of ATTRIBUTES)p[a]=Math.min(99,(p[a]||40)+1);p.overall=Math.min(p.potential,calculatePlayerOverall(p));}}
         c.snapshot.academy=academy.filter(p=>{if(p.age<20)return true;if(c.squad.length<25){p.contractType='owned';p.contractYears=3;c.squad.push(p);}else registerWorldFreeAgent(p);return false;});
         while(c.squad.length<20){const count=pos=>c.squad.filter(p=>p.position===pos).length;const pos=SQUAD_TEMPLATE.find(pos=>count(pos)<SQUAD_TEMPLATE.filter(x=>x===pos).length)||'MC';
-            const p=buildGeneratedPlayer(pos,clubTarget-4,18+Math.floor(Math.random()*3),c.division);assignPlayerIds(w,[p],c.name);c.squad.push(p);}
+            const p=buildGeneratedPlayer(pos,clubTarget-5,18+Math.floor(Math.random()*4),c.division);assignPlayerIds(w,[p],c.name);c.squad.push(p);}
+        // Los clubes grandes intentan mantener unas cuantas estrellas: si se les retiran o se van, suben a un joven de nivel alto
+        {
+            const eliteLvl = (c.prestige ?? 0) - 3;
+            const wanted = (c.prestige ?? 0) >= divTarget + 10 ? 4 : (c.prestige ?? 0) >= divTarget + 6 ? 3 : (c.prestige ?? 0) >= divTarget + 3 ? 2 : 0;
+            const POS = ['DC', 'MC', 'EXT', 'MCO', 'DFC', 'LI'];
+            let k = 0;
+            while (wanted && c.squad.length < 24 && c.squad.filter(p => (p.overall || 0) >= eliteLvl).length < wanted && k < wanted) {
+                const p = buildGeneratedPlayer(POS[(k + c.squad.length) % POS.length], eliteLvl - 2, 21 + Math.floor(Math.random() * 3), c.division);
+                assignPlayerIds(w, [p], c.name); c.squad.push(p); k++;
+            }
+        }
         while(c.snapshot.academy.length<6){const p=buildGeneratedPlayer(SQUAD_TEMPLATE[Math.floor(Math.random()*SQUAD_TEMPLATE.length)],clubTarget-14,16,c.division);assignPlayerIds(w,[p],c.name);c.snapshot.academy.push(p);}
         c.financeTicks={};
         for(const k of ['fd_sponsor','fd_tv'])if(c.snapshot[k]?.active){const d=c.snapshot[k];d.yearsLeft=Math.max(0,(d.yearsLeft||1)-1);d.active=d.yearsLeft>0;}
