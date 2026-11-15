@@ -312,6 +312,17 @@ body .main-layout .quadrant .menu-button::before { filter: drop-shadow(0 2px 3px
     #gameSelectionModal .game-selection-btn > div:nth-child(3) { font-size: .78rem !important; letter-spacing: .24em; margin-bottom: 14px !important; }
     #btnLogoutSelection { min-width: 0; width: 100%; max-width: 300px; height: 52px; padding: 0 22px !important; font-size: 1.1rem !important; white-space: nowrap; }
     #gameSelectionModal .modal-content > div:nth-of-type(2) { margin-top: 20px !important; }
+    /* iPhone/Safari: un filtro (drop-shadow) sobre un panel tan alto, con recorte y capa negativa dentro, deja el contenido en blanco.
+       En móvil el panel se dibuja sin filtros: borde y brillo con box-shadow, esquinas con border-radius y el contenido por encima. */
+    #gameSelectionModal .modal-content { filter: none !important; isolation: auto; -webkit-transform: none; }
+    #gameSelectionModal .modal-content::before { z-index: 0; clip-path: none; border-radius: 18px; box-shadow: 0 0 0 2px #35b6ff, 0 0 16px rgba(53,182,255,.55), inset 0 0 30px rgba(53,182,255,.25); }
+    #gameSelectionModal .modal-content > * { position: relative; z-index: 1; }
+    #gameSelectionModal .modal-content h2 { filter: none !important; -webkit-text-fill-color: transparent; }
+    #gameSelectionModal .game-selection-btn, #btnLogoutSelection { filter: none !important; }
+    /* App instalada en iPhone: el panel nunca se limita a la altura de la pantalla ni se centra «por arriba» (se cortaba el principio); se desplaza entero */
+    #gameSelectionModal { align-items: flex-start !important; -webkit-overflow-scrolling: touch; }
+    #gameSelectionModal .modal-content { max-height: none !important; overflow: visible !important; margin: auto !important; }
+    #gameSelectionModal .game-selection-btn { display: block; opacity: 1 !important; visibility: visible !important; }
 }
 /* pantallas bajas (móvil en horizontal): panel compacto, fotos más panorámicas y scroll si aun así no cabe */
 @media (max-height: 560px) {
