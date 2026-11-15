@@ -252,14 +252,14 @@
         const bonus = E ? E.roundMoney(value * 0.25) : Math.round(value * 0.25);
         const salary = Math.max(100, agent.salary || 0, E ? E.expectedSalary(agent, state.division) : (agent.overall || 50) * 35);
         if ((state.balance || 0) < bonus) {
-            await window.pcfNotify('Agente libre', `No tienes dinero para la prima de fichaje de ${agent.name}: ${bonus.toLocaleString('es-ES')}€ (saldo: ${(state.balance || 0).toLocaleString('es-ES')}€).`);
+            await window.pcfNotify('Agente libre', `No tienes dinero para la prima de fichaje de ${agent.name}: ${(Number(bonus)||0).toLocaleString('es-ES')}€ (saldo: ${(state.balance || 0).toLocaleString('es-ES')}€).`);
             return;
         }
         const confirmed = await window.pcfConfirm('Fichar agente libre',
             `${agent.name} · ${agent.position} · Media ${agent.overall} · ${agent.age} años\n\n` +
             `Traspaso: gratis (no tiene club)\n` +
-            `Prima de fichaje: ${bonus.toLocaleString('es-ES')}€\n` +
-            `Salario: ${salary.toLocaleString('es-ES')}€/sem · contrato de 2 años\n\n` +
+            `Prima de fichaje: ${(Number(bonus)||0).toLocaleString('es-ES')}€\n` +
+            `Salario: ${(Number(salary)||0).toLocaleString('es-ES')}€/sem · contrato de 2 años\n\n` +
             `No podrás ponerlo a la venta hasta dentro de 10 jornadas.`,
             { okLabel: 'Fichar' });
 
@@ -290,7 +290,7 @@
         }
 
         news(
-            `✅ ¡${agent.name} fichado como agente libre! Firma por 2 años a ${salary.toLocaleString('es-ES')}€/sem (prima: ${bonus.toLocaleString('es-ES')}€).`,
+            `✅ ¡${agent.name} fichado como agente libre! Firma por 2 años a ${(Number(salary)||0).toLocaleString('es-ES')}€/sem (prima: ${(Number(bonus)||0).toLocaleString('es-ES')}€).`,
             'success'
         );
 

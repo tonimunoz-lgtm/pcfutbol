@@ -1261,8 +1261,8 @@ function sellPlayer(name) {
     gameState.pendingOffers=(gameState.pendingOffers||[]).filter(o=>o.player?.id!==player.id&&o.player?.name!==name);
     gameState.playerSalesIncome=(gameState.playerSalesIncome||0)+fee;
     logMovement('sale', `Venta: ${name}`, fee);
-    updateWeeklyFinancials();addNews(`💰 ${name} vendido al ${buyer.club} por ${fee.toLocaleString('es-ES')}€.`, 'success');
-    return {success:true,message:`${name} vendido por ${fee.toLocaleString('es-ES')}€.`};
+    updateWeeklyFinancials();addNews(`💰 ${name} vendido al ${buyer.club} por ${(Number(fee)||0).toLocaleString('es-ES')}€.`, 'success');
+    return {success:true,message:`${name} vendido por ${(Number(fee)||0).toLocaleString('es-ES')}€.`};
 }
 
 function startNegotiation(player) {  
@@ -1375,7 +1375,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             const balanceBeforeClause = gameState.balance, purchasesBeforeClause = gameState.playerPurchases || 0,
                 movementsBeforeClause = (gameState.seasonMovements || []).length;
             if (gameState.balance < clause + bonusPay + offeredAgentFee) {
-                return { success: false, message: `No tienes dinero para la cláusula (${clause.toLocaleString('es-ES')}€) y la prima de fichaje (${bonusPay.toLocaleString('es-ES')}€).`, type: 'error' };
+                return { success: false, message: `No tienes dinero para la cláusula (${(Number(clause)||0).toLocaleString('es-ES')}€) y la prima de fichaje (${(Number(bonusPay)||0).toLocaleString('es-ES')}€).`, type: 'error' };
             }
             if (bonusPay > 0) {
                 gameState.balance -= bonusPay;
@@ -1387,7 +1387,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             }
             if (clause > 0) {
                 if (gameState.balance < clause) {
-                    return { success: false, message: `El jugador acepta, pero ya no tienes ${clause.toLocaleString('es-ES')}€ para pagar su cláusula.`, type: 'error' };
+                    return { success: false, message: `El jugador acepta, pero ya no tienes ${(Number(clause)||0).toLocaleString('es-ES')}€ para pagar su cláusula.`, type: 'error' };
                 }
                 gameState.balance -= clause;
                 gameState.playerPurchases = (gameState.playerPurchases || 0) + clause;
@@ -1415,7 +1415,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             endNegotiation(true);
             gameState.clauseSignings = { season: gameState.currentSeason, n: (gameState.clauseSignings?.season === gameState.currentSeason ? gameState.clauseSignings.n : 0) + 1 };
             addNews(`✅ ¡Fichaje completado! ${player.name} llega tras pagar su cláusula de rescisión.`, 'success');
-            if (player.club && player.club !== gameState.team) addNews(`📰 ${player.club} lamenta la marcha de ${player.name}, que se ha acogido a su cláusula (${clause.toLocaleString('es-ES')}€).${(player.overall || 0) >= 78 ? ' Es una de las operaciones del mercado.' : ''}`, 'info');
+            if (player.club && player.club !== gameState.team) addNews(`📰 ${player.club} lamenta la marcha de ${player.name}, que se ha acogido a su cláusula (${(Number(clause)||0).toLocaleString('es-ES')}€).${(player.overall || 0) >= 78 ? ' Es una de las operaciones del mercado.' : ''}`, 'info');
             // Efectos cruzados de un fichaje por cláusula: la afición se ilusiona si el fichado está por encima del nivel de tu plantilla
             // y la prensa lo cuenta en portada. (El nivel se compara sin contar al propio fichado.)
             try {
@@ -1447,7 +1447,7 @@ function offerToPlayer(offeredSalary, offeredBonus, offeredCar, offeredHouse, of
             found = Math.ceil(hi / 100) * 100;
         }
         const hint = found
-            ? ` Pide un ${Math.max(1, Math.ceil((found / offeredSalary - 1) * 100))} % más de sueldo (unos ${found.toLocaleString('es-ES')}€/sem) o mejores incentivos.`
+            ? ` Pide un ${Math.max(1, Math.ceil((found / offeredSalary - 1) * 100))} % más de sueldo (unos ${(Number(found)||0).toLocaleString('es-ES')}€/sem) o mejores incentivos.`
             : ' Aunque subas el sueldo no le convence: mejora los incentivos (prima, coche, casa) o la categoría/popularidad del club.';
         return { success: false, message: `${player.name} encuentra tu oferta insuficiente.${hint}${shirtNote}`, type: 'warning', neededSalary: found };
     }  
@@ -1510,7 +1510,7 @@ function offerToClub(offerAmount, playerExchange = [], isLoan = false) {
             return { success: false, message: 'No tienes suficiente dinero para esta oferta.', type: 'error' };
         }
         if (gameState.balance < offerAmount + bonusToPay) {
-            return { success: false, message: `No tienes dinero para el traspaso y la prima de fichaje (${bonusToPay.toLocaleString('es-ES')}€).`, type: 'error' };
+            return { success: false, message: `No tienes dinero para el traspaso y la prima de fichaje (${(Number(bonusToPay)||0).toLocaleString('es-ES')}€).`, type: 'error' };
         }
         const playerAskingPrice = player.askingPrice > 0 ? player.askingPrice : roundMoney(marketValue(player) * 1.1);
 
@@ -1572,7 +1572,7 @@ playerExchange.forEach(pName => {
                 endNegotiation();
                 return { success: false, message: `El ${player.club} ha rechazado tu oferta: está muy lejos de lo que piden por ${player.name}. Se rompen las negociaciones.`, type: 'error' };
             }
-            return { success: false, message: `El ${player.club} rechaza tu oferta. Les faltan unos ${missing.toLocaleString('es-ES')}€ (un ${Math.max(1, Math.ceil(missing / playerAskingPrice * 100))} % del precio) en dinero o jugadores.`, type: 'warning', missing };
+            return { success: false, message: `El ${player.club} rechaza tu oferta. Les faltan unos ${(Number(missing)||0).toLocaleString('es-ES')}€ (un ${Math.max(1, Math.ceil(missing / playerAskingPrice * 100))} % del precio) en dinero o jugadores.`, type: 'warning', missing };
         }  
     }  
 }  
@@ -2090,7 +2090,7 @@ function runWorldMarket() {
         }
     }
     if(w.transfers.length>500)w.transfers=w.transfers.slice(-500);
-    for(const m of emitted.slice(0,3))addNews(m.type==='renewal'?`📋 ${m.to} renueva a ${m.name} por 3 temporadas.`:`🔄 ${m.to} ficha a ${m.name} del ${m.from} por ${m.fee.toLocaleString('es-ES')}€.`, 'info');
+    for(const m of emitted.slice(0,3))addNews(m.type==='renewal'?`📋 ${m.to} renueva a ${m.name} por 3 temporadas.`:`🔄 ${m.to} ficha a ${m.name} del ${m.from} por ${(Number(m.fee)||0).toLocaleString('es-ES')}€.`, 'info');
     w.revision++;return emitted;
 }
 // Initialize career-market decisions once per season. Catalog templates are never written.
@@ -3313,7 +3313,7 @@ function seasonAwardsAndPress(summary) {
         gameState.boardConfidence = Math.min(100, (gameState.boardConfidence ?? 65) + 15);
         (gameState.managerAwards || (gameState.managerAwards = [])).push({ season: gameState.currentSeason, type: 'objetivos', label: 'Entrenador del Año', bonus });
         queuePress({ kind: 'premio', bonus });
-        addNews(`🎖️ La directiva premia al míster por cumplir todos los objetivos de la temporada: +${bonus.toLocaleString('es-ES')}€ y máxima confianza.`, 'success');
+        addNews(`🎖️ La directiva premia al míster por cumplir todos los objetivos de la temporada: +${(Number(bonus)||0).toLocaleString('es-ES')}€ y máxima confianza.`, 'success');
     }
 }
 if (typeof window !== 'undefined') window.pcfQueuePress = queuePress;
@@ -3717,7 +3717,7 @@ async function simulateFullWeekInner() {
     // carrera eso puede acabar en despido, siempre tras avisos y con motivo.
     if (gameState.balance < 0 && gameState.week % 4 === 0) {
         const debt = Math.abs(gameState.balance);
-        addNews(`[Directiva] El club está en números rojos (${debt.toLocaleString('es-ES')}€). Hay que recuperar el equilibrio económico cuanto antes: vender jugadores o reducir gastos.`, 'error');
+        addNews(`[Directiva] El club está en números rojos (${(Number(debt)||0).toLocaleString('es-ES')}€). Hay que recuperar el equilibrio económico cuanto antes: vender jugadores o reducir gastos.`, 'error');
     }
 
     // ===== FIN DE TEMPORADA =====
@@ -3966,7 +3966,7 @@ function expandStadium(cost = 50000, capacityIncrease = 10000) {
     gameState.stadiumCapacity += capacityIncrease;  
     gameState.weeklyIncomeBase += Math.floor(capacityIncrease / 20);  
     updateWeeklyFinancials();  
-    addNews(`¡Estadio expandido a ${gameState.stadiumCapacity.toLocaleString('es-ES')} espectadores!`);  
+    addNews(`¡Estadio expandido a ${(Number(gameState.stadiumCapacity)||0).toLocaleString('es-ES')} espectadores!`);  
     return { success: true, message: `¡Estadio expandido a ${gameState.stadiumCapacity} espectadores!` };  
 }  
   
@@ -4052,17 +4052,17 @@ function hireStaffFromCandidates(candidate) {
     if (existingStaff) {  
         indemnization = existingStaff.salary * 52;  
         if (gameState.balance < indemnization + candidate.clausula + candidate.salary) {  
-            return { success: false, message: `Dinero insuficiente. Necesitas ${indemnization.toLocaleString('es-ES')}€ para indemnizar a ${existingStaff.name} y pagar al nuevo staff.`, type: 'error' };  
+            return { success: false, message: `Dinero insuficiente. Necesitas ${(Number(indemnization)||0).toLocaleString('es-ES')}€ para indemnizar a ${existingStaff.name} y pagar al nuevo staff.`, type: 'error' };  
         }  
         gameState.balance -= indemnization;  
-        addNews(`¡${existingStaff.name} (${existingStaff.displayName}) ha sido despedido con una indemnización de ${indemnization.toLocaleString('es-ES')}€!`, 'warning');  
+        addNews(`¡${existingStaff.name} (${existingStaff.displayName}) ha sido despedido con una indemnización de ${(Number(indemnization)||0).toLocaleString('es-ES')}€!`, 'warning');  
     }  
   
     if (gameState.balance < candidate.clausula) {  
-        return { success: false, message: `Dinero insuficiente para pagar la cláusula de ${candidate.clausula.toLocaleString('es-ES')}€.` };  
+        return { success: false, message: `Dinero insuficiente para pagar la cláusula de ${(Number(candidate.clausula)||0).toLocaleString('es-ES')}€.` };  
     }  
     if (gameState.balance < candidate.salary) {  
-        return { success: false, message: `Dinero insuficiente para pagar el salario de ${candidate.salary.toLocaleString('es-ES')}€/sem.` };  
+        return { success: false, message: `Dinero insuficiente para pagar el salario de ${(Number(candidate.salary)||0).toLocaleString('es-ES')}€/sem.` };  
     }  
   
     gameState.balance -= candidate.clausula;
@@ -4075,7 +4075,7 @@ function hireStaffFromCandidates(candidate) {
             .filter(c => !(c.name === candidate.name && c.level === candidate.level));
     }
     updateWeeklyFinancials();  
-    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${candidate.clausula.toLocaleString('es-ES')}€)`, 'success');  
+    addNews(`¡${candidate.name} (${candidate.displayName}, Nivel ${candidate.level}) se une al staff! (Cláusula: ${(Number(candidate.clausula)||0).toLocaleString('es-ES')}€)`, 'success');  
     return { success: true, message: `¡${candidate.displayName} ${candidate.name} contratado exitosamente!` };  
 }  
   
@@ -4262,7 +4262,7 @@ function firePlayer(playerName) {
     if (gameState.balance < compensation) {
         return { 
             success: false, 
-            message: `No tienes suficiente dinero para pagar la indemnización de ${compensation.toLocaleString('es-ES')}€` 
+            message: `No tienes suficiente dinero para pagar la indemnización de ${(Number(compensation)||0).toLocaleString('es-ES')}€` 
         };
     }
     
@@ -4280,13 +4280,13 @@ function firePlayer(playerName) {
     (gameState.freeAgentsPool=gameState.freeAgentsPool||[]).push(player);captureWorldClub();
     // Noticia
     addNews(
-        `🚪 ${playerName} ha sido despedido del club. Indemnización pagada: ${compensation.toLocaleString('es-ES')}€`,
+        `🚪 ${playerName} ha sido despedido del club. Indemnización pagada: ${(Number(compensation)||0).toLocaleString('es-ES')}€`,
         'warning'
     );
     
     return { 
         success: true, 
-        message: `${playerName} ha sido despedido. Indemnización: ${compensation.toLocaleString('es-ES')}€`,
+        message: `${playerName} ha sido despedido. Indemnización: ${(Number(compensation)||0).toLocaleString('es-ES')}€`,
         compensation: compensation
     };
 }
@@ -4343,7 +4343,7 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
         if ((player.weeksOnMarket || 0) >= 4 && ratio <= 1.6) chance += 0.15;
         if (Math.random() >= chance) {
             if (ratio > 1.6 && player.weeksOnMarket === 4) {
-                addNews(`[Secretario Técnico] Pocos se interesan por ${player.name}: pides ${asking.toLocaleString('es-ES')}€ y su valor de mercado ronda ${value.toLocaleString('es-ES')}€.`, 'warning');
+                addNews(`[Secretario Técnico] Pocos se interesan por ${player.name}: pides ${(Number(asking)||0).toLocaleString('es-ES')}€ y su valor de mercado ronda ${(Number(value)||0).toLocaleString('es-ES')}€.`, 'warning');
             }
             return null;
         }
@@ -4367,7 +4367,7 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
             gameState.playerSalesIncome = (gameState.playerSalesIncome || 0) + clause;
             logMovement('sale', `Cláusula pagada por ${buyer.club}: ${player.name}`, clause);
             updateWeeklyFinancials();
-            addNews(`💥 ${buyer.club} ha pagado la cláusula de rescisión de ${player.name}: ${clause.toLocaleString('es-ES')}€. El traspaso se cierra sin negociación.`, 'success');
+            addNews(`💥 ${buyer.club} ha pagado la cláusula de rescisión de ${player.name}: ${(Number(clause)||0).toLocaleString('es-ES')}€. El traspaso se cierra sin negociación.`, 'success');
             return null;
         }
         offer = {
@@ -4375,7 +4375,7 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
             originalAskingPrice: asking, maxAmount: Math.min(maxAmount, Math.max(amount, askEff)),
             week: gameState.week, season: gameState.currentSeason, timestamp: Date.now()
         };
-        addNews(`📨 ¡Oferta recibida! ${buyer.club} ofrece ${amount.toLocaleString('es-ES')}€ por ${player.name} (pedías ${asking.toLocaleString('es-ES')}€)`,
+        addNews(`📨 ¡Oferta recibida! ${buyer.club} ofrece ${(Number(amount)||0).toLocaleString('es-ES')}€ por ${player.name} (pedías ${(Number(asking)||0).toLocaleString('es-ES')}€)`,
             amount >= asking ? 'success' : 'info');
     } else if (player.loanListed) {
         if (Math.random() >= 0.4) return null;
@@ -4387,7 +4387,7 @@ function makeOfferForPlayer(player, { silent = false } = {}) {
             type: 'loan', player, club: buyer.club, wageContribution, totalSalary: player.salary,
             week: gameState.week, season: gameState.currentSeason, timestamp: Date.now()
         };
-        addNews(`📨 ¡Oferta de cesión! ${buyer.club} quiere a ${player.name} cedido y asumiría ${wageContribution.toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`, 'info');
+        addNews(`📨 ¡Oferta de cesión! ${buyer.club} quiere a ${player.name} cedido y asumiría ${(Number(wageContribution)||0).toLocaleString('es-ES')}€/sem de su salario (${Math.round(wagePercentage * 100)}%)`, 'info');
     }
     if (!offer) return null;
     player.weeksSinceOffer = 0; player.hadOffers = true;      // llegó una oferta: se reinicia «semanas sin recibir ofertas»
@@ -4440,8 +4440,8 @@ function renderOffersList() {
                     <h3 style="color: #FFD700;">💰 Oferta de Compra</h3>
                     <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
                     <p><strong>Club:</strong> ${offer.club}</p>
-                    <p><strong>Oferta:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.amount.toLocaleString('es-ES')}€</span></p>
-                    <p><strong>Precio solicitado:</strong> ${offer.originalAskingPrice.toLocaleString('es-ES')}€ 
+                    <p><strong>Oferta:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${(Number(offer.amount)||0).toLocaleString('es-ES')}€</span></p>
+                    <p><strong>Precio solicitado:</strong> ${(Number(offer.originalAskingPrice)||0).toLocaleString('es-ES')}€ 
                        <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
                     </p>
                     
@@ -4474,8 +4474,8 @@ function renderOffersList() {
                     <h3 style="color: #FFD700;">🔄 Oferta de Cesión</h3>
                     <p><strong>Jugador:</strong> ${offer.player.name} (${offer.player.position}, OVR ${offer.player.overall})</p>
                     <p><strong>Club:</strong> ${offer.club}</p>
-                    <p><strong>Salario total:</strong> ${offer.totalSalary.toLocaleString('es-ES')}€/sem</p>
-                    <p><strong>Asumen:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${offer.wageContribution.toLocaleString('es-ES')}€/sem</span> 
+                    <p><strong>Salario total:</strong> ${(Number(offer.totalSalary)||0).toLocaleString('es-ES')}€/sem</p>
+                    <p><strong>Asumen:</strong> <span style="color: #4CAF50; font-size: 1.2em;">${(Number(offer.wageContribution)||0).toLocaleString('es-ES')}€/sem</span> 
                        <span style="color: ${isGoodOffer ? '#4CAF50' : '#ff3333'};">(${percentage}%)</span>
                     </p>
                     <p><strong>Tú pagas:</strong> <span style="color: #ff3333;">${(offer.totalSalary - offer.wageContribution).toLocaleString('es-ES')}€/sem</span></p>
@@ -4526,7 +4526,7 @@ function acceptOffer(offerIndex) {
     if(!loan)gameState.playerSalesIncome=(gameState.playerSalesIncome||0)+offer.amount;
     if(!loan)logMovement('sale', `Venta: ${current.name} (oferta del ${offer.club})`, offer.amount);
     addNews(loan?`🔄 ${current.name} cedido al ${offer.club}; asume el ${percentage}% del salario.`:
-        `💰 ${current.name} vendido al ${offer.club} por ${offer.amount.toLocaleString('es-ES')}€.`, 'success');
+        `💰 ${current.name} vendido al ${offer.club} por ${(Number(offer.amount)||0).toLocaleString('es-ES')}€.`, 'success');
 
     // Eliminar esta oferta y las demás por el mismo jugador
     gameState.pendingOffers = otherOffers;
@@ -4590,8 +4590,8 @@ async function counterOffer(offerIndex) {
     
     const counterAmount = await window.pcfPrompt(
         `Contraoferta para ${offer.player.name}\n\n` +
-        `Oferta actual: ${offer.amount.toLocaleString('es-ES')}€\n` +
-        `Tu precio: ${offer.originalAskingPrice.toLocaleString('es-ES')}€\n\n` +
+        `Oferta actual: ${(Number(offer.amount)||0).toLocaleString('es-ES')}€\n` +
+        `Tu precio: ${(Number(offer.originalAskingPrice)||0).toLocaleString('es-ES')}€\n\n` +
         `¿Cuánto quieres pedir?`,
         offer.originalAskingPrice
     );
@@ -4614,7 +4614,7 @@ async function counterOffer(offerIndex) {
         offer.originalAskingPrice = counter;
         
         addNews(
-            `✅ ${offer.club} ha aceptado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            `✅ ${offer.club} ha aceptado tu contraoferta de ${(Number(counter)||0).toLocaleString('es-ES')}€ por ${offer.player.name}`,
             'success'
         );
         
@@ -4622,7 +4622,7 @@ async function counterOffer(offerIndex) {
         acceptOffer(offerIndex);
     } else {
         addNews(
-            `❌ ${offer.club} ha rechazado tu contraoferta de ${counter.toLocaleString('es-ES')}€ por ${offer.player.name}`,
+            `❌ ${offer.club} ha rechazado tu contraoferta de ${(Number(counter)||0).toLocaleString('es-ES')}€ por ${offer.player.name}`,
             'warning'
         );
         
@@ -4659,7 +4659,7 @@ function checkMarketRecommendations() {
                 if (recommendation < 0.5) {
                     const newPrice = Math.round(player.askingPrice * 0.85);
                     addNews(
-                        `[Secretario Técnico] ${player.name} lleva ${player.weeksSinceOffer} semanas sin recibir ofertas. Recomiendo bajar el precio a ${newPrice.toLocaleString('es-ES')}€`,
+                        `[Secretario Técnico] ${player.name} lleva ${player.weeksSinceOffer} semanas sin recibir ofertas. Recomiendo bajar el precio a ${(Number(newPrice)||0).toLocaleString('es-ES')}€`,
                         'warning'
                     );
                 } else {

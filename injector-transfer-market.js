@@ -88,10 +88,10 @@
                 player.askingPrice = price;
                 player.weeksOnMarket = 0;
                 window.gameLogic.addNews(
-                    'Has puesto a ' + player.name + ' en venta por ' + price.toLocaleString('es-ES') + '\u20ac',
+                    'Has puesto a ' + player.name + ' en venta por ' + (Number(price)||0).toLocaleString('es-ES') + '\u20ac',
                     'info'
                 );
-                alert(player.name + ' ha sido puesto en venta por ' + price.toLocaleString('es-ES') + '\u20ac');
+                alert(player.name + ' ha sido puesto en venta por ' + (Number(price)||0).toLocaleString('es-ES') + '\u20ac');
             } else {
                 const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
                 player.transferListed = false;
@@ -120,8 +120,8 @@
             const wagePercent = parseInt(document.getElementById('sellLoanWagePercent').value) || 0;
             const ourCost = Math.round(player.salary * (wagePercent / 100));
             const theirCost = player.salary - ourCost;
-            document.getElementById('sellLoanOurCost').textContent = ourCost.toLocaleString('es-ES');
-            document.getElementById('sellLoanTheirCost').textContent = theirCost.toLocaleString('es-ES');
+            document.getElementById('sellLoanOurCost').textContent = (Number(ourCost)||0).toLocaleString('es-ES');
+            document.getElementById('sellLoanTheirCost').textContent = (Number(theirCost)||0).toLocaleString('es-ES');
         };
 
         console.log('Bug indice venta corregido');

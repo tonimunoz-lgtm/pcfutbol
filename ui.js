@@ -278,7 +278,7 @@ function renderSquadList(squad, currentTeam) {
         
         // Indicador de mercado
         if (p.transferListed) {
-            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">${stIcon('transferible','pcf-st-sm')}En venta (${p.askingPrice.toLocaleString('es-ES')}€)</span>`;
+            statusHTML += `<br><span style="color: #2196F3; font-size: 0.85em;">${stIcon('transferible','pcf-st-sm')}En venta (${(Number(p.askingPrice)||0).toLocaleString('es-ES')}€)</span>`;
         } else if (p.loanListed) {
             statusHTML += `<br><span style="color: #9C27B0; font-size: 0.85em;">${stIcon('cedible','pcf-st-sm')}Cedible</span>`;
         }
@@ -287,9 +287,9 @@ function renderSquadList(squad, currentTeam) {
     })()}
 </td>
                 <td>${contractYears} ${contractYears === 1 ? 'año' : 'años'}</td>
-                <td>${releaseClause.toLocaleString('es-ES')}€</td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-           <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->
+                <td>${(Number(releaseClause)||0).toLocaleString('es-ES')}€</td>
+                <td>${(Number(p.salary)||0).toLocaleString('es-ES')}€</td>  
+           <!-- <td>${(Number(p.value)||0).toLocaleString('es-ES')}€</td> -->
                 
 
 <td style="display: flex; gap: 3px; flex-wrap: nowrap; justify-content: center;">
@@ -406,8 +406,8 @@ function renderAcademyList(academy) {
                 <td>${p.form || 0}<br><small title="Condición física; se recupera con descanso">Físico ${Math.round(p.condition ?? 100)}%</small></td>  
                 <td>${statusText}</td>  
                 <td>${p.matches || 0}</td>  
-                <td>${p.salary.toLocaleString('es-ES')}€</td>  
-           <!-- <td>${p.value.toLocaleString('es-ES')}€</td> -->  
+                <td>${(Number(p.salary)||0).toLocaleString('es-ES')}€</td>  
+           <!-- <td>${(Number(p.value)||0).toLocaleString('es-ES')}€</td> -->  
                 <td>  
                     <button class="btn btn-sm" ${p.isInjured ? 'disabled' : ''} onclick="window.promoteConfirm(${jsAttribute(p.name)})">Ascender</button><button class="btn btn-sm youth-dismiss" data-player="${escapeHTML(encodeURIComponent(p.name))}">Despedir</button>  
                 </td>  
@@ -474,7 +474,7 @@ function renderPlayerMarketList(players) {
                 <td>${(p.salary || 0).toLocaleString('es-ES')}€</td>  
                 <td>${(p.value || 0).toLocaleString('es-ES')}€</td>  
                 <td style="color: #b45f06; font-weight: bold;">
-                    ${clauseAmount == null ? '—' : clauseAmount.toLocaleString('es-ES') + '€'}
+                    ${clauseAmount == null ? '—' : (Number(clauseAmount)||0).toLocaleString('es-ES') + '€'}
                 </td>
                 <td>${askingPrice}</td>  
                 <td class="pcf-estado" title="${estado}">${estadoHtml}</td>  
@@ -538,7 +538,7 @@ function renderAvailableYoungstersMarket(youngsters) {
             <td>${y.foot || 'N/A'}</td>  
             ${ATTRIBUTES.map(attr => `<td>${y[attr] || 0}</td>`).join('')}  
             <td>${y.club}</td>  
-            <td>${y.cost.toLocaleString('es-ES')}€</td>  
+            <td>${(Number(y.cost)||0).toLocaleString('es-ES')}€</td>  
             <td>  
                 <button class="btn btn-sm" onclick="window.fichYoungsterConfirm('${encodeURIComponent(JSON.stringify(y))}')">Contratar</button>  
             </td>  
@@ -579,7 +579,7 @@ function renderNextMatchCard(homeTeam, opponentName, week) {
 function updateDashboardStats(state) {  
     document.getElementById('teamName').textContent = state.team || '-';  
     document.getElementById('weekNo').textContent = `${state.week} (${state.currentSeason})`;  
-    document.getElementById('balanceDisplay').textContent = state.balance.toLocaleString('es-ES') + '€';  
+    document.getElementById('balanceDisplay').textContent = (Number(state.balance)||0).toLocaleString('es-ES') + '€';  
   
     const teamStats = state.standings[state.team];  
     const sorted = Object.entries(state.standings).sort((a, b) => {  
@@ -597,12 +597,12 @@ function updateDashboardStats(state) {
     document.getElementById('dashGoals').textContent = teamStats?.gf || 0;  
     document.getElementById('dashSquad').textContent = state.squad?.length || 0;  
     document.getElementById('dashAcademy').textContent = state.academy?.length || 0;  
-    document.getElementById('dashBalance').textContent = state.balance.toLocaleString('es-ES') + '€';  
-    document.getElementById('dashIncome').textContent = state.weeklyIncome.toLocaleString('es-ES') + '€';  
-    document.getElementById('dashExpenses').textContent = state.weeklyExpenses.toLocaleString('es-ES') + '€';  
+    document.getElementById('dashBalance').textContent = (Number(state.balance)||0).toLocaleString('es-ES') + '€';  
+    document.getElementById('dashIncome').textContent = (Number(state.weeklyIncome)||0).toLocaleString('es-ES') + '€';  
+    document.getElementById('dashExpenses').textContent = (Number(state.weeklyExpenses)||0).toLocaleString('es-ES') + '€';  
   
     const weekly = state.weeklyIncome - state.weeklyExpenses;  
-    document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + weekly.toLocaleString('es-ES') + '€';  
+    document.getElementById('dashWeekly').textContent = (weekly >= 0 ? '+' : '') + (Number(weekly)||0).toLocaleString('es-ES') + '€';  
     document.getElementById('dashWeekly').className = `data-value ${weekly < 0 ? 'negative' : ''}`;  
 // ✅ AÑADIR INFORMACIÓN DE TRANSFERENCIAS
 const purchases = state.playerPurchases || 0;
@@ -615,12 +615,12 @@ const dashSalesEl = document.getElementById('dashSales');
 const dashCompensationsEl = document.getElementById('dashCompensations');
 const dashTransferBalanceEl = document.getElementById('dashTransferBalance');
 
-if (dashPurchasesEl) dashPurchasesEl.textContent = purchases.toLocaleString('es-ES') + '€';
-if (dashSalesEl) dashSalesEl.textContent = sales.toLocaleString('es-ES') + '€';
-if (dashCompensationsEl) dashCompensationsEl.textContent = compensations.toLocaleString('es-ES') + '€';
+if (dashPurchasesEl) dashPurchasesEl.textContent = (Number(purchases)||0).toLocaleString('es-ES') + '€';
+if (dashSalesEl) dashSalesEl.textContent = (Number(sales)||0).toLocaleString('es-ES') + '€';
+if (dashCompensationsEl) dashCompensationsEl.textContent = (Number(compensations)||0).toLocaleString('es-ES') + '€';
 
 if (dashTransferBalanceEl) {
-    dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + transferBalance.toLocaleString('es-ES') + '€';
+    dashTransferBalanceEl.textContent = (transferBalance >= 0 ? '+' : '') + (Number(transferBalance)||0).toLocaleString('es-ES') + '€';
     dashTransferBalanceEl.style.color = transferBalance >= 0 ? '#4CAF50' : '#f44336';
 }
   
@@ -634,7 +634,7 @@ if (dashTransferBalanceEl) {
         if (cash < 0) {
             warnText = `⚠️ ATENCIÓN: Tu club está en números rojos (deuda de ${Math.abs(cash).toLocaleString('es-ES')}€). Si continúa así, ¡podrías ser destituido!`;
         } else if (weekly < 0 && runwayWeeks < 12) {
-            warnText = `⚠️ AVISO: el margen semanal es negativo (${weekly.toLocaleString('es-ES')}€/semana) y la caja (${cash.toLocaleString('es-ES')}€) solo aguanta unas ${Math.max(1, Math.floor(runwayWeeks))} semanas a este ritmo.`;
+            warnText = `⚠️ AVISO: el margen semanal es negativo (${(Number(weekly)||0).toLocaleString('es-ES')}€/semana) y la caja (${(Number(cash)||0).toLocaleString('es-ES')}€) solo aguanta unas ${Math.max(1, Math.floor(runwayWeeks))} semanas a este ritmo.`;
         }
         if (warnText) {
             warningAlert.innerHTML = `  
@@ -834,7 +834,7 @@ function renderNegotiationsList(state) {
                     ${p.contractYears} ${p.contractYears === 1 ? 'año' : 'años'}
                     ${p.contractYears <= 1 ? '⚠️' : ''}
                 </td>
-                <td>${p.salary.toLocaleString('es-ES')}€</td>
+                <td>${(Number(p.salary)||0).toLocaleString('es-ES')}€</td>
                 <td>${(p.releaseClause || 0).toLocaleString('es-ES')}€</td>
                 <td>
                     ${(p.refusesToRenew && p.refusalSeason === state.currentSeason)

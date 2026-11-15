@@ -152,11 +152,11 @@
                 if (signingBonus > 0) {
                     state.balance -= signingBonus;
                     (state.seasonMovements || (state.seasonMovements = [])).push({ week: state.week, type: 'signing', description: `Prima de renovación: ${renewal.playerName}`, amount: -signingBonus });
-                    news(`💰 Prima de firma de ${renewal.playerName}: ${signingBonus.toLocaleString('es-ES')}€`, 'info');
+                    news(`💰 Prima de firma de ${renewal.playerName}: ${(Number(signingBonus)||0).toLocaleString('es-ES')}€`, 'info');
                 }
 
                 news(
-                    `✅ ¡${renewal.playerName} ha aceptado la renovación! Añade ${renewal.newYears} años y queda con ${player.contractYears} años de contrato a ${renewal.newSalary.toLocaleString('es-ES')}€/sem`,
+                    `✅ ¡${renewal.playerName} ha aceptado la renovación! Añade ${renewal.newYears} años y queda con ${player.contractYears} años de contrato a ${(Number(renewal.newSalary)||0).toLocaleString('es-ES')}€/sem`,
                     'success'
                 );
                 news(`🗞️ PRENSA: ${renewal.playerName} renueva con el ${state.team} hasta ${(parseInt(String(state.currentSeason).split('/')[1]) || 2027) + player.contractYears - 1}.`, 'info');
@@ -334,7 +334,7 @@
             const merchPercent = Math.min(100, numField('renewalMerchPercent')), ticketPercent = Math.min(100, numField('renewalTicketPercent'));
             const hasBonus = bonus > 0, hasCar = car > 0, hasHouse = house > 0;
             if (bonus > (state.balance || 0)) {
-                (window.pcfNotify || alert)('Renovación', `No tienes dinero para pagar la prima de firma (${bonus.toLocaleString('es-ES')}€).`);
+                (window.pcfNotify || alert)('Renovación', `No tienes dinero para pagar la prima de firma (${(Number(bonus)||0).toLocaleString('es-ES')}€).`);
                 return;
             }
 
@@ -371,7 +371,7 @@
 
             // Noticia y feedback
             news(
-                `📝 Oferta de renovación enviada a ${player.name}: ${newYears} años, ${newSalary.toLocaleString('es-ES')}€/sem. Responderá en ${delay} jornada${delay > 1 ? 's' : ''}.`,
+                `📝 Oferta de renovación enviada a ${player.name}: ${newYears} años, ${(Number(newSalary)||0).toLocaleString('es-ES')}€/sem. Responderá en ${delay} jornada${delay > 1 ? 's' : ''}.`,
                 'info'
             );
 
@@ -452,7 +452,7 @@
                     border-bottom: 1px solid rgba(255,255,255,0.1);
                     font-size: 0.9em;
                 ">
-                    <span>📝 <strong>${r.playerName}</strong> — ${r.newYears} años, ${r.newSalary.toLocaleString('es-ES')}€/sem</span>
+                    <span>📝 <strong>${r.playerName}</strong> — ${r.newYears} años, ${(Number(r.newSalary)||0).toLocaleString('es-ES')}€/sem</span>
                     <span style="color: #FF9800;">
                         ${weeksLeft <= 0 ? '🔔 Responde esta jornada' : `⏰ Responde en ${weeksLeft} jornada${weeksLeft > 1 ? 's' : ''}`}
                     </span>

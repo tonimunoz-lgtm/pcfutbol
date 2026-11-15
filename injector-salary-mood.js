@@ -204,7 +204,7 @@
         const increase = Math.round(fairSalary * 1.1);
 
         news(
-            `[Secretario] ${worst.name} está muy insatisfecho con su salario actual (${(worst.salary || 0).toLocaleString('es-ES')}€/sem). Recomiendo subirlo a unos ${increase.toLocaleString('es-ES')}€/sem para evitar problemas.`,
+            `[Secretario] ${worst.name} está muy insatisfecho con su salario actual (${(worst.salary || 0).toLocaleString('es-ES')}€/sem). Recomiendo subirlo a unos ${(Number(increase)||0).toLocaleString('es-ES')}€/sem para evitar problemas.`,
             'warning'
         );
     }

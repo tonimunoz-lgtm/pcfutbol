@@ -170,7 +170,7 @@
         const clause = Number(player?.releaseClause) || 0;
         const p = Number(price) || 0;
         if (clause > 0 && p > clause) {
-            window.pcfToast(`El precio no puede superar la cláusula de rescisión (${clause.toLocaleString('es-ES')}€): se ha ajustado a ese importe.`, { type: 'warn' });
+            window.pcfToast(`El precio no puede superar la cláusula de rescisión (${(Number(clause)||0).toLocaleString('es-ES')}€): se ha ajustado a ese importe.`, { type: 'warn' });
             return clause;
         }
         return p;

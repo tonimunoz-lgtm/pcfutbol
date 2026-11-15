@@ -743,7 +743,7 @@ function addMatchRevenue(match) {
     if(window._financesSuppressBalance!==true) gs.balance+=rev;
     const cname=CUP_CONFIG[match.type]?.shortName||'Copa';
     const rs=rev>=1e6?(rev/1e6).toFixed(1)+'M€':Math.round(rev/1000)+'K€';
-    window.gameLogic?.addNews(`💰 ${cname}: Taquilla +${rs} (${att.toLocaleString()} espectadores)`,'success');
+    window.gameLogic?.addNews(`💰 ${cname}: Taquilla +${rs} (${(Number(att)||0).toLocaleString()} espectadores)`,'success');
     return rev;
 }
 

@@ -286,7 +286,7 @@
                         </div>
                         <div>
                             <div style="color:#aaa;font-size:.7em;">Coste</div>
-                            <div style="font-size:.85em;">${p.cost.toLocaleString('es-ES')}€</div>
+                            <div style="font-size:.85em;">${(Number(p.cost)||0).toLocaleString('es-ES')}€</div>
                         </div>
                     </div>
                 </div>
@@ -295,7 +295,7 @@
                            background:linear-gradient(135deg,#2196F3,#42A5F5);
                            border:none;border-radius:8px;color:#fff;font-weight:bold;
                            cursor:pointer;font-size:.88em;">
-                    ✍️ Contratar (${p.cost.toLocaleString('es-ES')}€)
+                    ✍️ Contratar (${(Number(p.cost)||0).toLocaleString('es-ES')}€)
                 </button>
             </div>`;
         }).join('');
@@ -329,11 +329,11 @@
         if (!s) return;
 
         if (s.balance < prospect.cost) {
-            showToast(`❌ No tienes suficiente dinero (necesitas ${prospect.cost.toLocaleString('es-ES')}€)`, 'error');
+            showToast(`❌ No tienes suficiente dinero (necesitas ${(Number(prospect.cost)||0).toLocaleString('es-ES')}€)`, 'error');
             return;
         }
 
-        if (await window.pcfConfirmText(`¿Contratar a ${prospect.name} (OVR ${prospect.overall} / POT ${prospect.potential}) por ${prospect.cost.toLocaleString('es-ES')}€?`)) {
+        if (await window.pcfConfirmText(`¿Contratar a ${prospect.name} (OVR ${prospect.overall} / POT ${prospect.potential}) por ${(Number(prospect.cost)||0).toLocaleString('es-ES')}€?`)) {
             gl().updateGameState({ balance: s.balance - prospect.cost });
             const state = gs();
             const newAcademy = [...(state.academy || []), { ...prospect, club: state.team }];
@@ -343,7 +343,7 @@
             const remaining = (gs().scoutResults || []).filter(p => p.name !== prospect.name);
             saveResults(remaining.length ? remaining : null);
 
-            addN(`[Cantera] ✅ ${prospect.name} (${prospect.position}, OVR ${prospect.overall} / POT ${prospect.potential}) se une a la cantera por ${prospect.cost.toLocaleString('es-ES')}€.`, 'success');
+            addN(`[Cantera] ✅ ${prospect.name} (${prospect.position}, OVR ${prospect.overall} / POT ${prospect.potential}) se une a la cantera por ${(Number(prospect.cost)||0).toLocaleString('es-ES')}€.`, 'success');
             window.closeScoutModal();
 
             if (window.gameLogic?.refreshUI) window.gameLogic.refreshUI(gs());

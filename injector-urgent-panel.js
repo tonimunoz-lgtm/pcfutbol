@@ -167,7 +167,7 @@
                 type: 'balance_negative',
                 icon: '💸',
                 title: '¡Saldo negativo!',
-                desc: `Balance: ${state.balance.toLocaleString('es-ES')}€. Riesgo de problemas financieros.`,
+                desc: `Balance: ${(Number(state.balance)||0).toLocaleString('es-ES')}€. Riesgo de problemas financieros.`,
                 color: '#f44336',
                 action: `openPage('finance')`,
                 actionLabel: 'Ver finanzas',
